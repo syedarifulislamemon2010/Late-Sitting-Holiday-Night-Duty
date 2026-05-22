@@ -1,0 +1,49 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Cell {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+  employees   Employee[]
+  createdAt   DateTime   @default(now())
+}
+
+model Employee {
+  id          Int      @id @default(autoincrement())
+  name        String
+  designation String
+  bankId      String?
+  fileNo      String?
+  cellId      Int
+  cell        Cell     @relation(fields: [cellId], references: [id])
+  duties      Duty[]
+  createdAt   DateTime @default(now())
+}
+
+model Duty {
+  id          Int      @id @default(autoincrement())
+  employeeId  Int
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type        String   // LATE_SITTING, HOLIDAY, NIGHT_SHIFT
+  date        String   // YYYY-MM-DD
+  description String?
+  allowance1  Float    // Snacks / Lunch / Dinner based on type
+  allowance2  Float    // Meal / Snacks / Early Meal based on type
+  totalBill   Float    // Total allowance
+  createdAt   DateTime @default(now())
+}
+
+model Document {
+  id          Int      @id @default(autoincrement())
+  name        String
+  filePath    String
+  fileSize    Int
+  uploadedAt  DateTime @default(now())
+}
