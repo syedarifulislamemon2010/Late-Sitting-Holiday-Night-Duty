@@ -72,10 +72,16 @@ export default function Sidebar() {
       {/* Mobile Top Navigation */}
       <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-2">
-          <img src="/janata-bank-logo-original.png" alt="Janata Bank PLC" className="h-8 object-contain" />
+          <svg viewBox="0 0 60 60" className="h-8 w-8 shrink-0 text-[#00BCD4] dark:text-[#4DD0E1]">
+            <rect x="3" y="3" width="54" height="54" rx="14" fill="none" stroke="currentColor" strokeWidth="3" />
+            <path d="M18 16 C18 40, 26 44, 30 44 C34 44, 42 40, 42 16" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+            <path d="M24 16 C24 34, 28 38, 30 38 C32 38, 36 34, 36 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <line x1="30" y1="8" x2="30" y2="52" stroke="currentColor" strokeWidth="3.5" />
+            <path d="M30 16 C38 16, 42 20, 42 26 C42 32, 38 34, 30 34" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+            <path d="M30 34 C38 34, 42 38, 42 44 C42 50, 38 50, 30 50" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+          </svg>
           <h1 className="font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">ডিউটি পোর্টাল</h1>
         </div>
-        <div className="flex items-center gap-2">
           <button 
             onClick={toggleDarkMode}
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
@@ -88,7 +94,6 @@ export default function Sidebar() {
           >
             {isOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-        </div>
       </div>
 
       {/* Mobile Drawer Overlay */}
@@ -104,7 +109,14 @@ export default function Sidebar() {
         {/* Sidebar Header Logo */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <img src="/janata-bank-logo-original.png" alt="Janata Bank PLC" className="h-10 object-contain" />
+            <svg viewBox="0 0 60 60" className="h-9 w-9 shrink-0 text-[#00BCD4] dark:text-[#4DD0E1]">
+              <rect x="3" y="3" width="54" height="54" rx="14" fill="none" stroke="currentColor" strokeWidth="3" />
+              <path d="M18 16 C18 40, 26 44, 30 44 C34 44, 42 40, 42 16" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+              <path d="M24 16 C24 34, 28 38, 30 38 C32 38, 36 34, 36 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <line x1="30" y1="8" x2="30" y2="52" stroke="currentColor" strokeWidth="3.5" />
+              <path d="M30 16 C38 16, 42 20, 42 26 C42 32, 38 34, 30 34" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+              <path d="M30 34 C38 34, 42 38, 42 44 C42 50, 38 50, 30 50" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+            </svg>
             <div>
               <h1 className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight">ডিউটি পোর্টাল</h1>
               <p className="text-[10px] font-medium text-[#00BCD4] dark:text-[#4DD0E1] uppercase tracking-wider">জনতা ব্যাংক পিএলসি.</p>

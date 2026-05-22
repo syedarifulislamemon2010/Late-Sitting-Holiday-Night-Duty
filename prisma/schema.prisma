@@ -47,3 +47,12 @@ model Document {
   fileSize    Int
   uploadedAt  DateTime @default(now())
 }
+
+model Holiday {
+  id           Int      @id @default(autoincrement())
+  date         String   @unique // YYYY-MM-DD
+  name         String
+  isWorkingDay Boolean  @default(false) // If true, overrides a weekend to be a working day
+  createdAt    DateTime @default(now())
+}
+

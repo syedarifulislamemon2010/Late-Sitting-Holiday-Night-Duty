@@ -61,6 +61,22 @@ function calculateAllowances(type: string) {
   }
 }
 
+async function checkIsHoliday(tx: any, dateStr: string): Promise<boolean> {
+  const dateObj = new Date(dateStr);
+  const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
+  const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+
+  const override = await tx.holiday.findUnique({
+    where: { date: dateStr }
+  });
+
+  if (override) {
+    return !override.isWorkingDay;
+  }
+
+  return isWeekend;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -78,6 +94,17 @@ export async function POST(request: Request) {
         
         if (!employeeId || !type || !date) {
           throw new Error('missing_fields');
+        }
+
+        // Validate Holiday Rules
+        const isHoliday = await checkIsHoliday(tx, date);
+
+        if (type === 'LATE_SITTING' && isHoliday) {
+          throw new Error('late_sitting_on_holiday');
+        }
+
+        if (type === 'HOLIDAY' && !isHoliday) {
+          throw new Error('holiday_duty_on_working_day');
         }
         
         const { allowance1, allowance2, totalBill } = calculateAllowances(type);
@@ -127,6 +154,13 @@ export async function POST(request: Request) {
     if (error.message === 'missing_fields') {
       return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
     }
+    if (error.message === 'late_sitting_on_holiday') {
+      return NextResponse.json({ error: 'late_sitting_on_holiday' }, { status: 400 });
+    }
+    if (error.message === 'holiday_duty_on_working_day') {
+      return NextResponse.json({ error: 'holiday_duty_on_working_day' }, { status: 400 });
+    }
     return NextResponse.json({ error: 'failed_to_create_duties' }, { status: 500 });
   }
 }
+
