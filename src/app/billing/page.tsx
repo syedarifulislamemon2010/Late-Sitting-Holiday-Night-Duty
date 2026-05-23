@@ -80,7 +80,8 @@ export default function BillingPage() {
   const [verifiedBy, setVerifiedBy] = useState('জনাব চৌধুরী আশিকুর রহমান');
   const [verifiedDesignation, setVerifiedDesignation] = useState('সিনিয়র সহকারী সচিব');
   const [approvedBy, setApprovedBy] = useState('জনাব কে. এম. মোস্তফা কামাল');
-  const [approvedDesignation] = useState('উপ-মহাব্যবস্থাপক'); // LOCKED TO DGM
+  const [approvedDesignation, setApprovedDesignation] = useState('উপ-মহাব্যবস্থাপক');
+  const [selectedApprovedExecutiveId, setSelectedApprovedExecutiveId] = useState('');
   
   // Janata Bank Specific Configs
   const [subjectText, setSubjectText] = useState('যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।');
@@ -109,8 +110,19 @@ export default function BillingPage() {
         const execData = await execRes.json();
         const empData = await empRes.json();
         setCells(Array.isArray(cellData) ? cellData : []);
-        setExecutives(Array.isArray(execData) ? execData : []);
         setEmployees(Array.isArray(empData) ? empData : []);
+        
+        if (Array.isArray(execData)) {
+          setExecutives(execData);
+          if (execData.length > 0) {
+            const defaultApp = execData.find((ex: any) => ex.name.includes('মোস্তফা কামাল') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || execData[0];
+            if (defaultApp) {
+              setSelectedApprovedExecutiveId(defaultApp.id.toString());
+              setApprovedBy(defaultApp.name);
+              setApprovedDesignation(defaultApp.designation);
+            }
+          }
+        }
       } catch (err) {
         console.error('Error loading static data:', err);
       }
@@ -862,18 +874,26 @@ export default function BillingPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">অনুমোদনকারী (ডিজিএম)</label>
+                  <label className="text-xs font-bold text-slate-500">অনুমোদনকারী কর্মকর্তা (Approver)</label>
                   <select
-                    value={approvedBy}
-                    onChange={(e) => setApprovedBy(e.target.value)}
+                    value={selectedApprovedExecutiveId}
+                    onChange={(e) => {
+                      const execId = e.target.value;
+                      setSelectedApprovedExecutiveId(execId);
+                      const exec = executives.find(ex => ex.id.toString() === execId);
+                      if (exec) {
+                        setApprovedBy(exec.name);
+                        setApprovedDesignation(exec.designation);
+                      }
+                    }}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none font-bold"
                   >
-                    <option value={approvedBy}>{approvedBy}</option>
-                    {executives
-                      .filter(ex => ex.designation === 'উপ-মহাব্যবস্থাপক' && ex.name !== approvedBy)
-                      .map(ex => (
-                        <option key={ex.id} value={ex.name}>{ex.name}</option>
-                      ))}
+                    <option value="">Select Officer (কর্মকর্তা নির্বাচন)</option>
+                    {executives.map(ex => (
+                      <option key={ex.id} value={ex.id.toString()}>
+                        {ex.name} ({ex.designation})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
