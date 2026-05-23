@@ -134,7 +134,7 @@ export default function RosterPage() {
   const [memoNo, setMemoNo] = useState('স্মারক নং: ৪৬.০২.০০০০.০০১.১৯.০০২.২৬-১৫৪');
   const [issuingOffice, setIssuingOffice] = useState('প্রশাসনিক সেল, ডিউটি পোর্টাল কার্যালয়');
   const [signingOfficer, setSigningOfficer] = useState('জনাব চৌধুরী আশিকুর রহমান');
-  const [signingDesignation] = useState('উপ-মহাব্যবস্থাপক');
+  const [signingDesignation, setSigningDesignation] = useState('উপ-মহাব্যবস্থাপক');
   const [signingPhone, setSigningPhone] = useState('০২-৯৫৫৫৬৬৬');
   const [signingEmail, setSigningEmail] = useState('ashikur.rahman@office.gov.bd');
   const [copies, setCopies] = useState([
@@ -144,6 +144,148 @@ export default function RosterPage() {
   ]);
   const [newCopyText, setNewCopyText] = useState('');
   const [executives, setExecutives] = useState<any[]>([]);
+  const [selectedExecutiveId, setSelectedExecutiveId] = useState<string>('');
+  const [holidays, setHolidays] = useState<any[]>([]);
+
+  // Helper to check if a date is a working day or weekend/holiday
+  const checkIsWorkingDay = (dateStr: string, holidaysList: any[]) => {
+    if (!dateStr) return true;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
+    
+    // Find database holiday entry
+    const holiday = holidaysList.find(h => h.date === dateStr);
+    
+    if (holiday) {
+      return holiday.isWorkingDay; // If isWorkingDay is false, it's a holiday (non-working day)
+    }
+    
+    // Default weekends in Bangladesh (Friday and Saturday)
+    if (dayOfWeek === 5 || dayOfWeek === 6) {
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Helper to walk backward to find the previous working day
+  const calculateOrderDate = (earliestDateStr: string, holidaysList: any[]) => {
+    if (!earliestDateStr) return new Date().toISOString().split('T')[0];
+    
+    let [y, m, d] = earliestDateStr.split('-').map(Number);
+    let currentDate = new Date(y, m - 1, d);
+    
+    // We want to find the working day before
+    while (true) {
+      // Subtract 1 day
+      currentDate.setDate(currentDate.getDate() - 1);
+      
+      const cy = currentDate.getFullYear();
+      const cm = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const cd = String(currentDate.getDate()).padStart(2, '0');
+      const cDateStr = `${cy}-${cm}-${cd}`;
+      
+      if (checkIsWorkingDay(cDateStr, holidaysList)) {
+        return cDateStr;
+      }
+    }
+  };
+
+  // Render stunning month calendar for multi-date selection
+  const renderMonthCalendar = (empId: number) => {
+    const [yearStr, monthStr] = selectedMonth.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10); // 1-indexed
+    
+    const lastDay = new Date(year, month, 0).getDate();
+    const cells = [];
+    
+    for (let day = 1; day <= lastDay; day++) {
+      const dayStr = String(day).padStart(2, '0');
+      const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+      
+      const dateObj = new Date(year, month - 1, day);
+      const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
+      const dayNamesBn = ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি'];
+      const dayName = dayNamesBn[dayOfWeek];
+      
+      const isSelected = (opt1Assignments[empId] || []).includes(dateStr);
+      const isWorking = checkIsWorkingDay(dateStr, holidays);
+      const isDbHoliday = holidays.find(h => h.date === dateStr);
+      
+      cells.push({
+        day,
+        dateStr,
+        dayName,
+        dayOfWeek,
+        isSelected,
+        isWorking,
+        isDbHoliday
+      });
+    }
+    
+    return (
+      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 no-print">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold text-slate-555 dark:text-slate-400">
+            ডিউটি তারিখসমূহ ({selectedMonth}):
+          </span>
+          {opt1Assignments[empId] && opt1Assignments[empId].length > 0 && (
+            <button
+              type="button"
+              onClick={() => setOpt1Assignments(prev => ({ ...prev, [empId]: [] }))}
+              className="text-[9px] font-bold text-red-500 hover:text-red-650 transition-colors"
+            >
+              সব মুছুন
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-7 gap-1 font-sans text-center">
+          {['র', 'স', 'ম', 'ব', 'বৃ', 'শু', 'শ'].map((dName, idx) => (
+            <div key={idx} className={`text-[9px] font-bold py-0.5 ${idx === 5 || idx === 6 ? 'text-red-500' : 'text-slate-400'}`}>
+              {dName}
+            </div>
+          ))}
+          
+          {/* Pad grid */}
+          {Array.from({ length: new Date(year, month - 1, 1).getDay() }).map((_, idx) => (
+            <div key={`pad-${idx}`} className="min-h-[36px]" />
+          ))}
+          
+          {cells.map(c => {
+            const holidayInfo = c.isDbHoliday ? c.isDbHoliday.name : (c.dayOfWeek === 5 || c.dayOfWeek === 6 ? 'সাপ্তাহিক ছুটি' : '');
+            return (
+              <button
+                type="button"
+                key={c.dateStr}
+                title={`${c.dateStr} (${holidayInfo || 'কর্মদিবস'})`}
+                onClick={() => {
+                  if (c.isSelected) {
+                    handleOpt1RemoveDate(empId, c.dateStr);
+                  } else {
+                    handleOpt1AddDate(empId, c.dateStr);
+                  }
+                }}
+                className={`relative p-1 text-[10px] font-bold rounded-lg transition-all flex flex-col items-center justify-center min-h-[36px] border ${
+                  c.isSelected
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm font-extrabold scale-105'
+                    : !c.isWorking
+                      ? 'bg-red-50/50 dark:bg-red-950/20 border-red-100/50 dark:border-red-900/10 text-red-500 hover:bg-red-100/60 dark:hover:bg-red-900/30'
+                      : 'bg-slate-50 dark:bg-slate-950/20 border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span>{c.day}</span>
+                {c.isDbHoliday && (
+                  <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-amber-550 animate-pulse" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   // New customizable parameters for Janata Bank Office Order
   const [printCategory, setPrintCategory] = useState<'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'>('LATE_SITTING');
@@ -234,21 +376,63 @@ export default function RosterPage() {
     return Array.from(groupedMap.values());
   };
 
+  // Automatically calculate orderDate to be the previous working day of the earliest selected duty date
+  useEffect(() => {
+    let earliestDate: string | null = null;
+
+    if (entryMode === 'EMPLOYEE_WISE') {
+      const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+      const allDates: string[] = [];
+      activeEmployeeIds.forEach(empId => {
+        if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
+          allDates.push(...opt1Assignments[empId]);
+        }
+      });
+      if (allDates.length > 0) {
+        allDates.sort();
+        earliestDate = allDates[0];
+      }
+    } else {
+      if (assignmentForm.date) {
+        earliestDate = assignmentForm.date;
+      }
+    }
+
+    if (earliestDate) {
+      const calculated = calculateOrderDate(earliestDate, holidays);
+      setOrderDate(calculated);
+    }
+  }, [opt1Assignments, assignmentForm.date, entryMode, holidays]);
+
   async function loadData() {
     try {
       setLoading(true);
-      const [empRes, cellRes, execRes] = await Promise.all([
+      const [empRes, cellRes, execRes, holidayRes] = await Promise.all([
         fetch('/api/employees'),
         fetch('/api/cells'),
-        fetch('/api/executives')
+        fetch('/api/executives'),
+        fetch('/api/holidays')
       ]);
       const empData = await empRes.json();
       const cellData = await cellRes.json();
       const execData = await execRes.json();
+      const holidayData = await holidayRes.json();
       
       setEmployees(Array.isArray(empData) ? empData : []);
       setCells(Array.isArray(cellData) ? cellData : []);
-      setExecutives(Array.isArray(execData) ? execData : []);
+      setHolidays(Array.isArray(holidayData) ? holidayData : []);
+      
+      if (Array.isArray(execData)) {
+        setExecutives(execData);
+        if (execData.length > 0) {
+          const defaultExec = execData.find((ex: any) => ex.name.includes('চৌধুরী আশিকুর রহমান') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || execData[0];
+          if (defaultExec) {
+            setSelectedExecutiveId(defaultExec.id.toString());
+            setSigningOfficer(defaultExec.name);
+            setSigningDesignation(defaultExec.designation);
+          }
+        }
+      }
     } catch (err) {
       console.error('Error loading static data:', err);
     } finally {
@@ -610,7 +794,7 @@ export default function RosterPage() {
               className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md ${duties.length > 0 ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-95' : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed'}`}
             >
               <Printer size={16} />
-              অফিস আদেশ (লিগ্যাল সাইজ) দেখুন ও প্রিন্ট করুন
+              অফিস আদেশ (A4 সাইজ) দেখুন ও প্রিন্ট করুন
             </button>
           </div>
 
@@ -730,41 +914,9 @@ export default function RosterPage() {
                                         <p className="text-[10px] text-slate-400 mt-0.5">{emp.designation}</p>
                                       </div>
                                     </div>
-                                    
-                                    {isChecked && (
-                                      <div className="flex items-center gap-1">
-                                        <input
-                                          type="date"
-                                          onChange={(e) => {
-                                            handleOpt1AddDate(emp.id, e.target.value);
-                                            e.target.value = ''; // Reset
-                                          }}
-                                          className="px-1.5 py-1 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] focus:outline-none focus:border-indigo-500 font-sans"
-                                        />
-                                      </div>
-                                    )}
                                   </div>
-
-                                  {isChecked && (
-                                    <div className="flex flex-wrap gap-1 pt-1.5 border-t border-slate-100/60 dark:border-slate-800/60">
-                                      {opt1Assignments[emp.id] && opt1Assignments[emp.id].length > 0 ? (
-                                        opt1Assignments[emp.id].map(date => (
-                                          <span key={date} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold font-sans bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-indigo-800/30">
-                                            {date}
-                                            <button 
-                                              type="button" 
-                                              onClick={() => handleOpt1RemoveDate(emp.id, date)}
-                                              className="text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-200 font-bold ml-0.5"
-                                            >
-                                              ×
-                                            </button>
-                                          </span>
-                                        ))
-                                      ) : (
-                                        <p className="text-[9px] text-slate-400 italic">তারিখ পিক করতে ডানদিকের ডেটবক্স ব্যবহার করুন।</p>
-                                      )}
-                                    </div>
-                                  )}
+                                  
+                                  {isChecked && renderMonthCalendar(emp.id)}
                                 </div>
                               );
                             })
@@ -1086,18 +1238,26 @@ export default function RosterPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">৩. আদেশ অনুমোদনকারী ডিজিএম (Order By)</label>
+                  <label className="text-xs font-bold text-slate-500">৩. আদেশ অনুমোদনকারী কর্মকর্তা (Signing Officer)</label>
                   <select
-                    value={signingOfficer}
-                    onChange={(e) => setSigningOfficer(e.target.value)}
+                    value={selectedExecutiveId}
+                    onChange={(e) => {
+                      const execId = e.target.value;
+                      setSelectedExecutiveId(execId);
+                      const exec = executives.find(ex => ex.id.toString() === execId);
+                      if (exec) {
+                        setSigningOfficer(exec.name);
+                        setSigningDesignation(exec.designation);
+                      }
+                    }}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
                   >
-                    <option value="">Select DGM (ডিজিএম নির্বাচন)</option>
-                    {executives
-                      .filter(ex => ex.designation === 'উপ-মহাব্যবস্থাপক')
-                      .map(ex => (
-                        <option key={ex.id} value={ex.name}>{ex.name}</option>
-                      ))}
+                    <option value="">Select Officer (কর্মকর্তা নির্বাচন)</option>
+                    {executives.map(ex => (
+                      <option key={ex.id} value={ex.id.toString()}>
+                        {ex.name} ({ex.designation})
+                      </option>
+                    ))}
                   </select>
                 </div>
 

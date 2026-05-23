@@ -15,7 +15,8 @@ import {
   X,
   LogOut,
   UserCheck,
-  Shield
+  Shield,
+  Trash2
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -87,6 +88,7 @@ export default function Sidebar() {
     { name: 'রোস্টার ও জিও', href: '/roster', icon: CalendarRange },
     { name: 'আপ্যায়ন বিল নোট', href: '/billing', icon: Receipt },
     { name: 'পিডিএফ আর্কাইভ', href: '/documents', icon: FileText },
+    { name: 'রিসাইকেল বিন', href: '/trash', icon: Trash2 },
   ];
 
   if (currentUser && currentUser.role === 'ADMIN') {

@@ -49,6 +49,24 @@ export async function DELETE(
       return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
     }
 
+    const executive = await prisma.executive.findUnique({
+      where: { id: execId }
+    });
+
+    if (!executive) {
+      return NextResponse.json({ error: 'executive_not_found' }, { status: 404 });
+    }
+
+    // Save to Trash
+    await prisma.trash.create({
+      data: {
+        entityType: 'EXECUTIVE',
+        entityId: execId,
+        name: `নির্বাহী: ${executive.name} (${executive.designation})`,
+        data: JSON.stringify(executive)
+      }
+    });
+
     await prisma.executive.delete({
       where: { id: execId }
     });

@@ -31,22 +31,22 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
 
-    // Delete physical file
-    const absolutePath = path.join(process.cwd(), 'public', doc.filePath);
-    if (fs.existsSync(absolutePath)) {
-      try {
-        fs.unlinkSync(absolutePath);
-      } catch (fileErr) {
-        console.error('Failed to delete physical file:', fileErr);
+    // Save to Trash (keep physical file for restoration support)
+    await prisma.trash.create({
+      data: {
+        entityType: 'DOCUMENT',
+        entityId: doc.id,
+        name: `দলিল: ${doc.name}`,
+        data: JSON.stringify(doc)
       }
-    }
+    });
 
     // Delete database entry
     await prisma.document.delete({
       where: { id: Number(id) },
     });
 
-    return NextResponse.json({ success: true, message: 'Document deleted successfully' });
+    return NextResponse.json({ success: true, message: 'Document soft-deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting document:', error);
     return NextResponse.json({ error: 'internal_error', message: error.message }, { status: 500 });

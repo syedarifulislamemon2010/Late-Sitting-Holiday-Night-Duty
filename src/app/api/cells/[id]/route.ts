@@ -75,6 +75,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'cell_has_employees' }, { status: 400 });
     }
     
+    // Save to Trash
+    await prisma.trash.create({
+      data: {
+        entityType: 'CELL',
+        entityId: cellId,
+        name: `সেল: ${cell.name}`,
+        data: JSON.stringify({ name: cell.name, description: cell.description })
+      }
+    });
+    
     await prisma.cell.delete({
       where: { id: cellId }
     });

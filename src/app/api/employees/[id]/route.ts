@@ -64,6 +64,25 @@ export async function DELETE(
       return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
     }
     
+    const employee = await prisma.employee.findUnique({
+      where: { id: employeeId },
+      include: { duties: true }
+    });
+    
+    if (!employee) {
+      return NextResponse.json({ error: 'employee_not_found' }, { status: 404 });
+    }
+    
+    // Create soft-delete Trash entry
+    await prisma.trash.create({
+      data: {
+        entityType: 'EMPLOYEE',
+        entityId: employeeId,
+        name: `${employee.name} (${employee.designation})`,
+        data: JSON.stringify(employee)
+      }
+    });
+    
     await prisma.employee.delete({
       where: { id: employeeId }
     });

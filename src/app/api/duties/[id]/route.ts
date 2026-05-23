@@ -133,6 +133,31 @@ export async function DELETE(
       return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
     }
     
+    const duty = await prisma.duty.findUnique({
+      where: { id: dutyId },
+      include: { employee: true }
+    });
+    
+    if (!duty) {
+      return NextResponse.json({ error: 'duty_not_found' }, { status: 404 });
+    }
+    
+    const typeMapBangla: Record<string, string> = {
+      'LATE_SITTING': 'লেট সিটিং',
+      'HOLIDAY': 'ছুটির দিন',
+      'NIGHT_SHIFT': 'নাইট শিফট'
+    };
+    
+    // Save to Trash
+    await prisma.trash.create({
+      data: {
+        entityType: 'DUTY',
+        entityId: dutyId,
+        name: `${duty.employee.name} - ${typeMapBangla[duty.type] || duty.type} (${duty.date})`,
+        data: JSON.stringify(duty)
+      }
+    });
+    
     await prisma.duty.delete({
       where: { id: dutyId }
     });
