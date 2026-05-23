@@ -178,7 +178,7 @@ body {
   }
   
   @page {
-    size: legal;
-    margin: 0.75in 0.5in 0.5in 1.75in !important;
+    size: A4;
+    margin: 1.0in !important;
   }
 }

@@ -256,6 +256,7 @@ function DogPhotoWithInteractiveEyes({ focusField, usernameLength }: {
 // ===== MAIN AUTH GUARD COMPONENT =====
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -263,14 +264,38 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [focusField, setFocusField] = useState<'none' | 'username' | 'password'>('none');
 
   useEffect(() => {
-    const checkAuth = () => {
-      const isAuth = document.cookie.split('; ').find(row => row.startsWith('session='));
-      setAuthenticated(!!isAuth);
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth');
+        const data = await res.json();
+        if (res.ok && data.authenticated) {
+          setAuthenticated(true);
+          setUserProfile(data.user);
+        } else {
+          setAuthenticated(false);
+          setUserProfile(null);
+        }
+      } catch (err) {
+        console.error('Auth verification error:', err);
+        setAuthenticated(false);
+        setUserProfile(null);
+      }
     };
     checkAuth();
-    const interval = setInterval(checkAuth, 1000);
+    const interval = setInterval(checkAuth, 4000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (userProfile) {
+      localStorage.setItem('currentUser', JSON.stringify(userProfile));
+      // Dispatch a storage event so components on the same tab are notified
+      window.dispatchEvent(new Event('storage'));
+    } else {
+      localStorage.removeItem('currentUser');
+      window.dispatchEvent(new Event('storage'));
+    }
+  }, [userProfile]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -286,6 +311,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (res.ok && data.success) {
         setAuthenticated(true);
+        // Fetch detailed profile immediately
+        const profileRes = await fetch('/api/auth');
+        const profileData = await profileRes.json();
+        if (profileRes.ok && profileData.authenticated) {
+          setUserProfile(profileData.user);
+        }
       } else {
         setError(data.message || 'ভুল ইউজারনেম বা পাসওয়ার্ড!');
       }

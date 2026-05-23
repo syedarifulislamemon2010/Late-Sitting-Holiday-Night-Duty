@@ -1,0 +1,494 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { 
+  UserPlus, 
+  Shield, 
+  Building2, 
+  Trash2, 
+  Edit3, 
+  AlertCircle, 
+  CheckSquare, 
+  Square,
+  Key,
+  UserCheck
+} from 'lucide-react';
+
+interface Cell {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+interface User {
+  id: number;
+  username: string;
+  name: string;
+  role: string;
+  cells: { id: number; name: string }[];
+}
+
+export default function UserManagement() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [cells, setCells] = useState<Cell[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Form states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('USER');
+  const [selectedCellIds, setSelectedCellIds] = useState<number[]>([]);
+
+  // Fetch initial profile
+  useEffect(() => {
+    async function getProfile() {
+      try {
+        const res = await fetch('/api/auth');
+        const data = await res.json();
+        if (res.ok && data.authenticated) {
+          setCurrentUser(data.user);
+        }
+      } catch (err) {
+        console.error('Profile fetch error:', err);
+      }
+    }
+    getProfile();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [usersRes, cellsRes] = await Promise.all([
+        fetch('/api/users'),
+        fetch('/api/cells')
+      ]);
+
+      if (usersRes.ok && cellsRes.ok) {
+        const usersData = await usersRes.json();
+        const cellsData = await cellsRes.json();
+        setUsers(usersData);
+        setCells(cellsData);
+      } else {
+        setError('ডাটা লোড করতে ব্যর্থ হয়েছে।');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('সার্ভার ত্রুটি ঘটেছে।');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleOpenCreateModal = () => {
+    setEditingUser(null);
+    setName('');
+    setUsername('');
+    setPassword('');
+    setRole('USER');
+    setSelectedCellIds([]);
+    setError('');
+    setSuccess('');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (user: User) => {
+    setEditingUser(user);
+    setName(user.name);
+    setUsername(user.username);
+    setPassword(''); // leave blank if keeping same
+    setRole(user.role);
+    setSelectedCellIds(user.cells.map(c => c.id));
+    setError('');
+    setSuccess('');
+    setIsModalOpen(true);
+  };
+
+  const handleCellToggle = (cellId: number) => {
+    if (selectedCellIds.includes(cellId)) {
+      setSelectedCellIds(selectedCellIds.filter(id => id !== cellId));
+    } else {
+      setSelectedCellIds([...selectedCellIds, cellId]);
+    }
+  };
+
+  const handleSelectAllCells = () => {
+    if (selectedCellIds.length === cells.length) {
+      setSelectedCellIds([]);
+    } else {
+      setSelectedCellIds(cells.map(c => c.id));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!name.trim()) {
+      setError('দয়া করে ইউজারের নাম প্রদান করুন।');
+      return;
+    }
+
+    if (!editingUser) {
+      // Create user validations
+      if (!username.trim()) {
+        setError('দয়া করে একটি ইউজারনেম প্রদান করুন।');
+        return;
+      }
+      if (!password || password.length < 4) {
+        setError('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে।');
+        return;
+      }
+    }
+
+    const payload = {
+      name: name.trim(),
+      username: username.trim(),
+      password: password ? password.trim() : undefined,
+      role,
+      cellIds: selectedCellIds
+    };
+
+    try {
+      const url = editingUser ? `/api/users/${editingUser.id}` : '/api/users';
+      const method = editingUser ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setSuccess(editingUser ? 'ইউজার সফলভাবে আপডেট হয়েছে!' : 'ইউজার সফলভাবে তৈরি হয়েছে!');
+        setIsModalOpen(false);
+        loadData();
+      } else {
+        setError(data.message || 'ইউজার সংরক্ষণ করতে সমস্যা হয়েছে।');
+      }
+    } catch (err) {
+      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    }
+  };
+
+  const handleDeleteUser = async (user: User) => {
+    if (user.username === 'admin') {
+      alert('সিস্টেম সুপার এডমিনকে মুছে ফেলা যাবে না!');
+      return;
+    }
+
+    if (currentUser && currentUser.id === user.id) {
+      alert('আপনি বর্তমানে লগইনকৃত ইউজার অ্যাকাউন্টটি মুছে ফেলতে পারবেন না!');
+      return;
+    }
+
+    if (!confirm(`আপনি কি নিশ্চিতভাবে ইউজার "${user.name}" মুছে ফেলতে চান?`)) return;
+
+    try {
+      const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setSuccess('ইউজার সফলভাবে মুছে ফেলা হয়েছে।');
+        loadData();
+      } else {
+        const data = await res.json();
+        setError(data.message || 'ইউজার মুছতে ব্যর্থ হয়েছে।');
+      }
+    } catch (err) {
+      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    }
+  };
+
+  if (currentUser && currentUser.role !== 'ADMIN') {
+    return (
+      <div className="glass-card p-8 rounded-2xl text-center space-y-4 max-w-md mx-auto mt-12 border border-red-150/30">
+        <div className="p-3 bg-red-50 text-red-500 rounded-full w-12 h-12 mx-auto flex items-center justify-center">
+          <AlertCircle size={24} />
+        </div>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">প্রবেশাধিকার সংরক্ষিত</h2>
+        <p className="text-xs text-slate-500">শুধুমাত্র সিস্টেম অ্যাডমিনিস্ট্রেটরগণ এই পাতাটি দেখতে এবং সেল-ভিত্তিক ইউজার পারমিশন ম্যানেজ করতে পারবেন।</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">ইউজার ও সেল পারমিশন</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">সিস্টেমের ইউজারবৃন্দ তৈরি করুন এবং নির্দিষ্ট সেল সমূহে তাদের দায়িত্ব/প্রবেশাধিকার নিয়ন্ত্রণ করুন।</p>
+        </div>
+        <button
+          onClick={handleOpenCreateModal}
+          className="px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition-all duration-200 shadow-md shadow-indigo-100/50 dark:shadow-none flex items-center gap-2 group active:scale-95"
+        >
+          <UserPlus size={16} className="group-hover:scale-110 transition-transform" />
+          নতুন ইউজার তৈরি
+        </button>
+      </div>
+
+      {success && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-2xl animate-shake">
+          {success}
+        </div>
+      )}
+
+      {/* Users List Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-48 bg-slate-200 dark:bg-slate-800/40 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {users.map(user => (
+            <div 
+              key={user.id} 
+              className="glass-card p-6 rounded-2xl border border-slate-200/60 dark:border-slate-850 hover:border-indigo-500/30 dark:hover:border-indigo-500/20 transition-all duration-300 relative group flex flex-col justify-between"
+            >
+              {/* Card top section */}
+              <div>
+                <div className="flex justify-between items-start gap-2">
+                  <div className="space-y-1">
+                    <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base font-sans">{user.name}</h3>
+                    <p className="text-[11px] font-semibold text-slate-400 font-mono">@{user.username}</p>
+                  </div>
+                  
+                  {/* Role Tag */}
+                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border ${user.role === 'ADMIN' ? 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400' : 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400'}`}>
+                    {user.role}
+                  </span>
+                </div>
+
+                {/* Cells lists */}
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                    <Building2 size={12} className="text-slate-400" />
+                    <span>প্রবেশাধিকার প্রাপ্ত সেলসমূহ:</span>
+                  </div>
+                  
+                  {user.role === 'ADMIN' ? (
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-2 italic flex items-center gap-1">
+                      <Shield size={12} className="text-rose-500" />
+                      এডমিন হিসেবে সব সেলের অ্যাক্সেস রয়েছে
+                    </p>
+                  ) : user.cells.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {user.cells.map(c => (
+                        <span 
+                          key={c.id} 
+                          className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold font-mono"
+                        >
+                          {c.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-2 italic">
+                      ⚠️ কোনো সেলের অ্যাক্সেস নেই!
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions panel */}
+              <div className="mt-6 flex justify-end items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 no-print">
+                <button
+                  onClick={() => handleOpenEditModal(user)}
+                  className="p-2 text-indigo-600 hover:bg-indigo-50 active:scale-95 dark:text-indigo-400 dark:hover:bg-indigo-950/30 rounded-xl transition-all"
+                  title="ইউজার তথ্য এডিট করুন"
+                >
+                  <Edit3 size={15} />
+                </button>
+                {user.username !== 'admin' && (
+                  <button
+                    onClick={() => handleDeleteUser(user)}
+                    className="p-2 text-rose-600 hover:bg-rose-50 active:scale-95 dark:text-rose-400 dark:hover:bg-rose-950/30 rounded-xl transition-all"
+                    title="ইউজার ডিলিট করুন"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* RENDER POPUP EDIT/CREATE MODAL */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 no-print">
+          <div className="w-full max-w-[500px] bg-white dark:bg-slate-900 rounded-[28px] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden relative animate-float">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-5 bg-slate-50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserCheck size={18} className="text-indigo-600" />
+                <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base font-sans">
+                  {editingUser ? 'ইউজার তথ্য পরিবর্তন' : 'নতুন ইউজার তৈরি করুন'}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl leading-none font-sans"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Body / Form */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto no-scrollbar">
+              {error && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-shake">
+                  <AlertCircle size={14} className="shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {/* 1. Name */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">ইউজারের পূর্ণ নাম *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="যেমন: জনাব সৈয়দ ইমন"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 focus:bg-white"
+                />
+              </div>
+
+              {/* 2. Username */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">ইউজারনেম *</label>
+                <input
+                  type="text"
+                  required
+                  disabled={!!editingUser}
+                  placeholder="যেমন: emon (ইংরেজি অক্ষরে)"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                  className={`w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-indigo-500 ${editingUser ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-slate-50/50 dark:bg-slate-950/20 text-slate-800 dark:text-slate-200'}`}
+                />
+              </div>
+
+              {/* 3. Password */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">
+                    {editingUser ? 'নতুন পাসওয়ার্ড (ঐচ্ছিক)' : 'পাসওয়ার্ড *'}
+                  </label>
+                  {editingUser && (
+                    <span className="text-[9px] text-slate-400 font-semibold italic flex items-center gap-0.5">
+                      <Key size={10} /> পাসওয়ার্ড পরিবর্তন না করতে চাইলে খালি রাখুন
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  placeholder="কমপক্ষে ৪ অক্ষরের পাসওয়ার্ড দিন"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 focus:bg-white"
+                />
+              </div>
+
+              {/* 4. Role */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">সিস্টেম রোল (Role)</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-xl text-xs font-semibold focus:outline-none"
+                >
+                  <option value="USER">USER (সাধারণ ইউজার)</option>
+                  <option value="ADMIN">ADMIN (সিস্টেম সুপার এডমিন)</option>
+                </select>
+              </div>
+
+              {/* 5. Cell Assignments (Only if Role is USER) */}
+              {role === 'USER' && (
+                <div className="space-y-2 pt-2 border-t border-dashed border-slate-100 dark:border-slate-800">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">
+                      দায়িত্বপ্রাপ্ত সেলসমূহ নির্বাচন করুন *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllCells}
+                      className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      {selectedCellIds.length === cells.length ? 'সব আনসিলেক্ট করুন' : 'সব সিলেক্ট করুন'}
+                    </button>
+                  </div>
+
+                  {cells.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3 max-h-36 overflow-y-auto pr-1 no-scrollbar pt-1">
+                      {cells.map(cell => {
+                        const isChecked = selectedCellIds.includes(cell.id);
+                        return (
+                          <div 
+                            key={cell.id}
+                            onClick={() => handleCellToggle(cell.id)}
+                            className={`p-3 rounded-xl border-2 cursor-pointer flex items-center justify-between transition-all duration-200 active:scale-[0.98] ${isChecked ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50/50 dark:bg-slate-950/10 border-slate-200/70 dark:border-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300'}`}
+                          >
+                            <div className="space-y-0.5 text-left leading-none">
+                              <span className="font-extrabold text-xs font-mono">{cell.name}</span>
+                              {cell.description && (
+                                <p className="text-[9px] font-medium text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
+                                  {cell.description}
+                                </p>
+                              )}
+                            </div>
+                            {isChecked ? (
+                              <CheckSquare size={16} className="text-indigo-600 dark:text-indigo-400" />
+                            ) : (
+                              <Square size={16} className="text-slate-400" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-amber-500 italic">সিস্টেমে কোনো সেল খুঁজে পাওয়া যায়নি! প্রথমে কর্মকর্তা পেজে গিয়ে সেল তৈরি করুন।</p>
+                  )}
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-600 dark:border-slate-800 dark:hover:bg-slate-800 text-xs font-bold rounded-xl active:scale-95 transition-all"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-indigo-100 dark:shadow-none"
+                >
+                  {editingUser ? 'আপডেট করুন' : 'ইউজার তৈরি করুন'}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

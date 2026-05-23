@@ -4,9 +4,10 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding starting...');
 
-  // 1. Delete all existing duties and employees to start fresh
+  // 1. Delete all existing duties, employees, and users to start fresh
   await prisma.duty.deleteMany({});
   await prisma.employee.deleteMany({});
+  await prisma.user.deleteMany({});
   await prisma.cell.deleteMany({});
 
   console.log('Cleared old data.');
@@ -21,6 +22,17 @@ async function main() {
   const jbns = await prisma.cell.create({
     data: { name: 'JBNS', description: 'জেবিএনএস সেল (আইটি কোর টিম)' }
   });
+
+  // Seed Admin User
+  const admin = await prisma.user.create({
+    data: {
+      username: 'admin',
+      password: '123456',
+      name: 'System Admin',
+      role: 'ADMIN'
+    }
+  });
+  console.log('Seeded admin user:', admin.username);
 
   console.log('Cells seeded successfully.');
 

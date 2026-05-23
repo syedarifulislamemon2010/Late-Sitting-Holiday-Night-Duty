@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
@@ -8,12 +9,45 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    
+    let userCellIds: number[] = [];
+    let isUserRestricted = false;
+
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { cells: true }
+        });
+        if (user && user.role === 'USER') {
+          isUserRestricted = true;
+          userCellIds = user.cells.map(c => c.id);
+        }
+      }
+    }
+
     let whereClause: any = {};
     
-    if (cellId && cellId !== 'all') {
-      whereClause.employee = {
-        cellId: parseInt(cellId, 10)
-      };
+    if (isUserRestricted) {
+      if (cellId && cellId !== 'all') {
+        const targetId = parseInt(cellId, 10);
+        if (userCellIds.includes(targetId)) {
+          whereClause.employee = { cellId: targetId };
+        } else {
+          whereClause.employee = { cellId: -1 }; // block access
+        }
+      } else {
+        whereClause.employee = { cellId: { in: userCellIds } };
+      }
+    } else {
+      if (cellId && cellId !== 'all') {
+        whereClause.employee = {
+          cellId: parseInt(cellId, 10)
+        };
+      }
     }
     
     if (startDate || endDate) {
@@ -109,39 +143,37 @@ export async function POST(request: Request) {
         
         const { allowance1, allowance2, totalBill } = calculateAllowances(type);
         
-        const existing = await tx.duty.findFirst({
+        const existingDuties = await tx.duty.findMany({
           where: {
             employeeId: parseInt(employeeId, 10),
             date: date
           }
         });
         
-        if (existing) {
-          const updated = await tx.duty.update({
-            where: { id: existing.id },
-            data: {
-              type,
-              description: description || null,
-              allowance1,
-              allowance2,
-              totalBill
-            }
-          });
-          createdDuties.push(updated);
+        if (type === 'LATE_SITTING') {
+          if (existingDuties.length > 0) {
+            throw new Error('duplicate_duty_on_date');
+          }
         } else {
-          const created = await tx.duty.create({
-            data: {
-              employeeId: parseInt(employeeId, 10),
-              type,
-              date,
-              description: description || null,
-              allowance1,
-              allowance2,
-              totalBill
-            }
-          });
-          createdDuties.push(created);
+          // HOLIDAY or NIGHT_SHIFT
+          const hasLateSitting = existingDuties.some((d: any) => d.type === 'LATE_SITTING');
+          if (hasLateSitting) {
+            throw new Error('duplicate_duty_on_date');
+          }
         }
+        
+        const created = await tx.duty.create({
+          data: {
+            employeeId: parseInt(employeeId, 10),
+            type,
+            date,
+            description: description || null,
+            allowance1,
+            allowance2,
+            totalBill
+          }
+        });
+        createdDuties.push(created);
       }
     });
     
@@ -159,6 +191,9 @@ export async function POST(request: Request) {
     }
     if (error.message === 'holiday_duty_on_working_day') {
       return NextResponse.json({ error: 'holiday_duty_on_working_day' }, { status: 400 });
+    }
+    if (error.message === 'duplicate_duty_on_date') {
+      return NextResponse.json({ error: 'duplicate_duty_on_date' }, { status: 400 });
     }
     return NextResponse.json({ error: 'failed_to_create_duties' }, { status: 500 });
   }

@@ -13,13 +13,35 @@ import {
   Moon,
   Menu,
   X,
-  LogOut
+  LogOut,
+  UserCheck,
+  Shield
 } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [darkMode, setDarkMode] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const loadUser = () => {
+      const stored = localStorage.getItem('currentUser');
+      if (stored) {
+        try {
+          setCurrentUser(JSON.parse(stored));
+        } catch {
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+    };
+    
+    loadUser();
+    window.addEventListener('storage', loadUser);
+    return () => window.removeEventListener('storage', loadUser);
+  }, []);
 
   useEffect(() => {
     const isDark = localStorage.getItem('theme') === 'dark' || 
@@ -61,11 +83,15 @@ export default function Sidebar() {
   const navItems = [
     { name: 'ড্যাশবোর্ড', href: '/', icon: LayoutDashboard },
     { name: 'কর্মকর্তাবৃন্দ ও সেল', href: '/employees', icon: Users },
+    { name: 'নির্বাহী প্যানেল', href: '/executive', icon: UserCheck },
     { name: 'রোস্টার ও জিও', href: '/roster', icon: CalendarRange },
     { name: 'আপ্যায়ন বিল নোট', href: '/billing', icon: Receipt },
     { name: 'পিডিএফ আর্কাইভ', href: '/documents', icon: FileText },
-
   ];
+
+  if (currentUser && currentUser.role === 'ADMIN') {
+    navItems.push({ name: 'ইউজার ও সেল পারমিশন', href: '/users', icon: Shield });
+  }
 
   return (
     <>

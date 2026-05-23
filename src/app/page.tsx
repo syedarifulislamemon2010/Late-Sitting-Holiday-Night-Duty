@@ -30,6 +30,8 @@ export default function Dashboard() {
     cellsCount: 0,
     dutiesCount: 0,
     totalBill: 0,
+    totalEntertainment: 0,
+    totalTravel: 0,
     lateSittingBill: 0,
     holidayBill: 0,
     nightShiftBill: 0,
@@ -57,6 +59,8 @@ export default function Dashboard() {
           cellsCount: Array.isArray(cells) ? cells.length : 0,
           dutiesCount: Array.isArray(duties) ? duties.length : 0,
           totalBill: 0,
+          totalEntertainment: 0,
+          totalTravel: 0,
           lateSittingBill: 0,
           holidayBill: 0,
           nightShiftBill: 0,
@@ -71,12 +75,18 @@ export default function Dashboard() {
             if (d.type === 'LATE_SITTING') {
               statsObj.lateSittingBill += d.totalBill || 0;
               statsObj.lateSittingCount++;
+              statsObj.totalEntertainment += d.allowance1 || 100;
+              statsObj.totalTravel += d.allowance2 || 200;
             } else if (d.type === 'HOLIDAY') {
               statsObj.holidayBill += d.totalBill || 0;
               statsObj.holidayCount++;
+              statsObj.totalEntertainment += d.allowance1 || 250;
+              statsObj.totalTravel += d.allowance2 || 250;
             } else if (d.type === 'NIGHT_SHIFT') {
               statsObj.nightShiftBill += d.totalBill || 0;
               statsObj.nightShiftCount++;
+              statsObj.totalEntertainment += d.allowance1 || 600;
+              statsObj.totalTravel += d.allowance2 || 400;
             }
           });
         }
@@ -191,12 +201,16 @@ export default function Dashboard() {
           <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/5 rounded-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300" />
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">সর্বমোট আপ্যায়ন বিল</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">সর্বমোট প্রদেয় বিল (Grand Total)</p>
               <h3 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mt-2 font-sans">৳{stats.totalBill.toLocaleString('bn-BD')}</h3>
             </div>
             <div className="p-3 bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 rounded-xl">
               <Banknote size={22} />
             </div>
+          </div>
+          <div className="text-[10px] text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 mt-4 space-y-0.5">
+            <p>• সর্বমোট আপ্যায়ন ব্যয়: <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{stats.totalEntertainment.toLocaleString('bn-BD')}</span></p>
+            <p>• সর্বমোট যাতায়াত ব্যয়: <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{stats.totalTravel.toLocaleString('bn-BD')}</span></p>
           </div>
           <Link href="/billing" className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:gap-2.5 transition-all">
             বিল নোট জেনারেট করুন <ArrowRight size={12} />

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import prisma from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -14,12 +16,31 @@ export async function POST(request: Request) {
     }
 
     if (action === 'login') {
-      if (username === 'admin' && password === '123456') {
-        const response = NextResponse.json({ success: true, message: 'Authenticated successfully' });
-        response.cookies.set('session', 'active', {
+      if (!username || !password) {
+        return NextResponse.json({ error: 'bad_request', message: 'ইউজারনেম ও পাসওয়ার্ড আবশ্যক!' }, { status: 400 });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { username: username.trim() }
+      });
+
+      if (user && user.password === password) {
+        const response = NextResponse.json({ 
+          success: true, 
+          message: 'Authenticated successfully',
+          user: {
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            role: user.role
+          }
+        });
+        
+        response.cookies.set('session', String(user.id), {
           path: '/',
           maxAge: 60 * 60 * 24, // 1 day
           sameSite: 'lax',
+          httpOnly: false, // accessible via document.cookie for client checking
         });
         return response;
       } else {
@@ -34,7 +55,43 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
-  const session = request.headers.get('cookie')?.includes('session=active');
-  return NextResponse.json({ authenticated: !!session });
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+
+    if (!sessionVal) {
+      return NextResponse.json({ authenticated: false, user: null });
+    }
+
+    const userId = parseInt(sessionVal, 10);
+    if (isNaN(userId)) {
+      return NextResponse.json({ authenticated: false, user: null });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        role: true,
+        cells: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return NextResponse.json({ authenticated: false, user: null });
+    }
+
+    return NextResponse.json({ authenticated: true, user });
+  } catch (error: any) {
+    console.error('Auth GET Error:', error);
+    return NextResponse.json({ authenticated: false, user: null });
+  }
 }
