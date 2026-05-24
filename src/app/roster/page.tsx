@@ -1276,7 +1276,7 @@ export default function RosterPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">৩. আদেশ অনুমোদনকারী কর্মকর্তা (Signing Officer)</label>
+                  <label className="text-xs font-bold text-slate-500">৩. আদেশ অনুমোদনকারী উপ-মহাব্যবস্থাপক (ডিজিএম)</label>
                   <select
                     value={selectedExecutiveId}
                     onChange={(e) => {
@@ -1290,7 +1290,7 @@ export default function RosterPage() {
                     }}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
                   >
-                    <option value="">Select Officer (কর্মকর্তা নির্বাচন)</option>
+                    <option value="">Select DGM (ডিজিএম নির্বাচন)</option>
                     {executives.map(ex => (
                       <option key={ex.id} value={ex.id.toString()}>
                         {ex.name} ({ex.designation})
@@ -1381,7 +1381,7 @@ export default function RosterPage() {
               </div>
 
               {/* Sub-header line: Reference and Date (With exactly 1 inch space below it) */}
-              <div className="w-full flex justify-between items-center text-[10px] pt-1 pb-1 border-b border-black/10 mt-1" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', marginBottom: '1.0in' }}>
+              <div className="w-full flex justify-between items-center text-[10px] pt-1 pb-1 border-b border-black/10 mt-1" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', marginBottom: '0.4in' }}>
                 <span className="font-bold">সূত্রঃ {orderRef}</span>
                 <span className="font-bold">
                   তারিখঃ {toBanglaDigits(new Date(orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং

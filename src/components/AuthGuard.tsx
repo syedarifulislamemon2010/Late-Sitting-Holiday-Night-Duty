@@ -367,8 +367,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               </g>
             </svg>
             <div className="flex flex-col text-left">
-              <span className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight tracking-wide font-sans">জনতা ব্যাংক লিমিটেড</span>
-              <span className="text-[10px] font-semibold text-[#00B7DE] uppercase tracking-wider">Janata Bank Limited</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight tracking-wide font-sans">জনতা ব্যাংক পিএলসি.</span>
+              <span className="text-[10px] font-semibold text-[#00B7DE] uppercase tracking-wider">Janata Bank PLC</span>
             </div>
           </div>
 
@@ -382,7 +382,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             
             {/* Branding Text */}
             <div className="text-center space-y-1.5">
-              <h2 className="text-2xl font-black text-[#1565C0] tracking-wide">ডিউটি পোর্টাল লগইন</h2>
+              <h2 className="text-2xl font-black text-[#1565C0] tracking-wide">লেট সিটিং-হলিডে-নাইট পোর্টাল</h2>
               
               {/* Duty Types - Styled Tags */}
               <div className="flex items-center justify-center gap-1.5 pt-1">
@@ -399,54 +399,54 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             {/* Login Form */}
             <form onSubmit={handleLogin} className="space-y-4 pt-1">
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 flex items-center gap-2.5 animate-shake">
-                  <AlertCircle size={15} className="shrink-0" />
-                  <span className="font-medium">{error}</span>
+                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-2xl flex items-center gap-2 text-xs font-semibold animate-shake">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{error}</span>
                 </div>
               )}
 
-              {/* Username */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.12em]">ইউজারনেম</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="admin"
+              {/* Username Input */}
+              <div className="space-y-1.5 text-left">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">ইউজারনেম</label>
+                <input 
+                  type="text" 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  onFocus={() => { setFocusField('username'); setError(''); }}
+                  onFocus={() => setFocusField('username')}
                   onBlur={() => setFocusField('none')}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-blue-100 bg-blue-50/30 text-sm text-slate-800 focus:outline-none focus:border-[#42A5F5] focus:bg-white focus:shadow-md focus:shadow-blue-100/50 transition-all duration-300 placeholder:text-slate-400"
+                  placeholder="যেমন: emon"
+                  className="w-full px-4 py-3 border border-slate-200 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 rounded-2xl text-sm font-semibold outline-none transition-all"
+                  required
                 />
               </div>
 
-              {/* Password */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.12em]">পাসওয়ার্ড</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••"
+              {/* Password Input */}
+              <div className="space-y-1.5 text-left">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
+                <input 
+                  type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => { setFocusField('password'); setError(''); }}
+                  onFocus={() => setFocusField('password')}
                   onBlur={() => setFocusField('none')}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-blue-100 bg-blue-50/30 text-sm text-slate-800 focus:outline-none focus:border-[#42A5F5] focus:bg-white focus:shadow-md focus:shadow-blue-100/50 transition-all duration-300 placeholder:text-slate-400"
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 border border-slate-200 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 rounded-2xl text-sm font-semibold outline-none transition-all font-mono"
+                  required
                 />
               </div>
 
-              {/* Submit */}
-              <button
-                type="submit"
+              {/* Login Submit Button */}
+              <button 
+                type="submit" 
                 disabled={loading}
-                className="w-full py-3.5 bg-gradient-to-r from-[#1976D2] to-[#1565C0] hover:from-[#1565C0] hover:to-[#0D47A1] active:scale-[0.97] text-white rounded-xl text-sm font-bold transition-all duration-200 shadow-lg shadow-blue-400/30 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 tracking-wide"
+                className="w-full py-3.5 bg-gradient-to-r from-[#1565C0] to-[#0D47A1] hover:from-[#0D47A1] hover:to-[#0A2F6C] text-white font-bold text-sm tracking-wide rounded-2xl transition-all shadow-md shadow-blue-700/10 hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
                     <ShieldCheck size={18} />
-                    <span>লগইন করুন</span>
+                    নিরাপদ লগইন
                   </>
                 )}
               </button>
@@ -502,5 +502,5 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return children;
 }

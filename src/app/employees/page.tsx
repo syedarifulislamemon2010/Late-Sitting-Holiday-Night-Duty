@@ -76,6 +76,16 @@ export default function EmployeesPage() {
   const [bulkImporting, setBulkImporting] = useState(false);
   const [bulkError, setBulkError] = useState('');
 
+  // Image paste parsing states
+  const [isImageImportLoading, setIsImageImportLoading] = useState(false);
+  const [customApiKey, setCustomApiKey] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('gemini_api_key') || '';
+    }
+    return '';
+  });
+  const [showKeyInput, setShowKeyInput] = useState(false);
+
   useEffect(() => {
     if (cells.length > 0 && !bulkEmpCellId) {
       setBulkEmpCellId(cells[0].id.toString());
@@ -351,6 +361,64 @@ export default function EmployeesPage() {
     } finally {
       setBulkImporting(false);
     }
+  };
+
+  const parseImageAndPopulate = async (base64Data: string, fileType: string) => {
+    setIsImageImportLoading(true);
+    setBulkError('');
+    
+    try {
+      const res = await fetch('/api/employees/parse-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileData: base64Data,
+          fileType: fileType,
+          customApiKey: customApiKey
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'ইমেজ পার্স করতে ব্যর্থ হয়েছে।');
+      }
+
+      if (data.employees && Array.isArray(data.employees)) {
+        const textLines = data.employees.map((emp: any) => `${emp.name} - ${emp.designation}`).join('\n');
+        setBulkEmpText(prev => prev ? `${prev}\n${textLines}` : textLines);
+      }
+    } catch (err: any) {
+      setBulkError(err.message || 'ছবি থেকে তথ্য বের করতে সমস্যা হয়েছে।');
+    } finally {
+      setIsImageImportLoading(false);
+    }
+  };
+
+  const handleTextareaPaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64Data = reader.result as string;
+          await parseImageAndPopulate(base64Data, file.type);
+        };
+        reader.readAsDataURL(file);
+        break;
+      }
+    }
+  };
+
+  const handleSaveApiKey = (key: string) => {
+    setCustomApiKey(key);
+    localStorage.setItem('gemini_api_key', key);
+    setShowKeyInput(false);
   };
 
   // Set forms for editing
@@ -737,6 +805,14 @@ export default function EmployeesPage() {
                 </div>
               )}
 
+              {/* Informative Clipboard Paste Banner */}
+              <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-xl text-xs space-y-1">
+                <p className="font-bold text-indigo-700 dark:text-indigo-400">💡 ক্লিপবোর্ড ইমেজ ইম্পোর্ট (Clipboard Image Import):</p>
+                <p className="text-slate-600 dark:text-slate-400 leading-normal">
+                  কর্মকর্তাদের নামের তালিকা সম্বলিত কোনো ইমেজ বা স্ক্রিনশট কপি করা থাকলে সরাসরি এই টেক্সটবক্সে পেস্ট (<kbd className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded shadow-sm text-[10px] font-sans font-bold">Ctrl + V</kbd>) করুন! কৃত্রিম বুদ্ধিমত্তা ছবি থেকে সকল নাম ও পদবী স্বয়ংক্রিয়ভাবে টেক্সট হিসেবে রূপান্তর করে দেবে।
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. সেল সিলেক্ট করুন *</label>
                 <select
@@ -753,21 +829,32 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  ২. কর্মকর্তার নাম ও পদবী (প্রতি লাইনে একজন) *
-                </label>
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    ২. কর্মকর্তার নাম ও পদবী (প্রতি লাইনে একজন) *
+                  </label>
+                  {isImageImportLoading && (
+                    <span className="text-[10px] text-indigo-600 dark:text-indigo-450 font-bold flex items-center gap-1">
+                      <span className="w-2 h-2 border border-indigo-600 border-t-transparent rounded-full animate-spin inline-block" />
+                      বিশ্লেষণ করা হচ্ছে...
+                    </span>
+                  )}
+                </div>
                 <textarea
                   required
                   rows={8}
-                  placeholder={`যেমন:\nজনাব মোঃ আশরাফুল ইসলাম - সিনিয়র অফিসার-আইটি (এসও-আইটি)\nজনাব সামিউল হক - অফিসার-আইটি (ও-আইটি)`}
+                  placeholder={`যেমন:\nজনাব মোঃ আশরাফুল ইসলাম - সিনিয়র অফিসার-আইটি (এসও-আইটি)\nজনাব সামিউল হক - অফিসার-আইটি (ও-আইটি)\n\n(অথবা কর্মকর্তাদের তালিকার কোনো ছবি এখানে সরাসরি Ctrl+V দিয়ে পেস্ট করুন)`}
                   value={bulkEmpText}
                   onChange={(e) => setBulkEmpText(e.target.value)}
+                  onPaste={handleTextareaPaste}
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-xs font-mono focus:outline-none focus:border-indigo-500 leading-relaxed"
+                  disabled={isImageImportLoading}
                 />
                 <p className="text-[10px] text-slate-400">
                   প্যাটার্ন: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">নাম - পদবী</code> (যেমন: নাম ও পদবীর মাঝে হাইফেন <strong>-</strong> বা কমা <strong>,</strong> ব্যবহার করুন)। পদবী না দিলে স্বয়ংক্রিয়ভাবে "অফিসার-আইটি" ধরা হবে।
                 </p>
               </div>
+
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 font-sans">
                 <button
@@ -779,8 +866,8 @@ export default function EmployeesPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={bulkImporting}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:bg-slate-300 dark:disabled:bg-slate-800"
+                  disabled={bulkImporting || isImageImportLoading}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:bg-slate-200 dark:disabled:bg-slate-850 disabled:text-slate-400"
                 >
                   {bulkImporting ? 'আমদানি হচ্ছে...' : 'ইম্পোর্ট করুন'}
                 </button>

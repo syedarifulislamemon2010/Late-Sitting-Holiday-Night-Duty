@@ -812,9 +812,9 @@ export default function BillingPage() {
                               return (
                                 <tr key={summary.employeeId} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                                   <td className="border border-black p-1.5 text-center" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>{toBanglaDigits(index + 1)}</td>
-                                  <td className="border border-black p-1.5 text-left pl-3 font-extrabold" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                                    <p>{summary.name}</p>
-                                    <p className="text-[9px] text-slate-800 font-semibold">{summary.designation}</p>
+                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                    <p className="font-normal">{summary.name}</p>
+                                    <p className="text-[9px] text-slate-800 font-normal mt-0.5">{summary.designation}</p>
                                   </td>
                                   <td className="border border-black p-1.5 text-center leading-snug" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                                     <p>{formatWorkedDatesForCategory(summary.employeeId)}</p>
@@ -834,7 +834,7 @@ export default function BillingPage() {
                             })}
                             
                             <tr className="font-bold bg-slate-50/50 text-[10px] border-t-2 border-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                              <td className="border border-black p-1.5 text-left pl-3" colSpan={3} style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                              <td className="border border-black p-1.5 text-right pr-3" colSpan={3} style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                                 <p>মোট দিন = {toBanglaDigits(totalDaysAll)} দিন</p>
                                 <p className="mt-1">মোট টাকা = ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</p>
                               </td>
@@ -868,7 +868,7 @@ export default function BillingPage() {
                   </div>
 
                   {/* Right-aligned payee signature block */}
-                  <div className="w-full flex justify-end text-right mt-6 mb-4">
+                  <div className="w-full flex justify-end text-right" style={{ marginTop: '0.6in', marginBottom: '0.2in' }}>
                     <div className="text-right leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', paddingRight: '0.1in' }}>
                       <p className="font-extrabold text-[10px]">({representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'})</p>
                       <p className="text-[10px] font-bold text-slate-800 mt-1">{representativeDesignation || 'এসও-আইটি'}</p>
@@ -877,22 +877,22 @@ export default function BillingPage() {
 
                   {/* Left-aligned Routing List with nice gaps, underlines and font size 10, NOT bold */}
                   <div className="w-full text-left mt-6 pl-1 no-break-inside" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                    <div style={{ marginBottom: '0.4in' }}>
+                    <div style={{ marginBottom: '0.85in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                         এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.4in' }}>
+                    <div style={{ marginBottom: '0.85in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                         এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.4in' }}>
+                    <div style={{ marginBottom: '0.85in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.4in' }}>
+                    <div style={{ marginBottom: '0.85in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                       </p>

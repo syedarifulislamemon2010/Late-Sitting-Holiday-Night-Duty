@@ -9,51 +9,20 @@ import {
   CalendarRange, 
   Receipt, 
   FileText,
-  Sun, 
-  Moon,
   Menu,
   X,
   LogOut,
   UserCheck,
   Shield,
-  Trash2
+  Trash2,
+  Building2,
+  Settings
 } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [darkMode, setDarkMode] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-
-  // Dynamic Premium Themes Definition
-  const themes = [
-    { name: 'Janata Blue', key: 'blue', primary: '#0b5e9e', hover: '#094d82', darkPrimary: '#38bdf8', darkHover: '#0ea5e9', bg: 'bg-[#0b5e9e]' },
-    { name: 'Indigo Premium', key: 'indigo', primary: '#4f46e5', hover: '#4338ca', darkPrimary: '#818cf8', darkHover: '#6366f1', bg: 'bg-[#4f46e5]' },
-    { name: 'Emerald Active', key: 'emerald', primary: '#10b981', hover: '#059669', darkPrimary: '#34d399', darkHover: '#059669', bg: 'bg-[#10b981]' },
-    { name: 'Royal Violet', key: 'violet', primary: '#7c3aed', hover: '#6d28d9', darkPrimary: '#a78bfa', darkHover: '#7c3aed', bg: 'bg-[#7c3aed]' },
-    { name: 'Rose Petal', key: 'rose', primary: '#e11d48', hover: '#be123c', darkPrimary: '#fb7185', darkHover: '#e11d48', bg: 'bg-[#e11d48]' },
-    { name: 'Amber Gold', key: 'amber', primary: '#d97706', hover: '#b45309', darkPrimary: '#fbbf24', darkHover: '#d97706', bg: 'bg-[#d97706]' }
-  ];
-
-  const [activeTheme, setActiveTheme] = useState('blue');
-
-  const applyTheme = (themeKey: string, isDark: boolean) => {
-    const theme = themes.find(t => t.key === themeKey) || themes[0];
-    const root = document.documentElement;
-    if (isDark) {
-      root.style.setProperty('--primary', theme.darkPrimary);
-      root.style.setProperty('--primary-hover', theme.darkHover);
-    } else {
-      root.style.setProperty('--primary', theme.primary);
-      root.style.setProperty('--primary-hover', theme.hover);
-    }
-  };
-
-  const handleThemeChange = (themeKey: string) => {
-    setActiveTheme(themeKey);
-    localStorage.setItem('themeColor', themeKey);
-    applyTheme(themeKey, darkMode);
-  };
 
   useEffect(() => {
     const loadUser = () => {
@@ -75,33 +44,10 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
-    const isDark = localStorage.getItem('theme') === 'dark' || 
-      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    setDarkMode(isDark);
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    const savedThemeColor = localStorage.getItem('themeColor') || 'blue';
-    setActiveTheme(savedThemeColor);
-    applyTheme(savedThemeColor, isDark);
+    // Keep white theme active by default
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
   }, []);
-
-  const toggleDarkMode = () => {
-    const nextDark = !darkMode;
-    setDarkMode(nextDark);
-    if (nextDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-    const savedThemeColor = localStorage.getItem('themeColor') || 'blue';
-    applyTheme(savedThemeColor, nextDark);
-  };
 
   const handleLogout = async () => {
     try {
@@ -119,22 +65,20 @@ export default function Sidebar() {
 
   const navItems = [
     { name: 'ড্যাশবোর্ড', href: '/', icon: LayoutDashboard },
-    { name: 'কর্মকর্তাবৃন্দ ও সেল', href: '/employees', icon: Users },
     { name: 'নির্বাহী প্যানেল', href: '/executive', icon: UserCheck },
-    { name: 'রোস্টার ও জিও', href: '/roster', icon: CalendarRange },
-    { name: 'বিল পিডিএফ জেনারেটর', href: '/billing', icon: Receipt },
-    { name: 'পিডিএফ আর্কাইভ', href: '/documents', icon: FileText },
+    { name: 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
+    { name: 'সেল', href: '/employees', icon: Building2 },
+    { name: 'অফিস অর্ডার', href: '/roster', icon: CalendarRange },
+    { name: 'বিল', href: '/billing', icon: Receipt },
+    { name: 'আর্কাইভ', href: '/documents', icon: FileText },
     { name: 'রিসাইকেল বিন', href: '/trash', icon: Trash2 },
+    { name: 'সেটিংস', href: '/users', icon: Settings },
   ];
-
-  if (currentUser && currentUser.role === 'ADMIN') {
-    navItems.push({ name: 'ইউজার ও সেল পারমিশন', href: '/users', icon: Shield });
-  }
 
   return (
     <>
       {/* Mobile Top Navigation */}
-      <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm">
+      <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-2">
           <svg viewBox="0 0 512 512" className="h-8 w-8 shrink-0 text-primary" fill="none">
             <g>
@@ -149,20 +93,14 @@ export default function Sidebar() {
               <path fill="currentColor" d="M255.8,420.3c-64.5,0-129-12.9-192.9-38.6l-2.7-1.1l-0.7-2.8c-24.7-97.3-24.7-177.2,0.2-244.3l0.9-2.4l2.3-0.9c128.4-51.4,258.3-51.4,386.2,0l2.7,1.1l0.7,2.8c24.7,97.3,24.7,177.2-0.2,244.3l-0.9,2.4l-2.3,0.9C384.9,407.4,320.3,420.3,255.8,420.3z M69.8,372.2c123.4,48.9,248.8,48.9,372.7-0.1c22.9-63.7,22.8-139.8-0.3-232.3c-123.4-48.9-248.8-48.9-372.7,0.1C46.6,203.6,46.7,279.7,69.8,372.2z"/>
             </g>
           </svg>
-          <h1 className="font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">ডিউটি পোর্টাল</h1>
+          <h1 className="font-bold text-slate-800 font-sans tracking-wide">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
         </div>
-          <button 
-            onClick={toggleDarkMode}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
-          >
-            {darkMode ? <Sun size={20} className="text-amber-500" /> : <Moon size={20} />}
-          </button>
-          <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
-          >
-            {isOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className="p-2 rounded-lg hover:bg-slate-100 text-slate-600"
+        >
+          {isOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
 
       {/* Mobile Drawer Overlay */}
@@ -174,9 +112,9 @@ export default function Sidebar() {
       )}
 
       {/* Sidebar Navigation Panel */}
-      <aside className={`no-print fixed top-0 bottom-0 left-0 z-50 flex flex-col w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:sticky lg:h-screen'}`}>
+      <aside className={`no-print fixed top-0 lg:top-0 bottom-0 left-0 z-30 flex flex-col w-72 bg-white border-r border-slate-200 transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:sticky lg:h-screen'}`}>
         {/* Sidebar Header Logo */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <svg viewBox="0 0 512 512" className="h-9 w-9 shrink-0 text-primary" fill="none">
               <g>
@@ -186,19 +124,19 @@ export default function Sidebar() {
                 <path fill="currentColor" d="M175.7,284.4c-17.6,0-32-14.3-32-32c0-8.3,3.1-16.1,8.8-22.1l8.2,7.9c-3.7,3.8-5.7,8.9-5.7,14.2c0,11.4,9.2,20.6,20.6,20.6c11.4,0,20.6-9.2,20.6-20.6v-95.2h11.4v95.2C207.7,270.1,193.3,284.4,175.7,284.4z"/>
                 <path fill="currentColor" d="M400.1,255.1c9.9-7.8,15.9-19.8,15.9-32.7c0-23-18.7-41.6-41.6-41.6h-85.1v11.7h85.1c16.5,0,29.9,13.4,29.9,29.9c0,11.8-7,22.5-17.8,27.3l-12.1,5.4l12.1,5.4c10.8,4.8,17.8,15.5,17.8,27.3c0,16.5-13.4,30-29.9,30H270.2c-2.7,4.1-5.8,8-9,11.7h113.1c23,0,41.6-18.7,41.6-41.7C416,274.8,410,262.8,400.1,255.1z"/>
                 <path fill="currentColor" d="M442.1,218.5c0-33.9-27.6-61.5-61.5-61.5h-91.4v11.4h91.4c27.7,0,50.2,22.5,50.2,50.2c0,12.1-4.4,23.8-12.3,32.8l-3.3,3.7l3.3,3.7c7.9,9.1,12.3,20.8,12.3,32.9c0,27.7-22.5,50.2-50.2,50.2h-132c-5,4.2-10.5,8-16.2,11.4h148.2c33.9,0,61.5-27.6,61.5-61.5c0-13.2-4.3-26-12.1-36.6C437.9,244.6,442.1,231.8,442.1,218.5z"/>
-                <path fill="currentColor" d="M362.7,204.7h-73.5v11.4h73.5c5.4,0,9.7,4.3,9.7,9.7c0,2.6-1,5-2.9,6.9c-1.8,1.8-4.2,2.8-6.8,2.8h-73.5v11.4h73.5c5.7,0,11-2.2,14.9-6.2c4-4,6.2-9.3,6.2-14.9C383.8,214.2,374.3,204.7,362.7,204.7z"/>
+                <path fill="currentColor" d="M362.7,204.7{h-73.5v11.4h73.5c5.4,0,9.7,4.3,9.7,9.7c0,2.6-1,5-2.9,6.9c-1.8,1.8-4.2,2.8-6.8,2.8h-73.5v11.4h73.5c5.7,0,11-2.2,14.9-6.2c4-4,6.2-9.3,6.2-14.9C383.8,214.2,374.3,204.7,362.7,204.7z"/>
                 <path fill="currentColor" d="M362.7,263.3h-73.8c-0.3,3.8-0.8,7.6-1.4,11.4h75.2c5.4,0,9.7,4.4,9.7,9.7c0,2.6-1,5.1-2.9,6.9c-1.8,1.8-4.3,2.8-6.8,2.8h-80.4c-1.4,3.9-3.1,7.7-4.9,11.4h85.4c5.6,0,10.9-2.2,14.8-6.1c4-3.9,6.3-9.3,6.3-15C383.8,272.7,374.3,263.3,362.7,263.3z"/>
                 <path fill="currentColor" d="M255.8,420.3c-64.5,0-129-12.9-192.9-38.6l-2.7-1.1l-0.7-2.8c-24.7-97.3-24.7-177.2,0.2-244.3l0.9-2.4l2.3-0.9c128.4-51.4,258.3-51.4,386.2,0l2.7,1.1l0.7,2.8c24.7,97.3,24.7,177.2-0.2,244.3l-0.9,2.4l-2.3,0.9C384.9,407.4,320.3,420.3,255.8,420.3z M69.8,372.2c123.4,48.9,248.8,48.9,372.7-0.1c22.9-63.7,22.8-139.8-0.3-232.3c-123.4-48.9-248.8-48.9-372.7,0.1C46.6,203.6,46.7,279.7,69.8,372.2z"/>
               </g>
             </svg>
             <div>
-              <h1 className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight font-sans">ডিউটি পোর্টাল</h1>
+              <h1 className="font-bold text-slate-800 text-base leading-tight font-sans">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
               <p className="text-[9px] font-bold text-primary uppercase tracking-wider">জনতা ব্যাংক পিএলসি.</p>
             </div>
           </div>
           <button 
             onClick={() => setIsOpen(false)}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
+            className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-500"
           >
             <X size={18} />
           </button>
@@ -211,12 +149,12 @@ export default function Sidebar() {
             const isActive = pathname === item.href;
             return (
               <Link 
-                key={item.href}
+                key={item.name}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 group ${isActive ? 'bg-primary/10 text-primary shadow-sm font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-200'}`}
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 group ${isActive ? 'bg-primary/10 text-primary shadow-sm font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:text-slate-900'}`}
               >
-                <Icon size={18} className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500 dark:group-hover:text-slate-300'}`} />
+                <Icon size={18} className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500'}`} />
                 {item.name}
               </Link>
             );
@@ -224,44 +162,10 @@ export default function Sidebar() {
         </nav>
 
         {/* Sidebar Footer Controls */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-4 bg-slate-50/50 dark:bg-slate-950/20">
-          {/* Dynamic Theme Color Selector */}
-          <div className="px-3 space-y-1.5">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider font-sans">সিস্টেম কালার থিম</span>
-            <div className="flex gap-2 items-center py-1">
-              {themes.map(t => (
-                <button
-                  key={t.key}
-                  onClick={() => handleThemeChange(t.key)}
-                  className={`w-5 h-5 rounded-full ${t.bg} border-2 transition-all hover:scale-125 ${activeTheme === t.key ? 'border-slate-800 dark:border-white scale-110 shadow-md' : 'border-transparent'}`}
-                  title={t.name}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between px-3">
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium font-sans">থিম পরিবর্তন</span>
-            <button 
-              onClick={toggleDarkMode}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors shadow-sm bg-white dark:bg-slate-900"
-              title={darkMode ? 'হালকা মোড' : 'ডার্ক মোড'}
-            >
-              {darkMode ? <Sun size={16} className="text-amber-500" /> : <Moon size={16} />}
-            </button>
-          </div>
-          
-          <div className="px-3 py-2 bg-primary/5 border border-primary/10 rounded-xl flex items-center gap-2.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <div className="text-[11px] leading-tight">
-              <p className="font-semibold text-slate-700 dark:text-slate-300">ডাটাবেজ কানেক্টেড</p>
-              <p className="text-slate-400 dark:text-slate-500">PostgreSQL (Neon)</p>
-            </div>
-          </div>
-
+        <div className="p-4 border-t border-slate-100 space-y-4 bg-slate-50/50">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:hover:bg-red-950/30 dark:text-red-400 border border-red-100 dark:border-red-900/30 rounded-xl text-xs font-semibold transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-xl text-xs font-semibold transition-colors"
           >
             <LogOut size={14} />
             লগআউট করুন
