@@ -4,10 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Printer, 
   ChevronLeft, 
-  Calculator, 
   Calendar, 
   DollarSign, 
-  TrendingUp, 
   Clock,
   ShieldCheck,
   Award
@@ -49,14 +47,14 @@ interface EmployeeBillingSummary {
   bankId: string | null;
   fileNo: string | null;
   lateDays: number;
-  lateAllowance1: number; // Snacks (100)
-  lateAllowance2: number; // Meal (200)
+  lateAllowance1: number;
+  lateAllowance2: number;
   holidayDays: number;
-  holidayAllowance1: number; // Lunch (250)
-  holidayAllowance2: number; // Snacks (250)
+  holidayAllowance1: number;
+  holidayAllowance2: number;
   nightDays: number;
-  nightAllowance1: number; // Dinner (600)
-  nightAllowance2: number; // Early Meal (400)
+  nightAllowance1: number;
+  nightAllowance2: number;
   grandTotal: number;
 }
 
@@ -73,21 +71,14 @@ export default function BillingPage() {
 
   // Legal Print Form Configs
   const [isPrintMode, setIsPrintMode] = useState(false);
-  const [billMemo, setBillMemo] = useState('স্মারক নং: ৪৬.০২.০০০০.০০১.১৯.০০২.২৬-১৫৪');
   const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
-  const [preparedBy, setPreparedBy] = useState('জনাব শামীমা আক্তার');
-  const [preparedDesignation, setPreparedDesignation] = useState('কম্পিউটার অপারেটর');
-  const [verifiedBy, setVerifiedBy] = useState('জনাব চৌধুরী আশিকুর রহমান');
-  const [verifiedDesignation, setVerifiedDesignation] = useState('সিনিয়র সহকারী সচিব');
-  const [approvedBy, setApprovedBy] = useState('জনাব কে. এম. মোস্তফা কামাল');
-  const [approvedDesignation, setApprovedDesignation] = useState('উপ-মহাব্যবস্থাপক');
-  const [selectedApprovedExecutiveId, setSelectedApprovedExecutiveId] = useState('');
+  const [printCategory, setPrintCategory] = useState<'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'>('LATE_SITTING');
   
   // Janata Bank Specific Configs
   const [subjectText, setSubjectText] = useState('যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।');
   const [representativeName, setRepresentativeName] = useState('জনাব শাহনেওয়াজ মাহমুদ');
   const [representativeDesignation, setRepresentativeDesignation] = useState('এসও-আইটি');
-  const [openingParagraph, setOpeningParagraph] = useState('কর্তৃপক্ষের নির্দেশক্রমে Online Banking Software T-24 বাস্তবায়ন ও উক্ত Software দ্বারা পরিচালিত শাখা সমূহে অপারেশনাল সহায়তা প্রদানের নিমিত্তে অত্র ডিপার্টমেন্টের নিম্নবর্ণিত কর্মকর্তাগণ তাদের নামের পার্শ্বে বর্ণিত তারিখে ছুটির দিনে অফিসে অবস্থান করেছেন। উল্লেখ্য, গত ০৪/০৯/২০১৯ ইং তারিখে অনুষ্ঠিত বোর্ড অব ডিরেক্টরস এর ৩৬৬ তম সভার সিদ্ধান্ত \'ত\' মোতাবেক আইটি কার্যক্রম ২৪ ঘণ্টা নিরবিচ্ছিন্ন সাপোর্ট প্রদানের ক্ষেত্রে ছুটির দিনে দায়িত্ব পালনকারী নির্বাহী/কর্মকর্তাদের অনুকূলে ৫০০/- (যাতায়াত- ২৫০/-+আপ্যায়ন-২৫০/-) হারে ভাতা প্রদান অনুমোদিত আছে। নিম্নে বর্ণিত নির্বাহী/কর্মকর্তাদের অনুকূলে যাতায়াত ও আপ্যায়ন ভাতা বাবদ খরচ উল্লেখ করা হলো:');
+  const [openingParagraph, setOpeningParagraph] = useState('');
 
   const [executives, setExecutives] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -111,18 +102,7 @@ export default function BillingPage() {
         const empData = await empRes.json();
         setCells(Array.isArray(cellData) ? cellData : []);
         setEmployees(Array.isArray(empData) ? empData : []);
-        
-        if (Array.isArray(execData)) {
-          setExecutives(execData);
-          if (execData.length > 0) {
-            const defaultApp = execData.find((ex: any) => ex.name.includes('মোস্তফা কামাল') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || execData[0];
-            if (defaultApp) {
-              setSelectedApprovedExecutiveId(defaultApp.id.toString());
-              setApprovedBy(defaultApp.name);
-              setApprovedDesignation(defaultApp.designation);
-            }
-          }
-        }
+        setExecutives(Array.isArray(execData) ? execData : []);
       } catch (err) {
         console.error('Error loading static data:', err);
       }
@@ -161,17 +141,18 @@ export default function BillingPage() {
     fetchDutiesForBilling();
   }, [selectedMonth, selectedCell]);
 
-  // Automatically select first employee in the ledger table as payee representative by default
+  // Sync templates and openingParagraph dynamically based on printCategory
   useEffect(() => {
-    const summaries = getBillingSummaries();
-    if (summaries.length > 0) {
-      setRepresentativeName(summaries[0].name);
-      setRepresentativeDesignation(getShortDesignation(summaries[0].designation));
-    } else {
-      setRepresentativeName('');
-      setRepresentativeDesignation('');
+    let text = '';
+    if (printCategory === 'LATE_SITTING') {
+      text = 'কর্তৃপক্ষের নির্দেশক্রমে Online Banking Software T-24 বাস্তবায়ন ও উক্ত Software দ্বারা পরিচালিত শাখা সমুহে অপারেশনাল সহায়তা প্রদানের নিমিত্তে অত্র ডিপার্টমেন্টের নিম্নবর্ণিত কর্মকর্তাগণ তাদের নামের পার্শ্বে বর্নিত তারিখে ছুটির পরে অফিসে অবস্থান করেছেন। উল্লেখ্য, গত ০৪/০৯/২০১৪ ইং তারিখে অনুষ্ঠিত র্বোড অব ডিরেক্টরস এর ৩৩৪ তম সভার সিদ্ধান্ত "ঙ" মোতাবেক আইটি কার্যক্রম 24 ঘন্টা নিরবিচ্ছিন্ন সাপোর্ট প্রদানের ক্ষেত্রে ছুটির পরে দায়িত্ব পালনকারী নির্বাহী/কর্মকতাদের অনুকুলে ৩০০/- (যাতায়াত- ২০০/-+আপ্যায়ন-১০০/-) হারে ভাতা প্রদান অনুমোদিত আছে। নিম্নে বর্ণিত নির্বাহী/কর্মকতাদের অনুকূলে যাতায়াত ও আপ্যায়ন ভাতা বাবদ খরচ উল্লেখ করা হলঃ';
+    } else if (printCategory === 'NIGHT_SHIFT') {
+      text = 'কর্তৃপক্ষের নির্দেশক্রমে Online Banking Software T-24 বাস্তবায়ন ও উক্ত Software দ্বারা পরিচালিত শাখা সমুহে অপারেশনাল সহায়তা প্রদানের নিমিত্তে অত্র ডিপার্টমেন্টের নিম্নবর্ণিত কর্মকর্তাগণ তাদের নামের পার্শ্বে বর্নিত তারিখে রাত্রীকালীন শিফটে অফিসে অবস্থান করেছেন। উল্লেখ্য, গত ০৪/০৯/২০১৪ ইং তারিখে অনুষ্ঠিত র্বোড অব ডিরেক্টরস এর ৩৩৪ তম সভার সিদ্ধান্ত "ঙ" মোতাবেক আইটি কার্যক্রম 24 ঘন্টা নিরবিচ্ছিন্ন সাপোর্ট প্রদানের ক্ষেত্রে রাত্রী জাগরনের জন্য রাত্রীকালীন শিফটের দায়িত্ব পালনকারী নির্বাহী/কর্মকতাদের অনুকুলে ১০০০/- (যাতায়াত- ৪০০/-+আপ্যায়ন-৬০০/-) হারে ভাতা প্রদান অনুমোদিত আছে। নিম্নে বর্ণিত নির্বাহী/কর্মকতাদের অনুকূলে যাতায়াত ও আপ্যায়ন ভাতা বাবদ খরচ উল্লেখ করা হলঃ';
+    } else if (printCategory === 'HOLIDAY') {
+      text = 'কর্তৃপক্ষের নির্দেশক্রমে Online Banking Software T-24 বাস্তবায়ন ও উক্ত Software দ্বারা পরিচালিত শাখা সমুহে অপারেশনাল সহায়তা প্রদানের নিমিত্তে অত্র ডিপার্টমেন্টের নিম্নবর্ণিত কর্মকর্তাগণ তাদের নামের পার্শ্বে বর্নিত তারিখে ছুটির দিনে অফিসে অবস্থান করেছেন। উল্লেখ্য, গত ০৪/০৯/২০১৪ ইং তারিখে অনুষ্ঠিত র্বোড অব ডিরেক্টরস এর ৩৩৪ তম সভার সিদ্ধান্ত "ঙ" মোতাবেক আইটি কার্যক্রম 24 ঘন্টা নিরবিচ্ছিন্ন সাপোর্ট প্রদানের ক্ষেত্রে ছুটির দিনে দায়িত্ব পালনকারী নির্বাহী/কর্মকতাদের অনুকুলে ৫০০/- (যাতায়াত- ২৫০/-+আপ্যায়ন-২৫০/-) হারে ভাতা প্রদান অনুমোদিত আছে। নিম্নে বর্ণিত নির্বাহী/কর্মকতাদের অনুকূলে যাতায়াত ও আপ্যায়ন ভাতা বাবদ খরচ উল্লেখ করা হলঃ';
     }
-  }, [duties, selectedCell]);
+    setOpeningParagraph(text);
+  }, [printCategory]);
 
   // Aggregate duties by employee for billing ledger
   const getBillingSummaries = (): EmployeeBillingSummary[] => {
@@ -204,16 +185,16 @@ export default function BillingPage() {
       
       if (duty.type === 'LATE_SITTING') {
         summary.lateDays++;
-        summary.lateAllowance1 += duty.allowance1; // 100
-        summary.lateAllowance2 += duty.allowance2; // 200
+        summary.lateAllowance1 += duty.allowance1; 
+        summary.lateAllowance2 += duty.allowance2; 
       } else if (duty.type === 'HOLIDAY') {
         summary.holidayDays++;
-        summary.holidayAllowance1 += duty.allowance1; // 250
-        summary.holidayAllowance2 += duty.allowance2; // 250
+        summary.holidayAllowance1 += duty.allowance1; 
+        summary.holidayAllowance2 += duty.allowance2; 
       } else if (duty.type === 'NIGHT_SHIFT') {
         summary.nightDays++;
-        summary.nightAllowance1 += duty.allowance1; // 600
-        summary.nightAllowance2 += duty.allowance2; // 400
+        summary.nightAllowance1 += duty.allowance1; 
+        summary.nightAllowance2 += duty.allowance2; 
       }
       
       summary.grandTotal += duty.totalBill;
@@ -224,17 +205,36 @@ export default function BillingPage() {
 
   const billingSummaries = getBillingSummaries();
 
-  // Aggregate financial metrics
+  // Filter summaries for print based on selected printCategory
+  const printFilteredSummaries = billingSummaries.filter(s => {
+    if (printCategory === 'LATE_SITTING') return s.lateDays > 0;
+    if (printCategory === 'HOLIDAY') return s.holidayDays > 0;
+    if (printCategory === 'NIGHT_SHIFT') return s.nightDays > 0;
+    return false;
+  });
+
+  // Automatically select first employee in the print summaries as representative payee by default
+  useEffect(() => {
+    if (printFilteredSummaries.length > 0) {
+      setRepresentativeName(printFilteredSummaries[0].name);
+      setRepresentativeDesignation(getShortDesignation(printFilteredSummaries[0].designation));
+    } else {
+      setRepresentativeName('');
+      setRepresentativeDesignation('');
+    }
+  }, [duties, printCategory]);
+
+  // Aggregate financial metrics for general dashboard
   const aggregateMetrics = () => {
     let totalLateSittingBill = 0;
-    let totalLateAllowance1 = 0; // Snacks
-    let totalLateAllowance2 = 0; // Meal
+    let totalLateAllowance1 = 0; 
+    let totalLateAllowance2 = 0; 
     let totalHolidayBill = 0;
-    let totalHolidayAllowance1 = 0; // Lunch
-    let totalHolidayAllowance2 = 0; // Snacks
+    let totalHolidayAllowance1 = 0; 
+    let totalHolidayAllowance2 = 0; 
     let totalNightBill = 0;
-    let totalNightAllowance1 = 0; // Dinner
-    let totalNightAllowance2 = 0; // Early Meal
+    let totalNightAllowance1 = 0; 
+    let totalNightAllowance2 = 0; 
     let grandTotal = 0;
 
     duties.forEach(d => {
@@ -270,6 +270,20 @@ export default function BillingPage() {
 
   const metrics = aggregateMetrics();
 
+  // Rates configuration strictly for calculations
+  const getPrintCategoryRates = () => {
+    let transportRate = 200;
+    let apyaonRate = 100;
+    if (printCategory === 'HOLIDAY') {
+      transportRate = 250;
+      apyaonRate = 250;
+    } else if (printCategory === 'NIGHT_SHIFT') {
+      transportRate = 400;
+      apyaonRate = 600;
+    }
+    return { transportRate, apyaonRate };
+  };
+
   // Convert English digits/text to Bengali digits
   const toBanglaDigits = (num: number | string | undefined | null): string => {
     if (num === undefined || num === null) return '';
@@ -277,20 +291,7 @@ export default function BillingPage() {
     return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
   };
 
-  // Convert Gregorian Month string to formal Bengali
-  const getBanglaMonth = (dateStr: string) => {
-    if (!dateStr) return '';
-    const months = [
-      'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
-      'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
-    ];
-    const [year, month] = dateStr.split('-');
-    const bnYear = toBanglaDigits(parseInt(year, 10));
-    const bnMonth = months[parseInt(month, 10) - 1];
-    return `${bnMonth}, ${bnYear}`;
-  };
-
-  // Convert Date String to formal Bengali Date (e.g. ২৩-০৫-২০২৬)
+  // Convert Gregorian Date String to formal Bengali Date (e.g. ২৩-০৫-২০২৬)
   const getBanglaDate = (dateStr: string) => {
     if (!dateStr) return '';
     const [year, month, day] = dateStr.split('-');
@@ -300,7 +301,7 @@ export default function BillingPage() {
     return `${bnDay}-${bnMonth}-${bnYear}`;
   };
 
-  // Convert total number into Bengali Words for legal certification note
+  // Convert total number into Bengali Words for Legal certification note
   const getBanglaNumberWords = (num: number) => {
     if (num === 0) return 'শূন্য';
     
@@ -347,13 +348,14 @@ export default function BillingPage() {
     return wordStr.trim() + ' টাকা মাত্র';
   };
 
-  // Helper to extract sorted dates for an employee
-  const getEmployeeDuties = (employeeId: number) => {
-    return duties.filter(d => d.employeeId === employeeId);
+  // Helper to extract category duties for formatting
+  const getEmployeeCategoryDuties = (employeeId: number) => {
+    return duties.filter(d => d.employeeId === employeeId && d.type === printCategory);
   };
 
-  // Helper to format worked dates nicely (compact, comma separated, with total days)
-  const formatWorkedDates = (empDuties: Duty[]) => {
+  // Helper to format worked dates nicely with full DD-MM-YYYY format
+  const formatWorkedDatesForCategory = (empId: number) => {
+    const empDuties = getEmployeeCategoryDuties(empId);
     if (empDuties.length === 0) return '';
     const sorted = [...empDuties].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
@@ -361,14 +363,23 @@ export default function BillingPage() {
       const [year, month, day] = d.date.split('-');
       const bnDay = toBanglaDigits(parseInt(day, 10).toString().padStart(2, '0'));
       const bnMonth = toBanglaDigits(parseInt(month, 10).toString().padStart(2, '0'));
-      return `${bnDay}-${bnMonth}`;
+      const bnYear = toBanglaDigits(year);
+      return `${bnDay}-${bnMonth}-${bnYear}`;
     });
     
-    const bnTotalDays = toBanglaDigits(empDuties.length);
-    return `${formattedDates.join(', ')} (মোট: ${bnTotalDays} দিন)`;
+    return formattedDates.join(', ');
   };
 
-  // Helper to calculate cell-wise totals for a list of summaries
+  // Cell grouping for dashboard ledger
+  const groupedSummaries: { [cellName: string]: EmployeeBillingSummary[] } = {};
+  billingSummaries.forEach(s => {
+    if (!groupedSummaries[s.cellName]) {
+      groupedSummaries[s.cellName] = [];
+    }
+    groupedSummaries[s.cellName].push(s);
+  });
+
+  // Calculate cell totals for dashboard view
   const getCellTotals = (summaries: EmployeeBillingSummary[]) => {
     const lateDays = summaries.reduce((sum, s) => sum + s.lateDays, 0);
     const holidayDays = summaries.reduce((sum, s) => sum + s.holidayDays, 0);
@@ -378,120 +389,30 @@ export default function BillingPage() {
     const apyaon = summaries.reduce((sum, s) => sum + (s.lateDays * 100 + s.holidayDays * 250 + s.nightDays * 600), 0);
     const total = summaries.reduce((sum, s) => sum + s.grandTotal, 0);
 
-    return {
-      lateDays,
-      holidayDays,
-      nightDays,
-      transport,
-      apyaon,
-      total
-    };
+    return { lateDays, holidayDays, nightDays, transport, apyaon, total };
   };
 
-  // Transport calculation formula builder
-  const getTransportFormula = (summary: EmployeeBillingSummary) => {
-    const parts: string[] = [];
-    if (summary.lateDays > 0) {
-      parts.push(`২০০x${toBanglaDigits(summary.lateDays)}`);
-    }
-    if (summary.holidayDays > 0) {
-      parts.push(`২৫০x${toBanglaDigits(summary.holidayDays)}`);
-    }
-    if (summary.nightDays > 0) {
-      parts.push(`৪০০x${toBanglaDigits(summary.nightDays)}`);
-    }
-    
-    const totalTransport = (summary.lateDays * 200) + (summary.holidayDays * 250) + (summary.nightDays * 400);
-    const bnTotal = toBanglaDigits(totalTransport);
-    
-    if (parts.length === 0) return '০/-';
-    return `(${parts.join(' + ')}) = ${bnTotal}/-`;
-  };
+  // Category based printed totals
+  const totalTransportAll = printFilteredSummaries.reduce((sum, s) => {
+    const { transportRate } = getPrintCategoryRates();
+    const days = printCategory === 'LATE_SITTING' ? s.lateDays : printCategory === 'HOLIDAY' ? s.holidayDays : s.nightDays;
+    return sum + (days * transportRate);
+  }, 0);
 
-  // Apyaon calculation formula builder
-  const getApyaonFormula = (summary: EmployeeBillingSummary) => {
-    const parts: string[] = [];
-    if (summary.lateDays > 0) {
-      parts.push(`১০০x${toBanglaDigits(summary.lateDays)}`);
-    }
-    if (summary.holidayDays > 0) {
-      parts.push(`২৫০x${toBanglaDigits(summary.holidayDays)}`);
-    }
-    if (summary.nightDays > 0) {
-      parts.push(`৬০০x${toBanglaDigits(summary.nightDays)}`);
-    }
-    
-    const totalApyaon = (summary.lateDays * 100) + (summary.holidayDays * 250) + (summary.nightDays * 600);
-    const bnTotal = toBanglaDigits(totalApyaon);
-    
-    if (parts.length === 0) return '০/-';
-    return `(${parts.join(' + ')}) = ${bnTotal}/-`;
-  };
+  const totalApyaonAll = printFilteredSummaries.reduce((sum, s) => {
+    const { apyaonRate } = getPrintCategoryRates();
+    const days = printCategory === 'LATE_SITTING' ? s.lateDays : printCategory === 'HOLIDAY' ? s.holidayDays : s.nightDays;
+    return sum + (days * apyaonRate);
+  }, 0);
 
-  // Group billingSummaries by cell name
-  const groupedSummaries: { [cellName: string]: EmployeeBillingSummary[] } = {};
-  billingSummaries.forEach(s => {
-    if (!groupedSummaries[s.cellName]) {
-      groupedSummaries[s.cellName] = [];
-    }
-    groupedSummaries[s.cellName].push(s);
-  });
+  const grandTotalPrintAll = totalTransportAll + totalApyaonAll;
 
-  const totalTransportAll = billingSummaries.reduce((sum, s) => sum + (s.lateDays * 200 + s.holidayDays * 250 + s.nightDays * 400), 0);
-  const totalApyaonAll = billingSummaries.reduce((sum, s) => sum + (s.lateDays * 100 + s.holidayDays * 250 + s.nightDays * 600), 0);
+  const totalDaysAll = printFilteredSummaries.reduce((sum, s) => {
+    const days = printCategory === 'LATE_SITTING' ? s.lateDays : printCategory === 'HOLIDAY' ? s.holidayDays : s.nightDays;
+    return sum + days;
+  }, 0);
 
-  // Dynamic scaling parameters based on billing summaries count
-  const summariesCount = billingSummaries.length;
-  let printFontSize = 'text-[12px]';
-  let printTableFontSize = 'text-[11px]';
-  let printTablePadding = 'p-2';
-  let printHeaderSpacing = 'space-y-2';
-  let printHeaderPadding = 'pb-4';
-  let printBodySpacing = 'space-y-5';
-  let printTitleSpacing = 'space-y-2';
-  let printParaSpacing = 'leading-relaxed text-[12px]';
-  let printCertSpacing = 'space-y-2 mt-6 pt-4';
-  let printCertPadding = 'pl-4';
-  let printSigSpacing = 'pt-14';
-  let printTableHeadingSize = 'text-[11px]';
-  let printRowTextSize = 'text-[10.5px]';
-  let printSubRowTextSize = 'text-[9.5px]';
-  let printLogoSize = 'w-12 h-12';
-
-  if (summariesCount > 12) {
-    printFontSize = 'text-[10.5px]';
-    printTableFontSize = 'text-[10px]';
-    printTablePadding = 'p-1';
-    printHeaderSpacing = 'space-y-1';
-    printHeaderPadding = 'pb-2';
-    printBodySpacing = 'space-y-2';
-    printTitleSpacing = 'space-y-1';
-    printParaSpacing = 'leading-tight text-[10.5px]';
-    printCertSpacing = 'space-y-1 mt-2 pt-2';
-    printCertPadding = 'pl-2';
-    printSigSpacing = 'pt-6';
-    printTableHeadingSize = 'text-[10px]';
-    printRowTextSize = 'text-[10px]';
-    printSubRowTextSize = 'text-[9px]';
-    printLogoSize = 'w-10 h-10';
-  } else if (summariesCount > 7) {
-    printFontSize = 'text-[11px]';
-    printTableFontSize = 'text-[10.5px]';
-    printTablePadding = 'p-1.5';
-    printHeaderSpacing = 'space-y-1.5';
-    printHeaderPadding = 'pb-3';
-    printBodySpacing = 'space-y-3';
-    printTitleSpacing = 'space-y-1.5';
-    printParaSpacing = 'leading-relaxed text-[11px]';
-    printCertSpacing = 'space-y-1.5 mt-4 pt-3';
-    printCertPadding = 'pl-3';
-    printSigSpacing = 'pt-10';
-    printTableHeadingSize = 'text-[10.5px]';
-    printRowTextSize = 'text-[10.5px]';
-    printSubRowTextSize = 'text-[9.5px]';
-    printLogoSize = 'w-11 h-11';
-  }  // Running serial index for printing
-  let globalPrintIndex = 0;
+  const { transportRate, apyaonRate } = getPrintCategoryRates();
 
   return (
     <div className="space-y-6">
@@ -503,8 +424,8 @@ export default function BillingPage() {
           {/* Header Action Banner */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">আপ্যায়ন বিলিং লেজার</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">কর্মকর্তাদের ক্যাটাগরি ভিত্তিক ভাতার নিখুঁত হিসাব ও জনতা ব্যাংক পিএলসি. এর A4 সাইজ বিল মেমো প্রস্তুতকরণ প্যানেল।</p>
+              <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">বিল পিডিএফ জেনারেটর</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">কর্মকর্তাদের ক্যাটাগরি ভিত্তিক ভাতার নিখুঁত হিসাব ও জনতা ব্যাংক পিএলসি. এর লিগ্যাল সাইজ বিল মেমো প্রস্তুতকরণ প্যানেল।</p>
             </div>
             
             <button
@@ -513,7 +434,7 @@ export default function BillingPage() {
               className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md ${duties.length > 0 ? 'bg-gradient-to-r from-emerald-600 to-indigo-600 text-white hover:opacity-95' : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed'}`}
             >
               <Printer size={16} />
-              বিল মেমো (A4 Size) দেখুন ও প্রিন্ট করুন
+              বিল মেমো (Legal Size) দেখুন ও প্রিন্ট করুন
             </button>
           </div>
 
@@ -559,7 +480,7 @@ export default function BillingPage() {
               <div className="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-800 transition-all">
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">লেট সিটিং বিল (Entertainment + Travel)</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">লেট সিটিং বিল (Snacks + Travel)</p>
                     <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 font-sans">৳{metrics.totalLateSittingBill.toLocaleString('bn-BD')}</h3>
                   </div>
                   <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
@@ -576,7 +497,7 @@ export default function BillingPage() {
               <div className="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-800 transition-all">
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">হলিডে ডিউটি বিল (Entertainment + Travel)</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">হলিডে ডিউটি বিল (Lunch + Travel)</p>
                     <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 font-sans">৳{metrics.totalHolidayBill.toLocaleString('bn-BD')}</h3>
                   </div>
                   <div className="p-2 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-lg">
@@ -677,32 +598,19 @@ export default function BillingPage() {
                               <span className="font-bold text-slate-800 dark:text-slate-200 font-sans">{summary.nightDays}</span>
                               <span className="text-[9px] text-slate-400 font-sans block mt-0.5">৳{(summary.nightDays * 1000).toLocaleString('bn-BD')}</span>
                             </td>
-                            <td className="px-5 py-4 text-right font-extrabold text-indigo-600 dark:text-indigo-400 text-sm font-sans">
-                              ৳{summary.grandTotal.toLocaleString('bn-BD')}
+                            <td className="px-5 py-4 text-right font-bold text-slate-800 dark:text-slate-200 font-sans">
+                              ৳{summary.grandTotal.toLocaleString('bn-BD')}/-
                             </td>
                           </tr>
                         ))}
 
-                        {/* Cell Subtotal Row */}
-                        <tr className="bg-slate-50/50 dark:bg-slate-900/40 font-bold text-slate-700 dark:text-slate-300">
-                          <td colSpan={1} className="px-5 py-3 text-right">
-                            {cellName} উপ-মোট:
-                          </td>
-                          <td className="px-5 py-3 text-center">
-                            <span className="font-sans">{cellTotals.lateDays} দিন</span>
-                            <span className="text-[9px] text-slate-400 font-sans block mt-0.5">৳{(cellTotals.lateDays * 300).toLocaleString('bn-BD')}</span>
-                          </td>
-                          <td className="px-5 py-3 text-center">
-                            <span className="font-sans">{cellTotals.holidayDays} দিন</span>
-                            <span className="text-[9px] text-slate-400 font-sans block mt-0.5">৳{(cellTotals.holidayDays * 500).toLocaleString('bn-BD')}</span>
-                          </td>
-                          <td className="px-5 py-3 text-center">
-                            <span className="font-sans">{cellTotals.nightDays} দিন</span>
-                            <span className="text-[9px] text-slate-400 font-sans block mt-0.5">৳{(cellTotals.nightDays * 1000).toLocaleString('bn-BD')}</span>
-                          </td>
-                          <td className="px-5 py-3 text-right font-extrabold text-emerald-600 dark:text-emerald-400 text-sm font-sans">
-                            ৳{cellTotals.total.toLocaleString('bn-BD')}
-                          </td>
+                        {/* Subtotal Row for this Cell */}
+                        <tr className="bg-slate-50/50 dark:bg-slate-950/10 font-bold border-t border-slate-100 dark:border-slate-800/80">
+                          <td className="px-5 py-3 text-slate-500">উপ-মোট ({cellName})</td>
+                          <td className="px-5 py-3 text-center text-slate-700 dark:text-slate-350 font-sans">{cellTotals.lateDays} দিন</td>
+                          <td className="px-5 py-3 text-center text-slate-700 dark:text-slate-350 font-sans">{cellTotals.holidayDays} দিন</td>
+                          <td className="px-5 py-3 text-center text-slate-700 dark:text-slate-350 font-sans">{cellTotals.nightDays} দিন</td>
+                          <td className="px-5 py-3 text-right text-indigo-600 dark:text-indigo-400 font-bold font-sans">৳{cellTotals.total.toLocaleString('bn-BD')}/-</td>
                         </tr>
                       </tbody>
                     );
@@ -710,21 +618,51 @@ export default function BillingPage() {
                 </table>
               </div>
             ) : (
-              <div className="p-12 text-center max-w-sm mx-auto space-y-3">
-                <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 mx-auto">
-                  <Calculator size={22} />
-                </div>
-                <h4 className="font-bold text-slate-700 dark:text-slate-300">কোনো বিলিং ডাটা নেই</h4>
-                <p className="text-[11px] text-slate-400">এই পিরিয়ডে কোনো ডিউটি পালিত না হওয়ায় কোনো আপ্যায়ন বিল হিসাব করা যায়নি।</p>
+              <div className="p-16 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 italic">
+                নির্বাচিত মাস ও ফিল্টারের অধীনে কোনো বিলিং ডাটা পাওয়া যায়নি।
               </div>
             )}
           </div>
         </>
       ) : (
         // ----------------------------------------------------
-        // JANATA BANK PLC PRINT MODE (A4 সাইজ মেমো বিবরণী)
+        // JANATA BANK PLC PRINT MODE (Legal সাইজ মেমো বিবরণী)
         // ----------------------------------------------------
         <div className="space-y-6">
+          {/* Dynamic Media Print Style Overrides to ensure precise Legal spacing with Noto Sans Bengali font family */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            @media print {
+              @page {
+                size: legal !important;
+                margin-top: 0.6in !important;
+                margin-bottom: 0.75in !important;
+                margin-left: 1.3in !important;
+                margin-right: 0.5in !important;
+              }
+              .no-print { display: none !important; }
+              body { margin: 0 !important; padding: 0 !important; background: #fff !important; font-family: "Noto Sans Bengali", sans-serif !important; }
+              /* Force resetting Next.js page margins & layout wrapper padding */
+              main, .flex-1, .p-4, .lg\\:p-8, .p-6, .space-y-6 {
+                padding: 0 !important;
+                margin: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+              }
+              .print-legal-layout {
+                width: 100% !important;
+                height: 100% !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                font-family: "Noto Sans Bengali", sans-serif !important;
+                font-size: 14px !important;
+              }
+            }
+          `}} />
+
           {/* Back Controls (No-print) */}
           <div className="no-print flex items-center justify-between glass-card p-4 rounded-2xl">
             <button
@@ -741,7 +679,7 @@ export default function BillingPage() {
                 className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-md animate-pulse"
               >
                 <Printer size={14} />
-                মেমো প্রিন্ট করুন (A4 Size)
+                মেমো প্রিন্ট করুন (Legal Size)
               </button>
             </div>
           </div>
@@ -754,13 +692,16 @@ export default function BillingPage() {
               {/* Row 1: Document Metadata & Dates */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">নথি নম্বর (Memo No)</label>
-                  <input
-                    type="text"
-                    value={billMemo}
-                    onChange={(e) => setBillMemo(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-sans"
-                  />
+                  <label className="text-xs font-bold text-slate-500">ডিউটির ক্যাটাগরি (Duty Category)</label>
+                  <select
+                    value={printCategory}
+                    onChange={(e) => setPrintCategory(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
+                    <option value="NIGHT_SHIFT">Night Shift (রাত্রের ডিউটি)</option>
+                    <option value="HOLIDAY">Holiday Duty (ছুটির দিন)</option>
+                  </select>
                 </div>
 
                 <div className="space-y-1.5">
@@ -801,7 +742,7 @@ export default function BillingPage() {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
                   >
                     <option value="">Select Payee (সিলেক্ট করুন)</option>
-                    {billingSummaries.map(summary => (
+                    {printFilteredSummaries.map(summary => (
                       <option key={summary.employeeId} value={summary.name}>
                         {summary.name} ({getShortDesignation(summary.designation)})
                       </option>
@@ -815,86 +756,8 @@ export default function BillingPage() {
                     type="text"
                     disabled
                     value={representativeDesignation}
-                    className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-850 rounded-lg text-xs cursor-not-allowed text-slate-500 font-semibold"
+                    className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-850 border border-slate-200 dark:border-slate-850 rounded-lg text-xs cursor-not-allowed text-slate-500 font-semibold"
                   />
-                </div>
-              </div>
-
-              {/* Row 3: Board Resolution Paragraph */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500">১ম অনুচ্ছেদ (বোর্ড অব ডিরেক্টরস এর অনুমোদন সংক্রান্ত প্রারম্ভিক প্যারাগ্রাফ)</label>
-                <textarea
-                  rows={4}
-                  value={openingParagraph}
-                  onChange={(e) => setOpeningParagraph(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none focus:border-indigo-500 leading-relaxed font-semibold"
-                />
-              </div>
-
-              {/* Row 4: Administrative Officers */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">বিল প্রস্তুতকারী</label>
-                  <input
-                    type="text"
-                    value={preparedBy}
-                    onChange={(e) => setPreparedBy(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">প্রস্তুতকারীর পদবী</label>
-                  <input
-                    type="text"
-                    value={preparedDesignation}
-                    onChange={(e) => setPreparedDesignation(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">বিল যাচাইকারী</label>
-                  <input
-                    type="text"
-                    value={verifiedBy}
-                    onChange={(e) => setVerifiedBy(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">যাচাইকারীর পদবী</label>
-                  <input
-                    type="text"
-                    value={verifiedDesignation}
-                    onChange={(e) => setVerifiedDesignation(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">অনুমোদনকারী কর্মকর্তা (Approver)</label>
-                  <select
-                    value={selectedApprovedExecutiveId}
-                    onChange={(e) => {
-                      const execId = e.target.value;
-                      setSelectedApprovedExecutiveId(execId);
-                      const exec = executives.find(ex => ex.id.toString() === execId);
-                      if (exec) {
-                        setApprovedBy(exec.name);
-                        setApprovedDesignation(exec.designation);
-                      }
-                    }}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none font-bold"
-                  >
-                    <option value="">Select Officer (কর্মকর্তা নির্বাচন)</option>
-                    {executives.map(ex => (
-                      <option key={ex.id} value={ex.id.toString()}>
-                        {ex.name} ({ex.designation})
-                      </option>
-                    ))}
-                  </select>
                 </div>
               </div>
             </div>
@@ -902,183 +765,151 @@ export default function BillingPage() {
 
           {/* Interactive Print Mock Sheet */}
           <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner">
-            {/* Renders exactly like A4 Page in Print Preview with standard 1.0 inch margins all around */}
-            <div className="print-a4-layout w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"Nikosh", "SolaimanLipi", "Noto Sans Bengali", serif', padding: '1.0in', boxSizing: 'border-box' }}>
+            {/* Renders exactly like Legal Page in Print Preview with exact user-specified margins and Noto Sans Bengali font */}
+            <div className="print-legal-layout w-[8.5in] min-h-[14in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"Noto Sans Bengali", sans-serif', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in', boxSizing: 'border-box' }}>
               
-              {/* Official Header */}
-              <div className="w-full flex flex-col items-end text-right justify-start space-y-1 pr-1 border-b border-black pb-2">
-                <div className="flex items-center gap-2 mb-1 justify-end">
-                  <svg viewBox="0 0 512 512" className={`${printLogoSize} text-[#0b5e9e] shrink-0`} fill="none">
-                    <g>
-                      <path fill="currentColor" d="M175.7,351.4c-53.1,0-96.4-43.3-96.4-96.4c0-24.9,9.5-48.6,26.6-66.5l8.2,7.9c-15.1,15.8-23.5,36.7-23.5,58.7c0,46.9,38.1,85.1,85,85.1c46.9,0,85.1-38.2,85.1-85.1v-97.7h11.4v97.7C272.1,308.1,228.9,351.4,175.7,351.4z"/>
-                      <path fill="currentColor" d="M175.7,329.1c-41.3,0-74.9-33.6-74.9-74.9c0-19.4,7.3-37.7,20.7-51.7l8.2,7.9c-11.3,11.8-17.5,27.4-17.5,43.9c0,35.1,28.5,63.6,63.5,63.6c35.1,0,63.6-28.5,63.6-63.6v-96.9h11.4v96.9C250.7,295.4,217,329.1,175.7,329.1z"/>
-                      <path fill="currentColor" d="M175.7,306.8c-29.5,0-53.4-24-53.4-53.5c0-13.8,5.2-26.9,14.8-36.9l8.2,7.9c-7.5,7.8-11.6,18.2-11.6,29c0,23.2,18.9,42.1,42.1,42.1c23.2,0,42.1-18.9,42.1-42.1v-96.1h11.4v96.1C229.2,282.8,205.2,306.8,175.7,306.8z"/>
-                      <path fill="currentColor" d="M175.7,284.4c-17.6,0-32-14.3-32-32c0-8.3,3.1-16.1,8.8-22.1l8.2,7.9c-3.7,3.8-5.7,8.9-5.7,14.2c0,11.4,9.2,20.6,20.6,20.6c11.4,0,20.6-9.2,20.6-20.6v-95.2h11.4v95.2C207.7,270.1,193.3,284.4,175.7,284.4z"/>
-                      <path fill="currentColor" d="M400.1,255.1c9.9-7.8,15.9-19.8,15.9-32.7c0-23-18.7-41.6-41.6-41.6h-85.1v11.7h85.1c16.5,0,29.9,13.4,29.9,29.9c0,11.8-7,22.5-17.8,27.3l-12.1,5.4l12.1,5.4c10.8,4.8,17.8,15.5,17.8,27.3c0,16.5-13.4,30-29.9,30H270.2c-2.7,4.1-5.8,8-9,11.7h113.1c23,0,41.6-18.7,41.6-41.7C416,274.8,410,262.8,400.1,255.1z"/>
-                      <path fill="currentColor" d="M442.1,218.5c0-33.9-27.6-61.5-61.5-61.5h-91.4v11.4h91.4c27.7,0,50.2,22.5,50.2,50.2c0,12.1-4.4,23.8-12.3,32.8l-3.3,3.7l3.3,3.7c7.9,9.1,12.3,20.8,12.3,32.9c0,27.7-22.5,50.2-50.2,50.2h-132c-5,4.2-10.5,8-16.2,11.4h148.2c33.9,0,61.5-27.6,61.5-61.5c0-13.2-4.3-26-12.1-36.6C437.9,244.6,442.1,231.8,442.1,218.5z"/>
-                      <path fill="currentColor" d="M362.7,204.7h-73.5v11.4h73.5c5.4,0,9.7,4.3,9.7,9.7c0,2.6-1,5-2.9,6.9c-1.8,1.8-4.2,2.8-6.8,2.8h-73.5v11.4h73.5c5.7,0,11-2.2,14.9-6.2c4-4,6.2-9.3,6.2-14.9C383.8,214.2,374.3,204.7,362.7,204.7z"/>
-                      <path fill="currentColor" d="M362.7,263.3h-73.8c-0.3,3.8-0.8,7.6-1.4,11.4h75.2c5.4,0,9.7,4.4,9.7,9.7c0,2.6-1,5.1-2.9,6.9c-1.8,1.8-4.3,2.8-6.8,2.8h-80.4c-1.4,3.9-3.1,7.7-4.9,11.4h85.4c5.6,0,10.9-2.2,14.8-6.1c4-3.9,6.3-9.3,6.3-15C383.8,272.7,374.3,263.3,362.7,263.3z"/>
-                      <path fill="currentColor" d="M255.8,420.3c-64.5,0-129-12.9-192.9-38.6l-2.7-1.1l-0.7-2.8c-24.7-97.3-24.7-177.2,0.2-244.3l0.9-2.4l2.3-0.9c128.4-51.4,258.3-51.4,386.2,0l2.7,1.1l0.7,2.8c24.7,97.3,24.7,177.2-0.2,244.3l-0.9,2.4l-2.3,0.9C384.9,407.4,320.3,420.3,255.8,420.3z M69.8,372.2c123.4,48.9,248.8,48.9,372.7-0.1c22.9-63.7,22.8-139.8-0.3-232.3c-123.4-48.9-248.8-48.9-372.7,0.1C46.6,203.6,46.7,279.7,69.8,372.2z"/>
-                    </g>
-                  </svg>
-                  <div className="text-left font-serif leading-none">
-                    <h2 className="text-sm font-extrabold tracking-tight">জনতা ব্যাংক পিএলসি.</h2>
-                    <p className="text-[7.5px] font-semibold text-slate-800">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+              <div>
+                {/* Official Header - Right-aligned online banking dept name and date, NO bank name, NO logo */}
+                <div className="w-full flex justify-end text-right mb-6 font-serif">
+                  <div className="text-right">
+                    <h2 className="text-[17px] font-bold text-black uppercase">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                    <p className="text-[15px] font-bold text-black mt-1">তারিখ: {getBanglaDate(billDate)}</p>
                   </div>
                 </div>
-                
-                <div className="w-full flex justify-between items-end text-[10px] pt-1 font-serif">
-                  <span className="font-semibold text-[9.5px]">{billMemo}</span>
-                  <span className="font-semibold border-b border-black pb-0.5">তারিখ: {getBanglaDate(billDate)}</span>
-                </div>
-              </div>
 
-              {/* Title and Main Body */}
-              <div className={`flex-1 flex flex-col justify-between ${printBodySpacing} ${printFontSize} mt-3`}>
-                <div>
-                  <h2 className="text-left text-[12.5px] font-extrabold underline decoration-black">
-                    বিষয়: {subjectText}
-                  </h2>
-                  
-                  <div className="space-y-2 mt-2.5">
-                    <p className={`text-justify leading-relaxed text-slate-900 ${printParaSpacing}`}>
-                      {openingParagraph}
+                {/* Title and Main Body */}
+                <div className="flex-1 flex flex-col justify-between mt-4">
+                  <div>
+                    <h2 className="text-left text-[14px] font-bold underline decoration-black underline-offset-4 leading-normal">
+                      বিষয়: {subjectText}
+                    </h2>
+                    
+                    <div className="space-y-3 mt-3">
+                      <p className="text-justify leading-relaxed text-black text-[14px]">
+                        {openingParagraph}
+                      </p>
+                    </div>
+
+                    {/* Redesigned Printed Legal Billing Table - HOBOHO match */}
+                    {printFilteredSummaries.length > 0 ? (
+                      <table className="w-full border-collapse border border-black text-center mt-5 text-[13px]">
+                        <thead>
+                          <tr className="bg-slate-50 font-bold border-b border-black text-[13px]">
+                            <th className="border border-black p-2 w-[8%] text-center leading-tight">ক্রমিক<br/>নং</th>
+                            <th className="border border-black p-2 text-left pl-3 w-[28%]">নাম ও পদবী</th>
+                            <th className="border border-black p-2 text-center w-[25%]">তারিখ</th>
+                            <th className="border border-black p-2 text-center w-[15%]">যাতায়াত</th>
+                            <th className="border border-black p-2 text-center w-[15%]">আপ্যায়ন</th>
+                            <th className="border border-black p-2 text-center w-[9%]">মোট</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {printFilteredSummaries.map((summary, index) => {
+                            const days = printCategory === 'LATE_SITTING' ? summary.lateDays : printCategory === 'HOLIDAY' ? summary.holidayDays : summary.nightDays;
+                            const empTransport = days * transportRate;
+                            const empApyaon = days * apyaonRate;
+                            const empTotal = empTransport + empApyaon;
+                            
+                            return (
+                              <tr key={summary.employeeId} className="text-black text-[13px]">
+                                <td className="border border-black p-2 text-center font-serif">
+                                  {toBanglaDigits(index + 1)}
+                                </td>
+                                <td className="border border-black p-2 text-left pl-3 leading-tight font-extrabold text-[13px]">
+                                  <p>{summary.name}</p>
+                                  <p className="text-[11px] text-slate-800 font-semibold mt-0.5">{summary.designation}</p>
+                                </td>
+                                <td className="border border-black p-2 font-serif text-center text-[12px] leading-snug">
+                                  <p>{formatWorkedDatesForCategory(summary.employeeId)}</p>
+                                  <p className="text-[10px] text-slate-600 mt-1 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>
+                                </td>
+                                <td className="border border-black p-2 font-serif text-center text-[12px] leading-tight">
+                                  <p className="text-slate-600">({toBanglaDigits(transportRate)}x{toBanglaDigits(days)})</p>
+                                  <p className="font-bold mt-1">- {toBanglaDigits(empTransport)}/-</p>
+                                </td>
+                                <td className="border border-black p-2 font-serif text-center text-[12px] leading-tight">
+                                  <p className="text-slate-600">({toBanglaDigits(apyaonRate)}x{toBanglaDigits(days)})</p>
+                                  <p className="font-bold mt-1">- {toBanglaDigits(empApyaon)}/-</p>
+                                </td>
+                                <td className="border border-black p-2 font-extrabold font-serif text-center text-[13px]">
+                                  {toBanglaDigits(empTotal)}/-
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          
+                          {/* Grand Total Row at bottom - Mockup Exact Match */}
+                          <tr className="font-bold bg-slate-50/50 text-[13px] border-t-2 border-black">
+                            <td className="border border-black p-2 text-right pr-3" colSpan={3}>
+                              মোট - ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})
+                            </td>
+                            <td className="border border-black p-2 font-serif text-center">
+                              <p className="text-slate-600">({toBanglaDigits(transportRate)}x{toBanglaDigits(totalDaysAll)})</p>
+                              <p className="font-extrabold mt-1">- {toBanglaDigits(totalTransportAll)}/-</p>
+                            </td>
+                            <td className="border border-black p-2 font-serif text-center">
+                              <p className="text-slate-600">({toBanglaDigits(apyaonRate)}x{toBanglaDigits(totalDaysAll)})</p>
+                              <p className="font-extrabold mt-1">- {toBanglaDigits(totalApyaonAll)}/-</p>
+                            </td>
+                            <td className="border border-black p-2 font-extrabold font-serif text-center">
+                              {toBanglaDigits(grandTotalPrintAll)}/-
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="p-16 border border-dashed border-slate-350 rounded-xl text-center text-slate-500 italic mt-4">
+                        নির্বাচিত ক্যাটাগরির অধীনে এই মাসে কোনো ডিউটি বা বিল রেকর্ড পাওয়া যায়নি।
+                      </div>
+                    )}
+
+                    {/* Specific Government/Janata Bank PLC Paragraphs 02, 03, and 04 */}
+                    <div className="border-t border-black text-left pt-4 mt-6 font-serif space-y-3">
+                      <p className="text-justify leading-relaxed text-black text-[14px]">
+                        ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
+                      </p>
+                      <p className="text-justify leading-relaxed text-black text-[14px]">
+                        ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = {toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')}) এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = {toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')}) অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                      </p>
+                      <p className="text-justify leading-relaxed text-black text-[14px]">
+                        ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = {toBanglaDigits(grandTotalPrintAll)}/- ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')}) {representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'}, {representativeDesignation || 'এসও-আইটি'} এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right-aligned payee signature block below Paragraph 4 and sitting directly above left routing list */}
+                <div className="w-full flex justify-end text-right font-serif mt-10 mb-8">
+                  <div className="text-center font-serif leading-snug" style={{ marginRight: '0.4in' }}>
+                    <p className="font-extrabold text-[14px]">({representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'})</p>
+                    <p className="text-[12px] font-bold text-slate-800 mt-1">{representativeDesignation || 'সিনিয়র অফিসার-আইটি (এসও-আইটি)'}</p>
+                  </div>
+                </div>
+
+                {/* Left-aligned Routing List with bold, underlines and spacious gaps */}
+                <div className="w-full text-left font-serif space-y-8 mt-6 pl-2 no-break-inside">
+                  <div>
+                    <p className="font-extrabold text-[14px] inline-block border-b-2 border-black pb-0.5">
+                      এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপে।
                     </p>
                   </div>
-
-                  {/* Redesigned Printed Legal Billing Table */}
-                  <table className={`w-full border-collapse border border-black text-center mt-3.5 ${printTableFontSize}`}>
-                    <thead>
-                      <tr className={`bg-slate-50 font-bold border-b border-black ${printTableHeadingSize}`}>
-                        <th className={`border border-black ${printTablePadding} w-[6%] text-center`}>ক্রমিক নং</th>
-                        <th className={`border border-black ${printTablePadding} text-left pl-2`}>নাম ও পদবী</th>
-                        <th className={`border border-black ${printTablePadding} text-center w-[25%]`}>দায়িত্ব পালনের তারিখ</th>
-                        <th className={`border border-black ${printTablePadding} text-center w-[23%]`}>যাতায়াত ভাতা</th>
-                        <th className={`border border-black ${printTablePadding} text-center w-[23%]`}>আপ্যায়ন ভাতা</th>
-                        <th className={`border border-black ${printTablePadding} text-right pr-2 w-[13%]`}>মোট প্রদেয়</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(groupedSummaries).map(([cellName, summaries]) => {
-                        const cellTotals = getCellTotals(summaries);
-                        return (
-                          <React.Fragment key={cellName}>
-                            {/* Cell Group Header inside the Table */}
-                            <tr className="bg-slate-100 font-bold border-y border-black text-left">
-                              <td colSpan={6} className={`${printTablePadding} font-extrabold text-[9px] pl-2 bg-slate-100`}>
-                                সেল: {cellName}
-                              </td>
-                            </tr>
-
-                            {/* Officers in this cell */}
-                            {summaries.map((summary) => {
-                              globalPrintIndex++;
-                              const empDuties = getEmployeeDuties(summary.employeeId);
-                              return (
-                                <tr key={summary.employeeId} className={`${printRowTextSize} hover:bg-slate-50/40 text-black`}>
-                                  <td className={`border border-black ${printTablePadding} font-serif text-center`}>
-                                    {toBanglaDigits(globalPrintIndex)}
-                                  </td>
-                                  <td className={`border border-black ${printTablePadding} text-left pl-2 leading-tight`}>
-                                    <p className="font-extrabold">{summary.name}</p>
-                                    <p className={`${printSubRowTextSize} text-slate-800 font-semibold`}>{summary.designation}</p>
-                                  </td>
-                                  <td className={`border border-black ${printTablePadding} font-serif text-center text-[7.5px] leading-snug`}>
-                                    {formatWorkedDates(empDuties)}
-                                  </td>
-                                  <td className={`border border-black ${printTablePadding} font-serif text-center text-[8px] leading-tight`}>
-                                    {getTransportFormula(summary)}
-                                  </td>
-                                  <td className={`border border-black ${printTablePadding} font-serif text-center text-[8px] leading-tight`}>
-                                    {getApyaonFormula(summary)}
-                                  </td>
-                                  <td className={`border border-black ${printTablePadding} font-extrabold font-serif text-right pr-2`}>
-                                    ৳{toBanglaDigits(summary.grandTotal)}/-
-                                  </td>
-                                </tr>
-                              );
-                            })}
-
-                            {/* Subtotal row inside printed table for this Cell */}
-                            <tr className="font-bold bg-slate-50/80">
-                              <td className={`border border-black ${printTablePadding} text-right pr-2`} colSpan={3}>
-                                उप-মোট ({cellName}):
-                              </td>
-                              <td className={`border border-black ${printTablePadding} font-serif text-center text-[8.5px]`}>
-                                ৳{toBanglaDigits(cellTotals.transport)}/-
-                              </td>
-                              <td className={`border border-black ${printTablePadding} font-serif text-center text-[8.5px]`}>
-                                ৳{toBanglaDigits(cellTotals.apyaon)}/-
-                              </td>
-                              <td className={`border border-black ${printTablePadding} font-extrabold font-serif text-right pr-2`} colSpan={1}>
-                                ৳{toBanglaDigits(cellTotals.total)}/-
-                              </td>
-                            </tr>
-                          </React.Fragment>
-                        );
-                      })}
-                      
-                      {/* Grand Total Row at bottom */}
-                      <tr className="font-bold bg-slate-100/60 text-[9.5px] border-t border-black">
-                        <td className={`border border-black ${printTablePadding} text-right pr-2`} colSpan={3}>
-                          সর্বমোট প্রদেয় বিল:
-                        </td>
-                        <td className={`border border-black ${printTablePadding} font-serif text-center`}>
-                          ৳{toBanglaDigits(totalTransportAll)}/-
-                        </td>
-                        <td className={`border border-black ${printTablePadding} font-serif text-center`}>
-                          ৳{toBanglaDigits(totalApyaonAll)}/-
-                        </td>
-                        <td className={`border border-black ${printTablePadding} font-extrabold font-serif text-right pr-2`} colSpan={1}>
-                          ৳{toBanglaDigits(metrics.grandTotal)}/-
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Specific Government/Janata Bank PLC Paragraphs 02 and 03 */}
-                <div className={`${printCertSpacing} border-t border-black text-left pt-2 font-serif`}>
-                  <p className={`text-justify leading-relaxed ${printParaSpacing} mb-1.5`}>
-                    ০২। বর্ণিত যাতায়াত ভাতা বাবদ সর্বমোট টাকা <span className="font-bold">৳{toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll)})</span> কোড নং- ১৩৫১২০২৫০০০০০০৩ (যাতায়াত ও ভ্রমণ) এবং আপ্যায়ন ভাতা বাবদ সর্বমোট টাকা <span className="font-bold">৳{toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll)})</span> কোড নং- ১৩৫১২০১১০০০০০০২ (আপ্যায়ন ব্যয়) খাত হতে ব্যয় করা হবে।
-                  </p>
-                  <p className={`text-justify leading-relaxed ${printParaSpacing}`}>
-                    ০৩। অতএব, উপরোক্ত কর্মকর্তা ও কর্মচারীদের যাতায়াত ও আপ্যায়ন ভাতা বাবদ সর্বমোট টাকা <span className="font-bold">৳{toBanglaDigits(metrics.grandTotal)}/- ({getBanglaNumberWords(metrics.grandTotal)})</span> পরিশোধ করার লক্ষ্যে <span className="font-bold">{representativeName}, {representativeDesignation}</span> এর নিকট হস্তান্তরের প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য সবিনয় অনুরোধ করা হলো।
-                  </p>
-                </div>
-              </div>
-
-              {/* Stacked Left-Routing and Right-Signatures Panel */}
-              <div className={`flex justify-between items-end border-t border-black/10 pt-4 ${printSigSpacing} ${printFontSize} no-break-inside mt-4`}>
-                {/* Left Side Stacked Routing Blocks */}
-                <div className="w-[45%] text-left space-y-4 font-serif text-[9px] leading-normal pl-2 py-0.5">
-                  <p>এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপে।</p>
-                  <p>এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপে।</p>
-                  <p>উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপে।</p>
-                  <p>উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপে।</p>
-                </div>                {/* Right Side Aligned Signature Box */}
-                <div className="w-[50%] flex justify-end gap-5 text-center leading-tight">
-                  <div className="space-y-0.5 font-serif">
-                    <div className="h-8 border-b border-black/30 w-24 mx-auto mb-1.5" />
-                    <p className="font-bold text-[9px]">({preparedBy})</p>
-                    <p className="text-[7.5px] text-slate-800 font-semibold">{preparedDesignation}</p>
-                    <p className="text-[6.5px] text-slate-500">বিল প্রস্তুতকারী</p>
+                  <div>
+                    <p className="font-extrabold text-[14px] inline-block border-b-2 border-black pb-0.5">
+                      এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপে।
+                    </p>
                   </div>
-                  
-                  <div className="space-y-0.5 font-serif">
-                    <div className="h-8 border-b border-black/30 w-24 mx-auto mb-1.5" />
-                    <p className="font-bold text-[9px]">({verifiedBy})</p>
-                    <p className="text-[7.5px] text-slate-800 font-semibold">{verifiedDesignation}</p>
-                    <p className="text-[6.5px] text-slate-500">যাচাইকারী / সেল প্রধান</p>
+                  <div>
+                    <p className="font-extrabold text-[14px] inline-block border-b-2 border-black pb-0.5">
+                      উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপে।
+                    </p>
                   </div>
-
-                  <div className="space-y-0.5 font-serif">
-                    <div className="h-8 border-b border-black/30 w-24 mx-auto mb-1.5" />
-                    <p className="font-bold text-[9px]">({approvedBy})</p>
-                    <p className="text-[7.5px] text-slate-800 font-semibold">{approvedDesignation}</p>
-                    <p className="text-[6.5px] text-slate-500">অনুমোদনকারী কর্তৃপক্ষ</p>
+                  <div>
+                    <p className="font-extrabold text-[14px] inline-block border-b-2 border-black pb-0.5">
+                      উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপে।
+                    </p>
                   </div>
                 </div>
+
               </div>
 
             </div>

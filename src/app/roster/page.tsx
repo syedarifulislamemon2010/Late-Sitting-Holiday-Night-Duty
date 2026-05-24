@@ -133,7 +133,7 @@ export default function RosterPage() {
   const [isPrintMode, setIsPrintMode] = useState(false);
   const [memoNo, setMemoNo] = useState('স্মারক নং: ৪৬.০২.০০০০.০০১.১৯.০০২.২৬-১৫৪');
   const [issuingOffice, setIssuingOffice] = useState('প্রশাসনিক সেল, ডিউটি পোর্টাল কার্যালয়');
-  const [signingOfficer, setSigningOfficer] = useState('জনাব চৌধুরী আশিকুর রহমান');
+  const [signingOfficer, setSigningOfficer] = useState('জনাব মোহাম্মদ সোহরাব হোসেন');
   const [signingDesignation, setSigningDesignation] = useState('উপ-মহাব্যবস্থাপক');
   const [signingPhone, setSigningPhone] = useState('০২-৯৫৫৫৬৬৬');
   const [signingEmail, setSigningEmail] = useState('ashikur.rahman@office.gov.bd');
@@ -425,7 +425,7 @@ export default function RosterPage() {
       if (Array.isArray(execData)) {
         setExecutives(execData);
         if (execData.length > 0) {
-          const defaultExec = execData.find((ex: any) => ex.name.includes('চৌধুরী আশিকুর রহমান') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || execData[0];
+          const defaultExec = execData.find((ex: any) => ex.name.includes('মোহাম্মদ সোহরাব হোসেন') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || execData[0];
           if (defaultExec) {
             setSelectedExecutiveId(defaultExec.id.toString());
             setSigningOfficer(defaultExec.name);
@@ -496,7 +496,7 @@ export default function RosterPage() {
               employeeId: empId,
               type: assignmentForm.type,
               date: dateStr,
-              description: assignmentForm.description.trim() || undefined
+              description: 'Customization এবং Development সংক্রান্ত'
             });
           });
         }
@@ -522,7 +522,7 @@ export default function RosterPage() {
         employeeId: empId,
         type: assignmentForm.type,
         date: assignmentForm.date,
-        description: assignmentForm.description.trim() || undefined
+        description: 'Customization এবং Development সংক্রান্ত'
       }));
     }
 
@@ -631,7 +631,7 @@ export default function RosterPage() {
         body: JSON.stringify({
           type: editForm.type,
           date: editForm.date,
-          description: editForm.description.trim() || undefined
+          description: 'Customization এবং Development সংক্রান্ত'
         })
       });
       
@@ -852,18 +852,6 @@ export default function RosterPage() {
                     <option value="HOLIDAY">Holiday Duty (সরকারি ছুটি)</option>
                     <option value="NIGHT_SHIFT">Night Shift (রাত্রীকালীন ডিউটি)</option>
                   </select>
-                </div>
-
-                {/* Common Field 2: Duty Description Selection */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">২. কাজের বিবরণ/মন্তব্য (ঐচ্ছিক)</label>
-                  <input
-                    type="text"
-                    placeholder="যেমন: জরুরি নথি ফাইল প্রস্তুতকরণ"
-                    value={assignmentForm.description}
-                    onChange={(e) => setAssignmentForm({ ...assignmentForm, description: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
-                  />
                 </div>
 
                 {/* Mode Specific Layouts */}
@@ -1311,7 +1299,7 @@ export default function RosterPage() {
           {/* Interactive Print Mock Sheet */}
           <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner font-serif">
             {/* Renders exactly like A4 Page in Print Preview with standard 1.0 inch margins all around */}
-            <div className="print-a4-layout w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"Nikosh", "SolaimanLipi", "Noto Sans Bengali", serif', padding: '1.0in', boxSizing: 'border-box' }}>
+            <div className="print-a4-layout w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"Noto Sans Bengali", sans-serif', padding: '1.0in', boxSizing: 'border-box' }}>
               
               {/* Janata Bank PLC Redesigned Header to match mockup logo exactly */}
               <div className="w-full flex justify-between items-start border-b-2 border-[#0b5e9e] pb-2">
@@ -1364,32 +1352,32 @@ export default function RosterPage() {
 
                   {/* Redesigned Printed Duty Table Grouped by Employee */}
                   {getGroupedDuties().length > 0 ? (
-                    <table className="w-full border-collapse border border-black text-center mt-3 text-[10.5px]">
+                    <table className="w-full border-collapse border border-black text-center mt-3 text-[11px]">
                       <thead>
-                        <tr className="bg-slate-50 font-bold border-b border-black text-[9.5px]">
+                        <tr className="bg-slate-50 font-bold border-b border-black text-[11px]">
                           <th className="border border-black p-1.5 w-[8%] text-center">ক্রমিক নং</th>
-                          <th className="border border-black p-1.5 text-left pl-3 w-[30%]">নির্বাহী/ কর্মকর্তার নাম</th>
+                          <th className="border border-black p-1.5 text-left pl-3 w-[28%]">নির্বাহী/ কর্মকর্তার নাম</th>
                           <th className="border border-black p-1.5 text-center w-[12%]">পদবী</th>
-                          <th className="border border-black p-1.5 text-left pl-3 w-[25%]">কাজের বিবরণ</th>
+                          <th className="border border-black p-1.5 text-left pl-3 w-[27%] text-[12px]">কাজের বিবরণ</th>
                           <th className="border border-black p-1.5 text-center w-[25%]">তারিখ</th>
                         </tr>
                       </thead>
                       <tbody>
                         {getGroupedDuties().map((group, index) => (
-                          <tr key={group.employee.id} className="text-black text-[10px]">
+                          <tr key={group.employee.id} className="text-black text-[11px]">
                             <td className="border border-black p-1.5 text-center font-serif">
                               {toBanglaDigits(index + 1)}
                             </td>
-                            <td className="border border-black p-1.5 text-left pl-3 leading-tight font-extrabold text-[10px]">
+                            <td className="border border-black p-1.5 text-left pl-3 leading-tight font-extrabold text-[12px]">
                               {group.employee.name.startsWith('জনাব') ? group.employee.name : `জনাব ${group.employee.name}`}
                             </td>
-                            <td className="border border-black p-1.5 text-center font-semibold text-[9.5px]">
+                            <td className="border border-black p-1.5 text-center font-semibold text-[11px]">
                               {getShortDesignation(group.employee.designation)}
                             </td>
-                            <td className="border border-black p-1.5 text-left pl-3 leading-tight">
-                              {group.description}
+                            <td className="border border-black p-1.5 text-left pl-3 leading-tight text-[12px] font-semibold text-black">
+                              Customization এবং Development সংক্রান্ত
                             </td>
-                            <td className="border border-black p-1.5 text-center font-serif text-[9px] leading-snug tracking-tight">
+                            <td className="border border-black p-1.5 text-center font-serif text-[11px] leading-snug tracking-tight">
                               {getFormattedDateList(group.dates)}
                             </td>
                           </tr>
@@ -1404,7 +1392,7 @@ export default function RosterPage() {
                 </div>
 
                 {/* Redesigned bottom-left signature aligned exactly like mockup with 1.0 inch top space below table */}
-                <div className="flex justify-between items-start text-xs font-serif" style={{ marginTop: '1.0in' }}>
+                <div className="flex justify-between items-start text-xs font-serif" style={{ marginTop: '0.75in' }}>
                   <div className="w-[50%] text-left space-y-0.5 pl-3 leading-tight">
                     <p className="font-extrabold text-[11px] text-black">({signingOfficer || 'ডিজিএম নাম সিলেক্ট করুন'})</p>
                     <p className="font-semibold text-slate-800 text-[10px]">{signingDesignation}</p>
@@ -1466,18 +1454,6 @@ export default function RosterPage() {
                   value={editForm.date}
                   onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
-                />
-              </div>
-
-              {/* Edit Description */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">৩. কাজের বিবরণ/মন্তব্য (ঐচ্ছিক)</label>
-                <input
-                  type="text"
-                  placeholder="যেমন: জরুরি নথি ফাইল প্রস্তুতকরণ"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
                 />
               </div>
 

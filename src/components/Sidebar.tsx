@@ -86,7 +86,7 @@ export default function Sidebar() {
     { name: 'কর্মকর্তাবৃন্দ ও সেল', href: '/employees', icon: Users },
     { name: 'নির্বাহী প্যানেল', href: '/executive', icon: UserCheck },
     { name: 'রোস্টার ও জিও', href: '/roster', icon: CalendarRange },
-    { name: 'আপ্যায়ন বিল নোট', href: '/billing', icon: Receipt },
+    { name: 'বিল পিডিএফ জেনারেটর', href: '/billing', icon: Receipt },
     { name: 'পিডিএফ আর্কাইভ', href: '/documents', icon: FileText },
     { name: 'রিসাইকেল বিন', href: '/trash', icon: Trash2 },
   ];
