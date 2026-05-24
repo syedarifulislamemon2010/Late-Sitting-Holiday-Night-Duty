@@ -376,25 +376,34 @@ export default function RosterPage() {
     return Array.from(groupedMap.values());
   };
 
-  // Automatically calculate orderDate to be the previous working day of the earliest selected duty date
+  // Automatically calculate orderDate to be the previous working day of the earliest selected duty date or printed table date
   useEffect(() => {
     let earliestDate: string | null = null;
 
-    if (entryMode === 'EMPLOYEE_WISE') {
-      const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
-      const allDates: string[] = [];
-      activeEmployeeIds.forEach(empId => {
-        if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
-          allDates.push(...opt1Assignments[empId]);
-        }
-      });
-      if (allDates.length > 0) {
-        allDates.sort();
-        earliestDate = allDates[0];
-      }
+    // First try to calculate from the matched duties in the print table
+    const tableGroups = getGroupedDuties();
+    const tableDates = tableGroups.flatMap(g => g.dates);
+    if (tableDates.length > 0) {
+      tableDates.sort();
+      earliestDate = tableDates[0];
     } else {
-      if (assignmentForm.date) {
-        earliestDate = assignmentForm.date;
+      // Fallback to the form inputs if print table is empty
+      if (entryMode === 'EMPLOYEE_WISE') {
+        const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+        const allDates: string[] = [];
+        activeEmployeeIds.forEach(empId => {
+          if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
+            allDates.push(...opt1Assignments[empId]);
+          }
+        });
+        if (allDates.length > 0) {
+          allDates.sort();
+          earliestDate = allDates[0];
+        }
+      } else {
+        if (assignmentForm.date) {
+          earliestDate = assignmentForm.date;
+        }
       }
     }
 
@@ -402,7 +411,7 @@ export default function RosterPage() {
       const calculated = calculateOrderDate(earliestDate, holidays);
       setOrderDate(calculated);
     }
-  }, [opt1Assignments, assignmentForm.date, entryMode, holidays]);
+  }, [duties, selectedCell, printCategory, opt1Assignments, assignmentForm.date, entryMode, holidays]);
 
   async function loadData() {
     try {
@@ -1299,13 +1308,13 @@ export default function RosterPage() {
           {/* Interactive Print Mock Sheet */}
           <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner font-serif">
             {/* Renders exactly like A4 Page in Print Preview with standard 1.0 inch margins all around */}
-            <div className="print-a4-layout w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"Noto Sans Bengali", sans-serif', padding: '1.0in', boxSizing: 'border-box' }}>
+            <div className="print-a4-layout w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', padding: '1.0in', boxSizing: 'border-box' }}>
               
               {/* Janata Bank PLC Redesigned Header to match mockup logo exactly */}
               <div className="w-full flex justify-between items-start border-b-2 border-[#0b5e9e] pb-2">
                 {/* Left side: Logo & Tagline */}
                 <div className="flex items-start gap-2 text-left">
-                  <svg viewBox="0 0 512 512" className={`${printLogoSize} text-[#0b5e9e] shrink-0`} fill="none">
+                  <svg viewBox="0 0 512 512" style={{ width: '64px', height: '64px' }} className="text-[#0b5e9e] shrink-0" fill="none">
                     <g>
                       <path fill="currentColor" d="M175.7,351.4c-53.1,0-96.4-43.3-96.4-96.4c0-24.9,9.5-48.6,26.6-66.5l8.2,7.9c-15.1,15.8-23.5,36.7-23.5,58.7c0,46.9,38.1,85.1,85,85.1c46.9,0,85.1-38.2,85.1-85.1v-97.7h11.4v97.7C272.1,308.1,228.9,351.4,175.7,351.4z"/>
                       <path fill="currentColor" d="M175.7,329.1c-41.3,0-74.9-33.6-74.9-74.9c0-19.4,7.3-37.7,20.7-51.7l8.2,7.9c-11.3,11.8-17.5,27.4-17.5,43.9c0,35.1,28.5,63.6,63.5,63.6c35.1,0,63.6-28.5,63.6-63.6v-96.9h11.4v96.9C250.7,295.4,217,329.1,175.7,329.1z"/>
@@ -1319,19 +1328,19 @@ export default function RosterPage() {
                     </g>
                   </svg>
                   <div className="font-serif leading-none mt-0.5">
-                    <h2 className="text-[19px] font-extrabold text-[#0b5e9e]">জনতা ব্যাংক পিএলসি.</h2>
-                    <p className="text-[9.5px] font-bold text-[#555555] mt-1.5">উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
+                    <h2 style={{ fontFamily: 'Kalpurush', fontSize: '24px', fontWeight: 'bold', color: '#0b5e9e', lineHeight: '1.0' }}>জনতা ব্যাংক পিএলসি.</h2>
+                    <p style={{ fontFamily: 'Kalpurush', fontSize: '10px', fontWeight: 'bold', color: '#555555', marginTop: '4px', lineHeight: '1.0' }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
                   </div>
                 </div>
 
                 {/* Right side: Department */}
-                <div className="text-right font-serif leading-none mt-2">
-                  <h3 className="text-[13.5px] font-bold text-black">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
+                <div className="text-right mt-1">
+                  <h3 style={{ fontFamily: 'Kalpurush', fontSize: '18px', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '8px' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
                 </div>
               </div>
 
-              {/* Sub-header line: Reference and Date */}
-              <div className="w-full flex justify-between items-center text-[10.5px] font-serif pt-1.5 pb-1 border-b border-black/10 mt-1">
+              {/* Sub-header line: Reference and Date (With exactly 1 inch space below it) */}
+              <div className="w-full flex justify-between items-center text-[10px] pt-1 pb-1 border-b border-black/10 mt-1" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', marginBottom: '1.0in' }}>
                 <span className="font-bold">সূত্রঃ {orderRef}</span>
                 <span className="font-bold">
                   তারিখঃ {toBanglaDigits(new Date(orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং
@@ -1339,45 +1348,46 @@ export default function RosterPage() {
               </div>
 
               {/* Title and Main Body */}
-              <div className="flex-1 flex flex-col justify-start pt-3 space-y-4 text-[11px]">
-                <div className="space-y-4">
-                  <h2 className="text-center text-[14.5px] font-extrabold underline decoration-black underline-offset-4">
+              <div className="flex-1 flex flex-col justify-start pt-2 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                <div className="space-y-2.5">
+                  <h2 className="text-center text-[12px] font-extrabold underline decoration-black underline-offset-2" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
                     অফিস নির্দেশ
                   </h2>
                   
                   <p 
-                    className="text-justify leading-relaxed mt-3 text-[11px] text-slate-950 text-indent-8"
+                    className="text-justify leading-normal mt-2 text-[10px] text-slate-950 text-indent-8"
+                    style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}
                     dangerouslySetInnerHTML={{ __html: orderText }}
                   />
 
                   {/* Redesigned Printed Duty Table Grouped by Employee */}
                   {getGroupedDuties().length > 0 ? (
-                    <table className="w-full border-collapse border border-black text-center mt-3 text-[11px]">
+                    <table className="w-full border-collapse border border-black text-center mt-2.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                       <thead>
-                        <tr className="bg-slate-50 font-bold border-b border-black text-[11px]">
-                          <th className="border border-black p-1.5 w-[8%] text-center">ক্রমিক নং</th>
-                          <th className="border border-black p-1.5 text-left pl-3 w-[28%]">নির্বাহী/ কর্মকর্তার নাম</th>
-                          <th className="border border-black p-1.5 text-center w-[12%]">পদবী</th>
-                          <th className="border border-black p-1.5 text-left pl-3 w-[27%] text-[12px]">কাজের বিবরণ</th>
-                          <th className="border border-black p-1.5 text-center w-[25%]">তারিখ</th>
+                        <tr className="bg-slate-50 font-bold border-b border-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                          <th className="border border-black p-1 w-[8%] text-center">ক্রমিক নং</th>
+                          <th className="border border-black p-1 text-left pl-2 w-[28%]">নির্বাহী/ কর্মকর্তার নাম</th>
+                          <th className="border border-black p-1 text-center w-[12%]">পদবী</th>
+                          <th className="border border-black p-1 text-left pl-2 w-[27%]">কাজের বিবরণ</th>
+                          <th className="border border-black p-1 text-center w-[25%]">তারিখ</th>
                         </tr>
                       </thead>
                       <tbody>
                         {getGroupedDuties().map((group, index) => (
-                          <tr key={group.employee.id} className="text-black text-[11px]">
-                            <td className="border border-black p-1.5 text-center font-serif">
+                          <tr key={group.employee.id} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                            <td className="border border-black p-1 text-center font-normal" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                               {toBanglaDigits(index + 1)}
                             </td>
-                            <td className="border border-black p-1.5 text-left pl-3 leading-tight font-extrabold text-[12px]">
+                            <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                               {group.employee.name.startsWith('জনাব') ? group.employee.name : `জনাব ${group.employee.name}`}
                             </td>
-                            <td className="border border-black p-1.5 text-center font-semibold text-[11px]">
+                            <td className="border border-black p-1 text-center font-normal" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                               {getShortDesignation(group.employee.designation)}
                             </td>
-                            <td className="border border-black p-1.5 text-left pl-3 leading-tight text-[12px] font-semibold text-black">
+                            <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                               Customization এবং Development সংক্রান্ত
                             </td>
-                            <td className="border border-black p-1.5 text-center font-serif text-[11px] leading-snug tracking-tight">
+                            <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                               {getFormattedDateList(group.dates)}
                             </td>
                           </tr>
@@ -1391,10 +1401,10 @@ export default function RosterPage() {
                   )}
                 </div>
 
-                {/* Redesigned bottom-left signature aligned exactly like mockup with 1.0 inch top space below table */}
-                <div className="flex justify-between items-start text-xs font-serif" style={{ marginTop: '0.75in' }}>
-                  <div className="w-[50%] text-left space-y-0.5 pl-3 leading-tight">
-                    <p className="font-extrabold text-[11px] text-black">({signingOfficer || 'ডিজিএম নাম সিলেক্ট করুন'})</p>
+                {/* Redesigned bottom-left signature aligned exactly like mockup with exactly 1 inch of space above it */}
+                <div className="flex justify-between items-start text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', marginTop: '1.0in' }}>
+                  <div className="w-[50%] text-left space-y-0.5 pl-2 leading-none">
+                    <p className="font-extrabold text-[10px] text-black">({signingOfficer || 'ডিজিএম নাম সিলেক্ট করুন'})</p>
                     <p className="font-semibold text-slate-800 text-[10px]">{signingDesignation}</p>
                   </div>
                   <div className="w-[50%]" />

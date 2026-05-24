@@ -629,36 +629,46 @@ export default function BillingPage() {
         // JANATA BANK PLC PRINT MODE (Legal সাইজ মেমো বিবরণী)
         // ----------------------------------------------------
         <div className="space-y-6">
-          {/* Dynamic Media Print Style Overrides to ensure precise Legal spacing with Noto Sans Bengali font family */}
+          {/* Dynamic Media Print Style Overrides to ensure precise Legal spacing with Kalpurush font family */}
           <style dangerouslySetInnerHTML={{ __html: `
             @media print {
               @page {
                 size: legal !important;
-                margin-top: 0.6in !important;
-                margin-bottom: 0.75in !important;
-                margin-left: 1.3in !important;
-                margin-right: 0.5in !important;
+                margin: 0 !important;
               }
               .no-print { display: none !important; }
-              body { margin: 0 !important; padding: 0 !important; background: #fff !important; font-family: "Noto Sans Bengali", sans-serif !important; }
+              body { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                background: #fff !important; 
+                font-family: "Kalpurush", "Noto Sans Bengali", sans-serif !important; 
+                font-size: 10px !important;
+                line-height: 1.0 !important;
+              }
               /* Force resetting Next.js page margins & layout wrapper padding */
-              main, .flex-1, .p-4, .lg\\:p-8, .p-6, .space-y-6 {
+              main, .flex-1, .p-4, .lg\\:p-8, .p-6, .space-y-6, .py-6, .my-6 {
                 padding: 0 !important;
                 margin: 0 !important;
                 border: none !important;
                 box-shadow: none !important;
               }
               .print-legal-layout {
-                width: 100% !important;
-                height: 100% !important;
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
-                padding-left: 0 !important;
-                padding-right: 0 !important;
+                width: 8.5in !important;
+                height: 14.0in !important;
+                padding-top: 0.6in !important;
+                padding-bottom: 0.75in !important;
+                padding-left: 1.3in !important;
+                padding-right: 0.5in !important;
                 border: none !important;
                 box-shadow: none !important;
-                font-family: "Noto Sans Bengali", sans-serif !important;
-                font-size: 14px !important;
+                font-family: "Kalpurush", "Noto Sans Bengali", sans-serif !important;
+                font-size: 10px !important;
+                line-height: 1.0 !important;
+                box-sizing: border-box !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+                page-break-before: avoid !important;
+                overflow: hidden !important;
               }
             }
           `}} />
@@ -679,14 +689,14 @@ export default function BillingPage() {
                 className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-md animate-pulse"
               >
                 <Printer size={14} />
-                মেমো প্রিন্ট করুন (Legal Size)
+                ডাউনলোড / প্রিন্ট পিডিএফ (Legal Size)
               </button>
             </div>
           </div>
 
           {/* Interactive Print Options Configurator (No-print) */}
           <div className="no-print glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6">
-            <h3 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-indigo-500 text-base">বিল মেমো কাস্টমাইজেশন ও প্রফেশনাল কন্ট্রোল প্যানেল</h3>
+            <h3 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-50 to-indigo-500 text-base">বিল মেমো কাস্টমাইজেশন ও প্রফেশনাল কন্ট্রোল প্যানেল</h3>
             
             <div className="space-y-4">
               {/* Row 1: Document Metadata & Dates */}
@@ -765,151 +775,150 @@ export default function BillingPage() {
 
           {/* Interactive Print Mock Sheet */}
           <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner">
-            {/* Renders exactly like Legal Page in Print Preview with exact user-specified margins and Noto Sans Bengali font */}
-            <div className="print-legal-layout w-[8.5in] min-h-[14in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"Noto Sans Bengali", sans-serif', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in', boxSizing: 'border-box' }}>
+            {/* Renders exactly like Legal Page in Print Preview with exact user-specified margins and Kalpurush font */}
+            <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in', boxSizing: 'border-box', fontSize: '10px', lineHeight: '1.0' }}>
               
-              <div>
-                {/* Official Header - Right-aligned online banking dept name and date, NO bank name, NO logo */}
-                <div className="w-full flex justify-end text-right mb-6 font-serif">
-                  <div className="text-right">
-                    <h2 className="text-[17px] font-bold text-black uppercase">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                    <p className="text-[15px] font-bold text-black mt-1">তারিখ: {getBanglaDate(billDate)}</p>
-                  </div>
-                </div>
-
-                {/* Title and Main Body */}
-                <div className="flex-1 flex flex-col justify-between mt-4">
-                  <div>
-                    <h2 className="text-left text-[14px] font-bold underline decoration-black underline-offset-4 leading-normal">
-                      বিষয়: {subjectText}
-                    </h2>
-                    
-                    <div className="space-y-3 mt-3">
-                      <p className="text-justify leading-relaxed text-black text-[14px]">
-                        {openingParagraph}
-                      </p>
+              <div className="flex flex-col h-full justify-between">
+                <div>
+                  {/* Official Header - Right-aligned online banking dept name and date, NO bank name, NO logo */}
+                  <div className="w-full flex justify-end text-right mb-4">
+                    <div className="text-right leading-none">
+                      <h2 className="text-[16px] font-bold text-black uppercase" style={{ fontFamily: 'Kalpurush', fontSize: '16px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                      <p className="text-[10px] font-bold text-black mt-1.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>তারিখ: {getBanglaDate(billDate)} ইং</p>
                     </div>
+                  </div>
 
-                    {/* Redesigned Printed Legal Billing Table - HOBOHO match */}
-                    {printFilteredSummaries.length > 0 ? (
-                      <table className="w-full border-collapse border border-black text-center mt-5 text-[13px]">
-                        <thead>
-                          <tr className="bg-slate-50 font-bold border-b border-black text-[13px]">
-                            <th className="border border-black p-2 w-[8%] text-center leading-tight">ক্রমিক<br/>নং</th>
-                            <th className="border border-black p-2 text-left pl-3 w-[28%]">নাম ও পদবী</th>
-                            <th className="border border-black p-2 text-center w-[25%]">তারিখ</th>
-                            <th className="border border-black p-2 text-center w-[15%]">যাতায়াত</th>
-                            <th className="border border-black p-2 text-center w-[15%]">আপ্যায়ন</th>
-                            <th className="border border-black p-2 text-center w-[9%]">মোট</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {printFilteredSummaries.map((summary, index) => {
-                            const days = printCategory === 'LATE_SITTING' ? summary.lateDays : printCategory === 'HOLIDAY' ? summary.holidayDays : summary.nightDays;
-                            const empTransport = days * transportRate;
-                            const empApyaon = days * apyaonRate;
-                            const empTotal = empTransport + empApyaon;
-                            
-                            return (
-                              <tr key={summary.employeeId} className="text-black text-[13px]">
-                                <td className="border border-black p-2 text-center font-serif">
-                                  {toBanglaDigits(index + 1)}
-                                </td>
-                                <td className="border border-black p-2 text-left pl-3 leading-tight font-extrabold text-[13px]">
-                                  <p>{summary.name}</p>
-                                  <p className="text-[11px] text-slate-800 font-semibold mt-0.5">{summary.designation}</p>
-                                </td>
-                                <td className="border border-black p-2 font-serif text-center text-[12px] leading-snug">
-                                  <p>{formatWorkedDatesForCategory(summary.employeeId)}</p>
-                                  <p className="text-[10px] text-slate-600 mt-1 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>
-                                </td>
-                                <td className="border border-black p-2 font-serif text-center text-[12px] leading-tight">
-                                  <p className="text-slate-600">({toBanglaDigits(transportRate)}x{toBanglaDigits(days)})</p>
-                                  <p className="font-bold mt-1">- {toBanglaDigits(empTransport)}/-</p>
-                                </td>
-                                <td className="border border-black p-2 font-serif text-center text-[12px] leading-tight">
-                                  <p className="text-slate-600">({toBanglaDigits(apyaonRate)}x{toBanglaDigits(days)})</p>
-                                  <p className="font-bold mt-1">- {toBanglaDigits(empApyaon)}/-</p>
-                                </td>
-                                <td className="border border-black p-2 font-extrabold font-serif text-center text-[13px]">
-                                  {toBanglaDigits(empTotal)}/-
-                                </td>
-                              </tr>
-                            );
-                          })}
-                          
-                          {/* Grand Total Row at bottom - Mockup Exact Match */}
-                          <tr className="font-bold bg-slate-50/50 text-[13px] border-t-2 border-black">
-                            <td className="border border-black p-2 text-right pr-3" colSpan={3}>
-                              মোট - ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})
-                            </td>
-                            <td className="border border-black p-2 font-serif text-center">
-                              <p className="text-slate-600">({toBanglaDigits(transportRate)}x{toBanglaDigits(totalDaysAll)})</p>
-                              <p className="font-extrabold mt-1">- {toBanglaDigits(totalTransportAll)}/-</p>
-                            </td>
-                            <td className="border border-black p-2 font-serif text-center">
-                              <p className="text-slate-600">({toBanglaDigits(apyaonRate)}x{toBanglaDigits(totalDaysAll)})</p>
-                              <p className="font-extrabold mt-1">- {toBanglaDigits(totalApyaonAll)}/-</p>
-                            </td>
-                            <td className="border border-black p-2 font-extrabold font-serif text-center">
-                              {toBanglaDigits(grandTotalPrintAll)}/-
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div className="p-16 border border-dashed border-slate-350 rounded-xl text-center text-slate-500 italic mt-4">
-                        নির্বাচিত ক্যাটাগরির অধীনে এই মাসে কোনো ডিউটি বা বিল রেকর্ড পাওয়া যায়নি।
+                  {/* Title and Main Body */}
+                  <div className="flex-1 flex flex-col justify-between mt-2">
+                    <div>
+                      <h2 className="text-left text-[10px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        বিষয়: {subjectText}
+                      </h2>
+                      
+                      <div className="mt-2.5">
+                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                          {openingParagraph}
+                        </p>
                       </div>
-                    )}
 
-                    {/* Specific Government/Janata Bank PLC Paragraphs 02, 03, and 04 */}
-                    <div className="border-t border-black text-left pt-4 mt-6 font-serif space-y-3">
-                      <p className="text-justify leading-relaxed text-black text-[14px]">
-                        ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
+                      {/* Redesigned Printed Legal Billing Table - HOBOHO match */}
+                      {printFilteredSummaries.length > 0 ? (
+                        <table className="w-full border-collapse border border-black text-center mt-3 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                          <thead>
+                            <tr className="bg-slate-50 font-bold border-b border-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                              <th className="border border-black p-1.5 w-[8%] text-center leading-tight">ক্রমিক<br/>নং</th>
+                              <th className="border border-black p-1.5 text-left pl-3 w-[28%]">নাম ও পদবী</th>
+                              <th className="border border-black p-1.5 text-center w-[25%]">তারিখ</th>
+                              <th className="border border-black p-1.5 text-center w-[15%]">যাতায়াত</th>
+                              <th className="border border-black p-1.5 text-center w-[15%]">আপ্যায়ন</th>
+                              <th className="border border-black p-1.5 text-center w-[9%]">মোট</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {printFilteredSummaries.map((summary, index) => {
+                              const days = printCategory === 'LATE_SITTING' ? summary.lateDays : printCategory === 'HOLIDAY' ? summary.holidayDays : summary.nightDays;
+                              const empTransport = days * transportRate;
+                              const empApyaon = days * apyaonRate;
+                              const empTotal = empTransport + empApyaon;
+                              
+                              return (
+                                <tr key={summary.employeeId} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                    {toBanglaDigits(index + 1)}
+                                  </td>
+                                  <td className="border border-black p-1.5 text-left pl-3 leading-tight font-extrabold text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                    <p>{summary.name}</p>
+                                    <p className="text-[9px] text-slate-800 font-semibold mt-0.5">{summary.designation}</p>
+                                  </td>
+                                  <td className="border border-black p-1.5 text-center text-[10px] leading-snug" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                    <p>{formatWorkedDatesForCategory(summary.employeeId)}</p>
+                                    <p className="text-[9px] text-slate-700 mt-1 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>
+                                  </td>
+                                  <td className="border border-black p-1.5 text-center text-[10px] leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                    ({toBanglaDigits(transportRate)}x{toBanglaDigits(days)}) = {toBanglaDigits(empTransport)}/-
+                                  </td>
+                                  <td className="border border-black p-1.5 text-center text-[10px] leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                    ({toBanglaDigits(apyaonRate)}x{toBanglaDigits(days)}) = {toBanglaDigits(empApyaon)}/-
+                                  </td>
+                                  <td className="border border-black p-1.5 font-extrabold text-center text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                    {toBanglaDigits(empTotal)}/-
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            
+                            {/* Grand Total Row at bottom - Mockup Exact Match */}
+                            <tr className="font-bold bg-slate-50/50 text-[10px] border-t-2 border-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                              <td className="border border-black p-1.5 text-left pl-3" colSpan={3} style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                <p>মোট দিন = {toBanglaDigits(totalDaysAll)} দিন</p>
+                                <p className="mt-1">মোট টাকা = ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</p>
+                              </td>
+                              <td className="border border-black p-1.5 text-center text-[10px] leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                ({toBanglaDigits(transportRate)}x{toBanglaDigits(totalDaysAll)}) = {toBanglaDigits(totalTransportAll)}/-
+                              </td>
+                              <td className="border border-black p-1.5 text-center text-[10px] leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                ({toBanglaDigits(apyaonRate)}x{toBanglaDigits(totalDaysAll)}) = {toBanglaDigits(totalApyaonAll)}/-
+                              </td>
+                              <td className="border border-black p-1.5 font-extrabold text-center text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                {toBanglaDigits(grandTotalPrintAll)}/-
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-16 border border-dashed border-slate-355 rounded-xl text-center text-slate-500 italic mt-4">
+                          নির্বাচিত ক্যাটাগরির অধীনে এই মাসে কোনো ডিউটি বা বিল রেকর্ড পাওয়া যায়নি।
+                        </div>
+                      )}
+
+                      {/* Specific Government/Janata Bank PLC Paragraphs 02, 03, and 04 */}
+                      <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                          ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
+                        </p>
+                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                          ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                        </p>
+                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                          ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(grandTotalPrintAll)}/- ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'}, {representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right-aligned payee signature block below Paragraph 4 and sitting directly above left routing list */}
+                  <div className="w-full flex justify-end text-right mb-4" style={{ marginTop: '0.5in' }}>
+                    <div className="text-right leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', paddingRight: '0.1in' }}>
+                      <p className="font-extrabold text-[10px]">({representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'})</p>
+                      <p className="text-[10px] font-bold text-slate-800 mt-1">{representativeDesignation || 'এসও-আইটি'}</p>
+                    </div>
+                  </div>
+
+                  {/* Left-aligned Routing List with nice gaps, underlines and font size 10, NOT bold */}
+                  <div className="w-full text-left mt-6 pl-1 no-break-inside" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                    <div style={{ marginBottom: '1.0in' }}>
+                      <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
-                      <p className="text-justify leading-relaxed text-black text-[14px]">
-                        ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = {toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')}) এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = {toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')}) অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                    </div>
+                    <div style={{ marginBottom: '1.0in' }}>
+                      <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
-                      <p className="text-justify leading-relaxed text-black text-[14px]">
-                        ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = {toBanglaDigits(grandTotalPrintAll)}/- ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')}) {representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'}, {representativeDesignation || 'এসও-আইটি'} এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                    </div>
+                    <div style={{ marginBottom: '1.0in' }}>
+                      <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
+                      </p>
+                    </div>
+                    <div style={{ marginBottom: '1.0in' }}>
+                      <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
                   </div>
-                </div>
 
-                {/* Right-aligned payee signature block below Paragraph 4 and sitting directly above left routing list */}
-                <div className="w-full flex justify-end text-right font-serif mt-10 mb-8">
-                  <div className="text-center font-serif leading-snug" style={{ marginRight: '0.4in' }}>
-                    <p className="font-extrabold text-[14px]">({representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'})</p>
-                    <p className="text-[12px] font-bold text-slate-800 mt-1">{representativeDesignation || 'সিনিয়র অফিসার-আইটি (এসও-আইটি)'}</p>
-                  </div>
                 </div>
-
-                {/* Left-aligned Routing List with bold, underlines and spacious gaps */}
-                <div className="w-full text-left font-serif space-y-8 mt-6 pl-2 no-break-inside">
-                  <div>
-                    <p className="font-extrabold text-[14px] inline-block border-b-2 border-black pb-0.5">
-                      এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপে।
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-extrabold text-[14px] inline-block border-b-2 border-black pb-0.5">
-                      এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপে।
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-extrabold text-[14px] inline-block border-b-2 border-black pb-0.5">
-                      উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপে।
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-extrabold text-[14px] inline-block border-b-2 border-black pb-0.5">
-                      উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপে।
-                    </p>
-                  </div>
-                </div>
-
               </div>
 
             </div>

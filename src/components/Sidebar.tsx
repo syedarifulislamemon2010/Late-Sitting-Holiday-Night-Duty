@@ -25,6 +25,36 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
+  // Dynamic Premium Themes Definition
+  const themes = [
+    { name: 'Janata Blue', key: 'blue', primary: '#0b5e9e', hover: '#094d82', darkPrimary: '#38bdf8', darkHover: '#0ea5e9', bg: 'bg-[#0b5e9e]' },
+    { name: 'Indigo Premium', key: 'indigo', primary: '#4f46e5', hover: '#4338ca', darkPrimary: '#818cf8', darkHover: '#6366f1', bg: 'bg-[#4f46e5]' },
+    { name: 'Emerald Active', key: 'emerald', primary: '#10b981', hover: '#059669', darkPrimary: '#34d399', darkHover: '#059669', bg: 'bg-[#10b981]' },
+    { name: 'Royal Violet', key: 'violet', primary: '#7c3aed', hover: '#6d28d9', darkPrimary: '#a78bfa', darkHover: '#7c3aed', bg: 'bg-[#7c3aed]' },
+    { name: 'Rose Petal', key: 'rose', primary: '#e11d48', hover: '#be123c', darkPrimary: '#fb7185', darkHover: '#e11d48', bg: 'bg-[#e11d48]' },
+    { name: 'Amber Gold', key: 'amber', primary: '#d97706', hover: '#b45309', darkPrimary: '#fbbf24', darkHover: '#d97706', bg: 'bg-[#d97706]' }
+  ];
+
+  const [activeTheme, setActiveTheme] = useState('blue');
+
+  const applyTheme = (themeKey: string, isDark: boolean) => {
+    const theme = themes.find(t => t.key === themeKey) || themes[0];
+    const root = document.documentElement;
+    if (isDark) {
+      root.style.setProperty('--primary', theme.darkPrimary);
+      root.style.setProperty('--primary-hover', theme.darkHover);
+    } else {
+      root.style.setProperty('--primary', theme.primary);
+      root.style.setProperty('--primary-hover', theme.hover);
+    }
+  };
+
+  const handleThemeChange = (themeKey: string) => {
+    setActiveTheme(themeKey);
+    localStorage.setItem('themeColor', themeKey);
+    applyTheme(themeKey, darkMode);
+  };
+
   useEffect(() => {
     const loadUser = () => {
       const stored = localStorage.getItem('currentUser');
@@ -53,6 +83,10 @@ export default function Sidebar() {
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    const savedThemeColor = localStorage.getItem('themeColor') || 'blue';
+    setActiveTheme(savedThemeColor);
+    applyTheme(savedThemeColor, isDark);
   }, []);
 
   const toggleDarkMode = () => {
@@ -65,6 +99,8 @@ export default function Sidebar() {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
+    const savedThemeColor = localStorage.getItem('themeColor') || 'blue';
+    applyTheme(savedThemeColor, nextDark);
   };
 
   const handleLogout = async () => {
@@ -100,7 +136,7 @@ export default function Sidebar() {
       {/* Mobile Top Navigation */}
       <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-2">
-          <svg viewBox="0 0 512 512" className="h-8 w-8 shrink-0 text-[#00BCD4] dark:text-[#4DD0E1]" fill="none">
+          <svg viewBox="0 0 512 512" className="h-8 w-8 shrink-0 text-primary" fill="none">
             <g>
               <path fill="currentColor" d="M175.7,351.4c-53.1,0-96.4-43.3-96.4-96.4c0-24.9,9.5-48.6,26.6-66.5l8.2,7.9c-15.1,15.8-23.5,36.7-23.5,58.7c0,46.9,38.1,85.1,85,85.1c46.9,0,85.1-38.2,85.1-85.1v-97.7h11.4v97.7C272.1,308.1,228.9,351.4,175.7,351.4z"/>
               <path fill="currentColor" d="M175.7,329.1c-41.3,0-74.9-33.6-74.9-74.9c0-19.4,7.3-37.7,20.7-51.7l8.2,7.9c-11.3,11.8-17.5,27.4-17.5,43.9c0,35.1,28.5,63.6,63.5,63.6c35.1,0,63.6-28.5,63.6-63.6v-96.9h11.4v96.9C250.7,295.4,217,329.1,175.7,329.1z"/>
@@ -142,7 +178,7 @@ export default function Sidebar() {
         {/* Sidebar Header Logo */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <svg viewBox="0 0 512 512" className="h-9 w-9 shrink-0 text-[#00BCD4] dark:text-[#4DD0E1]" fill="none">
+            <svg viewBox="0 0 512 512" className="h-9 w-9 shrink-0 text-primary" fill="none">
               <g>
                 <path fill="currentColor" d="M175.7,351.4c-53.1,0-96.4-43.3-96.4-96.4c0-24.9,9.5-48.6,26.6-66.5l8.2,7.9c-15.1,15.8-23.5,36.7-23.5,58.7c0,46.9,38.1,85.1,85,85.1c46.9,0,85.1-38.2,85.1-85.1v-97.7h11.4v97.7C272.1,308.1,228.9,351.4,175.7,351.4z"/>
                 <path fill="currentColor" d="M175.7,329.1c-41.3,0-74.9-33.6-74.9-74.9c0-19.4,7.3-37.7,20.7-51.7l8.2,7.9c-11.3,11.8-17.5,27.4-17.5,43.9c0,35.1,28.5,63.6,63.5,63.6c35.1,0,63.6-28.5,63.6-63.6v-96.9h11.4v96.9C250.7,295.4,217,329.1,175.7,329.1z"/>
@@ -156,8 +192,8 @@ export default function Sidebar() {
               </g>
             </svg>
             <div>
-              <h1 className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight">ডিউটি পোর্টাল</h1>
-              <p className="text-[10px] font-medium text-[#00BCD4] dark:text-[#4DD0E1] uppercase tracking-wider">জনতা ব্যাংক পিএলসি.</p>
+              <h1 className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight font-sans">ডিউটি পোর্টাল</h1>
+              <p className="text-[9px] font-bold text-primary uppercase tracking-wider">জনতা ব্যাংক পিএলসি.</p>
             </div>
           </div>
           <button 
@@ -178,9 +214,9 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 group ${isActive ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 shadow-sm shadow-indigo-50/50 dark:shadow-none font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-200'}`}
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 group ${isActive ? 'bg-primary/10 text-primary shadow-sm font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-200'}`}
               >
-                <Icon size={18} className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-slate-500 dark:group-hover:text-slate-300'}`} />
+                <Icon size={18} className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500 dark:group-hover:text-slate-300'}`} />
                 {item.name}
               </Link>
             );
@@ -188,7 +224,22 @@ export default function Sidebar() {
         </nav>
 
         {/* Sidebar Footer Controls */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-3 bg-slate-50/50 dark:bg-slate-950/20">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-4 bg-slate-50/50 dark:bg-slate-950/20">
+          {/* Dynamic Theme Color Selector */}
+          <div className="px-3 space-y-1.5">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider font-sans">সিস্টেম কালার থিম</span>
+            <div className="flex gap-2 items-center py-1">
+              {themes.map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => handleThemeChange(t.key)}
+                  className={`w-5 h-5 rounded-full ${t.bg} border-2 transition-all hover:scale-125 ${activeTheme === t.key ? 'border-slate-800 dark:border-white scale-110 shadow-md' : 'border-transparent'}`}
+                  title={t.name}
+                />
+              ))}
+            </div>
+          </div>
+
           <div className="flex items-center justify-between px-3">
             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium font-sans">থিম পরিবর্তন</span>
             <button 
@@ -200,7 +251,7 @@ export default function Sidebar() {
             </button>
           </div>
           
-          <div className="px-3 py-2 bg-indigo-50/40 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-950/30 rounded-xl flex items-center gap-2.5">
+          <div className="px-3 py-2 bg-primary/5 border border-primary/10 rounded-xl flex items-center gap-2.5">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <div className="text-[11px] leading-tight">
               <p className="font-semibold text-slate-700 dark:text-slate-300">ডাটাবেজ কানেক্টেড</p>
