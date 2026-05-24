@@ -1178,6 +1178,47 @@ export default function RosterPage() {
         // GOVERNMENT PRINT MODE (অফিস আদেশ / জিও)
         // ----------------------------------------------------
         <div className="space-y-6">
+          {/* Dynamic Media Print Style Overrides to ensure A4 fits on exactly 1 single page with zero double margins */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            @media print {
+              @page {
+                size: A4 !important;
+                margin: 0 !important;
+              }
+              .no-print { display: none !important; }
+              body { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                background: #fff !important; 
+                font-family: "Kalpurush", "Noto Sans Bengali", sans-serif !important; 
+                font-size: 10px !important;
+                line-height: 1.0 !important;
+              }
+              /* Force resetting Next.js page margins & layout wrapper padding */
+              main, .flex-1, .p-4, .lg\\:p-8, .p-6, .space-y-6, .py-6, .my-6 {
+                padding: 0 !important;
+                margin: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+              }
+              .print-a4-layout {
+                width: 210mm !important;
+                height: 297mm !important;
+                padding: 1.0in !important;
+                border: none !important;
+                box-shadow: none !important;
+                font-family: "Kalpurush", "Noto Sans Bengali", sans-serif !important;
+                font-size: 10px !important;
+                line-height: 1.0 !important;
+                box-sizing: border-box !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+                page-break-before: avoid !important;
+                overflow: hidden !important;
+              }
+            }
+          `}} />
+
           {/* Back Controls (No-print) */}
           <div className="no-print flex items-center justify-between glass-card p-4 rounded-2xl">
             <button
@@ -1194,7 +1235,7 @@ export default function RosterPage() {
                 className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-md animate-pulse"
               >
                 <Printer size={14} />
-                প্রিন্ট করুন (A4 Size)
+                ডাউনলোড / প্রিন্ট পিডিএফ (A4 Size)
               </button>
             </div>
           </div>
@@ -1308,7 +1349,7 @@ export default function RosterPage() {
           {/* Interactive Print Mock Sheet */}
           <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner font-serif">
             {/* Renders exactly like A4 Page in Print Preview with standard 1.0 inch margins all around */}
-            <div className="print-a4-layout w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', padding: '1.0in', boxSizing: 'border-box' }}>
+            <div className="print-a4-layout w-[210mm] h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', padding: '1.0in', boxSizing: 'border-box' }}>
               
               {/* Janata Bank PLC Redesigned Header to match mockup logo exactly */}
               <div className="w-full flex justify-between items-start border-b-2 border-[#0b5e9e] pb-2">
