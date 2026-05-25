@@ -67,7 +67,6 @@ export default function Sidebar() {
     { name: 'ড্যাশবোর্ড', href: '/', icon: LayoutDashboard },
     { name: 'নির্বাহী প্যানেল', href: '/executive', icon: UserCheck },
     { name: 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
-    { name: 'সেল', href: '/employees', icon: Building2 },
     { name: 'অফিস অর্ডার', href: '/roster', icon: CalendarRange },
     { name: 'বিল', href: '/billing', icon: Receipt },
     { name: 'আর্কাইভ', href: '/documents', icon: FileText },
@@ -124,7 +123,7 @@ export default function Sidebar() {
                 <path fill="currentColor" d="M175.7,284.4c-17.6,0-32-14.3-32-32c0-8.3,3.1-16.1,8.8-22.1l8.2,7.9c-3.7,3.8-5.7,8.9-5.7,14.2c0,11.4,9.2,20.6,20.6,20.6c11.4,0,20.6-9.2,20.6-20.6v-95.2h11.4v95.2C207.7,270.1,193.3,284.4,175.7,284.4z"/>
                 <path fill="currentColor" d="M400.1,255.1c9.9-7.8,15.9-19.8,15.9-32.7c0-23-18.7-41.6-41.6-41.6h-85.1v11.7h85.1c16.5,0,29.9,13.4,29.9,29.9c0,11.8-7,22.5-17.8,27.3l-12.1,5.4l12.1,5.4c10.8,4.8,17.8,15.5,17.8,27.3c0,16.5-13.4,30-29.9,30H270.2c-2.7,4.1-5.8,8-9,11.7h113.1c23,0,41.6-18.7,41.6-41.7C416,274.8,410,262.8,400.1,255.1z"/>
                 <path fill="currentColor" d="M442.1,218.5c0-33.9-27.6-61.5-61.5-61.5h-91.4v11.4h91.4c27.7,0,50.2,22.5,50.2,50.2c0,12.1-4.4,23.8-12.3,32.8l-3.3,3.7l3.3,3.7c7.9,9.1,12.3,20.8,12.3,32.9c0,27.7-22.5,50.2-50.2,50.2h-132c-5,4.2-10.5,8-16.2,11.4h148.2c33.9,0,61.5-27.6,61.5-61.5c0-13.2-4.3-26-12.1-36.6C437.9,244.6,442.1,231.8,442.1,218.5z"/>
-                <path fill="currentColor" d="M362.7,204.7{h-73.5v11.4h73.5c5.4,0,9.7,4.3,9.7,9.7c0,2.6-1,5-2.9,6.9c-1.8,1.8-4.2,2.8-6.8,2.8h-73.5v11.4h73.5c5.7,0,11-2.2,14.9-6.2c4-4,6.2-9.3,6.2-14.9C383.8,214.2,374.3,204.7,362.7,204.7z"/>
+                <path fill="currentColor" d="M362.7,204.7h-73.5v11.4h73.5c5.4,0,9.7,4.3,9.7,9.7c0,2.6-1,5-2.9,6.9c-1.8,1.8-4.2,2.8-6.8,2.8h-73.5v11.4h73.5c5.7,0,11-2.2,14.9-6.2c4-4,6.2-9.3,6.2-14.9C383.8,214.2,374.3,204.7,362.7,204.7z"/>
                 <path fill="currentColor" d="M362.7,263.3h-73.8c-0.3,3.8-0.8,7.6-1.4,11.4h75.2c5.4,0,9.7,4.4,9.7,9.7c0,2.6-1,5.1-2.9,6.9c-1.8,1.8-4.3,2.8-6.8,2.8h-80.4c-1.4,3.9-3.1,7.7-4.9,11.4h85.4c5.6,0,10.9-2.2,14.8-6.1c4-3.9,6.3-9.3,6.3-15C383.8,272.7,374.3,263.3,362.7,263.3z"/>
                 <path fill="currentColor" d="M255.8,420.3c-64.5,0-129-12.9-192.9-38.6l-2.7-1.1l-0.7-2.8c-24.7-97.3-24.7-177.2,0.2-244.3l0.9-2.4l2.3-0.9c128.4-51.4,258.3-51.4,386.2,0l2.7,1.1l0.7,2.8c24.7,97.3,24.7,177.2-0.2,244.3l-0.9,2.4l-2.3,0.9C384.9,407.4,320.3,420.3,255.8,420.3z M69.8,372.2c123.4,48.9,248.8,48.9,372.7-0.1c22.9-63.7,22.8-139.8-0.3-232.3c-123.4-48.9-248.8-48.9-372.7,0.1C46.6,203.6,46.7,279.7,69.8,372.2z"/>
               </g>
@@ -162,12 +161,12 @@ export default function Sidebar() {
         </nav>
 
         {/* Sidebar Footer Controls */}
-        <div className="p-4 border-t border-slate-100 space-y-4 bg-slate-50/50">
+        <div className="p-4 border-t border-slate-100 space-y-4 bg-slate-50/30">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-xl text-xs font-semibold transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50/80 dark:bg-red-950/20 text-red-650 hover:text-white dark:text-red-400 hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-600 hover:scale-[1.03] active:scale-[0.98] border border-red-200/60 dark:border-red-900/30 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm hover:shadow-[0_0_15px_rgba(239,68,68,0.35)] cursor-pointer group"
           >
-            <LogOut size={14} />
+            <LogOut size={13} className="transition-transform duration-300 group-hover:-translate-x-0.5" />
             লগআউট করুন
           </button>
         </div>

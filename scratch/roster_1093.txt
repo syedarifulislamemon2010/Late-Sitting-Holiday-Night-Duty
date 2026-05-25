@@ -1,0 +1,49 @@
+Created At: 2026-05-25T10:35:46Z
+Completed At: 2026-05-25T10:35:47Z
+File Path: `file:///e:/Late-Sitting-Holiday-Night-Duty/src/app/roster/page.tsx`
+Total Lines: 1779
+Total Bytes: 98812
+Showing lines 1195 to 1235
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1195:                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 bg-slate-50/20 dark:bg-slate-950/10">
+1196:                         {filteredFormEmployees.length > 0 ? (
+1197:                           filteredFormEmployees.map(emp => {
+1198:                             const isChecked = assignmentForm.selectedEmployeeIds.includes(emp.id);
+1199:                             return (
+1200:                                <div 
+1201:                                 key={emp.id}
+1202:                                 onClick={() => handleEmployeeToggle(emp.id)}
+1203:                                 className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border ${isChecked ? 'bg-indigo-50/40 border-indigo-200/50 dark:bg-indigo-950/20 dark:border-indigo-800/30' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
+1204:                               >
+1205:                                 <div className="flex items-center gap-2">
+1206:                                   <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
+1207:                                     {isChecked && <Check size={10} strokeWidth={3} />}
+1208:                                   </div>
+1209:                                   <div>
+1210:                                     <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">{emp.name}</p>
+1211:                                     <p className="text-[10px] text-slate-400 mt-0.5">{emp.designation}</p>
+1212:                                   </div>
+1213:                                 </div>
+1214:                                 <span className="text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded uppercase font-sans">{emp.cell.name}</span>
+1215:                               </div>
+1216:                             );
+1217:                           })
+1218:                         ) : (
+1219:                           <p className="text-[11px] text-center text-slate-400 py-4">কর্মকর্তা পাওয়া যায়নি</p>
+1220:                         )}
+1221:                       </div>
+1222:                     </div>
+1223:                   </div>
+1224:                 )}
+1225: 
+1226:                 <button
+1227:                   type="submit"
+1228:                   disabled={submitting}
+1229:                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-sm font-semibold transition-colors shadow-md mt-4"
+1230:                 >
+1231:                   {submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন'}
+1232:                 </button>
+1233:               </form>
+1234:             </div>
+1235: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
 
 function calculateAllowances(type: string) {
   switch (type) {
@@ -149,12 +150,26 @@ export async function DELETE(
     };
     
     // Save to Trash
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    let deletedBy: string | null = null;
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (user) {
+          deletedBy = user.username;
+        }
+      }
+    }
+
     await prisma.trash.create({
       data: {
         entityType: 'DUTY',
         entityId: dutyId,
         name: `${duty.employee.name} - ${typeMapBangla[duty.type] || duty.type} (${duty.date})`,
-        data: JSON.stringify(duty)
+        data: JSON.stringify(duty),
+        deletedBy
       }
     });
     

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import fs from 'fs';
 import path from 'path';
+import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
@@ -32,12 +33,26 @@ export async function DELETE(request: Request) {
     }
 
     // Save to Trash (keep physical file for restoration support)
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    let deletedBy: string | null = null;
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (user) {
+          deletedBy = user.username;
+        }
+      }
+    }
+
     await prisma.trash.create({
       data: {
         entityType: 'DOCUMENT',
         entityId: doc.id,
         name: `দলিল: ${doc.name}`,
-        data: JSON.stringify(doc)
+        data: JSON.stringify(doc),
+        deletedBy
       }
     });
 

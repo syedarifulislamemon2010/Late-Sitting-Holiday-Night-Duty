@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
 
 export async function PUT(
   request: Request,
@@ -74,12 +75,26 @@ export async function DELETE(
     }
     
     // Create soft-delete Trash entry
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    let deletedBy: string | null = null;
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (user) {
+          deletedBy = user.username;
+        }
+      }
+    }
+
     await prisma.trash.create({
       data: {
         entityType: 'EMPLOYEE',
         entityId: employeeId,
         name: `${employee.name} (${employee.designation})`,
-        data: JSON.stringify(employee)
+        data: JSON.stringify(employee),
+        deletedBy
       }
     });
     

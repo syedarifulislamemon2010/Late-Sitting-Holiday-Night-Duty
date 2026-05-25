@@ -31,6 +31,7 @@ export default function TrashPage() {
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const fetchTrash = async () => {
     try {
@@ -50,6 +51,25 @@ export default function TrashPage() {
   useEffect(() => {
     fetchTrash();
   }, []);
+
+  // Clear selections on tab or search queries change for safety
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [activeTab, searchQuery]);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredItems.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredItems.map(item => item.id));
+    }
+  };
 
   const handleRestore = async (item: TrashItem) => {
     if (!confirm(`আপনি কি নিশ্চিতভাবে "${item.name}" পুনরুদ্ধার করতে চান?`)) return;
@@ -98,6 +118,64 @@ export default function TrashPage() {
       }
     } catch (err) {
       console.error('Error purging:', err);
+      alert('স্থায়ীভাবে মুছার প্রক্রিয়া ব্যর্থ হয়েছে।');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`আপনি কি নিশ্চিতভাবে নির্বাচিত ${toBanglaDigits(selectedIds.length)}টি রেকর্ড পুনরুদ্ধার করতে চান?`)) return;
+
+    try {
+      setActionLoading(-1); // bulk indicator
+      const res = await fetch('/api/trash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'restore', trashIds: selectedIds })
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        alert(result.message || 'রেকর্ডগুলো সফলভাবে পুনরুদ্ধার করা হয়েছে!');
+        setSelectedIds([]);
+        fetchTrash();
+      } else {
+        alert(result.message || 'রেকর্ড পুনরুদ্ধার করতে ব্যর্থ হয়েছে।');
+      }
+    } catch (err: any) {
+      console.error('Error bulk restoring:', err);
+      alert('পুনরুদ্ধার প্রক্রিয়া ব্যর্থ হয়েছে।');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBulkPurge = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`সতর্কবার্তা: নির্বাচিত ${toBanglaDigits(selectedIds.length)}টি রেকর্ড স্থায়ীভাবে মুছে ফেলা হবে এবং এটি আর কখনো ফেরত আনা সম্ভব হবে না।\n\nআপনি কি নিশ্চিতভাবে স্থায়ীভাবে মুছতে চান?`)) return;
+
+    try {
+      setActionLoading(-1); // bulk indicator
+      const res = await fetch('/api/trash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'purge', trashIds: selectedIds })
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        alert(result.message || 'রেকর্ডগুলো স্থায়ীভাবে মুছে ফেলা হয়েছে!');
+        setSelectedIds([]);
+        fetchTrash();
+      } else {
+        alert(result.message || 'রেকর্ডটি স্থায়ীভাবে মুছতে ব্যর্থ হয়েছে।');
+      }
+    } catch (err) {
+      console.error('Error bulk purging:', err);
       alert('স্থায়ীভাবে মুছার প্রক্রিয়া ব্যর্থ হয়েছে।');
     } finally {
       setActionLoading(null);
@@ -224,6 +302,37 @@ export default function TrashPage() {
             </div>
           </div>
 
+          {/* Bulk Action Header bar */}
+          {selectedIds.length > 0 && (
+            <div className="flex items-center justify-between p-3.5 bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-xl animate-fade-in">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  {toBanglaDigits(selectedIds.length)}টি রেকর্ড নির্বাচিত করা হয়েছে
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={handleBulkRestore}
+                  disabled={actionLoading !== null}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  <RotateCcw size={12} />
+                  সব রিস্টোর করুন
+                </button>
+                <button
+                  onClick={handleBulkPurge}
+                  disabled={actionLoading !== null}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 size={12} />
+                  সব চিরতরে মুছুন
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Trash List Table */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-3">
@@ -240,6 +349,14 @@ export default function TrashPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/70 dark:bg-slate-950/40 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-850">
+                    <th className="px-5 py-3.5 w-12 text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={filteredItems.length > 0 && selectedIds.length === filteredItems.length}
+                        onChange={toggleSelectAll}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer h-4 w-4"
+                      />
+                    </th>
                     <th className="px-5 py-3.5">রেকর্ডের নাম ও বিবরণ</th>
                     <th className="px-5 py-3.5 w-32">ধরণ</th>
                     <th className="px-5 py-3.5 w-44">মুছে ফেলার তারিখ</th>
@@ -261,10 +378,21 @@ export default function TrashPage() {
                       hour12: true
                     });
 
-                    const isBtnLoading = actionLoading === item.id;
+                    const isBtnLoading = actionLoading === item.id || actionLoading === -1;
+                    const isSelected = selectedIds.includes(item.id);
 
                     return (
-                      <tr key={item.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-950/10 transition-colors">
+                      <tr key={item.id} className={`hover:bg-slate-50/40 dark:hover:bg-slate-950/10 transition-colors ${isSelected ? 'bg-indigo-50/20 dark:bg-indigo-950/10' : ''}`}>
+                        {/* Checkbox Column */}
+                        <td className="px-5 py-4 w-12 text-center">
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected}
+                            onChange={() => toggleSelect(item.id)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer h-4 w-4"
+                          />
+                        </td>
+
                         {/* Name Column */}
                         <td className="px-5 py-4">
                           <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{item.name}</p>

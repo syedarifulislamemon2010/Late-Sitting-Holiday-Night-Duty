@@ -28,6 +28,69 @@ const STRICT_DESIGNATIONS = [
   'সহকারী মহাব্যবস্থাপক'
 ];
 
+const PALETTES = [
+  {
+    border: 'border-l-4 border-l-indigo-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
+    badge: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30',
+    title: 'text-indigo-900 dark:text-indigo-100 group-hover:text-indigo-650',
+    bg: 'bg-indigo-50/10 dark:bg-indigo-950/5',
+    name: 'indigo'
+  },
+  {
+    border: 'border-l-4 border-l-emerald-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
+    badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30',
+    title: 'text-emerald-900 dark:text-emerald-100 group-hover:text-emerald-655',
+    bg: 'bg-emerald-50/10 dark:bg-emerald-950/5',
+    name: 'emerald'
+  },
+  {
+    border: 'border-l-4 border-l-amber-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
+    badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30',
+    title: 'text-amber-900 dark:text-amber-100 group-hover:text-amber-655',
+    bg: 'bg-amber-50/10 dark:bg-emerald-950/5',
+    name: 'amber'
+  },
+  {
+    border: 'border-l-4 border-l-rose-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
+    badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30',
+    title: 'text-rose-900 dark:text-rose-100 group-hover:text-rose-655',
+    bg: 'bg-rose-50/10 dark:bg-rose-950/5',
+    name: 'rose'
+  },
+  {
+    border: 'border-l-4 border-l-sky-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
+    badge: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30',
+    title: 'text-sky-900 dark:text-sky-100 group-hover:text-sky-655',
+    bg: 'bg-sky-50/10 dark:bg-sky-950/5',
+    name: 'sky'
+  },
+  {
+    border: 'border-l-4 border-l-violet-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
+    badge: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30',
+    title: 'text-violet-900 dark:text-violet-100 group-hover:text-violet-655',
+    bg: 'bg-violet-50/10 dark:bg-violet-950/5',
+    name: 'violet'
+  },
+  {
+    border: 'border-l-4 border-l-teal-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
+    badge: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-400 border border-teal-100 dark:border-teal-900/30',
+    title: 'text-teal-900 dark:text-teal-100 group-hover:text-teal-655',
+    bg: 'bg-teal-50/10 dark:bg-teal-950/5',
+    name: 'teal'
+  },
+  {
+    border: 'border-l-4 border-l-fuchsia-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
+    badge: 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-400 border border-fuchsia-100 dark:border-fuchsia-900/30',
+    title: 'text-fuchsia-900 dark:text-fuchsia-100 group-hover:text-fuchsia-655',
+    bg: 'bg-fuchsia-50/10 dark:bg-fuchsia-950/5',
+    name: 'fuchsia'
+  }
+];
+
+const getPalette = (id: number) => {
+  return PALETTES[id % PALETTES.length];
+};
+
 export default function ExecutivesPage() {
   const [executives, setExecutives] = useState<Executive[]>([]);
   const [loading, setLoading] = useState(true);
@@ -407,43 +470,44 @@ export default function ExecutivesPage() {
           {/* Executives Grid */}
           {filteredExecutives.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredExecutives.map((exec) => (
-                <div key={exec.id} className="glass-card p-6 rounded-2xl flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all group">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{exec.name}</h3>
-                        <p className="text-xs font-semibold text-slate-400 mt-1 flex items-center gap-1">
-                          <Briefcase size={12} />
-                          {exec.designation}
-                        </p>
+              {filteredExecutives.map((exec) => {
+                const pal = getPalette(exec.id);
+                return (
+                  <div key={exec.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 ${pal.border} ${pal.bg} ${pal.name === 'indigo' ? 'shadow-[0_0_15px_-3px_rgba(99,102,241,0.06)]' : ''} group`}>
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">{exec.name}</h3>
+                          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
+                            <Briefcase size={12} className="text-slate-450" />
+                            {exec.designation}
+                          </p>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold font-sans ${pal.badge} shrink-0`}>
+                          Executive
+                        </span>
                       </div>
-                      <span className="px-2.5 py-1 bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-950/20 rounded-lg text-[10px] font-bold font-sans">
-                        Executive
-                      </span>
                     </div>
 
-
+                    <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80">
+                      <button
+                        onClick={() => startEditExec(exec)}
+                        className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                        title="সম্পাদনা"
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        onClick={() => deleteExec(exec.id)}
+                        className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-655 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
+                        title="মুছে ফেলুন"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                    <button
-                      onClick={() => startEditExec(exec)}
-                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 transition-colors"
-                      title="সম্পাদনা"
-                    >
-                      <Edit2 size={13} />
-                    </button>
-                    <button
-                      onClick={() => deleteExec(exec.id)}
-                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
-                      title="মুছে ফেলুন"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="glass-card p-12 text-center rounded-2xl max-w-md mx-auto space-y-3">

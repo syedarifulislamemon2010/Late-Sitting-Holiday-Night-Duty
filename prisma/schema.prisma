@@ -82,6 +82,7 @@ model Trash {
   entityId   Int
   name       String   // Descriptive name to display in the Recycle Bin UI
   data       String   // Serialized JSON of record details
+  deletedBy  String?  // Username of the user who deleted it
   deletedAt  DateTime @default(now())
 }
 

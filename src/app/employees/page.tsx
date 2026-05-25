@@ -33,6 +33,49 @@ interface Employee {
   cell: Cell;
 }
 
+const extractNickname = (nameStr: string): string => {
+  const clean = nameStr.trim();
+  
+  // Custom exact overrides for Janata Bank PLC IT Officers
+  if (clean.includes('মনোয়ার')) return 'মনোয়ার';
+  if (clean.includes('প্রদীপ্ত')) return 'প্রদীপ্ত';
+  if (clean.includes('মারুফ')) return 'মারুফ';
+  if (clean.includes('জোবায়ের')) return 'জোবায়ের';
+  if (clean.includes('ইমন')) return 'ইমন';
+  if (clean.includes('কিবরিয়া') || clean.includes('কিবর')) return 'কিবরিয়া';
+  if (clean.includes('সাইফ')) return 'সাইফ';
+  if (clean.includes('দেবাশীষ')) return 'দেবাশীষ';
+  if (clean.includes('শাহিন')) return 'শাহিন';
+  if (clean.includes('সৈকত')) return 'সৈকত';
+  if (clean.includes('বাহার')) return 'বাহার';
+  if (clean.includes('রিয়াজ')) return 'রিয়াজ';
+  if (clean.includes('রবিউল')) return 'রবিউল';
+  if (clean.includes('হাদীউজ্জামান') || clean.includes('বাপ্পী')) return 'বাপ্পী';
+  if (clean.includes('আরিফুল ইসলাম')) return 'আরিফ'; // Avoid matching 'আরিফুল ইসলাম ইমন'
+  if (clean.includes('রাশেদ')) return 'রাশেদ';
+  if (clean.includes('জাকির')) return 'জাকির';
+  if (clean.includes('ফাতিহ')) return 'ফাতিহ';
+  
+  // Rule-based fallback
+  const parts = clean.split(/\s+/);
+  if (parts.length === 0) return 'ইউ';
+  
+  // Cleaned prefixes (no punctuation, including common variations)
+  const prefixes = [
+    'জনাব', 'মুhammad', 'muhammad', 'মুহাম্মদ', 'মোহাম্মদ', 'মোহাম্মাদ', 'মো', 'মোঃ', 'মোহা', 'শ্রী', 'ডা', 'ডাঃ', 'ড', 'ডক্টর', 'মহম্মদ', 'মিসেস', 'মিস', 'এসএম'
+  ];
+  
+  for (let i = 0; i < parts.length; i++) {
+    const word = parts[i];
+    const cleanedWord = word.replace(/[.,:;ঃ]/g, '').trim();
+    if (!prefixes.includes(cleanedWord) && cleanedWord.length > 0) {
+      return word.substring(0, 10);
+    }
+  }
+  
+  return parts[0] ? parts[0].substring(0, 10) : 'ইউ';
+};
+
 const STRICT_DESIGNATIONS = [
   'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)',
   'প্রিন্সিপাল অফিসার (পিও)',
@@ -53,6 +96,76 @@ export default function EmployeesPage() {
   const [isCellModalOpen, setIsCellModalOpen] = useState(false);
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
   const [editingCell, setEditingCell] = useState<Cell | null>(null);
+  const [profileEmp, setProfileEmp] = useState<Employee | null>(null);
+
+  // Helper for premium HSL color palettes
+  const getPalette = (cellId: number) => {
+    const palettes = [
+      {
+        name: 'indigo',
+        border: 'border-indigo-200 dark:border-indigo-900/50',
+        bg: 'bg-indigo-50/20 dark:bg-indigo-950/5',
+        badge: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400',
+        text: 'text-indigo-650 dark:text-indigo-400'
+      },
+      {
+        name: 'emerald',
+        border: 'border-emerald-200 dark:border-emerald-900/50',
+        bg: 'bg-emerald-50/20 dark:bg-emerald-950/5',
+        badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400',
+        text: 'text-emerald-650 dark:text-emerald-400'
+      },
+      {
+        name: 'amber',
+        border: 'border-amber-200 dark:border-amber-900/50',
+        bg: 'bg-amber-50/20 dark:bg-amber-950/5',
+        badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400',
+        text: 'text-amber-650 dark:text-amber-400'
+      },
+      {
+        name: 'rose',
+        border: 'border-rose-200 dark:border-rose-900/50',
+        bg: 'bg-rose-50/20 dark:bg-rose-950/5',
+        badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455',
+        text: 'text-rose-650 dark:text-rose-400'
+      },
+      {
+        name: 'violet',
+        border: 'border-violet-200 dark:border-violet-900/50',
+        bg: 'bg-violet-50/20 dark:bg-violet-950/5',
+        badge: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400',
+        text: 'text-violet-650 dark:text-violet-400'
+      },
+      {
+        name: 'cyan',
+        border: 'border-cyan-200 dark:border-cyan-900/50',
+        bg: 'bg-cyan-50/20 dark:bg-cyan-950/5',
+        badge: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-400',
+        text: 'text-cyan-650 dark:text-cyan-400'
+      },
+      {
+        name: 'teal',
+        border: 'border-teal-200 dark:border-teal-900/50',
+        bg: 'bg-teal-50/20 dark:bg-teal-950/5',
+        badge: 'bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400',
+        text: 'text-teal-650 dark:text-teal-400'
+      },
+      {
+        name: 'sky',
+        border: 'border-sky-200 dark:border-sky-900/50',
+        bg: 'bg-sky-50/20 dark:bg-sky-950/5',
+        badge: 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-405',
+        text: 'text-sky-650 dark:text-sky-400'
+      }
+    ];
+    return palettes[cellId % palettes.length];
+  };
+
+  // Helper for Bangla digits
+  const toBanglaDigits = (num: number | string): string => {
+    const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
+  };
 
   // Form states
   const [empForm, setEmpForm] = useState({
@@ -121,8 +234,8 @@ export default function EmployeesPage() {
     e.preventDefault();
     setErrorMessage('');
 
-    if (!empForm.name.trim() || !empForm.designation.trim() || !empForm.cellId) {
-      setErrorMessage('নাম, পদবী এবং সেল অবশ্যই পূরণ করতে হবে।');
+    if (!empForm.name.trim() || !empForm.designation.trim() || !empForm.cellId || !empForm.bankId.trim() || !empForm.fileNo.trim()) {
+      setErrorMessage('নাম, পদবী, ব্যাংক আইডি, নথি নম্বর এবং সেল অবশ্যই পূরণ করতে হবে।');
       return;
     }
 
@@ -448,7 +561,9 @@ export default function EmployeesPage() {
   // Filter lists
   const filteredEmployees = employees.filter(emp => {
     const matchesSearch = emp.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          emp.designation.toLowerCase().includes(searchQuery.toLowerCase());
+                          emp.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (emp.bankId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (emp.fileNo || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCell = cellFilter === 'all' || emp.cellId.toString() === cellFilter;
     return matchesSearch && matchesCell;
   });
@@ -501,7 +616,7 @@ export default function EmployeesPage() {
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
                   type="text"
-                  placeholder="কর্মকর্তার নাম বা পদবী দিয়ে খুঁজুন..."
+                  placeholder="কর্মকর্তার নাম, পদবী, ব্যাংক আইডি বা নথি নং দিয়ে খুঁজুন..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
@@ -548,44 +663,106 @@ export default function EmployeesPage() {
             </div>
           </div>
 
-          {/* Officers List Grid */}
+          {/* Grouped Officers List by Cell */}
           {filteredEmployees.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEmployees.map((emp) => (
-                <div key={emp.id} className="glass-card p-6 rounded-2xl flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all group">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{emp.name}</h3>
-                        <p className="text-xs font-medium text-slate-400 mt-1 flex items-center gap-1">
-                          <Briefcase size={12} />
-                          {emp.designation}
-                        </p>
+            <div className="space-y-10">
+              {cells
+                .filter(cell => {
+                  const cellEmps = filteredEmployees.filter(emp => emp.cellId === cell.id);
+                  return cellEmps.length > 0;
+                })
+                .map((cell) => {
+                  const cellEmps = filteredEmployees
+                    .filter(emp => emp.cellId === cell.id)
+                    .sort((a, b) => {
+                      const aNum = parseInt(a.bankId || '0', 10);
+                      const bNum = parseInt(b.bankId || '0', 10);
+                      if (isNaN(aNum) || isNaN(bNum)) {
+                        return (a.bankId || '').localeCompare(b.bankId || '');
+                      }
+                      return aNum - bNum;
+                    });
+                  const cellPal = getPalette(cell.id);
+                  
+                  return (
+                    <div key={cell.id} className="space-y-4">
+                      
+                      {/* Cell Group Header Badge */}
+                      <div className={`flex items-center justify-between p-4 rounded-2xl ${cellPal.border} ${cellPal.bg} shadow-xs`}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-350">
+                            <Building2 size={16} />
+                          </div>
+                          <div>
+                            <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">{cell.name}</h3>
+                            {cell.description && (
+                              <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">{cell.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-sans ${cellPal.badge}`}>
+                          {toBanglaDigits(cellEmps.length)} জন কর্মকর্তা
+                        </span>
                       </div>
-                      <span className="px-2.5 py-1 bg-indigo-50/70 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-indigo-950/20 rounded-lg text-[10px] font-bold font-sans">
-                        {emp.cell.name}
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                    <button
-                      onClick={() => startEditEmp(emp)}
-                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 transition-colors"
-                      title="সম্পাদনা"
-                    >
-                      <Edit2 size={13} />
-                    </button>
-                    <button
-                      onClick={() => deleteEmployee(emp.id)}
-                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
-                      title="মুছে ফেলুন"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                      {/* Employees Grid in this Cell */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {cellEmps.map((emp) => {
+                          const pal = getPalette(emp.cellId);
+                          return (
+                            <div key={emp.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group ${pal.border} ${pal.bg}`}>
+                              <div className="space-y-4 cursor-pointer" onClick={() => setProfileEmp(emp)}>
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">{emp.name}</h3>
+                                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
+                                      <Briefcase size={12} className="text-slate-400" />
+                                      {emp.designation}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                                  <div className="flex items-center gap-1">
+                                    <Hash size={12} className="text-slate-400" />
+                                    <span>ব্যাংক আইডি: <strong>{emp.bankId}</strong></span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <CreditCard size={12} className="text-slate-400" />
+                                    <span>নথি নং: <strong className="font-mono">{emp.fileNo}</strong></span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80 font-sans">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditEmp(emp);
+                                  }}
+                                  className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                                  title="সম্পাদনা"
+                                >
+                                  <Edit2 size={13} />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteEmployee(emp.id);
+                                  }}
+                                  className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-650 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
+                                  title="মুছে ফেলুন"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           ) : (
             <div className="glass-card p-12 text-center rounded-2xl max-w-md mx-auto space-y-3">
@@ -694,6 +871,30 @@ export default function EmployeesPage() {
                     <option key={desig} value={desig}>{desig}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ব্যাংক আইডি *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="যেমন: 026799"
+                  value={empForm.bankId}
+                  onChange={(e) => setEmpForm({ ...empForm, bankId: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">নথি নম্বর (File No) *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="যেমন: SO(Com)-026799"
+                  value={empForm.fileNo}
+                  onChange={(e) => setEmpForm({ ...empForm, fileNo: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -873,6 +1074,75 @@ export default function EmployeesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------------------------------------------
+          OFFICER DETAILS PROFILE MODAL
+      ---------------------------------------------------- */}
+      {profileEmp && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans"
+          onClick={() => setProfileEmp(null)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-[28px] w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Cover Image */}
+            <div className="h-28 bg-gradient-to-r from-indigo-500 to-violet-600 relative flex items-end justify-center">
+              <div className="absolute -bottom-10 px-3 h-20 min-w-20 rounded-full border-4 border-white dark:border-slate-900 bg-indigo-100 flex items-center justify-center text-indigo-650 text-sm font-extrabold shadow-md">
+                {extractNickname(profileEmp.name)}
+              </div>
+            </div>
+
+            {/* Profile Info Details */}
+            <div className="pt-14 pb-8 px-6 text-center space-y-6">
+              <div>
+                <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-lg leading-tight">{profileEmp.name}</h4>
+              </div>
+
+              {/* Grid of Attributes */}
+              <div className="grid grid-cols-2 gap-3 text-left">
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">পদবী</span>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{profileEmp.designation}</p>
+                </div>
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">সেল</span>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{profileEmp.cell?.name || 'লোডিং...'}</p>
+                </div>
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যাংক আইডি</span>
+                  <p className="text-xs font-bold text-slate-850 dark:text-slate-150 font-sans">{profileEmp.bankId || 'প্রদান করা হয়নি'}</p>
+                </div>
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যক্তিগত নথি নং</span>
+                  <p className="text-xs font-bold text-slate-850 dark:text-slate-150 font-sans">{profileEmp.fileNo || 'প্রদান করা হয়নি'}</p>
+                </div>
+              </div>
+
+              {/* Close Buttons */}
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => setProfileEmp(null)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer transition-colors"
+                >
+                  বন্ধ করুন
+                </button>
+                <button
+                  onClick={() => {
+                    const emp = profileEmp;
+                    setProfileEmp(null);
+                    startEditEmp(emp);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors"
+                >
+                  সম্পাদনা করুন
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

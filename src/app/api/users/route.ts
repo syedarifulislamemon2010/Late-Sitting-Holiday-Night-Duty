@@ -3,6 +3,44 @@ import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
+    // 1. Fetch all employees with a bank ID
+    const employees = await prisma.employee.findMany({
+      where: {
+        bankId: {
+          not: null
+        }
+      }
+    });
+
+    // 2. Fetch all existing users' usernames
+    const existingUsers = await prisma.user.findMany({
+      select: { username: true }
+    });
+    const existingUsernames = new Set(existingUsers.map(u => u.username.trim().toLowerCase()));
+
+    // 3. Sync missing users
+    for (const emp of employees) {
+      if (emp.bankId && emp.bankId.trim() !== '') {
+        const username = emp.bankId.trim().toLowerCase();
+        // Skip if username is 'admin' or already exists
+        if (username !== 'admin' && !existingUsernames.has(username)) {
+          await prisma.user.create({
+            data: {
+              username: emp.bankId.trim(),
+              password: '123456',
+              name: emp.name.trim(),
+              role: 'USER',
+              cells: {
+                connect: { id: emp.cellId }
+              }
+            }
+          });
+          existingUsernames.add(username);
+        }
+      }
+    }
+
+    // 4. Fetch the users list as normal
     const users = await prisma.user.findMany({
       orderBy: { name: 'asc' },
       select: {
@@ -21,7 +59,7 @@ export async function GET() {
     });
     return NextResponse.json(users);
   } catch (error: any) {
-    console.error('Error fetching users:', error);
+    console.error('Error fetching users and syncing:', error);
     return NextResponse.json({ error: 'failed_to_fetch_users' }, { status: 500 });
   }
 }

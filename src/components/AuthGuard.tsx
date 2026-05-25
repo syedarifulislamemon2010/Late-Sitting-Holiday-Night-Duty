@@ -414,7 +414,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                   onChange={(e) => setUsername(e.target.value)}
                   onFocus={() => setFocusField('username')}
                   onBlur={() => setFocusField('none')}
-                  placeholder="যেমন: emon"
+                  placeholder="যেমন: 026799 (ব্যাংক আইডি)"
                   className="w-full px-4 py-3 border border-slate-200 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 rounded-2xl text-sm font-semibold outline-none transition-all"
                   required
                 />

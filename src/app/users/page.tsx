@@ -28,10 +28,54 @@ interface User {
   cells: { id: number; name: string }[];
 }
 
+const extractNickname = (nameStr: string): string => {
+  const clean = nameStr.trim();
+  
+  // Custom exact overrides for Janata Bank PLC IT Officers
+  if (clean.includes('মনোয়ার')) return 'মনোয়ার';
+  if (clean.includes('প্রদীপ্ত')) return 'প্রদীপ্ত';
+  if (clean.includes('মারুফ')) return 'মারুফ';
+  if (clean.includes('জোবায়ের')) return 'জোবায়ের';
+  if (clean.includes('ইমন')) return 'ইমন';
+  if (clean.includes('কিবরিয়া') || clean.includes('কিবর')) return 'কিবরিয়া';
+  if (clean.includes('সাইফ')) return 'সাইফ';
+  if (clean.includes('দেবাশীষ')) return 'দেবাশীষ';
+  if (clean.includes('শাহিন')) return 'শাহিন';
+  if (clean.includes('সৈকত')) return 'সৈকত';
+  if (clean.includes('বাহার')) return 'বাহার';
+  if (clean.includes('রিয়াজ')) return 'রিয়াজ';
+  if (clean.includes('রবিউল')) return 'রবিউল';
+  if (clean.includes('হাদীউজ্জামান') || clean.includes('বাপ্পী')) return 'বাপ্পী';
+  if (clean.includes('আরিফুল ইসলাম')) return 'আরিফ'; // Avoid matching 'আরিফুল ইসলাম ইমন'
+  if (clean.includes('রাশেদ')) return 'রাশেদ';
+  if (clean.includes('জাকির')) return 'জাকির';
+  if (clean.includes('ফাতিহ')) return 'ফাতিহ';
+  
+  // Rule-based fallback
+  const parts = clean.split(/\s+/);
+  if (parts.length === 0) return 'ইউ';
+  
+  // Cleaned prefixes (no punctuation, including common variations)
+  const prefixes = [
+    'জনাব', 'মুhammad', 'muhammad', 'মুহাম্মদ', 'মোহাম্মদ', 'মোহাম্মাদ', 'মো', 'মোঃ', 'মোহা', 'শ্রী', 'ডা', 'ডাঃ', 'ড', 'ডক্টর', 'মহম্মদ', 'মিসেস', 'মিস', 'এসএম'
+  ];
+  
+  for (let i = 0; i < parts.length; i++) {
+    const word = parts[i];
+    const cleanedWord = word.replace(/[.,:;ঃ]/g, '').trim();
+    if (!prefixes.includes(cleanedWord) && cleanedWord.length > 0) {
+      return word.substring(0, 10);
+    }
+  }
+  
+  return parts[0] ? parts[0].substring(0, 10) : 'ইউ';
+};
+
 export default function UserManagement() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -44,6 +88,179 @@ export default function UserManagement() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('USER');
   const [selectedCellIds, setSelectedCellIds] = useState<number[]>([]);
+  const [profileUser, setProfileUser] = useState<User | null>(null);
+
+  // Helper for premium colors
+  const getPalette = (cellId: number) => {
+    const palettes = [
+      {
+        name: 'indigo',
+        border: 'border-indigo-200 dark:border-indigo-900/50',
+        bg: 'bg-indigo-50/20 dark:bg-indigo-950/5',
+        badge: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400',
+        text: 'text-indigo-650 dark:text-indigo-400'
+      },
+      {
+        name: 'emerald',
+        border: 'border-emerald-200 dark:border-emerald-900/50',
+        bg: 'bg-emerald-50/20 dark:bg-emerald-950/5',
+        badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400',
+        text: 'text-emerald-650 dark:text-emerald-400'
+      },
+      {
+        name: 'amber',
+        border: 'border-amber-200 dark:border-amber-900/50',
+        bg: 'bg-amber-50/20 dark:bg-amber-950/5',
+        badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-455',
+        text: 'text-amber-650 dark:text-amber-400'
+      },
+      {
+        name: 'rose',
+        border: 'border-rose-200 dark:border-rose-900/50',
+        bg: 'bg-rose-50/20 dark:bg-rose-950/5',
+        badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455',
+        text: 'text-rose-650 dark:text-rose-400'
+      },
+      {
+        name: 'violet',
+        border: 'border-violet-200 dark:border-violet-900/50',
+        bg: 'bg-violet-50/20 dark:bg-violet-950/5',
+        badge: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400',
+        text: 'text-violet-650 dark:text-violet-400'
+      },
+      {
+        name: 'cyan',
+        border: 'border-cyan-200 dark:border-cyan-900/50',
+        bg: 'bg-cyan-50/20 dark:bg-cyan-950/5',
+        badge: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-400',
+        text: 'text-cyan-650 dark:text-cyan-400'
+      },
+      {
+        name: 'teal',
+        border: 'border-teal-200 dark:border-teal-900/50',
+        bg: 'bg-teal-50/20 dark:bg-teal-950/5',
+        badge: 'bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400',
+        text: 'text-teal-650 dark:text-teal-400'
+      },
+      {
+        name: 'sky',
+        border: 'border-sky-200 dark:border-sky-900/50',
+        bg: 'bg-sky-50/20 dark:bg-sky-950/5',
+        badge: 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400',
+        text: 'text-sky-650 dark:text-sky-400'
+      }
+    ];
+    return palettes[cellId % palettes.length];
+  };
+
+  const toBanglaDigits = (num: number | string): string => {
+    const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
+  };
+
+  const sortUsersByBankId = (userList: User[]) => {
+    return [...userList].sort((a, b) => {
+      const numA = parseInt(a.username, 10);
+      const numB = parseInt(b.username, 10);
+      
+      const isNumA = !isNaN(numA) && /^\d+$/.test(a.username.trim());
+      const isNumB = !isNaN(numB) && /^\d+$/.test(b.username.trim());
+
+      if (isNumA && isNumB) {
+        return numA - numB;
+      }
+      if (isNumA) return -1;
+      if (isNumB) return 1;
+      
+      return a.username.localeCompare(b.username);
+    });
+  };
+
+  const renderUserCard = (user: User, paletteId: number) => {
+    const pal = getPalette(paletteId);
+    const emp = employees.find(
+      (e) => e.bankId && e.bankId.trim().toLowerCase() === user.username.trim().toLowerCase()
+    );
+    return (
+      <div 
+        key={user.id} 
+        className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group ${pal.border} ${pal.bg}`}
+      >
+        {/* Card top section */}
+        <div className="cursor-pointer font-sans" onClick={() => setProfileUser(user)}>
+          <div className="flex justify-between items-start gap-2">
+            <div className="space-y-1">
+              <h3 className="font-extrabold text-slate-850 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">{user.name}</h3>
+              {emp && (
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{emp.designation}</p>
+              )}
+              <div className="flex flex-col gap-0.5 mt-1.5">
+                <span className="text-[11px] font-bold text-slate-450 dark:text-slate-500 font-sans">ব্যাংক আইডি: {user.username}</span>
+                {emp?.fileNo && (
+                  <span className="text-[11px] font-bold text-slate-450 dark:text-slate-500 font-sans">নথি নম্বর: {emp.fileNo}</span>
+                )}
+              </div>
+            </div>
+            
+            {/* Role Tag */}
+            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border ${user.role === 'ADMIN' ? 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-455' : 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400'}`}>
+              {user.role}
+            </span>
+          </div>
+
+          {/* Cells lists */}
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 font-sans">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wide">
+              <Building2 size={12} className="text-slate-400" />
+              <span>প্রবেশাধিকার প্রাপ্ত সেলসমূহ:</span>
+            </div>
+            
+            {user.role === 'ADMIN' ? (
+              <p className="text-xs font-semibold text-slate-650 dark:text-slate-400 mt-2 italic flex items-center gap-1">
+                <Shield size={12} className="text-rose-500" />
+                এডমিন হিসেবে সব সেলের অ্যাক্সেস রয়েছে
+              </p>
+            ) : user.cells.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {user.cells.map(c => (
+                  <span 
+                    key={c.id} 
+                    className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold font-mono"
+                  >
+                    {c.name}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-2 italic">
+                ⚠️ কোনো সেলের অ্যাক্সেস নেই!
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Actions panel */}
+        <div className="mt-6 flex justify-end items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 no-print">
+          <button
+            onClick={() => handleOpenEditModal(user)}
+            className="p-2 text-indigo-600 hover:bg-indigo-50 active:scale-95 dark:text-indigo-400 dark:hover:bg-indigo-950/30 rounded-xl transition-all"
+            title="ইউজার তথ্য এডিট করুন"
+          >
+            <Edit3 size={15} />
+          </button>
+          {user.username !== 'admin' && (
+            <button
+              onClick={() => handleDeleteUser(user)}
+              className="p-2 text-rose-600 hover:bg-rose-50 active:scale-95 dark:text-rose-400 dark:hover:bg-rose-950/30 rounded-xl transition-all"
+              title="ইউজার ডিলিট করুন"
+            >
+              <Trash2 size={15} />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   // Fetch initial profile
   useEffect(() => {
@@ -64,16 +281,19 @@ export default function UserManagement() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usersRes, cellsRes] = await Promise.all([
+      const [usersRes, cellsRes, empsRes] = await Promise.all([
         fetch('/api/users'),
-        fetch('/api/cells')
+        fetch('/api/cells'),
+        fetch('/api/employees')
       ]);
 
-      if (usersRes.ok && cellsRes.ok) {
+      if (usersRes.ok && cellsRes.ok && empsRes.ok) {
         const usersData = await usersRes.json();
         const cellsData = await cellsRes.json();
+        const empsData = await empsRes.json();
         setUsers(usersData);
         setCells(cellsData);
+        setEmployees(empsData);
       } else {
         setError('ডাটা লোড করতে ব্যর্থ হয়েছে।');
       }
@@ -93,13 +313,27 @@ export default function UserManagement() {
     setEditingUser(null);
     setName('');
     setUsername('');
-    setPassword('');
+    setPassword('123456');
     setRole('USER');
     setSelectedCellIds([]);
     setError('');
     setSuccess('');
     setIsModalOpen(true);
   };
+
+  // Auto-fetch employee details by bankId (username)
+  useEffect(() => {
+    if (!editingUser && username.trim() !== '') {
+      const match = employees.find(
+        (emp) => (emp.bankId || '').trim().toLowerCase() === username.trim().toLowerCase()
+      );
+      if (match) {
+        setName(match.name);
+        setSelectedCellIds([match.cellId]);
+        setPassword('123456');
+      }
+    }
+  }, [username, editingUser, employees]);
 
   const handleOpenEditModal = (user: User) => {
     setEditingUser(user);
@@ -253,78 +487,87 @@ export default function UserManagement() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {users.map(user => (
-            <div 
-              key={user.id} 
-              className="glass-card p-6 rounded-2xl border border-slate-200/60 dark:border-slate-850 hover:border-indigo-500/30 dark:hover:border-indigo-500/20 transition-all duration-300 relative group flex flex-col justify-between"
-            >
-              {/* Card top section */}
-              <div>
-                <div className="flex justify-between items-start gap-2">
-                  <div className="space-y-1">
-                    <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base font-sans">{user.name}</h3>
-                    <p className="text-[11px] font-semibold text-slate-400 font-mono">@{user.username}</p>
+        <div className="space-y-10 font-sans">
+          
+          {/* Admin Group */}
+          {users.filter(u => u.role === 'ADMIN').length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-950/5 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-rose-500">
+                    <Shield size={16} />
                   </div>
-                  
-                  {/* Role Tag */}
-                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border ${user.role === 'ADMIN' ? 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400' : 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400'}`}>
-                    {user.role}
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">সিস্টেম এডমিনিস্ট্রেটরবৃন্দ (System Administrators)</h3>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">সব সেলের দায়িত্বপ্রাপ্ত সুপার ইউজারবৃন্দ</p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455">
+                  {toBanglaDigits(users.filter(u => u.role === 'ADMIN').length)} জন ইউজার
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sortUsersByBankId(users.filter(u => u.role === 'ADMIN')).map(user => renderUserCard(user, 3))}
+              </div>
+            </div>
+          )}
+
+          {/* Cell Groups */}
+          {cells.map(cell => {
+            const cellUsers = users.filter(u => u.role === 'USER' && u.cells.some(c => c.id === cell.id));
+            if (cellUsers.length === 0) return null;
+            const sortedCellUsers = sortUsersByBankId(cellUsers);
+            const cellPal = getPalette(cell.id);
+
+            return (
+              <div key={cell.id} className="space-y-4">
+                <div className={`flex items-center justify-between p-4 rounded-2xl ${cellPal.border} ${cellPal.bg} shadow-xs`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-350">
+                      <Building2 size={16} />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-slate-885 dark:text-slate-100 text-sm tracking-wide">{cell.name} সেল ইউজারবৃন্দ</h3>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">শুধুমাত্র {cell.name} সেলের দায়িত্বপ্রাপ্ত ইউজারবৃন্দ</p>
+                    </div>
+                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${cellPal.badge}`}>
+                    {toBanglaDigits(sortedCellUsers.length)} জন ইউজার
                   </span>
                 </div>
 
-                {/* Cells lists */}
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                    <Building2 size={12} className="text-slate-400" />
-                    <span>প্রবেশাধিকার প্রাপ্ত সেলসমূহ:</span>
-                  </div>
-                  
-                  {user.role === 'ADMIN' ? (
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-2 italic flex items-center gap-1">
-                      <Shield size={12} className="text-rose-500" />
-                      এডমিন হিসেবে সব সেলের অ্যাক্সেস রয়েছে
-                    </p>
-                  ) : user.cells.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {user.cells.map(c => (
-                        <span 
-                          key={c.id} 
-                          className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold font-mono"
-                        >
-                          {c.name}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-2 italic">
-                      ⚠️ কোনো সেলের অ্যাক্সেস নেই!
-                    </p>
-                  )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sortedCellUsers.map(user => renderUserCard(user, cell.id))}
                 </div>
               </div>
+            );
+          })}
 
-              {/* Actions panel */}
-              <div className="mt-6 flex justify-end items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 no-print">
-                <button
-                  onClick={() => handleOpenEditModal(user)}
-                  className="p-2 text-indigo-600 hover:bg-indigo-50 active:scale-95 dark:text-indigo-400 dark:hover:bg-indigo-950/30 rounded-xl transition-all"
-                  title="ইউজার তথ্য এডিট করুন"
-                >
-                  <Edit3 size={15} />
-                </button>
-                {user.username !== 'admin' && (
-                  <button
-                    onClick={() => handleDeleteUser(user)}
-                    className="p-2 text-rose-600 hover:bg-rose-50 active:scale-95 dark:text-rose-400 dark:hover:bg-rose-950/30 rounded-xl transition-all"
-                    title="ইউজার ডিলিট করুন"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                )}
+          {/* Standard Users without Cells */}
+          {users.filter(u => u.role === 'USER' && u.cells.length === 0).length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/5 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-amber-500">
+                    <AlertCircle size={16} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">সেলের দায়িত্বহীন ইউজারবৃন্দ (Unassigned Users)</h3>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">বর্তমানে কোনো সেলের দায়িত্ব নেই</p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-455">
+                  {toBanglaDigits(users.filter(u => u.role === 'USER' && u.cells.length === 0).length)} জন ইউজার
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sortUsersByBankId(users.filter(u => u.role === 'USER' && u.cells.length === 0)).map(user => renderUserCard(user, 2))}
               </div>
             </div>
-          ))}
+          )}
+
         </div>
       )}
 
@@ -373,12 +616,12 @@ export default function UserManagement() {
 
               {/* 2. Username */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">ইউজারনেম *</label>
+                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">ইউজারনেম (ব্যাংক আইডি) *</label>
                 <input
                   type="text"
                   required
                   disabled={!!editingUser}
-                  placeholder="যেমন: emon (ইংরেজি অক্ষরে)"
+                  placeholder="যেমন: 026799 (ব্যাংক আইডি)"
                   value={username}
                   onChange={(e) => setUsername(e.target.value.toLowerCase())}
                   className={`w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-indigo-500 ${editingUser ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-slate-50/50 dark:bg-slate-950/20 text-slate-800 dark:text-slate-200'}`}
@@ -443,12 +686,12 @@ export default function UserManagement() {
                           <div 
                             key={cell.id}
                             onClick={() => handleCellToggle(cell.id)}
-                            className={`p-3 rounded-xl border-2 cursor-pointer flex items-center justify-between transition-all duration-200 active:scale-[0.98] ${isChecked ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50/50 dark:bg-slate-950/10 border-slate-200/70 dark:border-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300'}`}
+                            className={`p-3 rounded-xl border-2 cursor-pointer flex items-center justify-between transition-all duration-200 active:scale-[0.98] ${isChecked ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50/50 dark:bg-slate-950/10 border-slate-200/70 dark:border-slate-850 text-slate-700 dark:text-slate-330 hover:border-slate-300'}`}
                           >
                             <div className="space-y-0.5 text-left leading-none">
                               <span className="font-extrabold text-xs font-mono">{cell.name}</span>
                               {cell.description && (
-                                <p className="text-[9px] font-medium text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
+                                <p className="text-[9px] font-medium text-slate-400 dark:text-slate-555 mt-0.5 line-clamp-1">
                                   {cell.description}
                                 </p>
                               )}
@@ -489,6 +732,112 @@ export default function UserManagement() {
           </div>
         </div>
       )}
+
+      {/* ----------------------------------------------------
+          USER DETAILS PROFILE MODAL
+      ---------------------------------------------------- */}
+      {profileUser && (() => {
+        const emp = employees.find(
+          (e) => e.bankId && e.bankId.trim().toLowerCase() === profileUser.username.trim().toLowerCase()
+        );
+        return (
+          <div 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans"
+            onClick={() => setProfileUser(null)}
+          >
+            <div 
+              className="bg-white dark:bg-slate-900 rounded-[28px] w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl animate-scale-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Cover Image */}
+              <div className="h-28 bg-gradient-to-r from-indigo-500 to-violet-600 relative flex items-end justify-center">
+                <div className="absolute -bottom-10 px-3 h-20 min-w-20 rounded-full border-4 border-white dark:border-slate-900 bg-indigo-100 flex items-center justify-center text-indigo-650 text-sm font-extrabold shadow-md">
+                  {extractNickname(profileUser.name)}
+                </div>
+              </div>
+
+              {/* Profile Info Details */}
+              <div className="pt-14 pb-8 px-6 text-center space-y-6">
+                <div>
+                  <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-lg leading-tight">{profileUser.name}</h4>
+                  <p className="text-xs font-semibold text-slate-450 dark:text-slate-500 mt-1">@{profileUser.username}</p>
+                </div>
+
+                {/* Grid of Attributes */}
+                <div className="grid grid-cols-2 gap-3 text-left">
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">ইউজার রোল</span>
+                    <p className="text-xs font-bold text-slate-850 dark:text-slate-200">
+                      {profileUser.role === 'ADMIN' ? 'সুপার এডমিন' : 'সাধারণ ইউজার'}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যাংক আইডি</span>
+                    <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{profileUser.username}</p>
+                  </div>
+
+                  {emp && (
+                    <>
+                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">পদবী</span>
+                        <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.designation}</p>
+                      </div>
+                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যক্তিগত নথি নং</span>
+                        <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.fileNo || 'নেই'}</p>
+                      </div>
+                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">সেল</span>
+                        <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.cell?.name || 'নেই'}</p>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">প্রবেশাধিকার প্রাপ্ত সেলসমূহ</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {profileUser.role === 'ADMIN' ? (
+                        <span className="text-xs font-bold text-rose-600">সব সেল (সুপার এডমিন হিসেবে অ্যাক্সেস)</span>
+                      ) : profileUser.cells.length > 0 ? (
+                        profileUser.cells.map(c => (
+                          <span 
+                            key={c.id} 
+                            className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold"
+                          >
+                            {c.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs font-bold text-amber-600">কোনো সেল অ্যাসাইন করা নেই</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Close Buttons */}
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => setProfileUser(null)}
+                    className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    বন্ধ করুন
+                  </button>
+                  <button
+                    onClick={() => {
+                      const u = profileUser;
+                      setProfileUser(null);
+                      handleOpenEditModal(u);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    সম্পাদনা করুন
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

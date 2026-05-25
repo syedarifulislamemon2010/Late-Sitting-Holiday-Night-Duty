@@ -1,0 +1,99 @@
+Created At: 2026-05-24T12:36:17Z
+Completed At: 2026-05-24T12:36:18Z
+File Path: `file:///e:/Late-Sitting-Holiday-Night-Duty/src/app/billing/page.tsx`
+Total Lines: 912
+Total Bytes: 58092
+Showing lines 1 to 800
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: 'use client';
+2: 
+3: import React, { useState, useEffect } from 'react';
+4: import { 
+5:   Printer, 
+6:   ChevronLeft, 
+7:   Calendar, 
+8:   DollarSign, 
+9:   Clock,
+10:   ShieldCheck,
+11:   Award
+12: } from 'lucide-react';
+13: 
+14: interface Cell {
+15:   id: number;
+16:   name: string;
+17:   description: string | null;
+18: }
+19: 
+20: interface Employee {
+21:   id: number;
+22:   name: string;
+23:   designation: string;
+24:   bankId: string | null;
+25:   fileNo: string | null;
+26:   cellId: number;
+27:   cell: Cell;
+28: }
+29: 
+30: interface Duty {
+31:   id: number;
+32:   employeeId: number;
+33:   employee: Employee;
+34:   type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+35:   date: string;
+36:   description: string | null;
+37:   allowance1: number;
+38:   allowance2: number;
+39:   totalBill: number;
+40: }
+41: 
+42: interface EmployeeBillingSummary {
+43:   employeeId: number;
+44:   name: string;
+45:   designation: string;
+46:   cellName: string;
+47:   bankId: string | null;
+48:   fileNo: string | null;
+49:   lateDays: number;
+50:   lateAllowance1: number;
+51:   lateAllowance2: number;
+52:   holidayDays: number;
+53:   holidayAllowance1: number;
+54:   holidayAllowance2: number;
+55:   nightDays: number;
+56:   nightAllowance1: number;
+57:   nightAllowance2: number;
+58:   grandTotal: number;
+59: }
+60: 
+61: export default function BillingPage() {
+62:   const [duties, setDuties] = useState<Duty[]>([]);
+63:   const [cells, setCells] = useState<Cell[]>([]);
+64:   const [loading, setLoading] = useState(true);
+65:   con
+<truncated 45284 bytes>
+ধির পদবী (Representative Designation)</label>
+754:                   <input
+755:                     type="text"
+756:                     disabled
+757:                     value={representativeDesignation}
+758:                     className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-850 border border-slate-200 dark:border-slate-850 rounded-lg text-xs cursor-not-allowed text-slate-500 font-semibold"
+759:                   />
+760:                 </div>
+761:               </div>
+762:             </div>
+763:           </div>
+764: 
+765:           {/* Interactive Print Mock Sheet */}
+766:           <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner">
+767:             <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in', boxSizing: 'border-box', fontSize: '10px', lineHeight: '1.0' }}>
+768:               
+769:               <div className="flex flex-col h-full justify-between">
+770:                 <div>
+771:                   {/* Official Header */}
+772:                   <div className="w-full flex justify-end text-right mb-4">
+773:                     <div className="text-right leading-none">
+774:                       <h2 className="text-[16px] font-bold text-black uppercase" style={{ fontFamily: 'Kalpurush', fontSize: '16px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+775:                       <p className="text-[10px] 
+<truncated 2318 bytes>
+
+NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.
