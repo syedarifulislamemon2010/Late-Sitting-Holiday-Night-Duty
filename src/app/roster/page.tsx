@@ -668,7 +668,13 @@ export default function RosterPage() {
       const rankA = getDesignationRank(a.employee.designation);
       const rankB = getDesignationRank(b.employee.designation);
       if (rankA !== rankB) return rankA - rankB;
-      return a.employee.name.localeCompare(b.employee.name, 'bn-BD');
+      
+      const aNum = parseInt(a.employee.bankId || '0', 10);
+      const bNum = parseInt(b.employee.bankId || '0', 10);
+      if (isNaN(aNum) || isNaN(bNum)) {
+        return (a.employee.bankId || '').localeCompare(b.employee.bankId || '');
+      }
+      return aNum - bNum;
     });
 
     return groupedList;
@@ -730,7 +736,7 @@ export default function RosterPage() {
         const d = (designation || '').toUpperCase();
         if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SENIOR PRINCIPAL')) return 1;
         if (d.includes('পিও') || d.includes('PO') || d.includes('PRINCIPAL OFFICER')) return 2;
-        if (d.includes('এসো-আইটি') || d.includes('এসও-আইটি') || d.includes('এসও') || d.includes('SO-IT') || d.includes('SO') || d.includes('SENIOR OFFICER')) return 3;
+        if (d.includes('এসো-আইটি') || d.includes('এসো') || d.includes('এসো-আইটি') || d.includes('এসও-আইটি') || d.includes('এসও') || d.includes('SO-IT') || d.includes('SO') || d.includes('SENIOR OFFICER')) return 3;
         if (d.includes('ও-আইটি') || d.includes('O-IT') || d.includes('OFFICER') || d.includes('ও')) return 4;
         return 99;
       };
@@ -738,7 +744,13 @@ export default function RosterPage() {
         const rankA = getDesignationRank(a.designation);
         const rankB = getDesignationRank(b.designation);
         if (rankA !== rankB) return rankA - rankB;
-        return a.name.localeCompare(b.name, 'bn-BD');
+        
+        const aNum = parseInt(a.bankId || '0', 10);
+        const bNum = parseInt(b.bankId || '0', 10);
+        if (isNaN(aNum) || isNaN(bNum)) {
+          return (a.bankId || '').localeCompare(b.bankId || '');
+        }
+        return aNum - bNum;
       }) : [];
       setEmployees(sortedEmps);
       setCells(Array.isArray(cellData) ? cellData : []);
@@ -839,7 +851,29 @@ export default function RosterPage() {
             const localCells = await cellRes.json();
             const orders = await orderRes.json();
             
-            setEmployees(localEmps);
+            const getDesignationRank = (designation: string): number => {
+              const d = (designation || '').toUpperCase();
+              if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SENIOR PRINCIPAL')) return 1;
+              if (d.includes('পিও') || d.includes('PO') || d.includes('PRINCIPAL OFFICER')) return 2;
+              if (d.includes('এসো-আইটি') || d.includes('এসো') || d.includes('এসো-আইটি') || d.includes('এসও-আইটি') || d.includes('এসও') || d.includes('SO-IT') || d.includes('SO') || d.includes('SENIOR OFFICER')) return 3;
+              if (d.includes('ও-আইটি') || d.includes('O-IT') || d.includes('OFFICER') || d.includes('ও')) return 4;
+              return 99;
+            };
+
+            const sortedLocalEmps = Array.isArray(localEmps) ? [...localEmps].sort((a, b) => {
+              const rankA = getDesignationRank(a.designation);
+              const rankB = getDesignationRank(b.designation);
+              if (rankA !== rankB) return rankA - rankB;
+              
+              const aNum = parseInt(a.bankId || '0', 10);
+              const bNum = parseInt(b.bankId || '0', 10);
+              if (isNaN(aNum) || isNaN(bNum)) {
+                return (a.bankId || '').localeCompare(b.bankId || '');
+              }
+              return aNum - bNum;
+            }) : [];
+            
+            setEmployees(sortedLocalEmps);
             setCells(localCells);
             
             const matchingOrder = orders.find((o: any) => o.orderRef === editRef);

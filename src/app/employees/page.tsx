@@ -77,6 +77,44 @@ const extractNickname = (nameStr: string): string => {
   return parts[0] ? parts[0].substring(0, 10) : 'ইউ';
 };
 
+const parseCSVText = (text: string): string[][] => {
+  const lines: string[][] = [];
+  let row: string[] = [];
+  let col = '';
+  let inQuotes = false;
+  
+  const cleanText = text.trim().replace(/\r\n/g, '\n');
+  
+  for (let i = 0; i < cleanText.length; i++) {
+    const char = cleanText[i];
+    const nextChar = cleanText[i + 1];
+    
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        col += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      row.push(col.trim());
+      col = '';
+    } else if (char === '\n' && !inQuotes) {
+      row.push(col.trim());
+      lines.push(row);
+      row = [];
+      col = '';
+    } else {
+      col += char;
+    }
+  }
+  if (col || row.length > 0) {
+    row.push(col.trim());
+    lines.push(row);
+  }
+  return lines;
+};
+
 const STRICT_DESIGNATIONS = [
   'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)',
   'প্রিন্সিপাল অফিসার (পিও)',
@@ -337,26 +375,111 @@ export default function EmployeesPage() {
     e.preventDefault();
     setBulkError('');
     
-    if (!bulkEmpCellId) {
-      setBulkError('অনুগ্রহ করে সেল সিলেক্ট করুন।');
-      return;
-    }
-    
     if (!bulkEmpText.trim()) {
       setBulkError('অনুগ্রহ করে কর্মকর্তাদের নামের টেক্সট পেস্ট করুন।');
       return;
     }
     
-    // Parse lines
-    const parsed = bulkEmpText.split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(line => {
+    const isCSV = bulkEmpText.trim().startsWith('নাম,') || bulkEmpText.trim().startsWith('"নাম"') || bulkEmpText.includes('\n"জনাব') || bulkEmpText.includes('\nজনাব') || bulkEmpText.trim().startsWith('জনাব');
+    
+    let parsed: any[] = [];
+    
+    if (isCSV || bulkEmpText.includes(',')) {
+      try {
+        const rows = parseCSVText(bulkEmpText);
+        if (rows.length === 0) {
+          throw new Error('কোনো ভ্যালিড CSV রো পাওয়া যায়নি।');
+        }
+        
+        let hasHeader = false;
+        let nameIdx = 0;
+        let desigIdx = 1;
+        let bankIdx = 2;
+        let fileIdx = 3;
+        let cellIdx = 4;
+        
+        const firstRow = rows[0].map(c => c.trim().toLowerCase());
+        if (firstRow.includes('নাম') || firstRow.includes('name') || firstRow.includes('পদবী') || firstRow.includes('designation') || firstRow.includes('পদবি')) {
+          hasHeader = true;
+          nameIdx = firstRow.findIndex(h => h.includes('নাম') || h.includes('name'));
+          desigIdx = firstRow.findIndex(h => h.includes('পদবী') || h.includes('designation') || h.includes('পদবি'));
+          bankIdx = firstRow.findIndex(h => h.includes('ব্যাংক') || h.includes('bank') || h.includes('আইডি') || h.includes('id'));
+          fileIdx = firstRow.findIndex(h => h.includes('নথি') || h.includes('file'));
+          cellIdx = firstRow.findIndex(h => h.includes('সেল') || h.includes('cell'));
+        }
+        
+        const startRowIdx = hasHeader ? 1 : 0;
+        
+        const mapDesignation = (rawDesig: string): string => {
+          const clean = (rawDesig || '').toLowerCase();
+          if (clean.includes('এসপিও') || clean.includes('সিনিয়র প্রিন্সিপাল') || clean.includes('spo')) {
+            return STRICT_DESIGNATIONS[0];
+          }
+          if (clean.includes('পিও') || clean.includes('প্রিন্সিপাল') || clean.includes('po')) {
+            return STRICT_DESIGNATIONS[1];
+          }
+          if (clean.includes('এসো') || clean.includes('এসও') || clean.includes('so') || clean.includes('সিনিয়র অফিসার') || clean.includes('so-it') || clean.includes('অফিসার-আইটি (এসও-আইটি)')) {
+            return STRICT_DESIGNATIONS[2];
+          }
+          return STRICT_DESIGNATIONS[3]; // default: Officer-IT
+        };
+        
+        for (let idx = startRowIdx; idx < rows.length; idx++) {
+          const row = rows[idx];
+          if (row.length === 0 || (row.length === 1 && row[0] === '')) continue;
+          
+          const name = nameIdx !== -1 && row[nameIdx] ? row[nameIdx].trim() : '';
+          if (!name) continue;
+          
+          const rawDesig = desigIdx !== -1 && row[desigIdx] ? row[desigIdx].trim() : '';
+          const bankId = bankIdx !== -1 && row[bankIdx] ? row[bankIdx].trim() : '';
+          const fileNo = fileIdx !== -1 && row[fileIdx] ? row[fileIdx].trim() : '';
+          const cellName = cellIdx !== -1 && row[cellIdx] ? row[cellIdx].trim() : '';
+          
+          parsed.push({
+            name,
+            designation: mapDesignation(rawDesig),
+            bankId,
+            fileNo,
+            cellName
+          });
+        }
+      } catch (err: any) {
+        setBulkError('CSV ফাইল পার্সিং ত্রুটি: ' + err.message);
+        return;
+      }
+    }
+    
+    // Fallback parsing (line-by-line format)
+    if (parsed.length === 0) {
+      if (!bulkEmpCellId) {
+        setBulkError('অনুগ্রহ করে সেল সিলেক্ট করুন।');
+        return;
+      }
+      
+      const lines = bulkEmpText.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+        
+      const mapDesignation = (rawDesig: string): string => {
+        const clean = rawDesig.toLowerCase();
+        if (clean.includes('এসপিও') || clean.includes('সিনিয়র প্রিন্সিপাল') || clean.includes('spo')) {
+          return STRICT_DESIGNATIONS[0];
+        }
+        if (clean.includes('পিও') || clean.includes('প্রিন্সিপাল') || clean.includes('po')) {
+          return STRICT_DESIGNATIONS[1];
+        }
+        if (clean.includes('এসো') || clean.includes('এসও') || clean.includes('so') || clean.includes('সিনিয়র অফিসার') || clean.includes('so-it') || clean.includes('অফিসার-আইটি (এসও-আইটি)')) {
+          return STRICT_DESIGNATIONS[2];
+        }
+        return STRICT_DESIGNATIONS[3]; // default: Officer-IT
+      };
+      
+      lines.forEach(line => {
         let name = '';
         let designation = '';
         let matched = false;
-
-        // 1. Try splitting by tab, pipe, comma first as they are highly unambiguous
+        
         const primarySeps = ['\t', ' | ', '|', ' , ', ','];
         for (const sep of primarySeps) {
           if (line.includes(sep)) {
@@ -369,8 +492,7 @@ export default function EmployeesPage() {
             }
           }
         }
-
-        // 2. If not matched, check for space-wrapped hyphens ' - '
+        
         if (!matched && line.includes(' - ')) {
           const parts = line.split(' - ');
           if (parts.length >= 2) {
@@ -379,19 +501,15 @@ export default function EmployeesPage() {
             matched = true;
           }
         }
-
-        // 3. If still not matched, check for bare hyphen '-' ensuring it's not part of a known word
+        
         if (!matched && line.includes('-')) {
           let splitIndex = -1;
           let currentPos = 0;
           while (true) {
             const idx = line.indexOf('-', currentPos);
             if (idx === -1) break;
-
             const leftContext = line.substring(0, idx).trim();
             const rightContext = line.substring(idx + 1).trim();
-
-            // Ignore internal hyphens of compound designations
             const isInternalHyphen = 
               leftContext.endsWith('উপ') || 
               leftContext.endsWith('সহকারী') || 
@@ -403,48 +521,33 @@ export default function EmployeesPage() {
               leftContext.endsWith('জিএম') ||
               rightContext.startsWith('মহাব্যবস্থাপক') ||
               rightContext.startsWith('আইটি');
-
             if (!isInternalHyphen) {
               splitIndex = idx;
               break;
             }
             currentPos = idx + 1;
           }
-
           if (splitIndex !== -1) {
             name = line.substring(0, splitIndex).trim();
             designation = line.substring(splitIndex + 1).trim();
             matched = true;
           }
         }
-
+        
         if (!matched) {
           name = line;
-          designation = ''; // default fallback will handle it
+          designation = '';
         }
         
-        const mapDesignation = (rawDesig: string): string => {
-          const clean = rawDesig.toLowerCase();
-          if (clean.includes('এসপিও') || clean.includes('সিনিয়র প্রিন্সিপাল') || clean.includes('spo')) {
-            return STRICT_DESIGNATIONS[0];
-          }
-          if (clean.includes('পিও') || clean.includes('প্রিন্সিপাল') || clean.includes('po')) {
-            return STRICT_DESIGNATIONS[1];
-          }
-          if (clean.includes('এসও') || clean.includes('সিনিয়র অফিসার') || clean.includes('so') || clean.includes('এসো')) {
-            return STRICT_DESIGNATIONS[2];
-          }
-          return STRICT_DESIGNATIONS[3]; // default: Officer-IT
-        };
-        
-        return {
+        parsed.push({
           name,
           designation: mapDesignation(designation),
           cellId: parseInt(bulkEmpCellId, 10),
           bankId: '',
           fileNo: ''
-        };
+        });
       });
+    }
       
     if (parsed.length === 0) {
       setBulkError('কোনো কর্মকর্তা তথ্য পাওয়া যায়নি। সঠিক ফরম্যাটে লিখুন।');
@@ -717,9 +820,22 @@ export default function EmployeesPage() {
                   return cellEmps.length > 0;
                 })
                 .map((cell) => {
+                  const getDesignationRank = (designation: string): number => {
+                    const d = (designation || '').toUpperCase();
+                    if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SENIOR PRINCIPAL') || d.includes('সিনিয়র প্রিন্সিপাল')) return 1;
+                    if (d.includes('পিও') || d.includes('PO') || d.includes('PRINCIPAL') || d.includes('প্রিন্সিপাল')) return 2;
+                    if (d.includes('এসো') || d.includes('এসও') || d.includes('SO') || d.includes('SENIOR OFFICER') || d.includes('সিনিয়র অফিসার')) return 3;
+                    if (d.includes('ও-আইটি') || d.includes('O-IT') || d.includes('OFFICER') || d.includes('ও') || d.includes('অফিসার')) return 4;
+                    return 99;
+                  };
+
                   const cellEmps = filteredEmployees
                     .filter(emp => emp.cellId === cell.id)
                     .sort((a, b) => {
+                      const rankA = getDesignationRank(a.designation);
+                      const rankB = getDesignationRank(b.designation);
+                      if (rankA !== rankB) return rankA - rankB;
+                      
                       const aNum = parseInt(a.bankId || '0', 10);
                       const bNum = parseInt(b.bankId || '0', 10);
                       if (isNaN(aNum) || isNaN(bNum)) {
@@ -1081,6 +1197,27 @@ export default function EmployeesPage() {
                     <option key={c.id} value={c.id.toString()}>{c.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  অথবা CSV ফাইল আপলোড করুন
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      const text = event.target?.result as string;
+                      setBulkEmpText(text);
+                    };
+                    reader.readAsText(file);
+                  }}
+                  className="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 dark:file:bg-indigo-950/40 dark:file:text-indigo-400 hover:file:bg-indigo-100 transition-all cursor-pointer border border-dashed border-slate-300 dark:border-slate-800 p-2 rounded-xl bg-slate-50/20"
+                />
               </div>
 
               <div className="space-y-1.5">
