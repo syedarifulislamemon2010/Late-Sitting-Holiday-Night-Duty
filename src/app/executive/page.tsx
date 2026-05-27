@@ -10,7 +10,8 @@ import {
   AlertCircle,
   Briefcase,
   Phone,
-  Mail
+  Mail,
+  Download
 } from 'lucide-react';
 
 interface Executive {
@@ -412,6 +413,25 @@ export default function ExecutivesPage() {
     setShowKeyInput(false);
   };
 
+  const exportExecutivesToCSV = () => {
+    let csvContent = '\uFEFFনাম,পদবী,মোবাইল নম্বর,ইমেইল ঠিকানা\n';
+    filteredExecutives.forEach(exec => {
+      const name = `"${exec.name.replace(/"/g, '""')}"`;
+      const designation = `"${exec.designation.replace(/"/g, '""')}"`;
+      const phone = `"${(exec.phone || '').replace(/"/g, '""')}"`;
+      const email = `"${(exec.email || '').replace(/"/g, '""')}"`;
+      csvContent += `${name},${designation},${phone},${email}\n`;
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `executives_list_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Set form for editing
   const startEditExec = (exec: Executive) => {
     setEditingExec(exec);
@@ -468,6 +488,13 @@ export default function ExecutivesPage() {
             </div>
 
             <div className="flex gap-2">
+              <button
+                onClick={exportExecutivesToCSV}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5"
+              >
+                <Download size={16} />
+                এক্সপোর্ট করুন
+              </button>
               <button
                 onClick={() => {
                   setBulkText('');

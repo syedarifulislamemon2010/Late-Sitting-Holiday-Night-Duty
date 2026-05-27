@@ -11,7 +11,8 @@ import {
   AlertCircle,
   Briefcase,
   Hash,
-  CreditCard
+  CreditCard,
+  Download
 } from 'lucide-react';
 
 interface Cell {
@@ -558,6 +559,43 @@ export default function EmployeesPage() {
     setIsCellModalOpen(true);
   };
 
+  const exportEmployeesToCSV = () => {
+    let csvContent = '\uFEFFনাম,পদবী,ব্যাংক আইডি,নথি নং,সেল\n';
+    filteredEmployees.forEach(emp => {
+      const name = `"${emp.name.replace(/"/g, '""')}"`;
+      const designation = `"${emp.designation.replace(/"/g, '""')}"`;
+      const bankId = `"${(emp.bankId || '').replace(/"/g, '""')}"`;
+      const fileNo = `"${(emp.fileNo || '').replace(/"/g, '""')}"`;
+      const cellName = `"${(emp.cell?.name || '').replace(/"/g, '""')}"`;
+      csvContent += `${name},${designation},${bankId},${fileNo},${cellName}\n`;
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `employees_list_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportCellsToCSV = () => {
+    let csvContent = '\uFEFFসেলের নাম,কর্মকর্তা সংখ্যা\n';
+    cells.forEach(cell => {
+      const name = `"${cell.name.replace(/"/g, '""')}"`;
+      const empCount = cell._count?.employees || 0;
+      csvContent += `${name},${empCount}\n`;
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `cells_list_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Filter lists
   const filteredEmployees = employees.filter(emp => {
     const matchesSearch = emp.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -637,6 +675,13 @@ export default function EmployeesPage() {
             </div>
 
             <div className="flex gap-2">
+              <button
+                onClick={exportEmployeesToCSV}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5"
+              >
+                <Download size={16} />
+                এক্সপোর্ট করুন
+              </button>
               <button
                 onClick={() => {
                   setBulkEmpText('');
@@ -780,18 +825,27 @@ export default function EmployeesPage() {
           {/* Headline Controls */}
           <div className="flex items-center justify-between glass-card p-4 rounded-2xl">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">সেল তালিকা ও কর্মকর্তা ভলিউম</span>
-            <button
-              onClick={() => {
-                setEditingCell(null);
-                setCellForm({ name: '', description: '' });
-                setErrorMessage('');
-                setIsCellModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors"
-            >
-              <Plus size={16} />
-              নতুন সেল (Cell) যোগ করুন
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={exportCellsToCSV}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5"
+              >
+                <Download size={16} />
+                সেলসমূহ এক্সপোর্ট
+              </button>
+              <button
+                onClick={() => {
+                  setEditingCell(null);
+                  setCellForm({ name: '', description: '' });
+                  setErrorMessage('');
+                  setIsCellModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors"
+              >
+                <Plus size={16} />
+                নতুন সেল (Cell) যোগ করুন
+              </button>
+            </div>
           </div>
 
           {/* Cells List Grid */}
