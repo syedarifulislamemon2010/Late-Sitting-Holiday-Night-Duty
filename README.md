@@ -1,280 +1,198 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 ডিউটি ম্যানেজমেন্ট ও যাতায়াত-আপ্যায়ন বিলিং পোর্টাল (IT Department)
 
-## Getting Started
+সহজ, আধুনিক এবং সম্পূর্ণ ডাইনামিক এই ওয়েব অ্যাপ্লিকেশনটির মাধ্যমে আইটি ডিপার্টমেন্টের লেট-সিটিং (Late Sitting), ছুটির দিন (Holiday Duty) এবং রাত্রিকালীন শিফট (Night Shift) ডিউটির রোস্টার তৈরি, অফিস আদেশ জেনারেট এবং স্বয়ংক্রিয় যাতায়াত ও আপ্যায়ন বিল মেমো তৈরি ও প্রিন্ট করা যায়।
 
-First, run the development server:
+---
+
+## 📌 মূল ফিচারসমূহ (Functional Features)
+
+1. **ডাইনামিক রোস্টার ম্যানেজমেন্ট (Roster Management)**:
+   - কর্মকর্তা নির্বাচন ও ক্যালেন্ডার ইন্টারফেসের মাধ্যমে সহজে নির্দিষ্ট মাসের লেট-সিটিং, অফ-ডে বা নাইট ডিউটি অ্যাসাইন করা যায়।
+   - অটোমেটিক ভ্যালিডেশন: কাজের দিনে ছুটির দিনের ডিউটি বা ছুটির দিনে লেট-সিটিং বরাদ্দ করা সম্পূর্ণ নিষিদ্ধ এবং সিস্টেম তা স্বয়ংক্রিয়ভাবে প্রতিহত করে।
+
+2. **স্বয়ংক্রিয় ৭৫০০/- টাকা বিল লিমিট অপ্টিমাইজেশন ও চাকিং (Apyaon Limit & Staggering)**:
+   - অডিট নীতিমালা অনুযায়ী একই আদেশে ৭৫০০/- টাকার বেশি আপ্যায়ন বিল করা যাবে না। যদি কোনো মাসের মোট আপ্যায়ন খরচ ৭৫০০/- টাকার বেশি হয়, পোর্টালটি স্বয়ংক্রিয়ভাবে ডিউটিগুলোকে সমান কয়েকটি অংশে (Contiguous Chronological Chunks) ভাগ করে আলাদা আলাদা অফিস আদেশ জেনারেট করে।
+   - **আদেশের তারিখ স্ট্যাগারিং (Staggered Order Dates)**: একই তারিখে একাধিক অংশ জেনারেট করা হলে তা অডিটে সমস্যা করে। তাই প্রতিটি অংশের জন্য তার প্রথম ডিউটির তারিখ অনুযায়ী অটোমেটিকভাবে পর্যায়ক্রমিক অনন্য ও ভিন্ন ভিন্ন আগের কর্মদিবসের তারিখ (Staggered Order Date) বসে।
+
+3. **স্বয়ংক্রিয় বিল মেমো জেনারেটর (Bill Memo Generation)**:
+   - জেনারেট করা অফিস আদেশ বা রোস্টারের তথ্য থেকে ১-ক্লিকেই যাতায়াত ও আপ্যায়ন বিল মেমো তৈরি করা যায়।
+   - অর্ডারের কর্মকর্তার নাম অনুযায়ী বিলের প্রাপকের নাম ও পদবী স্বয়ংক্রিয়ভাবে সিঙ্ক বা সিলেক্ট হয়ে যায় (যা ইউজার চাইলে পরিবর্তন করতে পারেন)।
+
+4. **A4 ও লিগ্যাল সাইজ পিডিএফ প্রিন্টিং (High-Fidelity PDF Printing)**:
+   - সরকারি ও দাপ্তরিক ফরমেট বজায় রেখে আকর্ষণীয় বাংলা টাইপোগ্রাফি (Kalpurush Font) ব্যবহার করে সরাসরি প্রিন্ট-রেডি A4 সাইজের অফিস আদেশ এবং Legal সাইজের বিল মেমো পিডিএফ তৈরি হয়।
+
+5. **নিরাপদ ডিলিট ও ট্র্যাশ সিস্টেম (Soft Delete & Trash)**:
+   - ভুলবশত কোনো ডিউটি রেকর্ড বা অফিস আদেশ মুছে ফেলা হলে তা সরাসরি ট্র্যাশে (Trash) জমা হয়। সেখান থেকে যেকোনো সময় আবার রিস্টোর (Restore) বা পার্মানেন্ট ডিলিট করা যায়।
+
+---
+
+## 🛠 টেকনিক্যাল আর্কিটেকচার (Technical Architecture)
+
+এই পোর্টালটি অত্যন্ত আধুনিক ও পারফরম্যান্ট স্ট্যাক দিয়ে তৈরি করা হয়েছে:
+- **ফ্রন্টএন্ড ও ব্যাকএন্ড ফ্রেমওয়ার্ক**: [Next.js 16.2.6](https://nextjs.org/) (App Router, Turbopack সমৃদ্ধ)
+- **ডাটাবেজ ও ORM**: [Prisma ORM](https://www.prisma.io/) সহ ক্লাউড-হোস্টেড [Neon PostgreSQL Database](https://neon.tech/)
+- **স্টাইলিং**: CSS গ্লাস মরফিজম ও প্রিমিয়াম ডার্ক মোড ইন্টারফেস
+- **রিপোর্ট জেনারেশন**: HTML/CSS থেকে নিখুঁত পিডিএফ প্রিন্টিং এবং রিয়্যাক্ট-রেফারেন্স
+
+### ডাটাবেজ মডেলসমূহ (Database Schema):
+- `Employee`: কর্মকর্তাদের নাম, পদবী, ব্যাংক আইডি, ফাইল নং এবং ডিপার্টমেন্ট সেলের তথ্য।
+- `Cell`: ডিপার্টমেন্ট সেলের তালিকা (যেমন: Core Banking Cell, System Cell, Digital Banking Cell ইত্যাদি)।
+- `Duty`: প্রতি কর্মকর্তার নির্ধারিত ডিউটি বিবরণ, তারিখ, ধরন এবং অ্যালাউন্স হিসাব।
+- `OfficeOrder`: আর্কাইভ করা প্রিন্ট-রেডি অফিস আদেশ ও বিল মেমোর ডাটা (JSON ফরম্যাটে সংরক্ষিত)।
+- `Holiday`: সাপ্তাহিক ছুটি ছাড়া অন্যান্য সরকারি ও বিশেষ ছুটি কনফিগারেশন।
+- `User`: পোর্টাল ব্যবহারের জন্য এডমিন ও ইউজারদের লগইন ও পারমিশন কন্ট্রোল।
+- `Trash`: সফট-ডিলিট করা ফাইল ও তথ্যের হিস্ট্রি ট্র্যাকার।
+
+---
+
+## 📂 ফাইল স্ট্রাকচার (Directory Structure)
+
+```
+Late-Sitting-Holiday-Night-Duty/
+├── prisma/
+│   └── schema.prisma         # প্রিজমা ডাটাবেজ স্কিমা ফাইল
+├── src/
+│   ├── app/
+│   │   ├── api/              # ব্যাকএন্ড API এন্ডপয়েন্টসমূহ
+│   │   │   ├── duties/       # ডিউটি এন্ট্রি, অপ্টিমাইজেশন ও প্রিট্রিভাল API
+│   │   │   ├── office-orders/# আর্কাইভ ও অফিস আদেশ ট্রানজেকশনাল এডিটিং API
+│   │   │   └── ...           # অন্যান্য মাস্টার API
+│   │   ├── roster/           # রোস্টার তৈরি, স্প্লিট অপ্টিমাইজেশন ও প্রিন্ট পেজ
+│   │   ├── billing/          # বিল মেমো জেনারেশন ও অটো-পেয়ী সিঙ্ক পেজ
+│   │   ├── documents/        # আর্কাইভ করা অফিস আদেশ ও বিলের লিগ্যাল ভিউ পেজ
+│   │   ├── employees/        # কর্মকর্তা তালিকা ও এন্ট্রি ইন্টারফেস
+│   │   ├── trash/            # ট্র্যাশ বিন রিস্টোর ও ট্র্যাকিং পেজ
+│   │   └── layout.tsx        # গ্লোবাল লেআউট ও কালপুরুষ ফন্ট কনফিগারেশন
+│   ├── lib/
+│   │   └── prisma.ts         # প্রিজমা গ্লোবাল ক্লায়েন্ট ইনিশিয়ালাইজেশন
+│   └── ...
+├── .env                      # পরিবেশের ভেরিয়েবল ও ডাটাবেজ সিক্রেটস (লোকাল)
+├── .gitignore                # গিট ট্র্যাকিং বহির্ভূত ফাইলের তালিকা
+├── package.json              # ডিপেনডেন্সি ও প্যাকেজ তালিকা
+└── README.md                 # অ্যাপ্লিকেশন ইউজার ও ডেভেলপার গাইড
+```
+
+---
+
+## 🔒 নিরাপত্তা ও ডাটাবেজ প্রাইভেসি (Security & Privacy)
+
+ডাটাবেজের সংবেদনশীল তথ্য ও ক্রেডেনশিয়াল সুরক্ষিত রাখতে নিচের নির্দেশনাবলী কঠোরভাবে মেনে চলুন:
+
+1. **প্রজেক্ট প্রাইভেট রাখা (Private Repository)**:
+   - যেহেতু এটি ব্যাংক বা প্রাতিষ্ঠানিক কর্মকর্তাদের ডিউটি সংক্রান্ত ডাটা এবং Neon PostgreSQL-এর রিয়েল-টাইম ক্রেডেনশিয়াল ব্যবহার করে, তাই এই গিটহাব রিপোজিটরিটি কখনোই পাবলিক (Public) রাখবেন না।
+   - **প্রাইভেট করার নিয়ম**: GitHub-এ আপনার রিপোজিটরিতে যান → **Settings** ট্যাব → স্ক্রোল করে নিচে যান **Danger Zone**-এ → **Change visibility** বাটনে ক্লিক করুন → **Make private** সিলেক্ট করে কনফার্ম করুন।
+
+2. **`.env` ফাইল সংরক্ষণ**:
+   - `.env` ফাইলটিতে আপনার ডাটাবেজের সরাসরি কানেকশন স্ট্রিং (`DATABASE_URL`) থাকে। এটি প্রজেক্টের রুট ফোল্ডারে লোকালভাবে তৈরি করতে হবে।
+   - এই ফাইলটি ইতোমধ্যে `.gitignore` এ যোগ করা আছে। কোনো অবস্থাতেই গিট ট্র্যাকিংয়ে এটি যোগ বা পুশ করবেন না।
+
+---
+
+## 📥 ডাউনলোড ও ইন্সটলেশন গাইড (Setup & Installation)
+
+আপনার পিসিতে অ্যাপ্লিকেশনটি রান করতে নিচে বর্ণিত ধাপগুলো অনুসরণ করুন:
+
+### প্রাক-প্রয়োজনীয় সফটওয়্যার (Prerequisites):
+অ্যাপটি চালানোর জন্য আপনার পিসিতে নিচের সফটওয়্যারগুলো ইনস্টল থাকতে হবে:
+- **Node.js**: v22.x বা তার বেশি (LTS ভার্সন) -> [ডাউনলোড লিংক](https://nodejs.org)
+- **Git**: [ডাউনলোড লিংক](https://git-scm.com)
+
+---
+
+### ধাপ ১: গিটহাব থেকে প্রজেক্ট ডাউনলোড (Clone Project)
+টার্মিনাল (PowerShell / Command Prompt / Linux-Mac Terminal) খুলুন এবং প্রজেক্টটি ডাউনলোড করতে নিচের কমান্ডটি রান করুন:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/SyedArifulIslamEmon/Late-Sitting-Holiday-Night-Duty.git
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-
----
-
-# 🚀 গিটহাব আপ্লোড ও অন্য পিসিতে রান করার সম্পূর্ণ গাইড
-
----
-
-## পর্ব ১: গিটহাবে আপ্লোড (Push)
-
-### ধাপ ১ — Git ইন্সটল (যদি আগে থেকে না থাকে)
-
-1.  যান: [https://git-scm.com/downloads/win](https://git-scm.com/downloads/win)
-2.  **64-bit Git for Windows Setup** ডাউনলোড করুন ও ইন্সটল করুন
-3.  ইন্সটলের সময় সব ডিফল্ট সেটিংস রাখুন, শুধু **"Use Git from Git Bash and also from the Windows Command Prompt"** সিলেক্ট আছে কিনা নিশ্চিত করুন
-4.  ইন্সটল শেষ হলে PowerShell / Terminal খুলে ভেরিফাই করুন:
-
-```powershell
-git --version
-```
-> আউটপুট: `git version 2.xx.x` দেখলে সফল ✅
-
----
-
-### ধাপ ২ — GitHub অ্যাকাউন্ট ও রিপোজিটরি তৈরি
-
-1.  ব্রাউজারে যান: [https://github.com](https://github.com)
-2.  লগইন করুন (অ্যাকাউন্ট না থাকলে **Sign up** করুন)
-3.  উপরে ডানদিকে **"+"** বাটনে ক্লিক করুন → **"New repository"**
-4.  ফর্ম পূরণ করুন:
-    - **Repository name**: `Admin-Portal` (বা আপনার পছন্দমতো নাম)
-    - **Description**: `ডিউটি ম্যানেজমেন্ট ও আপ্যায়ন বিলিং পোর্টাল`
-    - **Public** বা **Private** সিলেক্ট করুন (প্রাইভেট রাখতে চাইলে Private দিন)
-    - ⚠️ **"Add a README file"** চেক করবেন না (কারণ প্রজেক্টে আগে থেকেই আছে)
-    - ⚠️ **".gitignore"** সিলেক্ট করবেন না (আগে থেকেই আছে)
-5.  **"Create repository"** ক্লিক করুন
-6.  তৈরি হলে একটা URL পাবেন যেমন:
-    ```
-    https://github.com/YOUR_USERNAME/Admin-Portal.git
-    ```
-    এই URL টি কপি করে রাখুন 📋
-
----
-
-### ধাপ ৩ — Git কনফিগারেশন (শুধু প্রথমবার)
-
-PowerShell / Terminal খুলুন এবং নিচের কমান্ডগুলো দিন (আপনার নাম ও ইমেইল দিন):
-
-```powershell
-git config --global user.name "আপনার নাম"
-git config --global user.email "আপনার_ইমেইল@gmail.com"
+ডাউনলোড শেষে প্রজেক্ট ফোল্ডারে প্রবেশ করুন:
+```bash
+cd Late-Sitting-Holiday-Night-Duty
 ```
 
 ---
 
-### ধাপ ৪ — প্রজেক্ট ফোল্ডারে Git Initialize ও Push
+### ধাপ ২: ডিপেনডেন্সি ও প্যাকেজ ইন্সটলেশন (Install Dependencies)
+সব ধরনের ডিপেনডেন্সি ও প্যাকেজ লোকালভাবে ইন্সটল করতে নিচের কমান্ডটি চালান (উইন্ডোজ, লিনাক্স বা ম্যাক সবার জন্যই একই কমান্ড):
 
-PowerShell / Terminal খুলুন এবং **একটা একটা করে** নিচের কমান্ডগুলো দিন:
-
-```powershell
-# ১. প্রজেক্ট ফোল্ডারে যান
-cd "c:\Users\Admin\Downloads\Compressed\Admin-Portal"
-
-# ২. Git রিপোজিটরি ইনিশিয়ালাইজ করুন (আগে থেকে থাকলে স্কিপ হবে)
-git init
-
-# ৩. সব ফাইল Stage করুন
-git add .
-
-# ৪. প্রথম কমিট করুন
-git commit -m "Initial commit: ডিউটি ম্যানেজমেন্ট পোর্টাল"
-
-# ৫. মূল ব্রাঞ্চের নাম main করুন
-git branch -M main
-
-# ৬. GitHub রিপোজিটরি যোগ করুন (আপনার URL দিয়ে বদলান)
-git remote add origin https://github.com/YOUR_USERNAME/Admin-Portal.git
-
-# ৭. কোড আপ্লোড (Push) করুন
-git push -u origin main
-```
-
-> [!IMPORTANT]
-> ধাপ ৭ এ **GitHub লগইন পপ-আপ** আসতে পারে। ব্রাউজারে লগইন করে অনুমোদন দিন।
-> যদি পাসওয়ার্ড চায়, তাহলে GitHub Settings → Developer Settings → **Personal Access Tokens** → **Tokens (classic)** থেকে একটা টোকেন তৈরি করে পাসওয়ার্ডের বদলে সেটা দিন।
-
----
-
-### ধাপ ৫ — ভেরিফাই করুন
-
-ব্রাউজারে যান: `https://github.com/YOUR_USERNAME/Admin-Portal`
-
-আপনার সব ফাইল দেখা যাচ্ছে? ✅ তাহলে আপ্লোড সফল!
-
-> [!CAUTION]
-> `.env` ফাইল `.gitignore` এ আছে তাই এটি **GitHub এ আপ্লোড হবে না** — এটাই সঠিক! `.env` ফাইলে আপনার ডাটাবেজ পাসওয়ার্ড আছে, তাই এটি কখনোই পাবলিকে শেয়ার করবেন না।
-
----
-
----
-
-## পর্ব ২: অন্য পিসিতে ডাউনলোড ও রান করা
-
-### প্রয়োজনীয় সফটওয়্যার ইন্সটল করুন
-
-| # | সফটওয়্যার | ডাউনলোড লিংক | কেন দরকার |
-|---|---|---|---|
-| 1 | **Node.js v22+** (LTS) | [https://nodejs.org](https://nodejs.org) | JavaScript রানটাইম ও npm প্যাকেজ ম্যানেজার |
-| 2 | **Git** | [https://git-scm.com](https://git-scm.com) | GitHub থেকে কোড ডাউনলোড করতে |
-| 3 | **VS Code** (ঐচ্ছিক) | [https://code.visualstudio.com](https://code.visualstudio.com) | কোড এডিটর |
-
-> [!TIP]
-> Node.js ইন্সটল করলে **npm** স্বয়ংক্রিয়ভাবে ইন্সটল হয়ে যায়। আলাদা করে npm ইন্সটল করতে হবে না।
-
-ইন্সটল ভেরিফিকেশন:
-```powershell
-node --version    # v22.x.x দেখা উচিত
-npm --version     # 10.x.x দেখা উচিত
-git --version     # 2.x.x দেখা উচিত
-```
-
----
-
-### ধাপ ১ — GitHub থেকে কোড ডাউনলোড (Clone)
-
-```powershell
-# যেখানে রাখতে চান সেই ফোল্ডারে যান (যেমন Desktop)
-cd Desktop
-
-# Clone করুন
-git clone https://github.com/YOUR_USERNAME/Admin-Portal.git
-
-# প্রজেক্ট ফোল্ডারে ঢুকুন
-cd Admin-Portal
-```
-
----
-
-### ধাপ ২ — Dependencies ইন্সটল করুন
-
-```powershell
+```bash
 npm install
 ```
-
-> এটি `package.json` দেখে সব প্রয়োজনীয় লাইব্রেরি (Next.js, React, Prisma, Tailwind, Recharts, Lucide ইত্যাদি) স্বয়ংক্রিয়ভাবে ইন্সটল করবে। ইন্টারনেট কানেকশন দরকার। সময় লাগতে পারে ১-৩ মিনিট।
+*(এটি `package.json` দেখে সব প্রয়োজনীয় ফ্রন্টএন্ড ও ব্যাকএন্ড প্যাকেজসমূহ ইন্সটল করবে। ইন্টারনেটের স্পিডের ওপর ভিত্তি করে ১-৩ মিনিট সময় লাগতে পারে।)*
 
 ---
 
-### ধাপ ৩ — `.env` ফাইল তৈরি করুন
+### ধাপ ৩: লোকাল `.env` ফাইল এবং ডাটাবেজ সংযোগ তৈরি করা
+আপনার প্রজেক্টের রুট ফোল্ডারে `.env` নামে একটি ফাইল তৈরি করুন এবং আপনার Neon PostgreSQL ক্লাউড ডাটাবেজ কানেকশন স্ট্রিংটি যোগ করুন:
 
-> [!IMPORTANT]
-> `.env` ফাইল GitHub এ আপ্লোড হয় না (নিরাপত্তার জন্য)। তাই **অন্য পিসিতে ম্যানুয়ালি তৈরি করতে হবে।**
-
-প্রজেক্ট ফোল্ডারের ভেতরে `.env` নামে একটি ফাইল তৈরি করুন:
-
+**উইন্ডোজ (PowerShell):**
 ```powershell
-# PowerShell দিয়ে তৈরি করতে:
 New-Item -Path ".env" -ItemType File
 ```
+**লিনাক্স ও ম্যাক (Terminal):**
+```bash
+touch .env
+```
 
-তারপর **Notepad** বা **VS Code** দিয়ে `.env` ফাইলটি ওপেন করে ভেতরে লিখুন:
-
+তৈরি করা `.env` ফাইলটি নোটপ্যাড বা আপনার প্রিয় কোড এডিটরে ওপেন করে নিচের স্ট্রিংটি লিখে সেভ করুন:
 ```env
 DATABASE_URL=postgresql://neondb_owner:npg_SwBDg8Gacei1@ep-lively-morning-aoebyciw-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ```
 
-> এটি আপনার Neon PostgreSQL ক্লাউড ডাটাবেজের কানেকশন URL। একই ডাটাবেজ যেকোনো পিসি থেকে অ্যাক্সেস করা যাবে।
-
 ---
 
-### ধাপ ৪ — Prisma Client তৈরি করুন
+### ধাপ ৪: Prisma Client জেনারেট করা
+Prisma ক্লায়েন্ট তৈরি করতে আপনার টার্মিনালে নিচের কমান্ডটি একবারের জন্য রান করুন:
 
-```powershell
+```bash
 npx prisma generate
 ```
 
-> এটি `prisma/schema.prisma` পড়ে ডাটাবেজ ক্লায়েন্ট কোড জেনারেট করবে। **প্রতিটি নতুন পিসিতে এটি একবার করতেই হবে।**
-
 ---
 
-### ধাপ ৫ — ডেভেলপমেন্ট সার্ভার রান করুন
+## 🏃 অ্যাপ রান করার নিয়ম (Running the Application)
 
-```powershell
+### ১. লোকাল ডেভেলপমেন্ট মোডে রান করতে (Development Server):
+লোকালহোস্টে রান করতে নিচের কমান্ডটি দিন:
+
+```bash
 npm run dev
 ```
+কমান্ডটি সফলভাবে রান হলে আপনার ব্রাউজারে যান: **[http://localhost:3000](http://localhost:3000)**
 
-> আউটপুটে দেখবেন:
-> ```
-> ▲ Next.js 16.2.6 (Turbopack)
->    Local: http://localhost:3000
-> ```
-
-ব্রাউজার ওপেন করুন: **http://localhost:3000**
-
-লগইন করুন:
-- **Username**: `admin`
-- **Password**: `123456`
-
-✅ **পোর্টাল রান হচ্ছে!**
+**লগইন ক্রেডেনশিয়াল (Default Credentials):**
+- **ইউজারনেম**: `admin`
+- **পাসওয়ার্ড**: `123456`
 
 ---
 
-## 📌 দ্রুত রেফারেন্স কার্ড
+### ২. প্রোডাকশন মোডে রান করতে (Production Server):
+লাইভ বা প্রোডাকশন এনভায়রনমেন্টের মতো বিল্ড করে চালানোর জন্য নিচের কমান্ডগুলো ব্যবহার করুন:
 
-### প্রতিদিনের কমান্ড (যখন কোড আপডেট করবেন):
+**উইন্ডোজ, লিনাক্স ও ম্যাক সব প্ল্যাটফর্মের জন্য:**
+```bash
+# প্রজেক্ট প্রোডাকশন বিল্ড নেওয়া (এইচটিএমএল ও জেএস অপ্টিমাইজেশন)
+npm run build
 
-```powershell
-# সব পরিবর্তন দেখুন
-git status
-
-# সব ফাইল Stage + Commit + Push করুন
-git add .
-git commit -m "আপডেটের বিবরণ লিখুন"
-git push
-```
-
-### অন্য পিসিতে লেটেস্ট কোড নামানো (যদি আগে clone করা থাকে):
-
-```powershell
-cd Admin-Portal
-git pull
-npm install      # নতুন কোনো লাইব্রেরি যোগ হলে
-npm run dev
-```
-
-### প্রোডাকশন বিল্ড (ডিপ্লয়ের আগে):
-
-```powershell
-npm run build    # কম্পাইল ও অপ্টিমাইজ
-npm run start    # প্রোডাকশন সার্ভার চালু
+# প্রোডাকশন সার্ভার স্টার্ট করা
+npm run start
 ```
 
 ---
 
-## ⚠️ সমস্যা হলে যা করবেন
+## 🤝 কন্ট্রিবিউটর (Contributor)
 
-| সমস্যা | সমাধান |
+এই প্রজেক্টের একমাত্র কন্ট্রিবিউটর এবং মেইনটেইনার:
+- 👑 **[Syed Ariful Islam Emon](https://github.com/SyedArifulIslamEmon)**
+
+---
+
+## ⚠️ সাধারণ সমস্যা ও সমাধান (Troubleshooting)
+
+| সমস্যা | সম্ভাব্য সমাধান |
 |---|---|
-| `npm install` এ error | `node --version` চেক করুন, v22+ হতে হবে |
-| `prisma generate` ফেইল | `npm install` আবার দিন, তারপর আবার চেষ্টা করুন |
-| ডাটাবেজ কানেক্ট হচ্ছে না | `.env` ফাইলে `DATABASE_URL` সঠিক আছে কিনা চেক করুন |
-| `git push` এ পারমিশন error | GitHub Personal Access Token ব্যবহার করুন |
-| পোর্ট 3000 ব্যস্ত | `npm run dev -- -p 3001` দিয়ে অন্য পোর্টে চালান |
-
+| `Port 3000 is already in use` | `npm run dev -- -p 3001` লিখে পোর্ট পরিবর্তন করে অন্য পোর্টে রান করুন। |
+| `Prisma Client error` | প্রজেক্ট ফোল্ডারে গিয়ে `npx prisma generate` কমান্ডটি রান করুন। |
+| ডাটাবেজ এরর বা কানেকশন ফেইল | আপনার `.env` ফাইলে `DATABASE_URL` কানেকশন স্ট্রিংটি সঠিকভাবে কপি-পেস্ট করা হয়েছে কিনা চেক করুন। |
+| নোড ভার্সন ফেইল এরর | আপনার নোডের ভার্সন `node --version` কমান্ড দিয়ে চেক করুন। এটি অবশ্যই v22+ হতে হবে। |
