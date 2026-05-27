@@ -331,8 +331,8 @@ export default function RosterPage() {
           )}
         </div>
         <div className="grid grid-cols-7 gap-1 font-sans text-center">
-          {['র', 'স', 'ম', 'ব', 'বৃ', 'শু', 'শ'].map((dName, idx) => (
-            <div key={idx} className={`text-[9px] font-bold py-0.5 ${idx === 5 || idx === 6 ? 'text-red-500' : 'text-slate-400'}`}>
+          {['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি'].map((dName, idx) => (
+            <div key={idx} className={`text-[10px] sm:text-xs font-bold py-0.5 ${idx === 5 || idx === 6 ? 'text-red-500 font-extrabold' : 'text-slate-400 dark:text-slate-550'}`}>
               {dName}
             </div>
           ))}
