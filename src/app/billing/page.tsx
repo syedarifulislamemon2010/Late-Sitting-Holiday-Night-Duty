@@ -8,7 +8,10 @@ import {
   DollarSign, 
   Clock,
   ShieldCheck,
-  Award
+  Award,
+  Loader2,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 
 interface Cell {
@@ -37,6 +40,7 @@ interface Duty {
   allowance1: number;
   allowance2: number;
   totalBill: number;
+  orderRef?: string | null;
 }
 
 interface EmployeeBillingSummary {
@@ -60,6 +64,7 @@ interface EmployeeBillingSummary {
 
 export default function BillingPage() {
   const [duties, setDuties] = useState<Duty[]>([]);
+  const [baseOrderRef, setBaseOrderRef] = useState('');
   const [cells, setCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCell, setSelectedCell] = useState('all');
@@ -71,6 +76,7 @@ export default function BillingPage() {
 
   // Legal Print Form Configs
   const [isPrintMode, setIsPrintMode] = useState(false);
+  const [isEditingArchive, setIsEditingArchive] = useState(false);
   const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
   const [printCategory, setPrintCategory] = useState<'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'>('LATE_SITTING');
   
@@ -79,6 +85,44 @@ export default function BillingPage() {
   const [representativeName, setRepresentativeName] = useState('জনাব শাহনেওয়াজ মাহমুদ');
   const [representativeDesignation, setRepresentativeDesignation] = useState('এসও-আইটি');
   const [openingParagraph, setOpeningParagraph] = useState('');
+
+  const [selectedExecutiveId, setSelectedExecutiveId] = useState('');
+  const [signingOfficer, setSigningOfficer] = useState('জনাব মোহাম্মদ সোহরাব হোসেন');
+  const [signingDesignation, setSigningDesignation] = useState('উপ-মহাব্যবস্থাপক');
+
+  const [archiving, setArchiving] = useState(false);
+  const [archiveSuccess, setArchiveSuccess] = useState<string | null>(null);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
+
+  const [billRef, setBillRef] = useState('');
+  const [originalBillRef, setOriginalBillRef] = useState('');
+  const [selectedOrderRef, setSelectedOrderRef] = useState<string>('');
+  const [pendingOrderRefs, setPendingOrderRefs] = useState<string[]>([]);
+  const [randomNumber, setRandomNumber] = useState(() => Math.floor(10 + Math.random() * 90));
+  const [archivedOrders, setArchivedOrders] = useState<any[]>([]);
+
+  // Sync billRef dynamically
+  useEffect(() => {
+    let repName = 'ইমন';
+    if (representativeName) {
+      repName = representativeName.replace(/^জনাব\s+/, '');
+    }
+    
+    const targetOrderRef = selectedOrderRef || baseOrderRef;
+    
+    if (targetOrderRef) {
+      const parts = targetOrderRef.split('/');
+      if (parts.length >= 3) {
+        parts[2] = repName;
+      }
+      setBillRef(parts.join('/') + '/বিল');
+    } else {
+      const catBangla = printCategory === 'LATE_SITTING' ? 'লেট-সিটিং' : printCategory === 'HOLIDAY' ? 'অফ-ডে' : 'নাইট';
+      const bnYear = toBanglaDigits('2026');
+      const bnRand = toBanglaDigits(randomNumber);
+      setBillRef(`৯১০৩/ডেভ/${repName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${bnRand}/বিল`);
+    }
+  }, [baseOrderRef, selectedOrderRef, printCategory, representativeName, randomNumber]);
 
   const [executives, setExecutives] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -102,7 +146,17 @@ export default function BillingPage() {
         const empData = await empRes.json();
         setCells(Array.isArray(cellData) ? cellData : []);
         setEmployees(Array.isArray(empData) ? empData : []);
-        setExecutives(Array.isArray(execData) ? execData : []);
+        if (Array.isArray(execData)) {
+          setExecutives(execData);
+          if (execData.length > 0) {
+            const defaultExec = execData.find((ex: any) => ex.name.includes('মোহাম্মদ সোহরাব হোসেন') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || execData[0];
+            if (defaultExec) {
+              setSelectedExecutiveId(defaultExec.id.toString());
+              setSigningOfficer(defaultExec.name);
+              setSigningDesignation(defaultExec.designation);
+            }
+          }
+        }
       } catch (err) {
         console.error('Error loading static data:', err);
       }
@@ -110,6 +164,61 @@ export default function BillingPage() {
     loadStaticData();
   }, []);
 
+  // Load archived bill details if edit_ref query param is present
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const editRef = params.get('edit_ref');
+    if (editRef) {
+      const editRefVal: string = editRef;
+      async function loadArchivedBill() {
+        try {
+          const res = await fetch('/api/office-orders');
+          if (res.ok) {
+            const orders = await res.json();
+            const archivedBill = orders.find((o: any) => o.orderRef === editRefVal);
+            if (archivedBill) {
+              setIsEditingArchive(true);
+              setIsPrintMode(true);
+              setOriginalBillRef(editRefVal);
+              
+              if (archivedBill.category && archivedBill.category.startsWith('BILL_')) {
+                setPrintCategory(archivedBill.category.slice(5) as any);
+              }
+              setBillDate(archivedBill.orderDate || new Date().toISOString().split('T')[0]);
+              setRepresentativeName(archivedBill.employeeName || '');
+              
+              let baseRef = editRefVal;
+              if (baseRef.endsWith('/বিল')) {
+                baseRef = baseRef.slice(0, -5);
+              }
+              setBaseOrderRef(baseRef);
+
+              if (archivedBill.content) {
+                if (archivedBill.content.openingParagraph) {
+                  setOpeningParagraph(archivedBill.content.openingParagraph);
+                }
+                if (archivedBill.content.subjectText) {
+                  setSubjectText(archivedBill.content.subjectText);
+                }
+                if (archivedBill.content.signingOfficer) {
+                  setSigningOfficer(archivedBill.content.signingOfficer);
+                }
+                if (archivedBill.content.signingDesignation) {
+                  setSigningDesignation(archivedBill.content.signingDesignation);
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error loading archived bill for editing:', err);
+        }
+      }
+      loadArchivedBill();
+    }
+  }, []);
+
+  // Fetch duties based on selected month & filters
   // Fetch duties based on selected month & filters
   async function fetchDutiesForBilling() {
     try {
@@ -122,14 +231,85 @@ export default function BillingPage() {
       const lastDay = new Date(parseInt(year, 10), parseInt(month, 10), 0).getDate();
       const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
       
-      let queryUrl = `/api/duties?startDate=${startDate}&endDate=${endDate}`;
+      let queryUrl = `/api/duties?startDate=${startDate}&endDate=${endDate}&includeArchived=true`;
       if (selectedCell !== 'all') {
         queryUrl += `&cellId=${selectedCell}`;
       }
       
       const res = await fetch(queryUrl);
       const data = await res.json();
-      setDuties(Array.isArray(data) ? data : []);
+      const activeList = Array.isArray(data) ? data : [];
+
+      // Fetch all archived office orders and bills
+      const ordersRes = await fetch('/api/office-orders');
+      const ordersData = await ordersRes.json();
+      const archivedOrders = Array.isArray(ordersData) ? ordersData : [];
+      setArchivedOrders(archivedOrders);
+
+      const getNormalizedRef = (ref: string) => {
+        if (!ref) return '';
+        let clean = ref;
+        if (clean.endsWith('/বিল')) {
+          clean = clean.slice(0, -5);
+        }
+        const parts = clean.split('/');
+        if (parts.length >= 3) {
+          parts.splice(2, 1); // remove name component
+        }
+        return parts.join('/');
+      };
+
+      const archivedBillNormalizedRefs = new Set(
+        archivedOrders
+          .filter(o => o.category?.startsWith('BILL_') || o.orderRef?.endsWith('/বিল'))
+          .map(o => getNormalizedRef(o.orderRef))
+      );
+
+      const filteredDuties = activeList.filter(d => {
+        if (!d.orderRef) return false; // Must have an office order generated
+        if (d.orderRef.endsWith('/বিল')) return false; // Already billed
+        const norm = getNormalizedRef(d.orderRef);
+        return !archivedBillNormalizedRefs.has(norm); // Must NOT have a bill generated
+      });
+
+      // Merge with archived duties if editing
+      if (isEditingArchive && baseOrderRef) {
+        const archRes = await fetch(`/api/duties?orderRef=${encodeURIComponent(baseOrderRef)}&includeArchived=true`);
+        if (archRes.ok) {
+          const archData = await archRes.json();
+          const archList = Array.isArray(archData) ? archData : [];
+          
+          const merged = [...archList];
+          filteredDuties.forEach(d => {
+            if (!merged.some(m => m.id === d.id)) {
+              merged.push(d);
+            }
+          });
+          setDuties(merged);
+          return;
+        }
+      }
+
+      // Extract distinct orderRefs for the selected printCategory
+      const pendingRefs = Array.from(
+        new Set(
+          filteredDuties
+            .filter(d => d.type === printCategory)
+            .map(d => d.orderRef)
+            .filter(Boolean)
+        )
+      ) as string[];
+      
+      setPendingOrderRefs(pendingRefs);
+      if (pendingRefs.length > 0) {
+        if (!selectedOrderRef || !pendingRefs.includes(selectedOrderRef)) {
+          setSelectedOrderRef(pendingRefs[0]);
+        }
+      } else {
+        setSelectedOrderRef('');
+      }
+
+      setDuties(filteredDuties);
     } catch (err) {
       console.error('Error fetching duties for billing:', err);
     } finally {
@@ -137,9 +317,24 @@ export default function BillingPage() {
     }
   }
 
+  const handleBackToLedger = () => {
+    setIsPrintMode(false);
+    setIsEditingArchive(false);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/billing');
+    }
+    fetchDutiesForBilling();
+  };
+
   useEffect(() => {
     fetchDutiesForBilling();
-  }, [selectedMonth, selectedCell]);
+  }, [selectedMonth, selectedCell, isEditingArchive, baseOrderRef, printCategory]);
+
+  // Reactive effect to keep baseOrderRef in sync with printCategory and duties
+  useEffect(() => {
+    const firstDuty = duties.find(d => d.type === printCategory && d.orderRef);
+    setBaseOrderRef(firstDuty ? firstDuty.orderRef || '' : '');
+  }, [duties, printCategory]);
 
   // Sync templates and openingParagraph dynamically based on printCategory
   useEffect(() => {
@@ -158,7 +353,11 @@ export default function BillingPage() {
   const getBillingSummaries = (): EmployeeBillingSummary[] => {
     const map = new Map<number, EmployeeBillingSummary>();
     
-    duties.forEach(duty => {
+    const activeDuties = selectedOrderRef
+      ? duties.filter(d => d.orderRef === selectedOrderRef)
+      : duties;
+      
+    activeDuties.forEach(duty => {
       const emp = duty.employee;
       if (!map.has(emp.id)) {
         map.set(emp.id, {
@@ -213,8 +412,22 @@ export default function BillingPage() {
     return false;
   });
 
-  // Automatically select first employee in the print summaries as representative payee by default
+  // Automatically select representative payee by default (based on selected office order payee name, falling back to first employee)
   useEffect(() => {
+    if (selectedOrderRef && archivedOrders.length > 0) {
+      const matchedOrder = archivedOrders.find(o => o.orderRef === selectedOrderRef);
+      if (matchedOrder && matchedOrder.employeeName) {
+        setRepresentativeName(matchedOrder.employeeName);
+        const matchedEmp = employees.find(e => e.name === matchedOrder.employeeName);
+        if (matchedEmp) {
+          setRepresentativeDesignation(getShortDesignation(matchedEmp.designation));
+        } else {
+          setRepresentativeDesignation('এসও-আইটি'); // Fallback designation
+        }
+        return;
+      }
+    }
+
     if (printFilteredSummaries.length > 0) {
       setRepresentativeName(printFilteredSummaries[0].name);
       setRepresentativeDesignation(getShortDesignation(printFilteredSummaries[0].designation));
@@ -222,7 +435,7 @@ export default function BillingPage() {
       setRepresentativeName('');
       setRepresentativeDesignation('');
     }
-  }, [duties, printCategory]);
+  }, [duties, printCategory, selectedOrderRef, archivedOrders, employees]);
 
   // Aggregate financial metrics for general dashboard
   const aggregateMetrics = () => {
@@ -411,6 +624,156 @@ export default function BillingPage() {
     const days = printCategory === 'LATE_SITTING' ? s.lateDays : printCategory === 'HOLIDAY' ? s.holidayDays : s.nightDays;
     return sum + days;
   }, 0);
+
+  const handleGenerateAndPrint = async (isPrintPreview: boolean) => {
+    setArchiving(true);
+    setArchiveSuccess(null);
+    setArchiveError(null);
+    
+    try {
+      const formatMonthName = (monthStr: string) => {
+        const [year, month] = monthStr.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const monthName = date.toLocaleString('en-US', { month: 'long' });
+        return `${monthName}-${year}`;
+      };
+      
+      const billingMonthName = formatMonthName(selectedMonth);
+
+      const summariesPayload = printFilteredSummaries.map(s => {
+        const days = printCategory === 'LATE_SITTING' ? s.lateDays : printCategory === 'HOLIDAY' ? s.holidayDays : s.nightDays;
+        const totalTransport = days * transportRate;
+        const totalApyaon = days * apyaonRate;
+        const empTotal = totalTransport + totalApyaon;
+        return {
+          name: s.name,
+          designation: s.designation,
+          bankId: s.bankId || '',
+          days: days,
+          apyaonRate: apyaonRate,
+          totalApyaon: totalApyaon,
+          totalTransport: totalTransport,
+          grandTotal: empTotal,
+          datesFormatted: formatWorkedDatesForCategory(s.employeeId)
+        };
+      });
+
+      // 1. Archive metadata into OfficeOrders table (Bill Archive)
+      const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
+      const cellName = matchedCellObj ? matchedCellObj.name : (selectedCell === 'all' ? 'All Cells' : 'IT Department');
+
+      const archivePayload = {
+        orderRef: billRef,
+        originalOrderRef: isEditingArchive ? originalBillRef : undefined,
+        orderDate: billDate,
+        category: "BILL_" + printCategory,
+        employeeName: representativeName,
+        cellName: cellName,
+        duties: summariesPayload.map(s => ({
+          employeeId: s.bankId,
+          employeeName: s.name,
+          designation: s.designation,
+          days: s.days,
+          apyaonRate: s.apyaonRate,
+          totalApyaon: s.totalApyaon,
+          totalTransport: s.totalTransport,
+          grandTotal: s.grandTotal,
+          datesFormatted: s.datesFormatted
+        })),
+        dutyIds: duties.filter(d => d.orderRef === selectedOrderRef && d.type === printCategory).map(d => d.id),
+        content: {
+          openingParagraph: openingParagraph,
+          totalDays: totalDaysAll,
+          totalApyaon: totalApyaonAll,
+          totalTransport: totalTransportAll,
+          grandTotal: grandTotalPrintAll,
+          grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          subjectText: subjectText
+        }
+      };
+
+      const archiveRes = await fetch('/api/office-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(archivePayload),
+      });
+
+      if (!archiveRes.ok) {
+        throw new Error('Failed to archive bill memo metadata');
+      }
+      console.log('Bill memo metadata archived successfully!');
+
+      // 2. Generate PDF and save in Documents table
+      const payload = {
+        billingMonth: billingMonthName,
+        openingParagraph: openingParagraph,
+        summaries: summariesPayload,
+        totalDays: totalDaysAll,
+        totalApyaon: totalApyaonAll,
+        totalTransport: totalTransportAll,
+        grandTotal: grandTotalPrintAll,
+        grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
+        signingOfficer: signingOfficer,
+        signingDesignation: signingDesignation,
+        representativeName: representativeName,
+        representativeDesignation: representativeDesignation,
+        subjectText: subjectText,
+        billDate: billDate,
+        transportRate: transportRate,
+        apyaonRate: apyaonRate,
+        totalTransportInWords: getBanglaNumberWords(totalTransportAll),
+        totalApyaonInWords: getBanglaNumberWords(totalApyaonAll),
+        billRef: billRef
+      };
+
+      const res = await fetch('/api/documents/generate-bill-memo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log('Bill memo archived successfully as PDF:', data);
+        setArchiveSuccess('বিল মেমো সফলভাবে জেনারেট এবং ম্যানুয়াল ফাইল আর্কাইভে সংরক্ষণ করা হয়েছে!');
+        
+        if (isPrintPreview) {
+          setTimeout(() => {
+            window.print();
+            setIsPrintMode(false);
+            setIsEditingArchive(false);
+            if (typeof window !== 'undefined') {
+              window.history.pushState({}, '', '/billing');
+            }
+            fetchDutiesForBilling();
+          }, 300);
+        } else {
+          if (data.filePath) {
+            window.open(data.filePath, '_blank');
+          }
+          setIsPrintMode(false);
+          setIsEditingArchive(false);
+          if (typeof window !== 'undefined') {
+            window.history.pushState({}, '', '/billing');
+          }
+          fetchDutiesForBilling();
+        }
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Failed to generate/archive bill memo PDF:', errorData);
+        setArchiveError('বিল মেমো আর্কাইভ করতে ব্যর্থ হয়েছে।');
+        setTimeout(() => setArchiveError(null), 5000);
+      }
+    } catch (err: any) {
+      console.error('Error in handleGenerateAndPrint:', err);
+      setArchiveError(err.message || 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+      setTimeout(() => setArchiveError(null), 5000);
+    } finally {
+      setArchiving(false);
+    }
+  };
 
   const { transportRate, apyaonRate } = getPrintCategoryRates();
 
@@ -643,7 +1006,7 @@ export default function BillingPage() {
                 background: #fff !important; 
                 font-family: "Kalpurush", "Noto Sans Bengali", sans-serif !important; 
                 font-size: 10px !important;
-                line-height: 1.0 !important;
+                line-height: 1.6 !important;
               }
               .print-legal-layout {
                 width: 8.5in !important;
@@ -663,24 +1026,67 @@ export default function BillingPage() {
           `}} />
 
           {/* Back Controls (No-print) */}
-          <div className="no-print flex items-center justify-between glass-card p-4 rounded-2xl">
-            <button
-              onClick={() => setIsPrintMode(false)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              <ChevronLeft size={16} />
-              ফিরে যান (লেজার ভিউ)
-            </button>
-
-            <div className="flex gap-3">
+          <div className="no-print flex flex-col gap-4 glass-card p-4 rounded-2xl">
+            <div className="flex items-center justify-between">
               <button
-                onClick={() => window.print()}
-                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-md animate-pulse"
+                onClick={handleBackToLedger}
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               >
-                <Printer size={14} />
-                ডাউনলোড / প্রিন্ট পিডিএফ (Legal Size)
+                <ChevronLeft size={16} />
+                ফিরে যান (লেজার ভিউ)
               </button>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleGenerateAndPrint(true)}
+                  disabled={archiving}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {archiving ? (
+                    <>
+                      <Loader2 className="animate-spin" size={14} />
+                      প্রসেস হচ্ছে...
+                    </>
+                  ) : (
+                    <>
+                      <Printer size={14} />
+                      প্রিন্ট প্রিভিউ
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleGenerateAndPrint(false)}
+                  disabled={archiving}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {archiving ? (
+                    <>
+                      <Loader2 className="animate-spin" size={14} />
+                      প্রসেস হচ্ছে...
+                    </>
+                  ) : (
+                    <>
+                      <Printer size={14} />
+                      ডাউনলোড
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
+
+            {archiveSuccess && (
+              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 p-3 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-455">
+                <CheckCircle size={16} className="text-emerald-505" />
+                <span>{archiveSuccess}</span>
+              </div>
+            )}
+
+            {archiveError && (
+              <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 p-3 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-455">
+                <AlertCircle size={16} className="text-rose-505" />
+                <span>{archiveError}</span>
+              </div>
+            )}
           </div>
 
           {/* Interactive Print Options Configurator (No-print) */}
@@ -689,7 +1095,7 @@ export default function BillingPage() {
             
             <div className="space-y-4">
               {/* Row 1: Document Metadata & Dates */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500">ডিউটির ক্যাটাগরি (Duty Category)</label>
                   <select
@@ -722,10 +1128,39 @@ export default function BillingPage() {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
                   />
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500">স্মারক/সূত্র নম্বর (Bill Ref)</label>
+                  <input
+                    type="text"
+                    value={billRef}
+                    onChange={(e) => setBillRef(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
               </div>
 
-              {/* Row 2: Payees & Representatives */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* office order selection dropdown if there are pending orders */}
+              {pendingOrderRefs.length > 0 && (
+                <div className="p-4 rounded-xl bg-amber-500/5 dark:bg-amber-950/10 border border-amber-200/40 dark:border-amber-900/20 space-y-1.5">
+                  <label className="text-xs font-extrabold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                    কোন অফিস আদেশের বিল তৈরি করতে চান? (Select Office Order)
+                  </label>
+                  <select
+                    value={selectedOrderRef}
+                    onChange={(e) => setSelectedOrderRef(e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-amber-200/60 dark:border-amber-900/40 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
+                  >
+                    {pendingOrderRefs.map(ref => (
+                      <option key={ref} value={ref}>{ref}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Row 2: Payees & Representatives & DGM */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500">তহবিল সংগ্রহকারী কর্মকর্তা (Bill Favoring To)</label>
                   <select
@@ -758,6 +1193,30 @@ export default function BillingPage() {
                     className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-850 border border-slate-200 dark:border-slate-850 rounded-lg text-xs cursor-not-allowed text-slate-500 font-semibold"
                   />
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500">অনুমোদনকারী কর্মকর্তা (DGM)</label>
+                  <select
+                    value={selectedExecutiveId}
+                    onChange={(e) => {
+                      const execId = e.target.value;
+                      setSelectedExecutiveId(execId);
+                      const exec = executives.find(ex => ex.id.toString() === execId);
+                      if (exec) {
+                        setSigningOfficer(exec.name);
+                        setSigningDesignation(exec.designation);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
+                  >
+                    <option value="">DGM নির্বাচন করুন</option>
+                    {executives.map(ex => (
+                      <option key={ex.id} value={ex.id.toString()}>
+                        {ex.name} ({ex.designation})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -784,7 +1243,7 @@ export default function BillingPage() {
                       </h2>
                       
                       <div className="mt-2.5">
-                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6' }}>
                           {openingParagraph}
                         </p>
                       </div>
@@ -853,14 +1312,14 @@ export default function BillingPage() {
                       ) : null}
 
                       {/* Paragraphs */}
-                      <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                      <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6' }}>
                           ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                         </p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6' }}>
                           ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                         </p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6' }}>
                           ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(grandTotalPrintAll)}/- ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'}, {representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                         </p>
                       </div>

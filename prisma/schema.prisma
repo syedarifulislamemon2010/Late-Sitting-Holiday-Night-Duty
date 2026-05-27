@@ -48,7 +48,10 @@ model Duty {
   allowance1  Float    // Snacks / Lunch / Dinner based on type
   allowance2  Float    // Meal / Snacks / Early Meal based on type
   totalBill   Float    // Total allowance
+  orderRef    String?
   createdAt   DateTime @default(now())
+
+  @@index([orderRef])
 }
 
 model Document {
@@ -57,6 +60,21 @@ model Document {
   filePath    String
   fileSize    Int
   uploadedAt  DateTime @default(now())
+}
+
+model OfficeOrder {
+  id           Int      @id @default(autoincrement())
+  orderRef     String   @unique
+  orderDate    String
+  category     String
+  employeeName String
+  cellName     String?
+  dutiesJson   String
+  contentJson  String?
+  status       String   @default("Printed")
+  createdAt    DateTime @default(now())
+
+  @@index([orderRef])
 }
 
 model Holiday {

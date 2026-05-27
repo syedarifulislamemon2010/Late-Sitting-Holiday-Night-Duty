@@ -19,7 +19,7 @@ export async function GET() {
         });
         if (user && user.role === 'USER') {
           isUserRestricted = true;
-          cellIds = user.cells.map(c => c.id);
+          cellIds = user.cells.map((c: any) => c.id);
         }
       }
     }

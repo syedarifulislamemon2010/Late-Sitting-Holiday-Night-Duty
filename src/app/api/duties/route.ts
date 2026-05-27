@@ -8,6 +8,8 @@ export async function GET(request: Request) {
     const cellId = searchParams.get('cellId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const includeArchived = searchParams.get('includeArchived') === 'true';
+    const orderRef = searchParams.get('orderRef');
     
     const cookieStore = await cookies();
     const sessionVal = cookieStore.get('session')?.value;
@@ -24,7 +26,7 @@ export async function GET(request: Request) {
         });
         if (user && user.role === 'USER') {
           isUserRestricted = true;
-          userCellIds = user.cells.map(c => c.id);
+          userCellIds = user.cells.map((c: any) => c.id);
         }
       }
     }
@@ -58,6 +60,12 @@ export async function GET(request: Request) {
       if (endDate) {
         whereClause.date.lte = endDate;
       }
+    }
+
+    if (orderRef) {
+      whereClause.orderRef = orderRef;
+    } else if (!includeArchived) {
+      whereClause.orderRef = null;
     }
     
     const duties = await prisma.duty.findMany({
@@ -114,7 +122,7 @@ async function checkIsHoliday(tx: any, dateStr: string): Promise<boolean> {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { assignments } = body;
+    const { assignments, orderRef, originalOrderRef } = body;
     
     if (!assignments || !Array.isArray(assignments) || assignments.length === 0) {
       return NextResponse.json({ error: 'assignments_required' }, { status: 400 });
@@ -122,7 +130,47 @@ export async function POST(request: Request) {
     
     const createdDuties: any[] = [];
     
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
+      if (originalOrderRef) {
+        // Delete existing duties linked to the originalOrderRef first
+        await tx.duty.deleteMany({
+          where: { orderRef: originalOrderRef }
+        });
+      }
+      if (orderRef && orderRef !== originalOrderRef) {
+        // Delete existing duties linked to the new orderRef
+        await tx.duty.deleteMany({
+          where: { orderRef: orderRef }
+        });
+      }
+
+      // Pre-fetch all holiday overrides for the unique assignment dates
+      const uniqueDates = Array.from(new Set(assignments.map((a: any) => a.date)));
+      const holidayOverrides = await tx.holiday.findMany({
+        where: { date: { in: uniqueDates } }
+      });
+      const holidayOverrideMap = new Map(holidayOverrides.map((h: any) => [h.date, h.isWorkingDay]));
+
+      const checkIsHolidayLocal = (dateStr: string): boolean => {
+        const dateObj = new Date(dateStr);
+        const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
+        const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+        const isWorkingDay = holidayOverrideMap.get(dateStr);
+        if (isWorkingDay !== undefined) {
+          return !isWorkingDay;
+        }
+        return isWeekend;
+      };
+
+      // Pre-fetch all existing duties for the employeeIds and dates
+      const uniqueEmployeeIds = Array.from(new Set(assignments.map((a: any) => parseInt(a.employeeId, 10))));
+      const allExistingDuties = await tx.duty.findMany({
+        where: {
+          employeeId: { in: uniqueEmployeeIds },
+          date: { in: uniqueDates }
+        }
+      });
+
       for (const assignment of assignments) {
         const { employeeId, type, date, description } = assignment;
         
@@ -130,8 +178,8 @@ export async function POST(request: Request) {
           throw new Error('missing_fields');
         }
 
-        // Validate Holiday Rules
-        const isHoliday = await checkIsHoliday(tx, date);
+        // Validate Holiday Rules locally using the pre-fetched map
+        const isHoliday = checkIsHolidayLocal(date);
 
         if (type === 'LATE_SITTING' && isHoliday) {
           throw new Error('late_sitting_on_holiday');
@@ -143,12 +191,10 @@ export async function POST(request: Request) {
         
         const { allowance1, allowance2, totalBill } = calculateAllowances(type);
         
-        const existingDuties = await tx.duty.findMany({
-          where: {
-            employeeId: parseInt(employeeId, 10),
-            date: date
-          }
-        });
+        // Filter existing duties locally from the pre-fetched list
+        const existingDuties = allExistingDuties.filter((d: any) => 
+          d.employeeId === parseInt(employeeId, 10) && d.date === date
+        );
         
         if (type === 'LATE_SITTING') {
           if (existingDuties.length > 0) {
@@ -170,11 +216,14 @@ export async function POST(request: Request) {
             description: description || null,
             allowance1,
             allowance2,
-            totalBill
+            totalBill,
+            orderRef: orderRef || null
           }
         });
         createdDuties.push(created);
       }
+    }, {
+      timeout: 30000 // 30 seconds
     });
     
     return NextResponse.json({ success: true, count: createdDuties.length });

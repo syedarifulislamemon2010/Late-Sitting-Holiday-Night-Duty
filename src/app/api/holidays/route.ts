@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     const savedHolidays: any[] = [];
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       for (const h of holidays) {
         if (!h.date || !h.name) continue;
         

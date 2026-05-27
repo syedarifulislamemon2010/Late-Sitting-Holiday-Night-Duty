@@ -16,7 +16,7 @@ export async function GET() {
     const existingUsers = await prisma.user.findMany({
       select: { username: true }
     });
-    const existingUsernames = new Set(existingUsers.map(u => u.username.trim().toLowerCase()));
+    const existingUsernames = new Set(existingUsers.map((u: any) => u.username.trim().toLowerCase()));
 
     // 3. Sync missing users
     for (const emp of employees) {

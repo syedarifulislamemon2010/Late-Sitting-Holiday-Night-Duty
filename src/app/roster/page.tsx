@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
@@ -46,6 +46,52 @@ interface Duty {
 const toBanglaDigits = (num: number | string) => {
   const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   return num.toString().replace(/\d/g, d => bn[parseInt(d, 10)]);
+};
+
+const getBanglaNumberWords = (num: number) => {
+  if (num === 0) return 'শূন্য';
+  
+  const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'छয়', 'সাত', 'আট', 'নয়'];
+  const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
+  const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
+
+  const convertTens = (n: number): string => {
+    if (n < 10) return singleWords[n];
+    if (n >= 10 && n < 20) return teenWords[n - 10];
+    const ten = Math.floor(n / 10);
+    const unit = n % 10;
+    return doubleWords[ten] + (unit > 0 ? ' ' + singleWords[unit] : '');
+  };
+
+  let wordStr = '';
+  
+  // Lac portion
+  if (num >= 100000) {
+    const lac = Math.floor(num / 100000);
+    wordStr += convertTens(lac) + ' লক্ষ ';
+    num %= 100000;
+  }
+
+  // Thousand portion
+  if (num >= 1000) {
+    const thousand = Math.floor(num / 1000);
+    wordStr += convertTens(thousand) + ' হাজার ';
+    num %= 1000;
+  }
+  
+  // Hundred portion
+  if (num >= 100) {
+    const hundred = Math.floor(num / 100);
+    wordStr += singleWords[hundred] + ' শত ';
+    num %= 100;
+  }
+  
+  // Tens portion
+  if (num > 0) {
+    wordStr += convertTens(num);
+  }
+  
+  return wordStr.trim() + ' টাকা মাত্র';
 };
 
 export default function RosterPage() {
@@ -131,17 +177,40 @@ export default function RosterPage() {
 
   // Office Order (জিও) custom edit fields
   const [isPrintMode, setIsPrintMode] = useState(false);
+  const [isEditingArchive, setIsEditingArchive] = useState(false);
+  const [archiveSerial, setArchiveSerial] = useState('');
+  const [originalOrderRef, setOriginalOrderRef] = useState('');
+  const [activePartIdx, setActivePartIdx] = useState(0);
+
+  const getSplitParts = (flatDuties: any[], numParts: number) => {
+    const parts: any[][] = Array.from({ length: numParts }, () => []);
+    const sorted = [...flatDuties].sort((a, b) => {
+      const dComp = a.date.localeCompare(b.date);
+      if (dComp !== 0) return dComp;
+      return a.employee.name.localeCompare(b.employee.name, 'bn-BD');
+    });
+    
+    const totalItems = sorted.length;
+    const baseSize = Math.floor(totalItems / numParts);
+    const remainder = totalItems % numParts;
+    
+    let currentIdx = 0;
+    for (let p = 0; p < numParts; p++) {
+      const currentSize = baseSize + (p < remainder ? 1 : 0);
+      parts[p] = sorted.slice(currentIdx, currentIdx + currentSize);
+      currentIdx += currentSize;
+    }
+    
+    return parts;
+  };
+
   const [memoNo, setMemoNo] = useState('স্মারক নং: ৪৬.০২.০০০০.০০১.১৯.০০২.২৬-১৫৪');
   const [issuingOffice, setIssuingOffice] = useState('প্রশাসনিক সেল, ডিউটি পোর্টাল কার্যালয়');
   const [signingOfficer, setSigningOfficer] = useState('জনাব মোহাম্মদ সোহরাব হোসেন');
   const [signingDesignation, setSigningDesignation] = useState('উপ-মহাব্যবস্থাপক');
   const [signingPhone, setSigningPhone] = useState('০২-৯৫৫৫৬৬৬');
   const [signingEmail, setSigningEmail] = useState('ashikur.rahman@office.gov.bd');
-  const [copies, setCopies] = useState([
-    'মহাপরিচালক, ডিউটি পোর্টাল অধিদপ্তর, ঢাকা।',
-    'হিসাবরক্ষণ কর্মকর্তা, সংশ্লিষ্ট কার্যালয়।',
-    'ব্যক্তিগত নথি / অফিস কপি।'
-  ]);
+  const [copies, setCopies] = useState<string[]>([]);
   const [newCopyText, setNewCopyText] = useState('');
   const [executives, setExecutives] = useState<any[]>([]);
   const [selectedExecutiveId, setSelectedExecutiveId] = useState<string>('');
@@ -150,6 +219,12 @@ export default function RosterPage() {
   // Helper to check if a date is a working day or weekend/holiday
   const checkIsWorkingDay = (dateStr: string, holidaysList: any[]) => {
     if (!dateStr) return true;
+    
+    // Hardcoded override for May 23, 2026 (Saturday) to be a working day (just like in dashboard calendar)
+    if (dateStr === '2026-05-23') {
+      return true;
+    }
+    
     const [y, m, d] = dateStr.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d);
     const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
@@ -169,14 +244,25 @@ export default function RosterPage() {
     return true;
   };
 
-  // Helper to walk backward to find the previous working day
-  const calculateOrderDate = (earliestDateStr: string, holidaysList: any[]) => {
+  // Check if a date should be disabled based on selected duty category
+  const isDateDisabledForType = (isWorking: boolean, type: string) => {
+    if (type === 'LATE_SITTING') {
+      return !isWorking; // Disable holidays/weekends for Late Sitting
+    }
+    if (type === 'HOLIDAY') {
+      return isWorking; // Disable normal working days for Holiday Duty
+    }
+    return false; // Night Shift allows any date
+  };
+
+  // Helper to walk backward to find the N-th previous working day
+  const calculateOrderDate = (earliestDateStr: string, holidaysList: any[], steps: number = 1) => {
     if (!earliestDateStr) return new Date().toISOString().split('T')[0];
     
     let [y, m, d] = earliestDateStr.split('-').map(Number);
     let currentDate = new Date(y, m - 1, d);
     
-    // We want to find the working day before
+    let workingDaysFound = 0;
     while (true) {
       // Subtract 1 day
       currentDate.setDate(currentDate.getDate() - 1);
@@ -187,7 +273,10 @@ export default function RosterPage() {
       const cDateStr = `${cy}-${cm}-${cd}`;
       
       if (checkIsWorkingDay(cDateStr, holidaysList)) {
-        return cDateStr;
+        workingDaysFound++;
+        if (workingDaysFound === steps) {
+          return cDateStr;
+        }
       }
     }
   };
@@ -254,12 +343,14 @@ export default function RosterPage() {
           ))}
           
           {cells.map(c => {
-            const holidayInfo = c.isDbHoliday ? c.isDbHoliday.name : (c.dayOfWeek === 5 || c.dayOfWeek === 6 ? 'সাপ্তাহিক ছুটি' : '');
+            const holidayInfo = c.isDbHoliday ? c.isDbHoliday.name : ((c.dayOfWeek === 5 || c.dayOfWeek === 6) && !c.isWorking ? 'সাপ্তাহিক ছুটি' : '');
+            const isDisabled = isDateDisabledForType(c.isWorking, assignmentForm.type);
             return (
               <button
                 type="button"
                 key={c.dateStr}
-                title={`${c.dateStr} (${holidayInfo || 'কর্মদিবস'})`}
+                disabled={isDisabled}
+                title={`${c.dateStr} (${holidayInfo || 'কর্মদিবস'})${isDisabled ? ' - এই ক্যাটাগরির জন্য ডিজেবল' : ''}`}
                 onClick={() => {
                   if (c.isSelected) {
                     handleOpt1RemoveDate(empId, c.dateStr);
@@ -270,9 +361,11 @@ export default function RosterPage() {
                 className={`relative p-1 text-[10px] font-bold rounded-lg transition-all flex flex-col items-center justify-center min-h-[36px] border ${
                   c.isSelected
                     ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm font-extrabold scale-105'
-                    : !c.isWorking
-                      ? 'bg-red-50/50 dark:bg-red-950/20 border-red-100/50 dark:border-red-900/10 text-red-500 hover:bg-red-100/60 dark:hover:bg-red-900/30'
-                      : 'bg-slate-50 dark:bg-slate-950/20 border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    : isDisabled
+                      ? 'bg-slate-100/50 dark:bg-slate-900/10 border-slate-200/20 dark:border-slate-800/10 text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-40'
+                      : !c.isWorking
+                        ? 'bg-red-50/50 dark:bg-red-950/20 border-red-100/50 dark:border-red-900/10 text-red-500 hover:bg-red-100/60 dark:hover:bg-red-900/30'
+                        : 'bg-slate-50 dark:bg-slate-950/20 border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
                 <span>{c.day}</span>
@@ -289,9 +382,13 @@ export default function RosterPage() {
 
   // New customizable parameters for Janata Bank Office Order
   const [printCategory, setPrintCategory] = useState<'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'>('LATE_SITTING');
+
+  useEffect(() => {
+    setActivePartIdx(0);
+  }, [selectedMonth, selectedCell, printCategory]);
+
   const [payeeEmployeeId, setPayeeEmployeeId] = useState<string>('');
   const [orderDate, setOrderDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [randomNumber, setRandomNumber] = useState(() => Math.floor(10 + Math.random() * 90));
   
   const LATE_SITTING_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>ছুটির পর (Late Sitting)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
 
@@ -302,15 +399,39 @@ export default function RosterPage() {
   const [orderText, setOrderText] = useState(LATE_SITTING_TEMPLATE);
   const [orderRef, setOrderRef] = useState('');
 
+  // Calculate stable, deterministic reference number suffix based on selected duties
+  const stableNumber = useMemo(() => {
+    const filtered = duties.filter(d => {
+      const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
+      const matchesCategory = d.type === printCategory;
+      return matchesCell && matchesCategory;
+    });
+
+    const dutyIds = filtered.map(d => d.id).sort((a, b) => a - b);
+    if (dutyIds.length === 0) {
+      return 84; // Fallback default
+    }
+
+    const hashStr = `${dutyIds.join(',')}|${printCategory}|${payeeEmployeeId}`;
+    let hash = 0;
+    for (let i = 0; i < hashStr.length; i++) {
+      hash = (hash * 31 + hashStr.charCodeAt(i)) & 0xffffff;
+    }
+    return 10 + (hash % 90);
+  }, [duties, printCategory, payeeEmployeeId, selectedCell]);
+
   // Automatically select first employee of the duty table as payee representative by default
   useEffect(() => {
     const tableEmps = getGroupedDuties();
     if (tableEmps.length > 0) {
-      setPayeeEmployeeId(tableEmps[0].employee.id.toString());
+      const isCurrentPayeeValid = tableEmps.some(g => g.employee.id.toString() === payeeEmployeeId);
+      if (!payeeEmployeeId || !isCurrentPayeeValid) {
+        setPayeeEmployeeId(tableEmps[0].employee.id.toString());
+      }
     } else {
       setPayeeEmployeeId('');
     }
-  }, [selectedCell, duties, printCategory]);
+  }, [selectedCell, duties, printCategory, payeeEmployeeId]);
 
   // Sync templates and orderRef dynamically
   useEffect(() => {
@@ -321,16 +442,165 @@ export default function RosterPage() {
 
     let empName = 'ইমন';
     if (payeeEmployeeId) {
-      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
-      if (emp) {
-        empName = emp.name.replace(/^জনাব\s+/, '');
+      const grouped = getGroupedDuties();
+      const matchedGroup = grouped.find(g => g.employee.id.toString() === payeeEmployeeId);
+      if (matchedGroup) {
+        empName = matchedGroup.employee.name.replace(/^জনাব\s+/, '');
+      } else {
+        const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
+        if (emp) {
+          empName = emp.name.replace(/^জনাব\s+/, '');
+        }
       }
     }
     const catBangla = printCategory === 'LATE_SITTING' ? 'লেট-সিটিং' : printCategory === 'HOLIDAY' ? 'অফ-ডে' : 'নাইট';
     const bnYear = toBanglaDigits('2026');
-    const bnRand = toBanglaDigits(randomNumber);
+    
+    if (isEditingArchive) {
+      // If editing, use the preserved archiveSerial, or fall back to parsing current orderRef
+      let currentSerial = archiveSerial;
+      if (!currentSerial && orderRef) {
+        const parts = orderRef.split('/');
+        if (parts.length >= 7) {
+          currentSerial = parts[6];
+        }
+      }
+      if (currentSerial) {
+        setOrderRef(`৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${currentSerial}`);
+      }
+      return;
+    }
+
+    // Consecutive reference numbers for split parts (e.g., 85 and 86)
+    const activeStableNumber = stableNumber + activePartIdx;
+    const bnRand = toBanglaDigits(activeStableNumber);
     setOrderRef(`৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${bnRand}`);
-  }, [printCategory, payeeEmployeeId, employees, randomNumber]);
+  }, [printCategory, payeeEmployeeId, employees, stableNumber, isEditingArchive, activePartIdx, archiveSerial]);
+
+  const archiveOrder = async (isPrintPreview: boolean) => {
+    if (!payeeEmployeeId || !orderRef) return;
+    
+    try {
+      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
+      const payeeName = emp ? emp.name : 'Unknown';
+      
+      const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
+      const cellName = matchedCellObj ? matchedCellObj.name : (selectedCell === 'all' ? 'All Cells' : 'IT Department');
+      
+      const printTableDuties = getGroupedDuties();
+
+      const payload = {
+        orderRef: orderRef,
+        originalOrderRef: isEditingArchive ? originalOrderRef : undefined,
+        orderDate: orderDate,
+        category: printCategory,
+        employeeName: payeeName,
+        cellName: cellName,
+        duties: printTableDuties.map(group => ({
+          employeeId: group.employee.id,
+          employeeName: group.employee.name,
+          designation: group.employee.designation,
+          dates: group.dates,
+          description: group.description
+        })),
+        dutyIds: printTableDuties.flatMap(group => {
+          const ids: number[] = [];
+          group.dates.forEach(dStr => {
+            const matchedDuty = duties.find(d => d.employee.id === group.employee.id && d.date === dStr && d.type === printCategory);
+            if (matchedDuty) ids.push(matchedDuty.id);
+          });
+          return ids;
+        }),
+        content: {
+          orderText: orderText,
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          copies: copies,
+          cellName: cellName
+        }
+      };
+
+      const res = await fetch('/api/office-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        console.log('Office order archived successfully!');
+        
+        // Trigger PDF generation endpoint in backend unconditionally
+        const pdfPayload = {
+          orderRef: orderRef,
+          orderDate: orderDate,
+          orderText: orderText,
+          duties: printTableDuties.map(group => ({
+            employee: {
+              name: group.employee.name,
+              designation: getShortDesignation(group.employee.designation),
+              bankId: group.employee.bankId || ''
+            },
+            datesFormatted: getFormattedDateList(group.dates),
+            description: group.description
+          })),
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          copies: copies
+        };
+
+        const pdfRes = await fetch('/api/documents/generate-office-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pdfPayload)
+        });
+
+        if (pdfRes.ok) {
+          const pdfData = await pdfRes.json();
+          // Only open PDF in a new tab if in download/A4 mode (not print preview mode)
+          if (!isPrintPreview && pdfData.filePath) {
+            window.open(pdfData.filePath, '_blank');
+          }
+        } else {
+          console.error('Failed to generate office order PDF');
+        }
+
+        if (isPrintPreview) {
+          // Trigger browser print
+          setTimeout(() => {
+            window.print();
+            setIsPrintMode(false);
+            if (isEditingArchive) {
+              setIsEditingArchive(false);
+              window.history.pushState({}, '', '/roster');
+            }
+            loadDuties();
+          }, 300);
+        } else {
+          setIsPrintMode(false);
+          if (isEditingArchive) {
+            setIsEditingArchive(false);
+            window.history.pushState({}, '', '/roster');
+          }
+          loadDuties();
+        }
+      } else {
+        console.error('Failed to archive office order');
+      }
+    } catch (err) {
+      console.error('Error archiving office order:', err);
+    }
+  };
+
+  // Commented out to ensure that archive is only saved upon explicit download/print click action
+  // as per instructions: "যতক্ষণ না ডাউনলোড বা প্রিন্ট প্রিভিউ অ্যাকশন নেওয়া হচ্ছে, ততক্ষণ এই সূত্র আর্কাইভে জমা হবে না"
+  /*
+  useEffect(() => {
+    if (isPrintMode) {
+      archiveOrder(true);
+    }
+  }, [isPrintMode]);
+  */
+
 
   const getShortDesignation = (desig: string) => {
     const match = desig.match(/\(([^)]+)\)/);
@@ -354,14 +624,25 @@ export default function RosterPage() {
       return matchesCell && matchesCategory;
     });
 
+    const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
+    const totalDays = filtered.length;
+    const totalApyaon = totalDays * apyaonRate;
+
+    let activeDuties = filtered;
+    if (totalApyaon > 7500) {
+      const numParts = Math.ceil(totalApyaon / 7500);
+      const parts = getSplitParts(filtered, numParts);
+      activeDuties = parts[activePartIdx] || [];
+    }
+
     const groupedMap = new Map<number, { employee: Employee; dates: string[]; description: string }>();
-    filtered.forEach(d => {
+    activeDuties.forEach(d => {
       const empId = d.employee.id;
       if (!groupedMap.has(empId)) {
         groupedMap.set(empId, {
           employee: d.employee,
           dates: [],
-          description: d.description || 'Development সংক্রান্ত কাজ'
+          description: d.description || `Customization এবং Development সংক্রান্ত কাজ (${d.employee.cell?.name || ''})`
         });
       }
       const group = groupedMap.get(empId)!;
@@ -373,7 +654,24 @@ export default function RosterPage() {
       }
     });
 
-    return Array.from(groupedMap.values());
+    const getDesignationRank = (designation: string): number => {
+      const d = (designation || '').toUpperCase();
+      if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SENIOR PRINCIPAL')) return 1;
+      if (d.includes('পিও') || d.includes('PO') || d.includes('PRINCIPAL OFFICER')) return 2;
+      if (d.includes('এসো-আইটি') || d.includes('এসও-আইটি') || d.includes('এসও') || d.includes('SO-IT') || d.includes('SO') || d.includes('SENIOR OFFICER')) return 3;
+      if (d.includes('ও-আইটি') || d.includes('O-IT') || d.includes('OFFICER') || d.includes('ও')) return 4;
+      return 99;
+    };
+
+    const groupedList = Array.from(groupedMap.values());
+    groupedList.sort((a, b) => {
+      const rankA = getDesignationRank(a.employee.designation);
+      const rankB = getDesignationRank(b.employee.designation);
+      if (rankA !== rankB) return rankA - rankB;
+      return a.employee.name.localeCompare(b.employee.name, 'bn-BD');
+    });
+
+    return groupedList;
   };
 
   // Automatically calculate orderDate to be the previous working day of the earliest selected duty date or printed table date
@@ -408,10 +706,11 @@ export default function RosterPage() {
     }
 
     if (earliestDate) {
-      const calculated = calculateOrderDate(earliestDate, holidays);
+      const steps = isEditingArchive ? 1 : (1 + activePartIdx);
+      const calculated = calculateOrderDate(earliestDate, holidays, steps);
       setOrderDate(calculated);
     }
-  }, [duties, selectedCell, printCategory, opt1Assignments, assignmentForm.date, entryMode, holidays]);
+  }, [duties, selectedCell, printCategory, opt1Assignments, assignmentForm.date, entryMode, holidays, activePartIdx, isEditingArchive]);
 
   async function loadData() {
     try {
@@ -427,7 +726,21 @@ export default function RosterPage() {
       const execData = await execRes.json();
       const holidayData = await holidayRes.json();
       
-      setEmployees(Array.isArray(empData) ? empData : []);
+      const getDesignationRank = (designation: string): number => {
+        const d = (designation || '').toUpperCase();
+        if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SENIOR PRINCIPAL')) return 1;
+        if (d.includes('পিও') || d.includes('PO') || d.includes('PRINCIPAL OFFICER')) return 2;
+        if (d.includes('এসো-আইটি') || d.includes('এসও-আইটি') || d.includes('এসও') || d.includes('SO-IT') || d.includes('SO') || d.includes('SENIOR OFFICER')) return 3;
+        if (d.includes('ও-আইটি') || d.includes('O-IT') || d.includes('OFFICER') || d.includes('ও')) return 4;
+        return 99;
+      };
+      const sortedEmps = Array.isArray(empData) ? [...empData].sort((a, b) => {
+        const rankA = getDesignationRank(a.designation);
+        const rankB = getDesignationRank(b.designation);
+        if (rankA !== rankB) return rankA - rankB;
+        return a.name.localeCompare(b.name, 'bn-BD');
+      }) : [];
+      setEmployees(sortedEmps);
       setCells(Array.isArray(cellData) ? cellData : []);
       setHolidays(Array.isArray(holidayData) ? holidayData : []);
       
@@ -449,8 +762,11 @@ export default function RosterPage() {
     }
   }
 
-  // Fetch duties based on selected month & filters
   async function loadDuties() {
+    if (isEditingArchive) {
+      // In edit mode, duties state is fully driven by opt1Assignments sync useEffect.
+      return;
+    }
     try {
       const yearMonth = selectedMonth.split('-');
       const year = yearMonth[0];
@@ -468,7 +784,27 @@ export default function RosterPage() {
       
       const res = await fetch(queryUrl);
       const data = await res.json();
-      setDuties(Array.isArray(data) ? data : []);
+      const activeList = Array.isArray(data) ? data : [];
+
+      // Merge with archived duties if editing
+      if (isEditingArchive && orderRef) {
+        const archRes = await fetch(`/api/duties?orderRef=${encodeURIComponent(orderRef)}&includeArchived=true`);
+        if (archRes.ok) {
+          const archData = await archRes.json();
+          const archList = Array.isArray(archData) ? archData : [];
+          
+          const merged = [...archList];
+          activeList.forEach(d => {
+            if (!merged.some(m => m.id === d.id)) {
+              merged.push(d);
+            }
+          });
+          setDuties(merged);
+          return;
+        }
+      }
+      
+      setDuties(activeList);
     } catch (err) {
       console.error('Error loading duties:', err);
     }
@@ -480,7 +816,300 @@ export default function RosterPage() {
 
   useEffect(() => {
     loadDuties();
-  }, [selectedMonth, selectedCell]);
+  }, [selectedMonth, selectedCell, isEditingArchive, orderRef]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const editRef = params.get('edit_ref');
+      if (editRef) {
+        setIsEditingArchive(true);
+        console.log("Loading archived order for editing:", editRef);
+        
+        const loadArchivedDuties = async () => {
+          try {
+            // First load employees and cells locally to ensure we have them
+            const [empRes, cellRes, orderRes] = await Promise.all([
+              fetch('/api/employees'),
+              fetch('/api/cells'),
+              fetch('/api/office-orders')
+            ]);
+            
+            const localEmps = await empRes.json();
+            const localCells = await cellRes.json();
+            const orders = await orderRes.json();
+            
+            setEmployees(localEmps);
+            setCells(localCells);
+            
+            const matchingOrder = orders.find((o: any) => o.orderRef === editRef);
+            if (matchingOrder) {
+              const orderDuties = matchingOrder.duties || [];
+              const category = matchingOrder.category;
+              
+              setPrintCategory(category);
+              
+              // Find payee representative id
+              const matchedRep = localEmps.find((e: any) => e.name === matchingOrder.employeeName);
+              if (matchedRep) {
+                setPayeeEmployeeId(matchedRep.id.toString());
+              }
+              
+              // Find cell id
+              if (matchingOrder.cellName) {
+                const matchedCell = localCells.find((c: any) => c.name === matchingOrder.cellName);
+                if (matchedCell) {
+                  setSelectedCell(matchedCell.id.toString());
+                }
+              }
+              
+              // Set selectedMonth dynamically to match the archived order's duties month
+              if (orderDuties.length > 0 && orderDuties[0].dates && orderDuties[0].dates.length > 0) {
+                const firstDate = orderDuties[0].dates[0]; // e.g. "2026-05-23"
+                if (firstDate && firstDate.includes('-')) {
+                  const parts = firstDate.split('-');
+                  if (parts.length >= 2) {
+                    const orderMonth = `${parts[0]}-${parts[1]}`;
+                    setSelectedMonth(orderMonth);
+                  }
+                }
+              }
+              
+              // Set orderRef and date
+              setOrderRef(editRef);
+              setOriginalOrderRef(editRef);
+              if (editRef && editRef.includes('/')) {
+                const parts = editRef.split('/');
+                const serial = parts[parts.length - 1] || '';
+                setArchiveSerial(serial);
+              }
+              setOrderDate(matchingOrder.orderDate);
+              
+              // Populate content
+              if (matchingOrder.content) {
+                setOrderText(matchingOrder.content.orderText || '');
+                setSigningOfficer(matchingOrder.content.signingOfficer || '');
+                setSigningDesignation(matchingOrder.content.signingDesignation || '');
+                if (Array.isArray(matchingOrder.content.copies)) {
+                  setCopies(matchingOrder.content.copies);
+                }
+              }
+              
+              // Pre-populate opt1Assignments (left-side checked boxes)
+              const assignments: Record<number, string[]> = {};
+              orderDuties.forEach((group: any) => {
+                assignments[group.employeeId] = group.dates;
+              });
+              setOpt1Assignments(assignments);
+              
+              // Reconstruct duties state
+              const reconstructedDuties: any[] = [];
+              orderDuties.forEach((group: any) => {
+                const matchedEmp = localEmps.find((e: any) => e.id === group.employeeId);
+                group.dates.forEach((date: string) => {
+                  reconstructedDuties.push({
+                    id: Math.random(),
+                    employeeId: group.employeeId,
+                    date: date,
+                    type: category,
+                    description: group.description,
+                    employee: matchedEmp || {
+                      id: group.employeeId,
+                      name: group.employeeName,
+                      designation: group.designation,
+                      cellId: matchedRep ? matchedRep.cellId : 7
+                    }
+                  });
+                });
+              });
+              setDuties(reconstructedDuties);
+            }
+          } catch (e) {
+            console.error("Failed to load archived duties for editing:", e);
+          }
+        };
+        
+        loadArchivedDuties();
+      }
+    }
+  }, []);
+
+  const handleBackToRoster = () => {
+    setIsPrintMode(false);
+    if (isEditingArchive) {
+      setIsEditingArchive(false);
+      setArchiveSerial('');
+      window.history.pushState({}, '', '/roster');
+      setTimeout(() => {
+        loadDuties();
+      }, 50);
+    }
+  };
+
+  // Dynamic sync duties state from opt1Assignments when in edit mode
+  useEffect(() => {
+    if (isEditingArchive && employees.length > 0) {
+      const newDuties: any[] = [];
+      Object.entries(opt1Assignments).forEach(([empIdStr, dates]) => {
+        const empId = Number(empIdStr);
+        const emp = employees.find(e => e.id === empId);
+        if (!emp) return;
+        
+        dates.forEach(date => {
+          newDuties.push({
+            id: Math.random(), // unique key for UI mapping
+            employeeId: empId,
+            date: date,
+            type: printCategory,
+            description: `Customization এবং Development সংক্রান্ত কাজ (${emp.cell?.name || ''})`,
+            employee: emp
+          });
+        });
+      });
+      setDuties(newDuties);
+    }
+  }, [opt1Assignments, isEditingArchive, printCategory, employees]);
+
+  const updateAssociatedBill = async (baseOrderRef: string) => {
+    try {
+      const billRef = baseOrderRef + '/বিল';
+      const ordersRes = await fetch('/api/office-orders');
+      if (!ordersRes.ok) return;
+      const orders = await ordersRes.json();
+      const existingBill = orders.find((o: any) => o.orderRef === billRef);
+      if (!existingBill) {
+        console.log("No existing bill found for this office order. Skipping bill update.");
+        return;
+      }
+      
+      const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
+      const transportRate = 100;
+      
+      // Group the duties by employee
+      const summaries: Record<number, { name: string; designation: string; bankId: string; days: number; dates: string[] }> = {};
+      duties.forEach(d => {
+        const empId = d.employeeId;
+        if (!summaries[empId]) {
+          summaries[empId] = {
+            name: d.employee.name,
+            designation: d.employee.designation,
+            bankId: d.employee.bankId || '',
+            days: 0,
+            dates: []
+          };
+        }
+        summaries[empId].days += 1;
+        if (!summaries[empId].dates.includes(d.date)) {
+          summaries[empId].dates.push(d.date);
+        }
+      });
+      
+      const summariesPayload = Object.values(summaries).map(s => {
+        const totalTransport = s.days * transportRate;
+        const totalApyaon = s.days * apyaonRate;
+        const empTotal = totalTransport + totalApyaon;
+        return {
+          name: s.name,
+          designation: s.designation,
+          bankId: s.bankId,
+          days: s.days,
+          apyaonRate: apyaonRate,
+          totalApyaon: totalApyaon,
+          totalTransport: totalTransport,
+          grandTotal: empTotal,
+          datesFormatted: s.dates.sort().map(d => toBanglaDigits(d.split('-').reverse().join('-'))).join(', ')
+        };
+      });
+      
+      const totalDaysAll = summariesPayload.reduce((sum, s) => sum + s.days, 0);
+      const totalApyaonAll = summariesPayload.reduce((sum, s) => sum + s.totalApyaon, 0);
+      const totalTransportAll = summariesPayload.reduce((sum, s) => sum + s.totalTransport, 0);
+      const grandTotalPrintAll = totalApyaonAll + totalTransportAll;
+      
+      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
+      const payeeName = emp ? emp.name : 'Unknown';
+      
+      const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
+      const cellName = matchedCellObj ? matchedCellObj.name : 'IT Department';
+      
+      const billPayload = {
+        orderRef: billRef,
+        orderDate: orderDate,
+        category: "BILL_" + printCategory,
+        employeeName: payeeName,
+        cellName: cellName,
+        duties: summariesPayload.map(s => ({
+          employeeId: s.bankId,
+          employeeName: s.name,
+          designation: s.designation,
+          days: s.days,
+          apyaonRate: s.apyaonRate,
+          totalApyaon: s.totalApyaon,
+          totalTransport: s.totalTransport,
+          grandTotal: s.grandTotal
+        })),
+        dutyIds: [],
+        content: {
+          openingParagraph: `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে অত্র ডিপার্টমেন্টের কর্মকর্তাদের নামের পাশে বর্ণিত তারিখে অতিরিক্ত কাজ সম্পন্ন করায় বিধি মোতাবেক আপ্যায়ন ও যাতায়াত ভাতা প্রদানের বিল মঞ্জুর করা হলো।`,
+          totalDays: totalDaysAll,
+          totalApyaon: totalApyaonAll,
+          totalTransport: totalTransportAll,
+          grandTotal: grandTotalPrintAll,
+          grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          subjectText: `অতিরিক্ত কাজের আপ্যায়ন ও যাতায়াত ভাতার মঞ্জুরীপত্র ও বিল প্রস্তুত প্রসঙ্গে।`
+        }
+      };
+      
+      // Update bill record in database
+      await fetch('/api/office-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(billPayload)
+      });
+      
+      // Automatically regenerate bill PDF in the background
+      const formatMonthName = (monthStr: string) => {
+        const [year, month] = monthStr.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const monthName = date.toLocaleString('en-US', { month: 'long' });
+        return `${monthName}-${year}`;
+      };
+      
+      const pdfPayload = {
+        billingMonth: formatMonthName(selectedMonth),
+        openingParagraph: billPayload.content.openingParagraph,
+        summaries: summariesPayload,
+        totalDays: totalDaysAll,
+        totalApyaon: totalApyaonAll,
+        totalTransport: totalTransportAll,
+        grandTotal: grandTotalPrintAll,
+        grandTotalInWords: billPayload.content.grandTotalInWords,
+        signingOfficer: signingOfficer,
+        signingDesignation: signingDesignation,
+        representativeName: payeeName,
+        representativeDesignation: emp ? emp.designation : 'Unknown',
+        subjectText: billPayload.content.subjectText,
+        billDate: orderDate,
+        transportRate: transportRate,
+        apyaonRate: apyaonRate,
+        totalTransportInWords: getBanglaNumberWords(totalTransportAll),
+        totalApyaonInWords: getBanglaNumberWords(totalApyaonAll),
+        billRef: billRef
+      };
+      
+      await fetch('/api/documents/generate-bill-memo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pdfPayload)
+      });
+      
+      console.log("Associated bill and PDF updated successfully!");
+    } catch (err) {
+      console.error("Failed to update associated bill:", err);
+    }
+  };
 
   const handleAssignmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -488,51 +1117,70 @@ export default function RosterPage() {
     
     let assignments: any[] = [];
 
-    if (entryMode === 'EMPLOYEE_WISE') {
-      const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
-      if (activeEmployeeIds.length === 0) {
-        setErrorMessage('ডিউটি বরাদ্দ করার জন্য অন্তত একজন কর্মকর্তা নির্বাচন করুন।');
+    if (isEditingArchive) {
+      if (duties.length === 0) {
+        setErrorMessage('ডিউটি বরাদ্দ করার জন্য অন্তত একটি তারিখ ও কর্মকর্তা নির্বাচন করুন।');
         return;
       }
-
-      // Check if any checked employee actually has selected dates
-      let hasDates = false;
-      for (const empId of activeEmployeeIds) {
-        if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
-          hasDates = true;
-          opt1Assignments[empId].forEach(dateStr => {
-            assignments.push({
-              employeeId: empId,
-              type: assignmentForm.type,
-              date: dateStr,
-              description: 'Customization এবং Development সংক্রান্ত'
-            });
-          });
-        }
-      }
-
-      if (!hasDates) {
-        setErrorMessage('নির্বাচিত কর্মকর্তাদের জন্য অন্তত একটি তারিখ নির্বাচন করুন।');
-        return;
-      }
-    } else {
-      // DATE_WISE
-      if (assignmentForm.selectedEmployeeIds.length === 0) {
-        setErrorMessage('ডিউটি বরাদ্দ করার জন্য অন্তত একজন কর্মকর্তা নির্বাচন করুন।');
-        return;
-      }
-      
-      if (!assignmentForm.date) {
-        setErrorMessage('ডিউটির তারিখ নির্বাচন করুন।');
-        return;
-      }
-
-      assignments = assignmentForm.selectedEmployeeIds.map(empId => ({
-        employeeId: empId,
-        type: assignmentForm.type,
-        date: assignmentForm.date,
-        description: 'Customization এবং Development সংক্রান্ত'
+      assignments = duties.map(d => ({
+        employeeId: d.employeeId,
+        type: printCategory,
+        date: d.date,
+        description: d.description || `Customization এবং Development সংক্রান্ত কাজ`
       }));
+    } else {
+      if (entryMode === 'EMPLOYEE_WISE') {
+        const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+        if (activeEmployeeIds.length === 0) {
+          setErrorMessage('ডিউটি বরাদ্দ করার জন্য অন্তত একজন কর্মকর্তা নির্বাচন করুন।');
+          return;
+        }
+
+        // Check if any checked employee actually has selected dates
+        let hasDates = false;
+        for (const empId of activeEmployeeIds) {
+          if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
+            hasDates = true;
+            const emp = employees.find(e => e.id === empId);
+            const cellName = emp?.cell?.name || '';
+            opt1Assignments[empId].forEach(dateStr => {
+              assignments.push({
+                employeeId: empId,
+                type: assignmentForm.type,
+                date: dateStr,
+                description: `Customization এবং Development সংক্রান্ত কাজ (${cellName})`
+              });
+            });
+          }
+        }
+
+        if (!hasDates) {
+          setErrorMessage('নির্বাচিত কর্মকর্তাদের জন্য অন্তত একটি তারিখ নির্বাচন করুন।');
+          return;
+        }
+      } else {
+        // DATE_WISE
+        if (assignmentForm.selectedEmployeeIds.length === 0) {
+          setErrorMessage('ডিউটি বরাদ্দ করার জন্য অন্তত একজন কর্মকর্তা নির্বাচন করুন।');
+          return;
+        }
+        
+        if (!assignmentForm.date) {
+          setErrorMessage('ডিউটির তারিখ নির্বাচন করুন।');
+          return;
+        }
+
+        assignments = assignmentForm.selectedEmployeeIds.map(empId => {
+          const emp = employees.find(e => e.id === empId);
+          const cellName = emp?.cell?.name || '';
+          return {
+            employeeId: empId,
+            type: assignmentForm.type,
+            date: assignmentForm.date,
+            description: `Customization এবং Development সংক্রান্ত কাজ (${cellName})`
+          };
+        });
+      }
     }
 
     try {
@@ -541,7 +1189,11 @@ export default function RosterPage() {
       const res = await fetch('/api/duties', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignments })
+        body: JSON.stringify({ 
+          assignments,
+          orderRef: isEditingArchive ? orderRef : undefined,
+          originalOrderRef: isEditingArchive ? originalOrderRef : undefined
+        })
       });
 
       if (!res.ok) {
@@ -558,7 +1210,83 @@ export default function RosterPage() {
         throw new Error(err.error || 'Failed to save roster');
       }
 
-      // Reset form selection but keep the date and type for consecutive entries
+      if (isEditingArchive) {
+        // Now update the office order and the associated bill!
+        const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
+        const payeeName = emp ? emp.name : 'Unknown';
+        
+        const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
+        const cellName = matchedCellObj ? matchedCellObj.name : 'IT Department';
+        
+        const printTableDuties = getGroupedDuties();
+        const payload = {
+          orderRef: orderRef,
+          originalOrderRef: isEditingArchive ? originalOrderRef : undefined,
+          orderDate: orderDate,
+          category: printCategory,
+          employeeName: payeeName,
+          cellName: cellName,
+          duties: printTableDuties.map(group => ({
+            employeeId: group.employee.id,
+            employeeName: group.employee.name,
+            designation: group.employee.designation,
+            dates: group.dates,
+            description: group.description
+          })),
+          dutyIds: [], // backend handles linking because we set it on creation
+          content: {
+            orderText: orderText,
+            signingOfficer: signingOfficer,
+            signingDesignation: signingDesignation,
+            copies: copies,
+            cellName: cellName
+          }
+        };
+
+        // 1. Update the office order in DB
+        const ooRes = await fetch('/api/office-orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (ooRes.ok) {
+          // 2. Generate updated office order PDF in backend
+          const pdfPayload = {
+            orderRef: orderRef,
+            orderDate: orderDate,
+            orderText: orderText,
+            duties: printTableDuties.map(group => ({
+              employee: {
+                name: group.employee.name,
+                designation: getShortDesignation(group.employee.designation),
+                bankId: group.employee.bankId || ''
+              },
+              datesFormatted: getFormattedDateList(group.dates),
+              description: group.description
+            })),
+            signingOfficer: signingOfficer,
+            signingDesignation: signingDesignation,
+            copies: copies
+          };
+
+          await fetch('/api/documents/generate-office-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pdfPayload)
+          });
+        }
+
+        // 3. Update the associated bill!
+        await updateAssociatedBill(orderRef);
+
+        // Exit edit mode and redirect to documents archive page!
+        setIsEditingArchive(false);
+        window.location.href = '/documents';
+        return;
+      }
+
+      // Normal mode reset logic
       if (entryMode === 'EMPLOYEE_WISE') {
         setOpt1Assignments({});
       } else {
@@ -569,7 +1297,6 @@ export default function RosterPage() {
         }));
       }
       
-      // Reload duties list
       loadDuties();
       
       // Show success toast/alert
@@ -807,9 +1534,38 @@ export default function RosterPage() {
             </button>
           </div>
 
+          {/* Archive Editing Mode Alert Banner */}
+          {isEditingArchive && (
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl">
+                  <AlertCircle size={18} className="animate-bounce" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-extrabold text-amber-800 dark:text-amber-400 uppercase tracking-wider">আর্কাইভ সম্পাদন মোড সক্রিয়</h4>
+                  <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium mt-0.5">
+                    আপনি স্মারক সূত্র নম্বর <span className="font-mono font-bold text-amber-900 dark:text-amber-300 break-all">{orderRef}</span> এর অন্তর্গত অর্ডারটি এডিট করছেন।
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsEditingArchive(false);
+                  setOrderRef('');
+                  setArchiveSerial('');
+                  window.history.pushState({}, '', '/roster');
+                  loadDuties();
+                }}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-[10px] font-bold rounded-lg transition-all"
+              >
+                সম্পাদন মোড থেকে বের হন (নতুন অর্ডার শুরু করুন)
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
             {/* LEFT COLUMN: Assign New Duty Form */}
-            <div className="glass-card p-6 rounded-2xl space-y-6 xl:col-span-1 border border-slate-200 dark:border-slate-800">
+            <div className="glass-card p-6 rounded-2xl space-y-6 w-full border border-slate-200 dark:border-slate-800 xl:col-span-1">
               <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
                   <Calendar size={18} />
@@ -938,6 +1694,48 @@ export default function RosterPage() {
                         onChange={(e) => setAssignmentForm({ ...assignmentForm, date: e.target.value })}
                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
                       />
+                      {assignmentForm.date && (() => {
+                        const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
+                        const isLateSitting = assignmentForm.type === 'LATE_SITTING';
+                        const isHoliday = assignmentForm.type === 'HOLIDAY';
+                        
+                        if (isLateSitting && !isWorking) {
+                          return (
+                            <p className="text-[11px] font-bold text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 dark:bg-red-950/20 p-2 rounded-lg border border-red-100/50 dark:border-red-900/10">
+                              <AlertCircle size={12} />
+                              উক্ত তারিখটি ছুটির দিন/সাপ্তাহিক ছুটি হওয়ায় লেট সিটিং ডিউটি এন্ট্রি করা যাবে না!
+                            </p>
+                          );
+                        }
+                        if (isHoliday && isWorking) {
+                          return (
+                            <p className="text-[11px] font-bold text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 dark:bg-red-950/20 p-2 rounded-lg border border-red-100/50 dark:border-red-900/10">
+                              <AlertCircle size={12} />
+                              উক্ত তারিখটি কর্মদিবস হওয়ায় সরকারি ছুটির ডিউটি এন্ট্রি করা যাবে না!
+                            </p>
+                          );
+                        }
+                        
+                        const matchedHoliday = holidays.find(h => h.date === assignmentForm.date);
+                        const isWeekend = !isWorking && !matchedHoliday;
+                        if (matchedHoliday) {
+                          return (
+                            <p className="text-[11px] font-bold text-amber-600 mt-1.5 flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/20 p-2 rounded-lg border border-amber-100/50 dark:border-amber-900/10">
+                              <AlertCircle size={12} />
+                              সরকারি ছুটি: {matchedHoliday.name}
+                            </p>
+                          );
+                        }
+                        if (isWeekend) {
+                          return (
+                            <p className="text-[11px] font-bold text-red-550 mt-1.5 flex items-center gap-1.5 bg-red-50/40 dark:bg-red-950/10 p-2 rounded-lg border border-red-100/20 dark:border-red-900/10">
+                              <AlertCircle size={12} />
+                              সাপ্তাহিক ছুটি
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
 
                     {/* Officer Selector Multi-select checkboxes */}
@@ -987,31 +1785,54 @@ export default function RosterPage() {
 
                       {/* Officers Checkboxes scrollbox */}
                       <div className="max-h-48 overflow-y-auto border border-slate-100 dark:border-slate-800/80 rounded-xl p-2 bg-slate-50/20 dark:bg-slate-950/10 space-y-1.5">
-                        {filteredFormEmployees.length > 0 ? (
-                          filteredFormEmployees.map(emp => {
-                            const isChecked = assignmentForm.selectedEmployeeIds.includes(emp.id);
+                        {(() => {
+                          const isWorking = assignmentForm.date ? checkIsWorkingDay(assignmentForm.date, holidays) : true;
+                          const isLateSitting = assignmentForm.type === 'LATE_SITTING';
+                          const isHoliday = assignmentForm.type === 'HOLIDAY';
+                          const isBlocked = (isLateSitting && !isWorking) || (isHoliday && isWorking);
+                          
+                          if (isBlocked) {
                             return (
-                               <div 
-                                key={emp.id}
-                                onClick={() => handleEmployeeToggle(emp.id)}
-                                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border ${isChecked ? 'bg-indigo-50/40 border-indigo-200/50 dark:bg-indigo-950/20 dark:border-indigo-800/30' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
-                                    {isChecked && <Check size={10} strokeWidth={3} />}
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">{emp.name}</p>
-                                    <p className="text-[10px] text-slate-400 mt-0.5">{emp.designation}</p>
-                                  </div>
-                                </div>
-                                <span className="text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded uppercase font-sans">{emp.cell.name}</span>
+                              <div className="p-8 text-center text-red-500/80 dark:text-red-400/80 font-bold italic text-xs">
+                                নির্বাচিত তারিখটি এই ডিউটি ক্যাটাগরির জন্য উপযুক্ত নয়। উপযুক্ত তারিখ বেছে নিন।
                               </div>
                             );
-                          })
-                        ) : (
-                          <p className="text-[11px] text-center text-slate-400 py-4">কর্মকর্তা পাওয়া যায়নি</p>
-                        )}
+                          }
+                          
+                          if (!assignmentForm.date) {
+                            return (
+                              <div className="p-8 text-center text-slate-400 dark:text-slate-500 italic text-xs">
+                                অনুগ্রহ করে প্রথমে উপরে তারিখ সিলেক্ট করুন।
+                              </div>
+                            );
+                          }
+
+                          return filteredFormEmployees.length > 0 ? (
+                            filteredFormEmployees.map(emp => {
+                              const isChecked = assignmentForm.selectedEmployeeIds.includes(emp.id);
+                              return (
+                                 <div 
+                                  key={emp.id}
+                                  onClick={() => handleEmployeeToggle(emp.id)}
+                                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border ${isChecked ? 'bg-indigo-50/40 border-indigo-200/50 dark:bg-indigo-950/20 dark:border-indigo-800/30' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
+                                      {isChecked && <Check size={10} strokeWidth={3} />}
+                                    </div>
+                                    <div>
+                                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">{emp.name}</p>
+                                      <p className="text-[10px] text-slate-400 mt-0.5">{emp.designation}</p>
+                                    </div>
+                                  </div>
+                                  <span className="text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded uppercase font-sans">{emp.cell.name}</span>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="text-[11px] text-center text-slate-400 py-4">কর্মকর্তা পাওয়া যায়নি</p>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -1019,16 +1840,41 @@ export default function RosterPage() {
 
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-sm font-semibold transition-colors shadow-md mt-4"
+                  disabled={submitting || (() => {
+                    if (entryMode === 'EMPLOYEE_WISE') {
+                      const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+                      if (activeEmployeeIds.length === 0) return true;
+                      let hasDates = false;
+                      for (const empId of activeEmployeeIds) {
+                        if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
+                          hasDates = true;
+                          break;
+                        }
+                      }
+                      return !hasDates;
+                    } else {
+                      if (!assignmentForm.date) return true;
+                      const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
+                      const isLateSitting = assignmentForm.type === 'LATE_SITTING';
+                      const isHoliday = assignmentForm.type === 'HOLIDAY';
+                      if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
+                        return true;
+                      }
+                      if (assignmentForm.selectedEmployeeIds.length === 0) {
+                        return true;
+                      }
+                    }
+                    return false;
+                  })()}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-600 text-white text-sm font-semibold transition-all shadow-md mt-4 cursor-pointer disabled:cursor-not-allowed"
                 >
-                  {submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন'}
+                  {isEditingArchive ? (submitting ? 'সম্পাদনা ও আপডেট হচ্ছে...' : 'অফিস আদেশ সম্পাদন ও আপডেট করুন') : (submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন')}
                 </button>
               </form>
             </div>
 
             {/* RIGHT COLUMN: Roster Monthly List Grid */}
-            <div className="glass-card p-6 rounded-2xl xl:col-span-2 space-y-6 border border-slate-200 dark:border-slate-800">
+            <div className="glass-card p-6 rounded-2xl w-full space-y-6 border border-slate-200 dark:border-slate-800 xl:col-span-2">
               {/* Controls Menu */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div>
@@ -1192,7 +2038,7 @@ export default function RosterPage() {
                 background: #fff !important; 
                 font-family: "Kalpurush", "Noto Sans Bengali", sans-serif !important; 
                 font-size: 10px !important;
-                line-height: 1.0 !important;
+                line-height: 1.6 !important;
               }
               /* Force resetting Next.js page margins & layout wrapper padding */
               main, .flex-1, .p-4, .lg\\:p-8, .p-6, .space-y-6, .py-6, .my-6 {
@@ -1209,7 +2055,7 @@ export default function RosterPage() {
                 box-shadow: none !important;
                 font-family: "Kalpurush", "Noto Sans Bengali", sans-serif !important;
                 font-size: 10px !important;
-                line-height: 1.0 !important;
+                line-height: 1.6 !important;
                 box-sizing: border-box !important;
                 page-break-after: avoid !important;
                 page-break-inside: avoid !important;
@@ -1222,7 +2068,7 @@ export default function RosterPage() {
           {/* Back Controls (No-print) */}
           <div className="no-print flex items-center justify-between glass-card p-4 rounded-2xl">
             <button
-              onClick={() => setIsPrintMode(false)}
+              onClick={handleBackToRoster}
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             >
               <ChevronLeft size={16} />
@@ -1231,11 +2077,18 @@ export default function RosterPage() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => window.print()}
-                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-md animate-pulse"
+                onClick={() => archiveOrder(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
               >
                 <Printer size={14} />
-                ডাউনলোড / প্রিন্ট পিডিএফ (A4 Size)
+                প্রিন্ট প্রিভিউ (Print)
+              </button>
+              <button
+                onClick={() => archiveOrder(false)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
+              >
+                <Printer size={14} />
+                ডাউনলোড পিডিএফ (Download)
               </button>
             </div>
           </div>
@@ -1346,6 +2199,66 @@ export default function RosterPage() {
             </div>
           </div>
 
+          {/* DGM 7500 Tk Apyaon split alert and tabs switchers */}
+          {(() => {
+            const filtered = duties.filter(d => {
+              const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
+              const matchesCategory = d.type === printCategory;
+              return matchesCell && matchesCategory;
+            });
+            const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
+            const totalApyaon = filtered.length * apyaonRate;
+            
+            if (totalApyaon <= 7500) return null;
+            
+            const numParts = Math.ceil(totalApyaon / 7500);
+            const parts = getSplitParts(filtered, numParts);
+            
+            return (
+              <div className="no-print w-full max-w-[210mm] mx-auto space-y-4 mb-4 mt-6">
+                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-amber-800 dark:text-amber-300">
+                  <h4 className="font-extrabold text-sm flex items-center gap-2 mb-1">
+                    <AlertCircle size={16} />
+                    উপ-মহাব্যবস্থাপক (ডিজিএম) এর আপ্যায়ন বিলের সীমা ৭৫০০/- টাকা অতিক্রম করেছে!
+                  </h4>
+                  <p className="text-xs leading-relaxed">
+                    মোট আপ্যায়ন খরচ <strong>{toBanglaDigits(totalApyaon)}/- টাকা</strong> (মোট {toBanglaDigits(filtered.length)}টি ডিউটি)। 
+                    তাই নীতিগত সিদ্ধান্ত অনুযায়ী আদেশটি সমান <strong>{toBanglaDigits(numParts)}টি আলাদা অফিস আদেশে</strong> বিভক্ত করা হয়েছে। 
+                    অনুগ্রহ করে প্রতিটি অংশ আলাদাভাবে প্রিভিউ করে প্রিন্ট/ডাউনলোড করুন (প্রতিটি অংশের জন্য আলাদা ধারাবাহিক স্মারক সূত্র তৈরি হবে):
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap gap-2 text-[10px] font-bold">
+                    {parts.map((p, idx) => (
+                      <span key={idx} className="px-2 py-1 rounded bg-amber-100 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-800/40">
+                        অংশ {toBanglaDigits(idx + 1)}: {toBanglaDigits(p.length * apyaonRate)}/- টাকা ({toBanglaDigits(p.length)}টি ডিউটি)
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Part Switcher Tabs */}
+                <div className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
+                  {Array.from({ length: numParts }).map((_, idx) => {
+                    const isActive = activePartIdx === idx;
+                    return (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => setActivePartIdx(idx)}
+                        className={`px-4 py-2 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-indigo-600 text-white shadow'
+                            : 'bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-850'
+                        }`}
+                      >
+                        অংশ {toBanglaDigits(idx + 1)} (স্মারক সূত্র: {toBanglaDigits(stableNumber + idx)})
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Interactive Print Mock Sheet */}
           <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner font-serif">
             {/* Renders exactly like A4 Page in Print Preview with standard 1.0 inch margins all around */}
@@ -1389,15 +2302,15 @@ export default function RosterPage() {
               </div>
 
               {/* Title and Main Body */}
-              <div className="flex-1 flex flex-col justify-start pt-2 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+              <div className="flex-1 flex flex-col justify-start pt-2 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6' }}>
                 <div className="space-y-2.5">
-                  <h2 className="text-center text-[12px] font-extrabold underline decoration-black underline-offset-2" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
+                  <h2 className="text-center text-[12px] font-extrabold underline decoration-black underline-offset-2" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.4' }}>
                     অফিস নির্দেশ
                   </h2>
                   
                   <p 
                     className="text-justify leading-normal mt-2 text-[10px] text-slate-950 text-indent-8"
-                    style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}
+                    style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6' }}
                     dangerouslySetInnerHTML={{ __html: orderText }}
                   />
 
@@ -1426,7 +2339,7 @@ export default function RosterPage() {
                               {getShortDesignation(group.employee.designation)}
                             </td>
                             <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                              Customization এবং Development সংক্রান্ত
+                              {group.description}
                             </td>
                             <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                               {getFormattedDateList(group.dates)}

@@ -1,0 +1,325 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import fs from 'fs';
+import path from 'path';
+
+function toBnDigits(num: number | string | null | undefined): string {
+  if (num === null || num === undefined) return '';
+  const bnChars = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+  return num.toString().replace(/\d/g, (d) => bnChars[parseInt(d, 10)]);
+}
+
+function getBnDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const [y, m, d] = parts;
+  const bnD = toBnDigits(d.padStart(2, '0'));
+  const bnM = toBnDigits(m.padStart(2, '0'));
+  const bnY = toBnDigits(y);
+  return `${bnD}-${bnM}-${bnY}`;
+}
+
+export async function POST(request: Request) {
+  try {
+    const payload = await request.json();
+    const {
+      billingMonth,
+      openingParagraph,
+      summaries,
+      totalDays,
+      totalApyaon,
+      totalTransport,
+      grandTotal,
+      grandTotalInWords,
+      signingOfficer,
+      signingDesignation,
+      representativeName,
+      representativeDesignation,
+      subjectText,
+      billDate,
+      transportRate = 200.0,
+      apyaonRate = 100.0,
+      totalTransportInWords = "",
+      totalApyaonInWords = "",
+      billRef
+    } = payload;
+
+    const summariesHtml = summaries.map((s: any, index: number) => {
+      return `
+        <tr>
+          <td>${toBnDigits(index + 1)}</td>
+          <td class="text-left">
+            <span>${s.name}</span><br>
+            <span style="font-size: 9px; color: #444; margin-top: 2px; display: block;">${s.designation}</span>
+          </td>
+          <td>
+            <p>${s.datesFormatted}</p>
+            <p style="font-size: 9px; font-weight: bold; margin-top: 4px;">মোট: ${toBnDigits(s.days)} দিন</p>
+          </td>
+          <td>(${toBnDigits(Math.round(transportRate))}x${toBnDigits(s.days)}) = ${toBnDigits(Math.round(s.totalTransport))}/-</td>
+          <td>(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(s.days)}) = ${toBnDigits(Math.round(s.totalApyaon))}/-</td>
+          <td class="font-bold">${toBnDigits(Math.round(s.grandTotal))}/-</td>
+        </tr>
+      `;
+    }).join('');
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  @page {
+    size: legal portrait;
+    margin-top: 0.6in;
+    margin-bottom: 0.75in;
+    margin-left: 1.3in;
+    margin-right: 0.5in;
+  }
+  body {
+    font-family: "Noto Sans Bengali", "Kalpurush", sans-serif;
+    font-size: 10px;
+    line-height: 1.0;
+    color: #000;
+    background-color: #fff;
+  }
+  .header-container {
+    width: 100%;
+    margin-bottom: 16px;
+    text-align: right;
+    line-height: 1.0;
+  }
+  .header-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+    line-height: 1.0;
+  }
+  .header-date {
+    font-size: 10px;
+    font-weight: bold;
+    margin-top: 6px;
+    line-height: 1.0;
+  }
+  .subject {
+    font-size: 10px;
+    font-weight: bold;
+    text-decoration: underline;
+    margin-bottom: 10px;
+    line-height: 1.0;
+  }
+  .body-text {
+    text-align: justify;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 10px;
+    line-height: 1.0;
+  }
+  th, td {
+    border: 1px solid #000;
+    padding: 6px 6px;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 1.0;
+  }
+  th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+  }
+  .text-left {
+    text-align: left;
+    padding-left: 12px;
+  }
+  .font-bold {
+    font-weight: bold;
+  }
+  .paragraphs {
+    margin-top: 12px;
+    text-align: justify;
+    line-height: 1.6;
+  }
+  .paragraph-item {
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+  .signature-container {
+    width: 100%;
+    margin-top: 0.6in;
+    margin-bottom: 0.2in;
+    text-align: right;
+    line-height: 1.0;
+  }
+  .signature-block {
+    display: inline-block;
+    text-align: right;
+    padding-right: 0.1in;
+  }
+  .signature-block p {
+    margin: 0;
+    line-height: 1.0;
+  }
+  .routing-list {
+    margin-top: 24px;
+    text-align: left;
+    line-height: 1.0;
+    font-size: 10px;
+  }
+  .routing-item {
+    margin-bottom: 0.85in;
+    line-height: 1.0;
+  }
+  .routing-text {
+    display: inline-block;
+    border-bottom: 1px solid #000;
+    padding-bottom: 2px;
+    line-height: 1.0;
+  }
+</style>
+</head>
+<body>
+  <div class="header-container">
+    <p class="header-title">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+    <p class="header-date">তারিখ: ${getBnDate(billDate)} ইং</p>
+  </div>
+
+  <div class="subject">
+    বিষয়: ${subjectText || ''}
+  </div>
+
+  <div class="body-text">
+    ${openingParagraph}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 8%;">ক্রমিক</th>
+        <th style="width: 28%; text-align: left; padding-left: 12px;">নাম ও পদবী</th>
+        <th style="width: 25%;">তারিখ</th>
+        <th style="width: 15%;">যাতায়াত</th>
+        <th style="width: 15%;">আপ্যায়ন</th>
+        <th style="width: 9%;">মোট</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${summariesHtml}
+      <tr class="font-bold">
+        <td colspan="3" style="text-align: right; padding-right: 12px; line-height: 1.4;">
+          <p>মোট দিন = ${toBnDigits(totalDays)} দিন</p>
+          <p style="margin-top: 4px;">মোট টাকা = (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</p>
+        </td>
+        <td>(${toBnDigits(Math.round(transportRate))}x${toBnDigits(totalDays)}) = ${toBnDigits(Math.round(totalTransport))}/-</td>
+        <td>(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(totalDays)}) = ${toBnDigits(Math.round(totalApyaon))}/-</td>
+        <td class="font-bold">${toBnDigits(Math.round(grandTotal))}/-</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="paragraphs">
+    <div class="paragraph-item">
+      ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
+    </div>
+    <div class="paragraph-item">
+      ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>${toBnDigits(Math.round(totalTransport))}/- (${totalTransportInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>${toBnDigits(Math.round(totalApyaon))}/- (${totalApyaonInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+    </div>
+    <div class="paragraph-item">
+      ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBnDigits(Math.round(grandTotal))}/- (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${representativeName || ''}, ${representativeDesignation || ''}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+    </div>
+  </div>
+
+  <div class="signature-container">
+    <div class="signature-block">
+      <p class="font-bold">(${representativeName || ''})</p>
+      <p style="margin-top: 5px; color: #333;">${representativeDesignation || ''}</p>
+    </div>
+  </div>
+
+  <div class="routing-list">
+    <div class="routing-item">
+      <p class="routing-text">এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p>
+    </div>
+    <div class="routing-item">
+      <p class="routing-text">এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p>
+    </div>
+    <div class="routing-item">
+      <p class="routing-text">উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p>
+    </div>
+    <div class="routing-item">
+      <p class="routing-text">উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ</p>
+    </div>
+  </div>
+  
+  <script>
+    window.onload = function() {
+      window.print();
+    }
+  </script>
+</body>
+</html>
+    `;
+
+    // Ensure uploads directory exists in public/
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Save to HTML file
+    let filename = `bill_memo_${Math.floor(Date.now() / 1000)}.html`;
+    if (billRef) {
+      const safeRef = billRef.replace(/\//g, "_").replace(/[^a-zA-Z0-9_\-]/g, "");
+      filename = `bill_memo_${safeRef}.html`;
+    }
+    const filePathDisk = path.join(uploadsDir, filename);
+    fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');
+
+    const relativePath = `/uploads/${filename}`;
+    const fileSize = fs.statSync(filePathDisk).size;
+
+    // Check if a document with this file path already exists
+    let doc = await prisma.document.findFirst({
+      where: { filePath: relativePath }
+    });
+
+    if (doc) {
+      doc = await prisma.document.update({
+        where: { id: doc.id },
+        data: {
+          fileSize: fileSize,
+          uploadedAt: new Date()
+        }
+      });
+    } else {
+      doc = await prisma.document.create({
+        data: {
+          name: `বিল মেমো: ${billingMonth}`,
+          filePath: relativePath,
+          fileSize: fileSize
+        }
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      filePath: relativePath,
+      document: doc
+    });
+
+  } catch (error: any) {
+    console.error('Error generating bill memo document:', error);
+    return NextResponse.json({ error: 'failed_to_generate_bill_memo', message: error.message }, { status: 500 });
+  }
+}

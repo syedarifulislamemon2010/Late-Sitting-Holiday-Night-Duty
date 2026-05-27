@@ -87,6 +87,32 @@ const PALETTES = [
   }
 ];
 
+const extractNickname = (nameStr: string): string => {
+  const clean = nameStr.trim();
+  
+  // Custom exact overrides for Janata Bank PLC IT Officers/Executives
+  if (clean.includes('সোহরাব')) return 'সোহরাব';
+  if (clean.includes('আশিকুর')) return 'আশিকুর';
+  if (clean.includes('ইমন')) return 'ইমন';
+  
+  const parts = clean.split(/\s+/);
+  if (parts.length === 0) return 'ইউ';
+  
+  const prefixes = [
+    'নথিপত্র', 'জনাব', 'মুhammad', 'muhammad', 'মুহাম্মদ', 'মোহাম্মদ', 'মোহাম্মাদ', 'মো', 'মোঃ', 'মোহা', 'শ্রী', 'ডা', 'ডাঃ', 'ড', 'ডক্টর', 'মহম্মদ', 'মিসেস', 'মিস', 'এসএম'
+  ];
+  
+  for (let i = 0; i < parts.length; i++) {
+    const word = parts[i];
+    const cleanedWord = word.replace(/[.,:;ঃ]/g, '').trim();
+    if (!prefixes.includes(cleanedWord) && cleanedWord.length > 0) {
+      return word.substring(0, 10);
+    }
+  }
+  
+  return parts[0] ? parts[0].substring(0, 10) : 'ইউ';
+};
+
 const getPalette = (id: number) => {
   return PALETTES[id % PALETTES.length];
 };
@@ -99,6 +125,7 @@ export default function ExecutivesPage() {
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExec, setEditingExec] = useState<Executive | null>(null);
+  const [profileExec, setProfileExec] = useState<Executive | null>(null);
 
   // Form states
   const [form, setForm] = useState({
@@ -474,7 +501,7 @@ export default function ExecutivesPage() {
                 const pal = getPalette(exec.id);
                 return (
                   <div key={exec.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 ${pal.border} ${pal.bg} ${pal.name === 'indigo' ? 'shadow-[0_0_15px_-3px_rgba(99,102,241,0.06)]' : ''} group`}>
-                    <div className="space-y-4">
+                    <div className="space-y-4 cursor-pointer" onClick={() => setProfileExec(exec)}>
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">{exec.name}</h3>
@@ -659,6 +686,71 @@ export default function ExecutivesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------------------------------------------
+          EXECUTIVE DETAILS PROFILE MODAL
+      ---------------------------------------------------- */}
+      {profileExec && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans"
+          onClick={() => setProfileExec(null)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-[28px] w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl animate-scale-up text-slate-800 dark:text-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Cover Image */}
+            <div className="h-28 bg-gradient-to-r from-indigo-500 to-violet-600 relative flex items-end justify-center">
+              <div className="absolute -bottom-10 px-3 h-20 min-w-20 rounded-full border-4 border-white dark:border-slate-900 bg-indigo-100 flex items-center justify-center text-indigo-650 text-sm font-extrabold shadow-md">
+                {extractNickname(profileExec.name)}
+              </div>
+            </div>
+
+            {/* Profile Info Details */}
+            <div className="pt-14 pb-8 px-6 text-center space-y-6">
+              <div>
+                <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-lg leading-tight">{profileExec.name}</h4>
+              </div>
+
+              {/* Grid of Attributes */}
+              <div className="grid grid-cols-2 gap-3 text-left">
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">পদবী</span>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{profileExec.designation}</p>
+                </div>
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">মোবাইল নম্বর</span>
+                  <p className="text-xs font-bold text-slate-855 dark:text-slate-150 font-sans">{profileExec.phone || 'প্রদান করা হয়নি'}</p>
+                </div>
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">ইমেইল ঠিকানা</span>
+                  <p className="text-xs font-bold text-slate-855 dark:text-slate-150 font-sans">{profileExec.email || 'প্রদান করা হয়নি'}</p>
+                </div>
+              </div>
+
+              {/* Close Buttons */}
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => setProfileExec(null)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer transition-colors"
+                >
+                  বন্ধ করুন
+                </button>
+                <button
+                  onClick={() => {
+                    const exec = profileExec;
+                    setProfileExec(null);
+                    startEditExec(exec);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors"
+                >
+                  সম্পাদনা করুন
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
