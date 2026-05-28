@@ -949,7 +949,7 @@ export default function LeaveGeneratorPage() {
           }
 
           /* Reset all parent elements of the sheet */
-          main, div {
+          main, .flex-1, .p-4, .lg\:p-8, .p-6, .py-6, .xl\:col-span-8, .pb-8 {
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
