@@ -141,6 +141,9 @@ export default function LeaveGeneratorPage() {
                 if (matchedEmp.fileNo) {
                   setFileNo(matchedEmp.fileNo);
                 }
+                if (matchedEmp.cell && matchedEmp.cell.name) {
+                  setCellName(matchedEmp.cell.name);
+                }
               }
             }
           }
@@ -425,6 +428,17 @@ export default function LeaveGeneratorPage() {
                       type="text" 
                       value={designation}
                       onChange={(e) => setDesignation(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold"
+                    />
+                  </div>
+
+                  {/* Cell Name */}
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-500">বিভাগ/সেল:</label>
+                    <input 
+                      type="text" 
+                      value={cellName}
+                      onChange={(e) => setCellName(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold"
                     />
                   </div>
@@ -744,7 +758,7 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 2. SUBJECT */}
-                <div className="mt-2">
+                <div className="mt-[60px] mb-[60px]">
                   <p className="text-black text-xs pb-0.5 w-fit bold-text">
                     {leaveDetails.actualDeducted > 0 ? formatSubject() : 'বিষয়ঃ নৈমিত্তিক ছুটি মঞ্জুরির আবেদন।'}
                   </p>
@@ -768,7 +782,7 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 4. SIGNATURE CARD SUMMARY */}
-                <div className="mt-2.5 flex justify-between items-start text-xs font-sans leading-tight">
+                <div className="mt-[70px] flex justify-between items-start text-xs font-sans leading-tight">
                   {/* Left Block (Applicant Info Signature block) */}
                   <div className="space-y-1 text-black">
                     <p>আপনার বিশ্বস্ত,</p>
@@ -790,19 +804,21 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 5. RECOMMENDATION & HIERARCHY APPROVAL BOXES */}
-                <div className="mt-2.5 pt-0.5 text-xs text-black font-sans space-y-0">
+                <div className="mt-[70px] pt-0.5 text-xs text-black font-sans space-y-0">
                   {/* Recommendation notice line */}
                   <div className="text-left text-black pb-1">
                     আবেদনকারীর অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর সুপারিশ করা হলো।
                   </div>
 
                   {/* Recommendation signatures */}
-                  <div className="text-left pt-14 pb-1">
-                    <span>সেল ইনচার্জ</span>
-                  </div>
+                  <div className="flex justify-between items-center text-xs text-black pt-14 px-2">
+                    <div className="text-left leading-normal">
+                      <span>সেল ইনচার্জ</span>
+                    </div>
 
-                  <div className="text-left pt-14 pb-1">
-                    <span>সহকারী মহাব্যবস্থাপক</span>
+                    <div className="text-right leading-normal">
+                      <span>সহকারী মহাব্যবস্থাপক</span>
+                    </div>
                   </div>
 
                   {/* AGM/DGM/SPO routing lines */}
