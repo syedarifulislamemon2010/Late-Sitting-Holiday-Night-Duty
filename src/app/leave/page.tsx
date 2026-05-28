@@ -742,7 +742,7 @@ export default function LeaveGeneratorPage() {
                   <p className="font-bold text-xs">প্রিয় মহোদয়,</p>
                   
                   <p className="text-black indent-12 text-xs">
-                    যথাউচিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী <span className="font-bold border-b border-black px-1">{startDate ? toDisplayDateStr(startDate) : '______'}</span> ইং তারিখ হতে <span className="font-bold border-b border-black px-1">{endDate ? toDisplayDateStr(endDate) : '______'}</span> ইং তারিখ পর্যন্ত মোট <span className="font-bold border-b border-black px-1">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
+                    যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী <span className="font-bold border-b border-black px-1">{startDate ? toDisplayDateStr(startDate) : '______'}</span> ইং তারিখ হতে <span className="font-bold border-b border-black px-1">{endDate ? toDisplayDateStr(endDate) : '______'}</span> ইং তারিখ পর্যন্ত মোট <span className="font-bold border-b border-black px-1">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
                   </p>
 
                   <p className="text-black text-xs leading-relaxed">
@@ -755,7 +755,7 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 4. SIGNATURE CARD SUMMARY */}
-                <div className="mt-10 flex justify-between items-start text-xs font-sans leading-tight">
+                <div className="mt-4 flex justify-between items-start text-xs font-sans leading-tight">
                   {/* Left Block (Applicant Info Signature block) */}
                   <div className="space-y-1 font-bold text-black">
                     <p className="font-semibold">আপনার বিশ্বস্ত,</p>
@@ -786,31 +786,31 @@ export default function LeaveGeneratorPage() {
                   {/* Recommendation signatures */}
                   <div className="flex justify-between items-center text-xs font-bold text-black pt-4 px-2">
                     <div className="text-center leading-normal">
-                      <div className="h-8 w-28 border-b border-black/30 mx-auto" />
-                      <p className="pt-1.5">সেল ইনচার্জ</p>
+                      <div className="h-16 w-28 border-b border-black/30 mx-auto" />
+                      <p className="pt-2">সেল ইনচার্জ</p>
                     </div>
 
                     <div className="text-center leading-normal">
-                      <div className="h-8 w-28 border-b border-black/30 mx-auto" />
-                      <p className="pt-1.5">সহকারী মহাব্যবস্থাপক</p>
+                      <div className="h-16 w-28 border-b border-black/30 mx-auto" />
+                      <p className="pt-2">সহকারী মহাব্যবস্থাপক</p>
                     </div>
                   </div>
 
                   {/* AGM/DGM/SPO routing lines */}
-                  <div className="pt-6 space-y-5 text-[10px] font-bold text-black tracking-wide border-t border-black/30">
-                    <div className="flex items-center justify-between border-b border-black/20 pb-1.5">
+                  <div className="pt-6 space-y-7 text-[10px] font-bold text-black tracking-wide border-t border-black/30">
+                    <div className="flex items-center justify-between border-b border-black/20 pb-3">
                       <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                       <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
-                    <div className="flex items-center justify-between border-b border-black/20 pb-1.5">
+                    <div className="flex items-center justify-between border-b border-black/20 pb-3">
                       <span>ডিজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                       <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
-                    <div className="flex items-center justify-between border-b border-black/20 pb-1.5">
+                    <div className="flex items-center justify-between border-b border-black/20 pb-3">
                       <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                       <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
-                    <div className="flex items-center justify-between pb-1">
+                    <div className="flex items-center justify-between pb-3">
                       <span>এসপিও (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                       <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
