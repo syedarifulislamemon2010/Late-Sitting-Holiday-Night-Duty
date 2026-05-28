@@ -659,7 +659,7 @@ export default function LeaveGeneratorPage() {
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2">
                   <h4 className="font-extrabold text-amber-900 text-xs flex items-center gap-1">
                     <Info size={14} />
-                    ছুটি হিসাব বিবরণী (Sandwich Rule 적용):
+                    ছুটি হিসাব বিবরণী (স্যান্ডউইচ নিয়ম অনুসারে):
                   </h4>
                   <div className="text-[11px] text-amber-800 font-medium space-y-1">
                     <p>• মোট ক্যালেন্ডার দিন: <span className="font-bold">{toBanglaDigits(leaveDetails.totalDays)} দিন</span></p>
@@ -744,14 +744,14 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 2. SUBJECT */}
-                <div className="mt-4">
+                <div className="mt-2">
                   <p className="text-black text-xs pb-0.5 w-fit bold-text">
                     {leaveDetails.actualDeducted > 0 ? formatSubject() : 'বিষয়ঃ নৈমিত্তিক ছুটি মঞ্জুরির আবেদন।'}
                   </p>
                 </div>
 
                 {/* 3. LETTER BODY */}
-                <div className="mt-3 text-xs text-black leading-relaxed text-justify space-y-2">
+                <div className="mt-1.5 text-xs text-black leading-relaxed text-justify space-y-1.5">
                   <p className="text-xs">প্রিয় মহোদয়,</p>
                   
                   <p className="text-black text-xs">
@@ -768,12 +768,12 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 4. SIGNATURE CARD SUMMARY */}
-                <div className="mt-4 flex justify-between items-start text-xs font-sans leading-tight">
+                <div className="mt-2.5 flex justify-between items-start text-xs font-sans leading-tight">
                   {/* Left Block (Applicant Info Signature block) */}
                   <div className="space-y-1 text-black">
                     <p>আপনার বিশ্বস্ত,</p>
-                    <div className="h-10 w-32 mt-2" />
-                    <p className="pt-2">নামঃ {applicantName || 'সৈয়দ আরিফুল ইসলাম ইমন'}</p>
+                    <div className="h-6 w-32 mt-1" />
+                    <p className="pt-1">নামঃ {applicantName || 'সৈয়দ আরিফুল ইসলাম ইমন'}</p>
                     <p>পদবীঃ {designation || 'সিনিয়র অফিসার-আইটি'}</p>
                     <p className="font-mono">ব্যাংক আইডিঃ {toBanglaDigits(bankId || '০২৬৭৯৫')}</p>
                     {fileNo && <p>ব্যক্তিগত নথি নংঃ {fileNo}</p>}
@@ -790,39 +790,33 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 5. RECOMMENDATION & HIERARCHY APPROVAL BOXES */}
-                <div className="mt-6 pt-2 space-y-4 font-sans text-xs">
+                <div className="mt-2.5 pt-0.5 text-xs text-black font-sans space-y-0">
                   {/* Recommendation notice line */}
-                  <div className="text-left text-black pb-1 mt-1">
+                  <div className="text-left text-black pb-1">
                     আবেদনকারীর অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর সুপারিশ করা হলো।
                   </div>
 
                   {/* Recommendation signatures */}
-                  <div className="flex justify-between items-center text-xs text-black pt-3 px-2">
-                    <div className="text-center leading-normal">
-                      <div className="h-20 w-32 mx-auto" />
-                      <p className="pt-2">সেল ইনচার্জ</p>
-                    </div>
+                  <div className="text-left pt-14 pb-1">
+                    <span>সেল ইনচার্জ</span>
+                  </div>
 
-                    <div className="text-center leading-normal">
-                      <div className="h-20 w-32 mx-auto" />
-                      <p className="pt-2">সহকারী মহাব্যবস্থাপক</p>
-                    </div>
+                  <div className="text-left pt-14 pb-1">
+                    <span>সহকারী মহাব্যবস্থাপক</span>
                   </div>
 
                   {/* AGM/DGM/SPO routing lines */}
-                  <div className="pt-6 space-y-12 text-[10px] text-black tracking-wide">
-                    <div className="flex items-center justify-between pb-1">
-                      <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                    </div>
-                    <div className="flex items-center justify-between pb-1">
-                      <span>ডিজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                    </div>
-                    <div className="flex items-center justify-between pb-1">
-                      <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                    </div>
-                    <div className="flex items-center justify-between pb-1">
-                      <span>এসপিও (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                    </div>
+                  <div className="text-left pt-14 pb-1">
+                    <span>এজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                  </div>
+                  <div className="text-left pt-14 pb-1">
+                    <span>ডিজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                  </div>
+                  <div className="text-left pt-14 pb-1">
+                    <span>এজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                  </div>
+                  <div className="text-left pt-14 pb-1">
+                    <span>এসপিও (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                 </div>
 
