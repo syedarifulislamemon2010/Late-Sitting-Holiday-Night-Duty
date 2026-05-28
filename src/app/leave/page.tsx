@@ -779,7 +779,12 @@ export default function LeaveGeneratorPage() {
                   {leaveType === 'POST_FACTO' ? (
                     <>
                       <p className="text-black text-xs">
-                        যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত {startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে {endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি। উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব {delegateName}, {delegateDesignation} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করছেন।
+                        {startDate === endDate ? (
+                          `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখে ${leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত ${leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।`
+                        ) : (
+                          `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে ${endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট ${leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত ${leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।`
+                        )}
+                        {` উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব ${delegateName}, ${delegateDesignation} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করছেন।`}
                       </p>
 
                       <p className="text-black text-xs leading-relaxed">
@@ -789,7 +794,11 @@ export default function LeaveGeneratorPage() {
                   ) : leaveType === 'STATION_LEAVE' ? (
                     <>
                       <p className="text-black text-xs">
-                        যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী {startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে {endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।
+                        {startDate === endDate ? (
+                          `যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখে ${leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।`
+                        ) : (
+                          `যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে ${endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত ${leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।`
+                        )}
                       </p>
 
                       <p className="text-black text-xs leading-relaxed">
@@ -803,7 +812,11 @@ export default function LeaveGeneratorPage() {
                   ) : (
                     <>
                       <p className="text-black text-xs">
-                        যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী {startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে {endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটির প্রয়োজন।
+                        {startDate === endDate ? (
+                          `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখে ${leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটির প্রয়োজন।`
+                        ) : (
+                          `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে ${endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট ${leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটির প্রয়োজন।`
+                        )}
                       </p>
 
                       <p className="text-black text-xs leading-relaxed">
@@ -847,7 +860,7 @@ export default function LeaveGeneratorPage() {
                   </div>
 
                   {/* Recommendation signatures */}
-                  <div className="flex justify-between items-center text-xs text-black pb-12 px-2">
+                  <div className="flex justify-between items-center text-xs text-black pt-[70px] pb-12 px-2">
                     <div className="text-left leading-normal">
                       <span>সেল ইনচার্জ</span>
                     </div>
@@ -901,13 +914,15 @@ export default function LeaveGeneratorPage() {
 
         @media print {
           /* Full Screen and layout resets */
-          body, html, main, .flex-1, .p-4, .lg\\:p-8, .p-6, .py-6 {
+          body, html, main, .flex-1, .p-4, .lg\:p-8, .p-6, .py-6 {
             background: #ffffff !important;
             color: #000000 !important;
             padding: 0 !important;
             margin: 0 !important;
-            height: auto !important;
-            overflow: visible !important;
+            height: 356mm !important;
+            max-height: 356mm !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
           }
           
           /* Hide non-printable panels */
