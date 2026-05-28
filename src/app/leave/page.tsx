@@ -339,6 +339,27 @@ export default function LeaveGeneratorPage() {
   const isSingleDay = startDate && endDate && startDate === endDate;
   const displayDaysWord = isSingleDay ? getBanglaDayWord(1) : (leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '');
 
+  // Get dynamic year for the leaves balance table header
+  const getSelectedYear = (): string => {
+    let yearStr = '';
+    if (startDate) {
+      const parts = startDate.split('-');
+      if (parts.length === 3) {
+        yearStr = parts[0];
+      }
+    }
+    if (!yearStr && applicationDate) {
+      const parts = applicationDate.split('-');
+      if (parts.length === 3) {
+        yearStr = parts[0];
+      }
+    }
+    if (!yearStr) {
+      yearStr = new Date().getFullYear().toString();
+    }
+    return toBanglaDigits(yearStr);
+  };
+
   // Format stay location dynamic text
   const formatStayLocationText = () => {
     return selectedDistrict || leaveLocation;
@@ -728,7 +749,7 @@ export default function LeaveGeneratorPage() {
                   {/* Right block: Leaves Balance Table */}
                   <div className="w-[85mm] border border-black p-1 text-[10px] bg-white font-sans text-black">
                     <div className="text-center font-bold pb-1 text-[10px]">
-                      ২০২৬ সালের ছুটির বিবরণ
+                      {getSelectedYear()} সালের ছুটির বিবরণ
                     </div>
                     <table className="w-full text-center border-collapse border border-black">
                       <thead>
