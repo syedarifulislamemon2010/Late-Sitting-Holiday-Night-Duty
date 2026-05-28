@@ -3,11 +3,15 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
+import { BANGLADESH_AREAS } from './bangladesh_areas';
 import { 
   CalendarCheck, 
   Printer, 
+  RefreshCw, 
   ArrowLeft, 
+  FileText, 
   User, 
+  AlertCircle,
   Settings,
   CalendarRange,
   Info
@@ -20,10 +24,6 @@ interface Employee {
   bankId: string | null;
   fileNo: string | null;
   cellId: number;
-  cell?: {
-    id: number;
-    name: string;
-  };
 }
 
 interface Holiday {
@@ -63,107 +63,6 @@ const DEFAULT_2026_HOLIDAYS = [
   { date: '2026-12-31', name: 'ব্যাংক ছুটির দিন (বার্ষিকী)' },
 ];
 
-// Bangladesh cascading location database
-const BANGLADESH_AREAS = {
-  'ঢাকা': {
-    districts: {
-      'ঢাকা': {
-        hasCityCorp: true,
-        thanas: [],
-        postOffices: []
-      },
-      'গাজীপুর': {
-        thanas: ['গাজীপুর সদর', 'কালিয়াকৈর', 'শ্রীপুর', 'কালীগঞ্জ', 'কাপাসিয়া'],
-        postOffices: ['গাজীপুর সদর', 'কালিয়াকৈর', 'শ্রীপুর', 'কালীগঞ্জ', 'কাপাসিয়া']
-      },
-      'নারায়ণগঞ্জ': {
-        thanas: ['নারায়ণগঞ্জ সদর', 'বন্দর', 'আড়াইহাজার', 'রূপগঞ্জ', 'সোনারগাঁও'],
-        postOffices: ['নারায়ণগঞ্জ সদর', 'বন্দর', 'আড়াইহাজার', 'রূপগঞ্জ', 'সোনারগাঁও']
-      },
-      'টাঙ্গাইল': {
-        thanas: ['টাঙ্গাইল সদর', 'মির্জাপুর', 'কালিহাতী', 'ঘাটাইল', 'মধুপুর'],
-        postOffices: ['টাঙ্গাইল সদর', 'মির্জাপুর', 'কালিহাতী', 'ঘাটাইল', 'মধুপুর']
-      }
-    }
-  },
-  'চট্টগ্রাম': {
-    districts: {
-      'চট্টগ্রাম': {
-        thanas: ['কোতোয়ালী', 'ডবলমুরিং', 'পাঁচলাইশ', 'হালিশহর', 'পতেঙ্গা', 'হাটহাজারী'],
-        postOffices: ['চট্টগ্রাম জিপিও', 'বন্দর', 'পতেঙ্গা', 'হাটহাজারী']
-      },
-      'কুমিল্লা': {
-        thanas: ['কুমিল্লা সদর', 'চৌদ্দগ্রাম', 'লাকসাম', 'দাউদকান্দি', 'বরুড়া'],
-        postOffices: ['কুমিল্লা সদর', 'চৌদ্দগ্রাম', 'লাকসাম', 'দাউদকান্দি']
-      },
-      'কক্সবাজার': {
-        thanas: ['কক্সবাজার সদর', 'উখিয়া', 'টেকনাফ', 'রামু', 'চকরিয়া'],
-        postOffices: ['কক্সবাজার সদর', 'উখিয়া', 'টেকনাফ', 'রামু']
-      }
-    }
-  },
-  'রাজশাহী': {
-    districts: {
-      'রাজশাহী': {
-        thanas: ['বোয়الية', 'রাজপাড়া', 'মতিহার', 'শাহ মখদুম', 'পবা'],
-        postOffices: ['রাজশাহী জিপিও', 'পবা']
-      },
-      'বগুড়া': {
-        thanas: ['বগুড়া সদর', 'শাজাহানপুর', 'শেরপুর', 'গাবতলী', 'শিবগঞ্জ'],
-        postOffices: ['বগুড়া সদর', 'শেরপুর', 'শিবগঞ্জ']
-      }
-    }
-  },
-  'খুলনা': {
-    districts: {
-      'খুলনা': {
-        thanas: ['খুলনা সদর', 'দৌলতপুর', 'খালিশপুর', 'রূপসা', 'ডুমুরিয়া'],
-        postOffices: ['খুলনা জিপিও', 'রূপসা']
-      },
-      'যশোর': {
-        thanas: ['যশোর সদর', 'ঝিকরগাছা', 'শার্শা', 'চৌগাছা', 'কেশবপুর'],
-        postOffices: ['যশোর সদর', 'শার্শা']
-      }
-    }
-  },
-  'বরিশাল': {
-    districts: {
-      'বরিশাল': {
-        thanas: ['বরিশাল সদর', 'বাকেরগঞ্জ', 'বাবুগঞ্জ', 'উজিরপুর', 'গৌরনদী'],
-        postOffices: ['বরিশাল জিপিও', 'গৌরনদী']
-      }
-    }
-  },
-  'সিলেট': {
-    districts: {
-      'সিলেট': {
-        thanas: ['সিলেট সদর', 'বিয়ানীবাজার', 'গোলাপগঞ্জ', 'কানাইঘাট', 'জৈন্তাপুর'],
-        postOffices: ['সিলেট জিপিও', 'বিয়ানীবাজার']
-      },
-      'মৌলভীবাজার': {
-        thanas: ['মৌলভীবাজার সদর', 'শ্রীমঙ্গল', 'কুলাউড়া', 'কমলগঞ্জ'],
-        postOffices: ['মৌলভীবাজার সদর', 'শ্রীমঙ্গল']
-      }
-    }
-  },
-  'রংপুর': {
-    districts: {
-      'রংপুর': {
-        thanas: ['রংপুর সদর', 'মিঠাপুকুর', 'পীরগঞ্জ', 'বদরগঞ্জ', 'কাউনিয়া'],
-        postOffices: ['রংপুর জিপিও', 'পীরগঞ্জ']
-      }
-    }
-  },
-  'ময়মনসিংহ': {
-    districts: {
-      'ময়মনসিংহ': {
-        thanas: ['ময়মনসিংহ সদর', 'মুক্তাগাছা', 'ত্রিশাল', 'ভালুকা', 'গফরগাঁও'],
-        postOffices: ['ময়মনসিংহ সদর', 'ত্রিশাল', 'ভালুকা']
-      }
-    }
-  }
-};
-
 export default function LeaveGeneratorPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [matchedEmp, setMatchedEmp] = useState<Employee | null>(null);
@@ -177,7 +76,7 @@ export default function LeaveGeneratorPage() {
   const [endDate, setEndDate] = useState('');
   const [applicationDate, setApplicationDate] = useState('');
   
-  // Custom applicant details
+  // Custom applicant details (editable, but default loaded from session & matching employee)
   const [applicantName, setApplicantName] = useState('');
   const [designation, setDesignation] = useState('');
   const [bankId, setBankId] = useState('');
@@ -231,19 +130,20 @@ export default function LeaveGeneratorPage() {
             setApplicantName(authData.user.name || '');
             setBankId(authData.user.username || '');
             
+            // If they are admin, fetch employees. Search if employee exists matching bankId.
             if (empsRes.ok) {
               const empsData = await empsRes.json();
               setEmployees(Array.isArray(empsData) ? empsData : []);
               
-              // Find matching employee to load designation, file number, and cell id
-              const matched = empsData.find((e: Employee) => 
+              // Find matching employee to load designation & file number automatically
+              const matchedEmp = empsData.find((e: Employee) => 
                 e.bankId && e.bankId.trim().toLowerCase() === authData.user.username.trim().toLowerCase()
               );
-              if (matched) {
-                setMatchedEmp(matched);
-                setDesignation(matched.designation);
-                if (matched.fileNo) {
-                  setFileNo(matched.fileNo);
+              if (matchedEmp) {
+                setMatchedEmp(matchedEmp);
+                setDesignation(matchedEmp.designation);
+                if (matchedEmp.fileNo) {
+                  setFileNo(matchedEmp.fileNo);
                 }
               }
             }
@@ -295,18 +195,22 @@ export default function LeaveGeneratorPage() {
     const dateObj = new Date(dateStr);
     if (isNaN(dateObj.getTime())) return false;
 
+    // Friday (5) & Saturday (6) in Bangladesh
     const dayOfWeek = dateObj.getDay();
     let isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
+    // Override specific default weekends
     if (dateStr === '2026-05-23') {
       isWeekend = false;
     }
 
+    // Override from database holidays working override
     const dbHol = dbHolidays.find(h => h.date === dateStr);
     if (dbHol && dbHol.isWorkingDay) {
       return false;
     }
 
+    // Check if in default holiday list or db holidays list with isWorkingDay === false
     const isPublicHoliday = DEFAULT_2026_HOLIDAYS.some(h => h.date === dateStr) || 
       dbHolidays.some(h => h.date === dateStr && !h.isWorkingDay);
 
@@ -349,24 +253,28 @@ export default function LeaveGeneratorPage() {
       current.setDate(current.getDate() + 1);
     }
 
-    // Preceding Day check
+    // 1. Preceding Day check
     const precedingDate = new Date(start);
     precedingDate.setDate(precedingDate.getDate() - 1);
     const precedingStr = precedingDate.toISOString().split('T')[0];
     const isPrecedingHoliday = isNonWorkingDay(precedingStr);
 
-    // Succeeding Day check
+    // 2. Succeeding Day check
     const succeedingDate = new Date(end);
     succeedingDate.setDate(succeedingDate.getDate() + 1);
     const succeedingStr = succeedingDate.toISOString().split('T')[0];
     const isSucceedingHoliday = isNonWorkingDay(succeedingStr);
 
+    // 3. Sandwiched check: block is sandwiched between preceding & succeeding holiday
     const isSandwiched = isPrecedingHoliday && isSucceedingHoliday;
     const succeedingHolidaysCount = isSandwiched ? getSucceedingContiguousHolidaysCount(endDate) : 0;
 
     let calendarDaysCount = allDates.length;
     let workingDaysSelected = allDates.filter(d => !isNonWorkingDay(d)).length;
 
+    // Apply rule:
+    // If sandwiched, count = total calendar days in block + succeeding holidays count.
+    // If not sandwiched, count = number of working days selected.
     let actualDeducted = 0;
     if (isSandwiched) {
       actualDeducted = calendarDaysCount + succeedingHolidaysCount;
@@ -406,6 +314,7 @@ export default function LeaveGeneratorPage() {
   }, [leaveType]);
 
   // Dynamically calculate remaining leaves
+  // নৈমিত্তিক ছুটি ভোগকৃত = Default ভোগকৃত (৯) + Applied Days (যদি নৈমিত্তিক ছুটির কোনো একটি টাইপ সিলেক্ট থাকে)
   const isCasualLeaveSelected = ['CASUAL', 'POST_FACTO', 'STATION_LEAVE'].includes(leaveType);
   const currentCasualUsed = casualUsed + (isCasualLeaveSelected ? leaveDetails.actualDeducted : 0);
   const currentCasualRemaining = Math.max(0, casualTotal - currentCasualUsed);
@@ -449,7 +358,7 @@ export default function LeaveGeneratorPage() {
     }
 
     const distInfo = (BANGLADESH_AREAS[selectedDivision as keyof typeof BANGLADESH_AREAS]?.districts as any)?.[selectedDistrict];
-    return distInfo ? distInfo.thanas : [];
+    return distInfo ? distInfo.thanas || [] : [];
   };
 
   const getPostOfficesForSelect = (): string[] => {
@@ -466,7 +375,7 @@ export default function LeaveGeneratorPage() {
     }
 
     const distInfo = (BANGLADESH_AREAS[selectedDivision as keyof typeof BANGLADESH_AREAS]?.districts as any)?.[selectedDistrict];
-    return distInfo ? distInfo.postOffices : [];
+    return distInfo ? distInfo.postOffices || [] : [];
   };
 
   // Format Subject
@@ -527,7 +436,7 @@ export default function LeaveGeneratorPage() {
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
             
-            {/* LEFT: Leaf Generator Settings Form */}
+            {/* LEFT: Leaf Generator Settings Form (35% width on desktop) */}
             <div className="no-print xl:col-span-4 space-y-6">
               
               {/* Box 1: applicant information */}
@@ -614,7 +523,7 @@ export default function LeaveGeneratorPage() {
                             setSelectedThana('');
                             setSelectedPostOffice('');
                           }}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none"
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none cursor-pointer"
                         >
                           <option value="">বিভাগ সিলেক্ট করুন...</option>
                           {Object.keys(BANGLADESH_AREAS).map(div => (
@@ -636,7 +545,7 @@ export default function LeaveGeneratorPage() {
                             setSelectedThana('');
                             setSelectedPostOffice('');
                           }}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none disabled:opacity-50"
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none disabled:opacity-50 cursor-pointer"
                         >
                           <option value="">জেলা সিলেক্ট করুন...</option>
                           {selectedDivision && Object.keys(BANGLADESH_AREAS[selectedDivision as keyof typeof BANGLADESH_AREAS].districts).map(dist => (
@@ -658,7 +567,7 @@ export default function LeaveGeneratorPage() {
                             setSelectedThana('');
                             setSelectedPostOffice('');
                           }}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none"
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none cursor-pointer"
                         >
                           <option value="">সিটি কর্পোরেশন সিলেক্ট করুন...</option>
                           <option value="ঢাকা উত্তর">ঢাকা উত্তর</option>
@@ -674,11 +583,11 @@ export default function LeaveGeneratorPage() {
                         <label className="text-[10px] text-slate-400 font-bold">থানা / উপজেলা:</label>
                         <select
                           value={selectedThana}
-                          disabled={!selectedDistrict || (selectedDistrict === 'ঢাকা' && !selectedCityCorp)}
+                          disabled={!selectedDistrict || (selectedDistrict === 'ঢাকা' && !selectedCityCorp) || getThanasForSelect().length === 0}
                           onChange={(e) => {
                             setSelectedThana(e.target.value);
                           }}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none disabled:opacity-50"
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none disabled:opacity-50 cursor-pointer"
                         >
                           <option value="">থানা সিলেক্ট করুন...</option>
                           {getThanasForSelect().map(t => (
@@ -692,11 +601,11 @@ export default function LeaveGeneratorPage() {
                         <label className="text-[10px] text-slate-400 font-bold">ডাকঘর (পোস্ট অফিস):</label>
                         <select
                           value={selectedPostOffice}
-                          disabled={!selectedDistrict || (selectedDistrict === 'ঢাকা' && !selectedCityCorp)}
+                          disabled={!selectedDistrict || (selectedDistrict === 'ঢাকা' && !selectedCityCorp) || getPostOfficesForSelect().length === 0}
                           onChange={(e) => {
                             setSelectedPostOffice(e.target.value);
                           }}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none disabled:opacity-50"
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none disabled:opacity-50 cursor-pointer"
                         >
                           <option value="">ডাকঘর সিলেক্ট করুন...</option>
                           {getPostOfficesForSelect().map(po => (
@@ -706,7 +615,6 @@ export default function LeaveGeneratorPage() {
                       </div>
                     </div>
                   </div>
-
                 </div>
               </div>
 
@@ -780,7 +688,7 @@ export default function LeaveGeneratorPage() {
                     <select
                       value={delegateId}
                       onChange={(e) => setDelegateId(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-bold"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-bold cursor-pointer"
                     >
                       <option value="">দায়িত্বপ্রাপ্ত কর্মকর্তা নির্বাচন করুন...</option>
                       {eligibleCoveringOfficers.map((emp: Employee) => (
@@ -900,24 +808,24 @@ export default function LeaveGeneratorPage() {
 
             </div>
 
-            {/* RIGHT: Pixel-Perfect Legal Document Sheet Preview */}
+            {/* RIGHT: Pixel-Perfect A4 Document Sheet Preview (8 columns) */}
             <div className="xl:col-span-8 flex justify-center pb-8">
               
               {/* Container of simulated sheet */}
               <div 
                 id="printable-leave-sheet" 
-                className="w-[216mm] min-h-[356mm] bg-white text-black p-[20mm] border border-slate-200 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] relative flex flex-col justify-between"
+                className="w-[216mm] min-h-[356mm] bg-white text-black p-[20mm] border-2 border-slate-300 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] relative flex flex-col justify-between"
                 style={{ contentVisibility: 'auto' }}
               >
                 
                 {/* 1. Header (Date + Leaves Table) */}
-                <div className="flex justify-between items-start leading-tight">
+                <div className="flex justify-between items-start font-sans leading-tight">
                   {/* Left block (Date and To address) */}
                   <div className="space-y-4 pt-1 text-xs">
-                    <p className="text-black">
+                    <p className="font-semibold text-black">
                       তারিখ: {toDisplayDateStr(applicationDate)} ইং
                     </p>
-                    <div className="space-y-0.5 text-black text-xs">
+                    <div className="space-y-0.5 font-bold text-black text-xs font-sans">
                       <p>উপ-মহাব্যবস্থাপক</p>
                       <p>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
                       <p>জনতা ব্যাংক পিএলসি,</p>
@@ -926,13 +834,13 @@ export default function LeaveGeneratorPage() {
                   </div>
 
                   {/* Right block: Leaves Balance Table */}
-                  <div className="w-[85mm] border border-black p-1 text-[10px] bg-white text-black">
-                    <div className="text-center pb-1 text-[10px]">
+                  <div className="w-[85mm] border border-black p-1 text-[10px] bg-white font-sans text-black">
+                    <div className="text-center font-bold pb-1 text-[10px]">
                       ২০২৬ সালের ছুটির বিবরণ
                     </div>
                     <table className="w-full text-center border-collapse border border-black">
                       <thead>
-                        <tr className="bg-slate-50 border-b border-black">
+                        <tr className="bg-slate-50 font-bold border-b border-black">
                           <th className="border border-black px-1.5 py-0.5 w-[12mm]">ক্র.নং</th>
                           <th className="border border-black px-1.5 py-0.5">ছুটির ধরণ</th>
                           <th className="border border-black px-1 py-0.5 w-[14mm]">প্রাপ্তব্য</th>
@@ -940,34 +848,27 @@ export default function LeaveGeneratorPage() {
                           <th className="border border-black px-1 py-0.5 w-[14mm]">অবশিষ্ট</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="font-semibold">
                         <tr className="border-b border-black">
                           <td className="border border-black px-1 py-0.5">০১.</td>
                           <td className="border border-black px-1.5 py-0.5 text-left">নৈমিত্তিক ছুটি</td>
-                          <td className="border border-black px-1 py-0.5">{toBanglaDigits(casualTotal)}</td>
-                          <td className="border border-black px-1 py-0.5">{toBanglaDigits(currentCasualUsed)}</td>
-                          <td className="border border-black px-1 py-0.5">{toBanglaDigits(currentCasualRemaining)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(casualTotal)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(currentCasualUsed)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(currentCasualRemaining)}</td>
                         </tr>
                         <tr className="border-b border-black">
                           <td className="border border-black px-1 py-0.5">০২.</td>
                           <td className="border border-black px-1.5 py-0.5 text-left">সাধারণ ছুটি</td>
-                          <td className="border border-black px-1 py-0.5">{toBanglaDigits(ordinaryTotal)}</td>
-                          <td className="border border-black px-1 py-0.5">{toBanglaDigits(ordinaryUsed)}</td>
-                          <td className="border border-black px-1 py-0.5">{toDisplayOrDash(currentOrdinaryRemaining)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(ordinaryTotal)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(ordinaryUsed)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toDisplayOrDash(currentOrdinaryRemaining)}</td>
                         </tr>
                         <tr>
                           <td className="border border-black px-1 py-0.5">০৩.</td>
                           <td className="border border-black px-1.5 py-0.5 text-left">বিশেষ ছুটি</td>
-                          <td className="border border-black px-1 py-0.5">
-                            <input 
-                              type="number" 
-                              value={specialTotal}
-                              onChange={(e) => setSpecialTotal(parseInt(e.target.value, 10) || 0)}
-                              className="w-full text-center outline-none"
-                            />
-                          </td>
-                          <td className="border border-black px-1 py-0.5">{toDisplayOrDash(specialUsed)}</td>
-                          <td className="border border-black px-1 py-0.5">{toDisplayOrDash(currentSpecialRemaining)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toDisplayOrDash(specialTotal)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toDisplayOrDash(specialUsed)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toDisplayOrDash(currentSpecialRemaining)}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -975,88 +876,88 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 2. SUBJECT */}
-                <div className="mt-2">
-                  <p className="text-black text-xs font-normal pb-0.5 w-fit">
+                <div className="mt-2.5">
+                  <p className="text-black text-xs pb-0.5 w-fit bold-text">
                     {leaveDetails.actualDeducted > 0 ? formatSubject() : 'বিষয়ঃ নৈমিত্তিক ছুটি মঞ্জুরির আবেদন।'}
                   </p>
                 </div>
 
                 {/* 3. LETTER BODY */}
-                <div className="mt-1.5 text-xs text-black leading-relaxed font-normal text-justify space-y-2">
-                  <p className="font-normal text-xs">প্রিয় মহোদয়,</p>
+                <div className="mt-1.5 text-xs text-black leading-relaxed text-justify space-y-2">
+                  <p className="text-xs">প্রিয় মহোদয়,</p>
                   
-                  <p className="text-black indent-12 text-xs font-normal">
-                    যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী <span className="border-b border-black px-1 font-normal">{startDate ? toDisplayDateStr(startDate) : '______'}</span> ইং তারিখ হতে <span className="border-b border-black px-1 font-normal">{endDate ? toDisplayDateStr(endDate) : '______'}</span> ইং তারিখ পর্যন্ত মোট <span className="border-b border-black px-1 font-normal">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
+                  <p className="text-black indent-12 text-xs">
+                    যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী <span className="border-b border-black px-1">{startDate ? toDisplayDateStr(startDate) : '______'}</span> ইং তারিখ হতে <span className="border-b border-black px-1">{endDate ? toDisplayDateStr(endDate) : '______'}</span> ইং তারিখ পর্যন্ত মোট <span className="border-b border-black px-1">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
                   </p>
 
-                  <p className="text-black text-xs leading-relaxed font-normal">
-                    উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব <span className="border-b border-black px-1 font-normal">{delegateName}</span>, <span className="border-b border-black px-1 font-normal">{delegateDesignation}</span> তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
+                  <p className="text-black text-xs leading-relaxed">
+                    উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব <span className="border-b border-black px-1">{delegateName}</span>, <span className="border-b border-black px-1">{delegateDesignation}</span> তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
                   </p>
 
-                  <p className="text-black text-xs leading-relaxed font-normal">
-                    অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত <span className="border-b border-black px-1 font-normal">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
+                  <p className="text-black text-xs leading-relaxed">
+                    অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত <span className="border-b border-black px-1">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
                   </p>
                 </div>
 
                 {/* 4. SIGNATURE CARD SUMMARY */}
-                <div className="mt-2.5 flex justify-between items-start text-xs font-normal leading-tight">
+                <div className="mt-2 flex justify-between items-start text-xs font-sans leading-tight">
                   {/* Left Block (Applicant Info Signature block) */}
-                  <div className="space-y-0.5 font-normal text-black">
-                    <p className="font-normal">আপনার বিশ্বস্ত,</p>
-                    <div className="h-8 w-32 border-b border-black/20 mt-1" />
-                    <p className="pt-1">নামঃ {applicantName || 'সৈয়দ আরিফুল ইসলাম ইমন'}</p>
-                    <p className="">পদবীঃ {designation || 'সিনিয়র অফিসার-আইটি'}</p>
+                  <div className="space-y-1 text-black">
+                    <p>আপনার বিশ্বস্ত,</p>
+                    <div className="h-10 w-32 border-b border-slate-200 mt-2" />
+                    <p className="pt-2">নামঃ {applicantName || 'সৈয়দ আরিফুল ইসলাম ইমন'}</p>
+                    <p>পদবীঃ {designation || 'সিনিয়র অফিসার-আইটি'}</p>
                     <p className="font-mono">ব্যাংক আইডিঃ {toBanglaDigits(bankId || '০২৬৭৯৫')}</p>
-                    {fileNo && <p className="">ব্যক্তিগত নথি নংঃ {fileNo}</p>}
-                    <p className="">{cellName}</p>
-                    <p className="">জনতা ব্যাংক পিএলসি,</p>
-                    <p className="">প্রধান কার্যালয়, ঢাকা।</p>
+                    {fileNo && <p>ব্যক্তিগত নথি নংঃ {fileNo}</p>}
+                    <p>{cellName}</p>
+                    <p>জনতা ব্যাংক পিএলসি,</p>
+                    <p>প্রধান কার্যালয়, ঢাকা।</p>
                   </div>
 
                   {/* Right Block (Stay & Mobile during leave) */}
-                  <div className="space-y-2 text-black font-normal text-xs text-right pr-2">
-                    <p>ছুটিতে থাকাকালীন অবস্থানঃ <span className="border-b border-black px-1.5 font-normal">{formatStayLocationText()}</span></p>
-                    <p>মোবাইল নংঃ <span className="font-mono border-b border-black px-1.5 font-normal">{toBanglaDigits(mobileNo)}</span></p>
+                  <div className="space-y-2 text-black text-xs text-right pr-2">
+                    <p>ছুটিতে থাকাকালীন অবস্থানঃ <span className="border-b border-black px-1.5">{formatStayLocationText()}</span></p>
+                    <p>মোবাইল নংঃ <span className="font-mono border-b border-black px-1.5">{toBanglaDigits(mobileNo)}</span></p>
                   </div>
                 </div>
 
                 {/* 5. RECOMMENDATION & HIERARCHY APPROVAL BOXES */}
-                <div className="mt-3.5 space-y-2 font-normal text-xs">
+                <div className="mt-3 border-t border-black pt-2 space-y-4 font-sans text-xs">
                   {/* Recommendation notice line */}
-                  <div className="text-center font-normal text-black pb-0.5">
-                    আবেদনকারীর অনুকূলে উক্ত <span className="border-b border-black px-1 font-normal">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর সুপারিশ করা হলো।
+                  <div className="text-center text-black border-b border-dashed border-black/45 pb-1 mt-1">
+                    আবেদনকারীর অনুকূলে উক্ত <span className="border-b border-black px-1">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর সুপারিশ করা হলো।
                   </div>
 
                   {/* Recommendation signatures */}
-                  <div className="flex justify-between items-center text-xs font-normal text-black pt-1 px-2">
+                  <div className="flex justify-between items-center text-xs text-black pt-3 px-2">
                     <div className="text-center leading-normal">
-                      <div className="h-12 w-28 border-b border-black/30 mx-auto" />
-                      <p className="pt-2 font-normal">সেল ইনচার্জ</p>
+                      <div className="h-20 w-32 border-b border-black/30 mx-auto" />
+                      <p className="pt-2">সেল ইনচার্জ</p>
                     </div>
 
                     <div className="text-center leading-normal">
-                      <div className="h-12 w-28 border-b border-black/30 mx-auto" />
-                      <p className="pt-2 font-normal">সহকারী মহাব্যবস্থাপক</p>
+                      <div className="h-20 w-32 border-b border-black/30 mx-auto" />
+                      <p className="pt-2">সহকারী মহাব্যবস্থাপক</p>
                     </div>
                   </div>
 
                   {/* AGM/DGM/SPO routing lines */}
-                  <div className="pt-1.5 space-y-2 text-[10px] font-normal text-black tracking-wide">
-                    <div className="flex items-center justify-between border-b border-black/10 pb-1.5">
-                      <span className="font-normal">এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                      <span className="w-16 border-b border-black/20 h-1" />
+                  <div className="pt-5 space-y-8 text-[10px] text-black tracking-wide">
+                    <div className="flex items-center justify-between border-b border-black/20 pb-3">
+                      <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                      <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
-                    <div className="flex items-center justify-between border-b border-black/10 pb-1.5">
-                      <span className="font-normal">ডিজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                      <span className="w-16 border-b border-black/20 h-1" />
+                    <div className="flex items-center justify-between border-b border-black/20 pb-3">
+                      <span>ডিজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                      <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
-                    <div className="flex items-center justify-between border-b border-black/10 pb-1.5">
-                      <span className="font-normal">এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                      <span className="w-16 border-b border-black/20 h-1" />
+                    <div className="flex items-center justify-between border-b border-black/20 pb-3">
+                      <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                      <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
-                    <div className="flex items-center justify-between pb-1.5">
-                      <span className="font-normal">এসপিও (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                      <span className="w-16 border-b border-black/20 h-1" />
+                    <div className="flex items-center justify-between pb-3">
+                      <span>এসপিও (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                      <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
                   </div>
                 </div>
@@ -1072,6 +973,22 @@ export default function LeaveGeneratorPage() {
       
       {/* Dynamic Printing CSS styles */}
       <style>{`
+        /* Universal Kalpurush size 10 normal weight styles */
+        #printable-leave-sheet, #printable-leave-sheet * {
+          font-family: 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
+          font-size: 13px !important;
+          font-style: normal !important;
+          line-height: 1.45 !important;
+          color: #000000 !important;
+          text-decoration: none !important;
+        }
+        #printable-leave-sheet, #printable-leave-sheet *:not(.bold-text) {
+          font-weight: normal !important;
+        }
+        #printable-leave-sheet .bold-text, #printable-leave-sheet .bold-text * {
+          font-weight: bold !important;
+        }
+
         @media print {
           /* Full Screen and layout resets */
           body, html, main, .flex-1, .p-4, .lg\\:p-8, .p-6, .py-6 {
@@ -1106,22 +1023,24 @@ export default function LeaveGeneratorPage() {
             page-break-inside: avoid !important;
             page-break-before: avoid !important;
           }
+
+          /* Ensure high fidelity text colors */
+          p, td, th, span, div {
+            color: #000000 !important;
+          }
+
+          table {
+            border-color: #000000 !important;
+          }
+
+          th, td {
+            border-color: #000000 !important;
+          }
           
           @page {
             size: legal portrait;
             margin: 0 !important;
           }
-        }
-
-        /* Strict CSS rule to enforce standard size 10 Kalpurush text in document */
-        #printable-leave-sheet, #printable-leave-sheet * {
-          font-family: 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
-          font-size: 13px !important; /* Size 10 is 13px */
-          font-weight: normal !important;
-          font-style: normal !important;
-          line-height: 1.45 !important;
-          color: #000000 !important;
-          text-decoration: none !important;
         }
       `}</style>
     </AuthGuard>
