@@ -769,17 +769,31 @@ export default function LeaveGeneratorPage() {
                 <div className="mt-1.5 text-xs text-black leading-relaxed text-justify space-y-1.5">
                   <p className="text-xs">প্রিয় মহোদয়,</p>
                   
-                  <p className="text-black text-xs">
-                    যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী {startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে {endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটির প্রয়োজন।
-                  </p>
+                  {leaveType === 'POST_FACTO' ? (
+                    <>
+                      <p className="text-black text-xs">
+                        যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত {startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে {endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি। উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব {delegateName}, {delegateDesignation} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করছেন।
+                      </p>
 
-                  <p className="text-black text-xs leading-relaxed">
-                    উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব {delegateName}, {delegateDesignation} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
-                  </p>
+                      <p className="text-black text-xs leading-relaxed">
+                        অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-black text-xs">
+                        যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী {startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে {endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটির প্রয়োজন।
+                      </p>
 
-                  <p className="text-black text-xs leading-relaxed">
-                    অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
-                  </p>
+                      <p className="text-black text-xs leading-relaxed">
+                        উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব {delegateName}, {delegateDesignation} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
+                      </p>
+
+                      <p className="text-black text-xs leading-relaxed">
+                        অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 {/* 4. SIGNATURE CARD SUMMARY */}
