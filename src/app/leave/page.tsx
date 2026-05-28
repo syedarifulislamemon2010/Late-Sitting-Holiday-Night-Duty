@@ -744,14 +744,14 @@ export default function LeaveGeneratorPage() {
                           <td className="border border-black px-1.5 py-0.5 text-left">সাধারণ ছুটি</td>
                           <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(ordinaryTotal)}</td>
                           <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(ordinaryUsed)}</td>
-                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toDisplayOrDash(currentOrdinaryRemaining)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(currentOrdinaryRemaining)}</td>
                         </tr>
                         <tr>
                           <td className="border border-black px-1 py-0.5">০৩.</td>
                           <td className="border border-black px-1.5 py-0.5 text-left">বিশেষ ছুটি</td>
-                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toDisplayOrDash(specialTotal)}</td>
-                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toDisplayOrDash(specialUsed)}</td>
-                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toDisplayOrDash(currentSpecialRemaining)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(specialTotal)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(specialUsed)}</td>
+                          <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(currentSpecialRemaining)}</td>
                         </tr>
                       </tbody>
                     </table>
