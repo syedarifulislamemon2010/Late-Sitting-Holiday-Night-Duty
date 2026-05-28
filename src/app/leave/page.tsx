@@ -758,7 +758,7 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 2. SUBJECT */}
-                <div className="mt-[60px] mb-[60px]">
+                <div className="mt-[30px] mb-[30px]">
                   <p className="text-black text-xs pb-0.5 w-fit bold-text">
                     {leaveDetails.actualDeducted > 0 ? formatSubject() : 'বিষয়ঃ নৈমিত্তিক ছুটি মঞ্জুরির আবেদন।'}
                   </p>
@@ -782,7 +782,7 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 4. SIGNATURE CARD SUMMARY */}
-                <div className="mt-[70px] flex justify-between items-start text-xs font-sans leading-tight">
+                <div className="mt-[35px] flex justify-between items-start text-xs font-sans leading-tight">
                   {/* Left Block (Applicant Info Signature block) */}
                   <div className="space-y-1 text-black">
                     <p>আপনার বিশ্বস্ত,</p>
@@ -804,7 +804,7 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 5. RECOMMENDATION & HIERARCHY APPROVAL BOXES */}
-                <div className="mt-[70px] pt-0.5 text-xs text-black font-sans space-y-0">
+                <div className="mt-[35px] pt-0.5 text-xs text-black font-sans space-y-0">
                   {/* Recommendation notice line */}
                   <div className="text-left text-black pb-1">
                     আবেদনকারীর অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর সুপারিশ করা হলো।
@@ -823,16 +823,16 @@ export default function LeaveGeneratorPage() {
 
                   {/* AGM/DGM/SPO routing lines */}
                   <div className="text-left pt-14 pb-1">
-                    <span>এজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                    <span>এজিএম (অনлайн) সমীপেঃ</span>
                   </div>
                   <div className="text-left pt-14 pb-1">
-                    <span>ডিজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                    <span>ডিজিএম (অনлайн) সমীপেঃ</span>
                   </div>
                   <div className="text-left pt-14 pb-1">
-                    <span>এজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                    <span>এজিএম (অনлайн) সমীপেঃ</span>
                   </div>
                   <div className="text-left pt-14 pb-1">
-                    <span>এসপিও (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                    <span>এসপিও (অনлайн) সমীপেঃ</span>
                   </div>
                 </div>
 
