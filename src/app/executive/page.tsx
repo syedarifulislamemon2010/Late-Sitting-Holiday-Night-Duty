@@ -148,7 +148,7 @@ export default function ExecutivesPage() {
   const [isImageImportLoading, setIsImageImportLoading] = useState(false);
   const [customApiKey, setCustomApiKey] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('gemini_api_key') || '';
+      return localStorage.getItem('ai_api_key') || '';
     }
     return '';
   });
@@ -409,7 +409,7 @@ export default function ExecutivesPage() {
 
   const handleSaveApiKey = (key: string) => {
     setCustomApiKey(key);
-    localStorage.setItem('gemini_api_key', key);
+    localStorage.setItem('ai_api_key', key);
     setShowKeyInput(false);
   };
 

@@ -5,11 +5,11 @@ export async function POST(request: Request) {
   try {
     const { fileData, fileType, customApiKey } = await request.json();
     
-    const apiKey = customApiKey || process.env.GEMINI_API_KEY;
+    const apiKey = customApiKey || process.env.AI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ 
         error: 'api_key_missing', 
-        message: 'ক্লিপবোর্ড থেকে ছবি পেস্ট করে ইম্পোর্ট করার জন্য একটি Gemini API Key প্রয়োজন। অনুগ্রহ করে .env ফাইলে GEMINI_API_KEY সেট করুন অথবা এখানে একটি কি (Key) প্রদান করুন।' 
+        message: 'ক্লিপবোর্ড থেকে ছবি পেস্ট করে ইম্পোর্ট করার জন্য একটি API Key প্রয়োজন। অনুগ্রহ করে .env ফাইলে AI_API_KEY সেট করুন।' 
       }, { status: 400 });
     }
 
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use gemini-1.5-flash which is robust and available everywhere
+    // Use generative model which is robust and available everywhere
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: 'application/json' }

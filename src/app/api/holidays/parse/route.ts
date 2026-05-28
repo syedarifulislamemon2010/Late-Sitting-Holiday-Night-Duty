@@ -133,10 +133,10 @@ export async function POST(request: Request) {
     
     let parsedHolidays: any[] = [];
     
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.AI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY;
 
     if (apiKey && (fileData || (text && text.length > 500))) {
-      // Use Gemini AI for parsing large text or documents/images
+      // Use Generative AI for parsing large text or documents/images
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ 
@@ -187,7 +187,7 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
           throw new Error('AI returned non-array structure');
         }
       } catch (aiError) {
-        console.error('Gemini AI parsing failed, falling back to regex parser:', aiError);
+        console.error('AI parsing failed, falling back to regex parser:', aiError);
         parsedHolidays = fallbackParseHolidays(text || '', defaultYear);
       }
     } else {
