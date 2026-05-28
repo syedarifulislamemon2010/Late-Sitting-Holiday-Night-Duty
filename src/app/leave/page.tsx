@@ -382,10 +382,18 @@ export default function LeaveGeneratorPage() {
 
             <button
               onClick={handlePrint}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer"
             >
               <Printer size={14} />
-              প্রিন্ট করুন
+              প্রিন্ট প্রিভিউ
+            </button>
+
+            <button
+              onClick={handlePrint}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            >
+              <FileText size={14} />
+              ডাউনলোড পিডিএফ
             </button>
           </div>
         </div>
@@ -814,7 +822,7 @@ export default function LeaveGeneratorPage() {
                   {/* Left Block (Applicant Info Signature block) */}
                   <div className="space-y-1 text-black">
                     <p>আপনার বিশ্বস্ত,</p>
-                    <div className="h-6 w-32 mt-1" />
+                    <div className="h-12 w-32 mt-1" />
                     <p className="pt-1">নামঃ {applicantName || 'সৈয়দ আরিফুল ইসলাম ইমন'}</p>
                     <p>পদবীঃ {designation || 'সিনিয়র অফিসার-আইটি'}</p>
                     <p className="font-mono">ব্যাংক আইডিঃ {toBanglaDigits(bankId || '০২৬৭৯৫')}</p>
@@ -839,7 +847,7 @@ export default function LeaveGeneratorPage() {
                   </div>
 
                   {/* Recommendation signatures */}
-                  <div className="flex justify-between items-center text-xs text-black pt-14 px-2">
+                  <div className="flex justify-between items-center text-xs text-black pb-12 px-2">
                     <div className="text-left leading-normal">
                       <span>সেল ইনচার্জ</span>
                     </div>
@@ -850,16 +858,16 @@ export default function LeaveGeneratorPage() {
                   </div>
 
                   {/* AGM/DGM/SPO routing lines */}
-                  <div className="text-left pt-14 pb-1">
+                  <div className="text-left pb-12">
                     <span>এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</span>
                   </div>
-                  <div className="text-left pt-14 pb-1">
+                  <div className="text-left pb-12">
                     <span>ডিজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</span>
                   </div>
-                  <div className="text-left pt-14 pb-1">
+                  <div className="text-left pb-12">
                     <span>এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</span>
                   </div>
-                  <div className="text-left pt-14 pb-1">
+                  <div className="text-left pb-12">
                     <span>এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</span>
                   </div>
                 </div>
@@ -914,6 +922,7 @@ export default function LeaveGeneratorPage() {
             justify-content: flex-start !important;
             width: 216mm !important;
             height: 356mm !important;
+            max-height: 356mm !important;
             min-height: 356mm !important;
             padding: 20mm !important;
             margin: 0 auto !important;
@@ -924,6 +933,7 @@ export default function LeaveGeneratorPage() {
             page-break-after: avoid !important;
             page-break-inside: avoid !important;
             page-break-before: avoid !important;
+            overflow: hidden !important;
           }
 
           /* Ensure high fidelity text colors */
