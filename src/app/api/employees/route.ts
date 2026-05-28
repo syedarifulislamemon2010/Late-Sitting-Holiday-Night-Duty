@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { logActivity } from '@/lib/audit';
 
 export async function GET() {
   try {
@@ -60,6 +61,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'invalid_cell_id' }, { status: 400 });
     }
     
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    let currentUser: any = null;
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        currentUser = await prisma.user.findUnique({ where: { id: userId } });
+      }
+    }
+
     const employee = await prisma.employee.create({
       data: {
         name: name.trim(),
@@ -72,6 +83,20 @@ export async function POST(request: Request) {
         cell: true
       }
     });
+
+    if (currentUser) {
+      const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+      const userAgent = request.headers.get('user-agent') || 'Unknown';
+      await logActivity({
+        username: currentUser.username,
+        action: 'CREATE',
+        entityType: 'EMPLOYEE',
+        entityId: String(employee.id),
+        ipAddress,
+        userAgent,
+        details: `${currentUser.name} (@${currentUser.username}) নতুন কর্মকর্তা "${employee.name}" (${employee.designation}) কে ${employee.cell.name} সেলে যোগ করেছেন।`
+      });
+    }
     
     return NextResponse.json(employee, { status: 201 });
   } catch (error: any) {

@@ -104,4 +104,17 @@ model Trash {
   deletedAt  DateTime @default(now())
 }
 
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  username   String
+  action     String   // LOGIN, CREATE, UPDATE, DELETE, CHANGE_PASSWORD
+  entityType String?  // USER, EMPLOYEE, CELL, DUTY, EXECUTIVE, HOLIDAY, DOCUMENT
+  entityId   String?
+  ipAddress  String?
+  macAddress String?
+  userAgent  String?
+  details    String
+  createdAt  DateTime @default(now())
+}
+
 

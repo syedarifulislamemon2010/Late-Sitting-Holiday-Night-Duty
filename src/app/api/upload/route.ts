@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import fs from 'fs';
 import path from 'path';
 import { cookies } from 'next/headers';
+import { logActivity } from '@/lib/audit';
 
 export async function POST(request: Request) {
   try {
@@ -53,6 +54,18 @@ export async function POST(request: Request) {
         filePath: relativePath,
         fileSize: file.size,
       },
+    });
+
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    const userAgent = request.headers.get('user-agent') || 'Unknown';
+    await logActivity({
+      username: user.username,
+      action: 'CREATE',
+      entityType: 'DOCUMENT',
+      entityId: String(doc.id),
+      ipAddress,
+      userAgent,
+      details: `${user.name} (@${user.username}) ম্যানুয়াল ফাইল আপলোড করেছেন: "${doc.name}"।`
     });
 
     return NextResponse.json({ success: true, document: doc });

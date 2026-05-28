@@ -1,8 +1,24 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { cookies } from 'next/headers';
+import { logActivity } from '@/lib/audit';
 
 export async function GET() {
   try {
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    if (!sessionVal) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+
+    const currentUserId = parseInt(sessionVal, 10);
+    const currentUser = !isNaN(currentUserId)
+      ? await prisma.user.findUnique({ where: { id: currentUserId } })
+      : null;
+
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন এই ইউজার তালিকা দেখতে পারবেন।' }, { status: 403 });
+    }
     // 1. Fetch all employees with a bank ID
     const employees = await prisma.employee.findMany({
       where: {
@@ -66,6 +82,21 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    if (!sessionVal) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+
+    const currentUserId = parseInt(sessionVal, 10);
+    const currentUser = !isNaN(currentUserId)
+      ? await prisma.user.findUnique({ where: { id: currentUserId } })
+      : null;
+
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন নতুন ইউজার তৈরি করতে পারবেন।' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { username, password, name, role, cellIds } = body;
 
@@ -103,6 +134,19 @@ export async function POST(request: Request) {
           }
         }
       }
+    });
+
+    // Logging the user creation activity
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    const userAgent = request.headers.get('user-agent') || 'Unknown';
+    await logActivity({
+      username: currentUser!.username,
+      action: 'CREATE',
+      entityType: 'USER',
+      entityId: String(user.id),
+      ipAddress,
+      userAgent,
+      details: `${currentUser!.name} (@${currentUser!.username}) নতুন ইউজার "${user.name}" (@${user.username}) তৈরি করেছেন।`
     });
 
     return NextResponse.json(user, { status: 201 });

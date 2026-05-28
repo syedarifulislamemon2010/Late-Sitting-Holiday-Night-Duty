@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
+import { logActivity } from '@/lib/audit';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -61,6 +62,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         }
       });
       return updated;
+    });
+
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    const userAgent = request.headers.get('user-agent') || 'Unknown';
+    await logActivity({
+      username: user.username,
+      action: 'UPDATE',
+      entityType: 'OFFICE_ORDER',
+      entityId: String(result.id),
+      ipAddress,
+      userAgent,
+      details: `${user.name} (@${user.username}) অফিস আদেশ বা বিল মেমো সংশোধন করেছেন (সূত্র: ${orderRef})।`
     });
 
     return NextResponse.json({ success: true, order: result });
@@ -140,6 +153,18 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       await tx.officeOrder.delete({
         where: { id }
       });
+    });
+
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    const userAgent = request.headers.get('user-agent') || 'Unknown';
+    await logActivity({
+      username: user.username,
+      action: 'DELETE',
+      entityType: 'OFFICE_ORDER',
+      entityId: String(id),
+      ipAddress,
+      userAgent,
+      details: `${user.name} (@${user.username}) অফিস আদেশ বা বিল মেমো মুছে ফেলেছেন এবং ট্র্যাশে পাঠিয়েছেন (সূত্র: ${order.orderRef})।`
     });
 
     return NextResponse.json({ success: true, message: 'Office order deleted and sent to trash' });

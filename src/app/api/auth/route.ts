@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
+import { logActivity } from '@/lib/audit';
 
 export async function POST(request: Request) {
   try {
@@ -25,6 +26,19 @@ export async function POST(request: Request) {
       });
 
       if (user && user.password === password) {
+        const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+        const userAgent = request.headers.get('user-agent') || 'Unknown';
+        
+        await logActivity({
+          username: user.username,
+          action: 'LOGIN',
+          entityType: 'USER',
+          entityId: String(user.id),
+          ipAddress,
+          userAgent,
+          details: `${user.name} (@${user.username}) সিস্টেমে সফলভাবে লগইন করেছেন।`
+        });
+
         const response = NextResponse.json({ 
           success: true, 
           message: 'Authenticated successfully',

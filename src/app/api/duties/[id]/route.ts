@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
+import { logActivity } from '@/lib/audit';
 
 function calculateAllowances(type: string) {
   switch (type) {
@@ -111,6 +112,33 @@ export async function PUT(
         }
       }
     });
+
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (user) {
+          const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+          const userAgent = request.headers.get('user-agent') || 'Unknown';
+          const typeMapBangla: Record<string, string> = {
+            'LATE_SITTING': 'লেট সিটিং',
+            'HOLIDAY': 'ছুটির দিন',
+            'NIGHT_SHIFT': 'নাইট শিফট'
+          };
+          await logActivity({
+            username: user.username,
+            action: 'UPDATE',
+            entityType: 'DUTY',
+            entityId: String(updated.id),
+            ipAddress,
+            userAgent,
+            details: `${user.name} (@${user.username}) কর্মকর্তা "${updated.employee.name}" এর ডিউটি অ্যাসাইনমেন্ট সংশোধন করেছেন (${updated.date}, টাইপ: ${typeMapBangla[updated.type] || updated.type})।`
+          });
+        }
+      }
+    }
 
     return NextResponse.json(updated);
   } catch (error: any) {

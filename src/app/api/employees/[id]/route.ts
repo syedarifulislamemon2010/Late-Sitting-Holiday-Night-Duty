@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
+import { logActivity } from '@/lib/audit';
 
 export async function PUT(
   request: Request,
@@ -31,6 +32,16 @@ export async function PUT(
     if (isNaN(parsedCellId)) {
       return NextResponse.json({ error: 'invalid_cell_id' }, { status: 400 });
     }
+
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    let currentUser: any = null;
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        currentUser = await prisma.user.findUnique({ where: { id: userId } });
+      }
+    }
     
     const employee = await prisma.employee.update({
       where: { id: employeeId },
@@ -45,6 +56,20 @@ export async function PUT(
         cell: true
       }
     });
+
+    if (currentUser) {
+      const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+      const userAgent = request.headers.get('user-agent') || 'Unknown';
+      await logActivity({
+        username: currentUser.username,
+        action: 'UPDATE',
+        entityType: 'EMPLOYEE',
+        entityId: String(employee.id),
+        ipAddress,
+        userAgent,
+        details: `${currentUser.name} (@${currentUser.username}) কর্মকর্তা "${employee.name}" এর তথ্য সংশোধন করেছেন (সেল: ${employee.cell.name})।`
+      });
+    }
     
     return NextResponse.json(employee);
   } catch (error: any) {
@@ -84,6 +109,18 @@ export async function DELETE(
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (user) {
           deletedBy = user.username;
+
+          const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+          const userAgent = request.headers.get('user-agent') || 'Unknown';
+          await logActivity({
+            username: user.username,
+            action: 'DELETE',
+            entityType: 'EMPLOYEE',
+            entityId: String(employeeId),
+            ipAddress,
+            userAgent,
+            details: `${user.name} (@${user.username}) কর্মকর্তা "${employee.name}" (${employee.designation}) কে সিস্টেম থেকে সরিয়ে দিয়েছেন।`
+          });
         }
       }
     }

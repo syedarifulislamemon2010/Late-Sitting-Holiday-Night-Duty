@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import fs from 'fs';
 import path from 'path';
 import { cookies } from 'next/headers';
+import { logActivity } from '@/lib/audit';
 
 export async function GET() {
   try {
@@ -70,6 +71,18 @@ export async function DELETE(request: Request) {
     // Delete database entry
     await prisma.document.delete({
       where: { id: Number(id) },
+    });
+
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    const userAgent = request.headers.get('user-agent') || 'Unknown';
+    await logActivity({
+      username: user.username,
+      action: 'DELETE',
+      entityType: 'DOCUMENT',
+      entityId: String(id),
+      ipAddress,
+      userAgent,
+      details: `${user.name} (@${user.username}) ম্যানুয়াল ফাইল ডিলিট করেছেন: "${doc.name}"।`
     });
 
     return NextResponse.json({ success: true, message: 'Document soft-deleted successfully' });

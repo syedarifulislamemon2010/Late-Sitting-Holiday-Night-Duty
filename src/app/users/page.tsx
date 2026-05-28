@@ -90,6 +90,22 @@ export default function UserManagement() {
   const [selectedCellIds, setSelectedCellIds] = useState<number[]>([]);
   const [profileUser, setProfileUser] = useState<User | null>(null);
 
+  // Tab State
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'profile' | 'users' | 'logs'>('profile');
+  
+  // Profile settings update form
+  const [profileName, setProfileName] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+
+  // Audit logs state
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [logSearchQuery, setLogSearchQuery] = useState('');
+
   // Helper for premium colors
   const getPalette = (cellId: number) => {
     const palettes = [
@@ -190,7 +206,7 @@ export default function UserManagement() {
         <div className="cursor-pointer font-sans" onClick={() => setProfileUser(user)}>
           <div className="flex justify-between items-start gap-2">
             <div className="space-y-1">
-              <h3 className="font-extrabold text-slate-850 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">{user.name}</h3>
+              <h3 className="font-extrabold text-slate-855 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">{user.name}</h3>
               {emp && (
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{emp.designation}</p>
               )}
@@ -270,6 +286,7 @@ export default function UserManagement() {
         const data = await res.json();
         if (res.ok && data.authenticated) {
           setCurrentUser(data.user);
+          setProfileName(data.user.name);
         }
       } catch (err) {
         console.error('Profile fetch error:', err);
@@ -305,9 +322,30 @@ export default function UserManagement() {
     }
   };
 
+  const fetchAuditLogs = async () => {
+    try {
+      setLoadingLogs(true);
+      const res = await fetch('/api/audit-logs');
+      if (res.ok) {
+        const data = await res.json();
+        setAuditLogs(data);
+      }
+    } catch (err) {
+      console.error('Logs fetch error:', err);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
   useEffect(() => {
-    loadData();
-  }, []);
+    if (currentUser && currentUser.role === 'ADMIN') {
+      if (activeSettingsTab === 'users') {
+        loadData();
+      } else if (activeSettingsTab === 'logs') {
+        fetchAuditLogs();
+      }
+    }
+  }, [currentUser, activeSettingsTab]);
 
   const handleOpenCreateModal = () => {
     setEditingUser(null);
@@ -444,130 +482,444 @@ export default function UserManagement() {
     }
   };
 
-  if (currentUser && currentUser.role !== 'ADMIN') {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileError('');
+    setProfileSuccess('');
+
+    if (!profileName.trim()) {
+      setProfileError('নাম পূরণ করা আবশ্যক।');
+      return;
+    }
+    if (newPassword && newPassword.length < 4) {
+      setProfileError('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে।');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setProfileError('পাসওয়ার্ড দুটি মেলেনি!');
+      return;
+    }
+
+    setUpdatingProfile(true);
+    try {
+      const res = await fetch(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: profileName.trim(),
+          password: newPassword ? newPassword.trim() : undefined
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProfileSuccess('আপনার প্রোফাইল তথ্য ও পাসওয়ার্ড সফলভাবে আপডেট হয়েছে!');
+        setNewPassword('');
+        setConfirmPassword('');
+        const updatedUser = { ...currentUser, name: profileName.trim() };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        window.dispatchEvent(new Event('user-profile-updated'));
+      } else {
+        setProfileError(data.message || 'আপডেট করতে ব্যর্থ হয়েছে।');
+      }
+    } catch (err) {
+      setProfileError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    } finally {
+      setUpdatingProfile(false);
+    }
+  };
+
+  if (!currentUser) {
     return (
-      <div className="glass-card p-8 rounded-2xl text-center space-y-4 max-w-md mx-auto mt-12 border border-red-150/30">
-        <div className="p-3 bg-red-50 text-red-500 rounded-full w-12 h-12 mx-auto flex items-center justify-center">
-          <AlertCircle size={24} />
-        </div>
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">প্রবেশাধিকার সংরক্ষিত</h2>
-        <p className="text-xs text-slate-500">শুধুমাত্র সিস্টেম অ্যাডমিনিস্ট্রেটরগণ এই পাতাটি দেখতে এবং সেল-ভিত্তিক ইউজার পারমিশন ম্যানেজ করতে পারবেন।</p>
+      <div className="flex flex-col items-center justify-center py-20 space-y-3 font-sans">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-slate-500 font-bold">সেটিংস লোড হচ্ছে...</p>
       </div>
     );
   }
 
+  const effectiveTab = currentUser.role === 'ADMIN' ? activeSettingsTab : 'profile';
+
+  // Filter logs based on search query
+  const filteredLogs = auditLogs.filter(log => {
+    const q = logSearchQuery.toLowerCase();
+    return (
+      (log.username || '').toLowerCase().includes(q) ||
+      (log.action || '').toLowerCase().includes(q) ||
+      (log.details || '').toLowerCase().includes(q) ||
+      (log.ipAddress || '').toLowerCase().includes(q) ||
+      (log.macAddress || '').toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">ইউজার ও সেল পারমিশন</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">সিস্টেমের ইউজারবৃন্দ তৈরি করুন এবং নির্দিষ্ট সেল সমূহে তাদের দায়িত্ব/প্রবেশাধিকার নিয়ন্ত্রণ করুন।</p>
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">সিস্টেম সেটিংস</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">আপনার প্রোফাইল পাসওয়ার্ড পরিবর্তন এবং ইউজার পারমিশন সমূহ নিয়ন্ত্রণ করুন।</p>
         </div>
-        <button
-          onClick={handleOpenCreateModal}
-          className="px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition-all duration-200 shadow-md shadow-indigo-100/50 dark:shadow-none flex items-center gap-2 group active:scale-95"
-        >
-          <UserPlus size={16} className="group-hover:scale-110 transition-transform" />
-          নতুন ইউজার তৈরি
-        </button>
       </div>
 
-      {success && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-2xl animate-shake">
-          {success}
+      {/* Tabs list */}
+      {currentUser.role === 'ADMIN' && (
+        <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2 mb-6 no-print">
+          <button
+            onClick={() => setActiveSettingsTab('profile')}
+            className={`px-5 py-2.5 font-sans font-bold text-xs transition-all border-b-2 -mb-[2px] ${effectiveTab === 'profile' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-250'}`}
+          >
+            আমার প্রোফাইল ও পাসওয়ার্ড
+          </button>
+          <button
+            onClick={() => setActiveSettingsTab('users')}
+            className={`px-5 py-2.5 font-sans font-bold text-xs transition-all border-b-2 -mb-[2px] ${effectiveTab === 'users' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-250'}`}
+          >
+            ইউজার পারমিশন ম্যানেজমেন্ট
+          </button>
+          <button
+            onClick={() => setActiveSettingsTab('logs')}
+            className={`px-5 py-2.5 font-sans font-bold text-xs transition-all border-b-2 -mb-[2px] ${effectiveTab === 'logs' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-250'}`}
+          >
+            সিস্টেম অ্যাক্টিভিটি লগ
+          </button>
         </div>
       )}
 
-      {/* Users List Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-48 bg-slate-200 dark:bg-slate-800/40 rounded-2xl animate-pulse" />
-          ))}
+      {/* PROFILE TAB */}
+      {effectiveTab === 'profile' && (
+        <div className="max-w-2xl mx-auto glass-card p-8 rounded-[24px] border border-slate-200/50 dark:border-slate-800 shadow-xl space-y-6">
+          <div className="flex items-center gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-extrabold text-lg flex items-center justify-center shadow-lg">
+              {extractNickname(currentUser.name)}
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-850 dark:text-slate-100 text-lg">{currentUser.name}</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-550 mt-0.5">ব্যাংক আইডি: @{currentUser.username} | রোল: {currentUser.role === 'ADMIN' ? 'সিস্টেম সুপার এডমিন' : 'সাধারণ ইউজার'}</p>
+            </div>
+          </div>
+
+          {profileSuccess && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-xl animate-shake">
+              {profileSuccess}
+            </div>
+          )}
+
+          {profileError && (
+            <div className="p-4 bg-rose-50 border border-rose-250 text-rose-700 text-xs font-bold rounded-xl animate-shake">
+              {profileError}
+            </div>
+          )}
+
+          <form onSubmit={handleUpdateProfile} className="space-y-5 font-sans">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">আমার নাম</label>
+              <input
+                type="text"
+                required
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ব্যাংক আইডি (অপরিবর্তনযোগ্য)</label>
+                <input
+                  type="text"
+                  disabled
+                  value={currentUser.username}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/60 text-xs text-slate-500 cursor-not-allowed"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">সিস্টেম রোল (অপরিবর্তনযোগ্য)</label>
+                <input
+                  type="text"
+                  disabled
+                  value={currentUser.role === 'ADMIN' ? 'সুপার এডমিন (ADMIN)' : 'সাধারণ ইউজার (USER)'}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/60 text-xs text-slate-500 cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            {currentUser.role === 'USER' && (
+              <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/60 rounded-xl space-y-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">আমার প্রবেশাধিকার প্রাপ্ত সেলসমূহ:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentUser.cells && currentUser.cells.length > 0 ? (
+                    currentUser.cells.map((c: any) => (
+                      <span key={c.id} className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-650 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 text-[10px] font-bold rounded-lg font-mono">
+                        {c.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-amber-600 font-semibold italic">⚠️ কোনো সেলে অ্যাসাইন করা নেই</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-slate-100 dark:border-slate-800/80 pt-4 space-y-4">
+              <h4 className="font-extrabold text-slate-800 dark:text-slate-100 text-xs flex items-center gap-1.5">
+                <Key size={14} className="text-indigo-600" />
+                পাসওয়ার্ড পরিবর্তন (খালি রাখলে আগের পাসওয়ার্ড বহাল থাকবে)
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-indigo-650 dark:text-indigo-400 uppercase">নতুন পাসওয়ার্ড</label>
+                  <input
+                    type="password"
+                    placeholder="কমপক্ষে ৪ অক্ষরের পাসওয়ার্ড"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-indigo-650 dark:text-indigo-400 uppercase">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+                  <input
+                    type="password"
+                    placeholder="পুনরায় পাসওয়ার্ডটি দিন"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 flex justify-end">
+              <button
+                type="submit"
+                disabled={updatingProfile}
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition-all duration-200 shadow-md shadow-indigo-150/50 dark:shadow-none active:scale-95 disabled:opacity-50"
+              >
+                {updatingProfile ? 'সংরক্ষণ হচ্ছে...' : 'সেটিংস সংরক্ষণ করুন'}
+              </button>
+            </div>
+          </form>
         </div>
-      ) : (
-        <div className="space-y-10 font-sans">
-          
-          {/* Admin Group */}
-          {users.filter(u => u.role === 'ADMIN').length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-950/5 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-rose-500">
-                    <Shield size={16} />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">সিস্টেম এডমিনিস্ট্রেটরবৃন্দ (System Administrators)</h3>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">সব সেলের দায়িত্বপ্রাপ্ত সুপার ইউজারবৃন্দ</p>
-                  </div>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455">
-                  {toBanglaDigits(users.filter(u => u.role === 'ADMIN').length)} জন ইউজার
-                </span>
-              </div>
+      )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortUsersByBankId(users.filter(u => u.role === 'ADMIN')).map(user => renderUserCard(user, 3))}
-              </div>
+      {/* USER MANAGEMENT TAB */}
+      {effectiveTab === 'users' && (
+        <>
+          <div className="flex justify-between items-center no-print">
+            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 font-sans">ইউজার ও সেল পারমিশন</h3>
+            <button
+              onClick={handleOpenCreateModal}
+              className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition-all duration-200 shadow-md shadow-indigo-100/50 dark:shadow-none flex items-center gap-2 group active:scale-95"
+            >
+              <UserPlus size={15} className="group-hover:scale-110 transition-transform" />
+              নতুন ইউজার তৈরি
+            </button>
+          </div>
+
+          {success && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-2xl animate-shake no-print">
+              {success}
             </div>
           )}
 
-          {/* Cell Groups */}
-          {cells.map(cell => {
-            const cellUsers = users.filter(u => u.role === 'USER' && u.cells.some(c => c.id === cell.id));
-            if (cellUsers.length === 0) return null;
-            const sortedCellUsers = sortUsersByBankId(cellUsers);
-            const cellPal = getPalette(cell.id);
-
-            return (
-              <div key={cell.id} className="space-y-4">
-                <div className={`flex items-center justify-between p-4 rounded-2xl ${cellPal.border} ${cellPal.bg} shadow-xs`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-350">
-                      <Building2 size={16} />
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold text-slate-885 dark:text-slate-100 text-sm tracking-wide">{cell.name} সেল ইউজারবৃন্দ</h3>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">শুধুমাত্র {cell.name} সেলের দায়িত্বপ্রাপ্ত ইউজারবৃন্দ</p>
-                    </div>
-                  </div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${cellPal.badge}`}>
-                    {toBanglaDigits(sortedCellUsers.length)} জন ইউজার
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {sortedCellUsers.map(user => renderUserCard(user, cell.id))}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Standard Users without Cells */}
-          {users.filter(u => u.role === 'USER' && u.cells.length === 0).length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/5 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-amber-500">
-                    <AlertCircle size={16} />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">সেলের দায়িত্বহীন ইউজারবৃন্দ (Unassigned Users)</h3>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">বর্তমানে কোনো সেলের দায়িত্ব নেই</p>
-                  </div>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-455">
-                  {toBanglaDigits(users.filter(u => u.role === 'USER' && u.cells.length === 0).length)} জন ইউজার
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortUsersByBankId(users.filter(u => u.role === 'USER' && u.cells.length === 0)).map(user => renderUserCard(user, 2))}
-              </div>
+          {error && (
+            <div className="p-4 bg-rose-50 border border-rose-250 text-rose-700 text-xs font-bold rounded-2xl animate-shake no-print">
+              {error}
             </div>
           )}
 
+          {/* Users List Grid */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-48 bg-slate-200 dark:bg-slate-800/40 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-10 font-sans">
+              
+              {/* Admin Group */}
+              {users.filter(u => u.role === 'ADMIN').length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-950/5 shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-rose-500">
+                        <Shield size={16} />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">সিস্টেম এডমিনিস্ট্রেটরবৃন্দ (System Administrators)</h3>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">সব সেলের দায়িত্বপ্রাপ্ত সুপার ইউজারবৃন্দ</p>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455">
+                      {toBanglaDigits(users.filter(u => u.role === 'ADMIN').length)} জন ইউজার
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {sortUsersByBankId(users.filter(u => u.role === 'ADMIN')).map(user => renderUserCard(user, 3))}
+                  </div>
+                </div>
+              )}
+
+              {/* Cell Groups */}
+              {cells.map(cell => {
+                const cellUsers = users.filter(u => u.role === 'USER' && u.cells.some(c => c.id === cell.id));
+                if (cellUsers.length === 0) return null;
+                const sortedCellUsers = sortUsersByBankId(cellUsers);
+                const cellPal = getPalette(cell.id);
+
+                return (
+                  <div key={cell.id} className="space-y-4">
+                    <div className={`flex items-center justify-between p-4 rounded-2xl ${cellPal.border} ${cellPal.bg} shadow-xs`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-350">
+                          <Building2 size={16} />
+                        </div>
+                        <div>
+                          <h3 className="font-extrabold text-slate-855 dark:text-slate-100 text-sm tracking-wide">{cell.name} সেল ইউজারবৃন্দ</h3>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-555 font-bold mt-0.5">শুধুমাত্র {cell.name} সেলের দায়িত্বপ্রাপ্ত ইউজারবৃন্দ</p>
+                        </div>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${cellPal.badge}`}>
+                        {toBanglaDigits(sortedCellUsers.length)} জন ইউজার
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {sortedCellUsers.map(user => renderUserCard(user, cell.id))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Standard Users without Cells */}
+              {users.filter(u => u.role === 'USER' && u.cells.length === 0).length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/5 shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-amber-500">
+                        <AlertCircle size={16} />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">সেলের দায়িত্বহীন ইউজারবৃন্দ (Unassigned Users)</h3>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">বর্তমানে কোনো সেলের দায়িত্ব নেই</p>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-455">
+                      {toBanglaDigits(users.filter(u => u.role === 'USER' && u.cells.length === 0).length)} জন ইউজার
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {sortUsersByBankId(users.filter(u => u.role === 'USER' && u.cells.length === 0)).map(user => renderUserCard(user, 2))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+        </>
+      )}
+
+      {/* SYSTEM ACTIVITY LOGS TAB */}
+      {effectiveTab === 'logs' && (
+        <div className="space-y-6 font-sans">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print bg-slate-50 dark:bg-slate-950/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-850 dark:text-slate-250">সিস্টেম অ্যাক্টিভিটি লগ</h3>
+              <p className="text-[10px] font-bold text-slate-450 dark:text-slate-500 mt-0.5">লগইন, এন্ট্রি, এডিট ও ডিলিটসহ সকল সিস্টেম কার্যক্রমের অডিট ট্রেইল</p>
+            </div>
+            
+            <div className="w-full md:w-64">
+              <input
+                type="text"
+                placeholder="লগ অনুসন্ধান করুন..."
+                value={logSearchQuery}
+                onChange={(e) => setLogSearchQuery(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs bg-white dark:bg-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          {loadingLogs ? (
+            <div className="flex flex-col items-center justify-center py-20 space-y-2">
+              <div className="w-10 h-10 border-4 border-indigo-650 border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs font-bold text-slate-500 font-sans">লগ ডাটা লোড হচ্ছে...</p>
+            </div>
+          ) : filteredLogs.length > 0 ? (
+            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm bg-white dark:bg-slate-900">
+              <div className="overflow-x-auto max-h-[60vh] no-scrollbar">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-950/40 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-850">
+                      <th className="px-5 py-3">সময়</th>
+                      <th className="px-4 py-3">ব্যবহারকারী</th>
+                      <th className="px-4 py-3">কার্যক্রম</th>
+                      <th className="px-5 py-3">বিস্তারিত বিবরণ</th>
+                      <th className="px-4 py-3">আইপি এড্রেস</th>
+                      <th className="px-4 py-3">ম্যাক এড্রেস</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-850 font-sans">
+                    {filteredLogs.map((log: any) => {
+                      const dateObj = new Date(log.createdAt);
+                      const formattedTime = dateObj.toLocaleDateString('bn-BD', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      }) + ' ' + dateObj.toLocaleTimeString('bn-BD', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      });
+
+                      const actionColors: Record<string, string> = {
+                        'LOGIN': 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-100/50 dark:border-blue-900/30',
+                        'CREATE': 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-900/30',
+                        'UPDATE': 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-455 border border-amber-100/50 dark:border-amber-900/30',
+                        'DELETE': 'bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-455 border border-rose-100/50 dark:border-rose-900/30',
+                        'CHANGE_PASSWORD': 'bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-100/50 dark:border-purple-900/30'
+                      };
+
+                      return (
+                        <tr key={log.id} className="hover:bg-slate-50/55 dark:hover:bg-slate-950/10 transition-colors">
+                          <td className="px-5 py-3.5 whitespace-nowrap text-slate-400 dark:text-slate-550 font-medium">
+                            {formattedTime}
+                          </td>
+                          <td className="px-4 py-3.5 font-bold text-slate-800 dark:text-slate-300">
+                            @{log.username}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${actionColors[log.action] || 'bg-slate-50 text-slate-650'}`}>
+                              {log.action}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5 text-slate-650 dark:text-slate-350 max-w-md font-medium">
+                            {log.details}
+                          </td>
+                          <td className="px-4 py-3.5 font-mono text-slate-500 dark:text-slate-450 font-semibold">
+                            {log.ipAddress || '---'}
+                          </td>
+                          <td className="px-4 py-3.5 font-mono text-slate-500 dark:text-slate-450 font-semibold">
+                            {log.macAddress || '---'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-16 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900">
+              <p className="text-slate-450 dark:text-slate-500 text-xs font-bold font-sans">কোনো অ্যাক্টিভিটি লগ পাওয়া যায়নি।</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -654,8 +1006,9 @@ export default function UserManagement() {
                 <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">সিস্টেম রোল (Role)</label>
                 <select
                   value={role}
+                  disabled={editingUser?.username === 'admin'}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-xl text-xs font-semibold focus:outline-none"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-855 rounded-xl text-xs font-semibold focus:outline-none"
                 >
                   <option value="USER">USER (সাধারণ ইউজার)</option>
                   <option value="ADMIN">ADMIN (সিস্টেম সুপার এডমিন)</option>
@@ -672,7 +1025,7 @@ export default function UserManagement() {
                     <button
                       type="button"
                       onClick={handleSelectAllCells}
-                      className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                      className="text-[10px] font-bold text-indigo-650 dark:text-indigo-400 hover:underline"
                     >
                       {selectedCellIds.length === cells.length ? 'সব আনসিলেক্ট করুন' : 'সব সিলেক্ট করুন'}
                     </button>
@@ -686,7 +1039,7 @@ export default function UserManagement() {
                           <div 
                             key={cell.id}
                             onClick={() => handleCellToggle(cell.id)}
-                            className={`p-3 rounded-xl border-2 cursor-pointer flex items-center justify-between transition-all duration-200 active:scale-[0.98] ${isChecked ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50/50 dark:bg-slate-950/10 border-slate-200/70 dark:border-slate-850 text-slate-700 dark:text-slate-330 hover:border-slate-300'}`}
+                            className={`p-3 rounded-xl border-2 cursor-pointer flex items-center justify-between transition-all duration-200 active:scale-[0.98] ${isChecked ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50/50 dark:bg-slate-950/10 border-slate-200/70 dark:border-slate-855 text-slate-700 dark:text-slate-330 hover:border-slate-300'}`}
                           >
                             <div className="space-y-0.5 text-left leading-none">
                               <span className="font-extrabold text-xs font-mono">{cell.name}</span>
@@ -765,35 +1118,35 @@ export default function UserManagement() {
 
                 {/* Grid of Attributes */}
                 <div className="grid grid-cols-2 gap-3 text-left">
-                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">ইউজার রোল</span>
                     <p className="text-xs font-bold text-slate-850 dark:text-slate-200">
                       {profileUser.role === 'ADMIN' ? 'সুপার এডমিন' : 'সাধারণ ইউজার'}
                     </p>
                   </div>
-                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যাংক আইডি</span>
                     <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{profileUser.username}</p>
                   </div>
 
                   {emp && (
                     <>
-                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5">
                         <span className="text-[10px] font-bold text-slate-400 uppercase">পদবী</span>
                         <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.designation}</p>
                       </div>
-                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5">
                         <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যক্তিগত নথি নং</span>
                         <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.fileNo || 'নেই'}</p>
                       </div>
-                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">সেল</span>
+                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5 col-span-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">セル</span>
                         <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.cell?.name || 'নেই'}</p>
                       </div>
                     </>
                   )}
 
-                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5 col-span-2">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">প্রবেশাধিকার প্রাপ্ত সেলসমূহ</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {profileUser.role === 'ADMIN' ? (

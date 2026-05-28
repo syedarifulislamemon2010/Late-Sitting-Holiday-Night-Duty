@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { logActivity } from '@/lib/audit';
 
 export async function GET(request: Request) {
   try {
@@ -225,6 +226,28 @@ export async function POST(request: Request) {
     }, {
       timeout: 30000 // 30 seconds
     });
+
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (user) {
+          const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+          const userAgent = request.headers.get('user-agent') || 'Unknown';
+          await logActivity({
+            username: user.username,
+            action: 'CREATE',
+            entityType: 'DUTY',
+            entityId: orderRef || undefined,
+            ipAddress,
+            userAgent,
+            details: `${user.name} (@${user.username}) কর্মকর্তা${assignments.length > 1 ? 'বৃন্দের' : 'র'} জন্য ${assignments.length}টি ডিউটি অ্যাসাইনমেন্ট সফলভাবে এন্ট্রি করেছেন ${orderRef ? `(অফিস আদেশ সূত্র: ${orderRef})` : ''}।`
+          });
+        }
+      }
+    }
     
     return NextResponse.json({ success: true, count: createdDuties.length });
   } catch (error: any) {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
+import { logActivity } from '@/lib/audit';
 
 export async function GET() {
   try {
@@ -88,6 +89,20 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    if (!sessionVal) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+    const currentUserId = parseInt(sessionVal, 10);
+    const currentUser = !isNaN(currentUserId)
+      ? await prisma.user.findUnique({ where: { id: currentUserId } })
+      : null;
+
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন অফিস আদেশ বা বিল মেমো তৈরি ও সংশোধন করতে পারবেন।' }, { status: 403 });
+    }
+
     const payload = await request.json();
     const { orderRef, originalOrderRef, orderDate, category, employeeName, cellName, duties, dutyIds, content } = payload;
     
@@ -117,6 +132,7 @@ export async function POST(request: Request) {
       let order = await tx.officeOrder.findUnique({
         where: { orderRef: orderRef }
       });
+      const existed = !!order;
 
       if (!order) {
         order = await tx.officeOrder.create({
@@ -153,10 +169,24 @@ export async function POST(request: Request) {
         });
       }
 
-      return order;
+      return { order, existed };
     });
 
-    return NextResponse.json({ success: true, id: result.id, order: result });
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    const userAgent = request.headers.get('user-agent') || 'Unknown';
+    const isEdit = result.existed || !!originalOrderRef;
+
+    await logActivity({
+      username: currentUser.username,
+      action: isEdit ? 'UPDATE' : 'CREATE',
+      entityType: 'OFFICE_ORDER',
+      entityId: String(result.order.id),
+      ipAddress,
+      userAgent,
+      details: `${currentUser.name} (@${currentUser.username}) ${isEdit ? 'অফিস আদেশ বা বিল মেমো সংশোধন' : 'নতুন অফিস আদেশ বা বিল মেমো তৈরি'} করেছেন (সূত্র: ${orderRef})।`
+    });
+
+    return NextResponse.json({ success: true, id: result.order.id, order: result.order });
   } catch (error: any) {
     console.error('Error creating office order:', error);
     return NextResponse.json({ error: 'internal_error', message: error.message }, { status: 500 });
