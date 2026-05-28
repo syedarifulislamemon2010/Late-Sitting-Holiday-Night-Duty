@@ -474,8 +474,12 @@ export default function LeaveGeneratorPage() {
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none cursor-pointer"
                     >
                       <option value="">জেলা সিলেক্ট করুন...</option>
-                      {allBangladeshDistricts.map(dist => (
-                        <option key={dist} value={dist}>{dist}</option>
+                      {Object.keys(BANGLADESH_AREAS).map(division => (
+                        <optgroup key={division} label={division}>
+                          {Object.keys(BANGLADESH_AREAS[division as keyof typeof BANGLADESH_AREAS].districts).sort().map(dist => (
+                            <option key={dist} value={dist}>{dist}</option>
+                          ))}
+                        </optgroup>
                       ))}
                     </select>
                   </div>
@@ -751,7 +755,7 @@ export default function LeaveGeneratorPage() {
                   <p className="text-xs">প্রিয় মহোদয়,</p>
                   
                   <p className="text-black indent-12 text-xs">
-                    যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী {startDate ? toDisplayDateStr(startDate) : ''} ইং তারিখ হতে {endDate ? toDisplayDateStr(endDate) : ''} ইং তারিখ পর্যন্ত মোট {leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : ''} দিনের নৈমিত্তিক ছুটির প্রয়োজন।
+                    যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী {startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে {endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটির প্রয়োজন।
                   </p>
 
                   <p className="text-black text-xs leading-relaxed">
@@ -759,7 +763,7 @@ export default function LeaveGeneratorPage() {
                   </p>
 
                   <p className="text-black text-xs leading-relaxed">
-                    অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
+                    অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
                   </p>
                 </div>
 
