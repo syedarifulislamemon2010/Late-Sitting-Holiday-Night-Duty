@@ -85,12 +85,8 @@ export default function LeaveGeneratorPage() {
   const [leaveLocation, setLeaveLocation] = useState('ঢাকা');
   const [mobileNo, setMobileNo] = useState('০১৬৭৪০৫৭৫২৯');
 
-  // Cascading Location States
-  const [selectedDivision, setSelectedDivision] = useState('');
+  // Stayed Location State (Only District is needed)
   const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [selectedCityCorp, setSelectedCityCorp] = useState('');
-  const [selectedThana, setSelectedThana] = useState('');
-  const [selectedPostOffice, setSelectedPostOffice] = useState('');
 
   // Duty delegate officer
   const [delegateId, setDelegateId] = useState<string>('');
@@ -332,50 +328,14 @@ export default function LeaveGeneratorPage() {
   const delegateName = matchedDelegate ? matchedDelegate.name : 'আব্দুল্লাহ আল জোবায়ের';
   const delegateDesignation = matchedDelegate ? matchedDelegate.designation : 'এসও-আইটি';
 
+  // Get all districts in Bangladesh flatly
+  const allBangladeshDistricts = Object.keys(BANGLADESH_AREAS).flatMap(div => 
+    Object.keys(BANGLADESH_AREAS[div as keyof typeof BANGLADESH_AREAS].districts)
+  ).sort();
+
   // Format stay location dynamic text
   const formatStayLocationText = () => {
-    const parts: string[] = [];
-    if (selectedDivision) parts.push(selectedDivision);
-    if (selectedDistrict && selectedDistrict !== selectedDivision) parts.push(selectedDistrict);
-    if (selectedCityCorp) parts.push(selectedCityCorp);
-    if (selectedThana) parts.push(selectedThana);
-    if (selectedPostOffice) parts.push(selectedPostOffice);
-    return parts.length > 0 ? parts.join(', ') : leaveLocation;
-  };
-
-  // Cascading helpers for thanas and post offices
-  const getThanasForSelect = (): string[] => {
-    if (!selectedDivision || !selectedDistrict) return [];
-    
-    if (selectedDistrict === 'ঢাকা') {
-      if (selectedCityCorp === 'ঢাকা উত্তর') {
-        return ['উত্তরা', 'গুলশান', 'মিরপুর', 'বাড্ডা', 'মোহাম্মদপুর', 'খিলক্ষেত'];
-      }
-      if (selectedCityCorp === 'ঢাকা দক্ষিণ') {
-        return ['মতিঝিল', 'ধানমণ্ডি', 'রমনা', 'চকবাজার', 'লালবাগ', 'পল্টন', 'কামরাঙ্গীরচর'];
-      }
-      return [];
-    }
-
-    const distInfo = (BANGLADESH_AREAS[selectedDivision as keyof typeof BANGLADESH_AREAS]?.districts as any)?.[selectedDistrict];
-    return distInfo ? distInfo.thanas || [] : [];
-  };
-
-  const getPostOfficesForSelect = (): string[] => {
-    if (!selectedDivision || !selectedDistrict) return [];
-    
-    if (selectedDistrict === 'ঢাকা') {
-      if (selectedCityCorp === 'ঢাকা উত্তর') {
-        return ['উত্তরা মডেল টাউন', 'গুলশান মডেল টাউন', 'মিরপুর সেকশন ১২', 'বাড্ডা পোস্ট অফিস', 'মোহাম্মদপুর পোস্ট অফিস'];
-      }
-      if (selectedCityCorp === 'ঢাকা দক্ষিণ') {
-        return ['জিপিও ঢাকা', 'মতিঝিল কমার্শিয়াল এরিয়া', 'লালবাগ পোস্ট অফিস', 'ধানমণ্ডি পোস্ট অফিস', 'রমনা পোস্ট অফিস'];
-      }
-      return [];
-    }
-
-    const distInfo = (BANGLADESH_AREAS[selectedDivision as keyof typeof BANGLADESH_AREAS]?.districts as any)?.[selectedDistrict];
-    return distInfo ? distInfo.postOffices || [] : [];
+    return selectedDistrict || leaveLocation;
   };
 
   // Format Subject
@@ -505,115 +465,19 @@ export default function LeaveGeneratorPage() {
                     />
                   </div>
 
-                  {/* Cascading Location Section */}
-                  <div className="space-y-2.5 border-t border-slate-100 pt-3">
-                    <label className="font-bold text-slate-500 text-xs block">ছুটিতে থাকাকালীন অবস্থান:</label>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      {/* Division select */}
-                      <div className="space-y-0.5">
-                        <label className="text-[10px] text-slate-400 font-bold">বিভাগ:</label>
-                        <select
-                          value={selectedDivision}
-                          onChange={(e) => {
-                            const div = e.target.value;
-                            setSelectedDivision(div);
-                            setSelectedDistrict('');
-                            setSelectedCityCorp('');
-                            setSelectedThana('');
-                            setSelectedPostOffice('');
-                          }}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none cursor-pointer"
-                        >
-                          <option value="">বিভাগ সিলেক্ট করুন...</option>
-                          {Object.keys(BANGLADESH_AREAS).map(div => (
-                            <option key={div} value={div}>{div}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* District select */}
-                      <div className="space-y-0.5">
-                        <label className="text-[10px] text-slate-400 font-bold">জেলা:</label>
-                        <select
-                          value={selectedDistrict}
-                          disabled={!selectedDivision}
-                          onChange={(e) => {
-                            const dist = e.target.value;
-                            setSelectedDistrict(dist);
-                            setSelectedCityCorp('');
-                            setSelectedThana('');
-                            setSelectedPostOffice('');
-                          }}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none disabled:opacity-50 cursor-pointer"
-                        >
-                          <option value="">জেলা সিলেক্ট করুন...</option>
-                          {selectedDivision && Object.keys(BANGLADESH_AREAS[selectedDivision as keyof typeof BANGLADESH_AREAS].districts).map(dist => (
-                            <option key={dist} value={dist}>{dist}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* City Corporation select (Only for Dhaka District) */}
-                    {selectedDistrict === 'ঢাকা' && (
-                      <div className="space-y-0.5 animate-fade-in">
-                        <label className="text-[10px] text-slate-400 font-bold">সিটি কর্পোরেশন:</label>
-                        <select
-                          value={selectedCityCorp}
-                          onChange={(e) => {
-                            const cc = e.target.value;
-                            setSelectedCityCorp(cc);
-                            setSelectedThana('');
-                            setSelectedPostOffice('');
-                          }}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none cursor-pointer"
-                        >
-                          <option value="">সিটি কর্পোরেশন সিলেক্ট করুন...</option>
-                          <option value="ঢাকা উত্তর">ঢাকা উত্তর</option>
-                          <option value="ঢাকা দক্ষিণ">ঢাকা দক্ষিণ</option>
-                        </select>
-                      </div>
-                    )}
-
-                    {/* Thana and Post Office select */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {/* Thana select */}
-                      <div className="space-y-0.5">
-                        <label className="text-[10px] text-slate-400 font-bold">থানা / উপজেলা:</label>
-                        <select
-                          value={selectedThana}
-                          disabled={!selectedDistrict || (selectedDistrict === 'ঢাকা' && !selectedCityCorp) || getThanasForSelect().length === 0}
-                          onChange={(e) => {
-                            setSelectedThana(e.target.value);
-                          }}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none disabled:opacity-50 cursor-pointer"
-                        >
-                          <option value="">থানা সিলেক্ট করুন...</option>
-                          {getThanasForSelect().map(t => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Post Office select */}
-                      <div className="space-y-0.5">
-                        <label className="text-[10px] text-slate-400 font-bold">ডাকঘর (পোস্ট অফিস):</label>
-                        <select
-                          value={selectedPostOffice}
-                          disabled={!selectedDistrict || (selectedDistrict === 'ঢাকা' && !selectedCityCorp) || getPostOfficesForSelect().length === 0}
-                          onChange={(e) => {
-                            setSelectedPostOffice(e.target.value);
-                          }}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none disabled:opacity-50 cursor-pointer"
-                        >
-                          <option value="">ডাকঘর সিলেক্ট করুন...</option>
-                          {getPostOfficesForSelect().map(po => (
-                            <option key={po} value={po}>{po}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                  {/* District Selection Section */}
+                  <div className="space-y-2 border-t border-slate-100 pt-3">
+                    <label className="font-bold text-slate-500 text-xs block">ছুটিতে থাকাকালীন অবস্থান (জেলা):</label>
+                    <select
+                      value={selectedDistrict}
+                      onChange={(e) => setSelectedDistrict(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                    >
+                      <option value="">জেলা সিলেক্ট করুন...</option>
+                      {allBangladeshDistricts.map(dist => (
+                        <option key={dist} value={dist}>{dist}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
