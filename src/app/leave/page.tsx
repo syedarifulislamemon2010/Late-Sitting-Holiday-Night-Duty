@@ -751,15 +751,15 @@ export default function LeaveGeneratorPage() {
                   <p className="text-xs">প্রিয় মহোদয়,</p>
                   
                   <p className="text-black indent-12 text-xs">
-                    যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী <span className="border-b border-black px-1">{startDate ? toDisplayDateStr(startDate) : '______'}</span> ইং তারিখ হতে <span className="border-b border-black px-1">{endDate ? toDisplayDateStr(endDate) : '______'}</span> ইং তারিখ পর্যন্ত মোট <span className="border-b border-black px-1">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
+                    যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী {startDate ? toDisplayDateStr(startDate) : ''} ইং তারিখ হতে {endDate ? toDisplayDateStr(endDate) : ''} ইং তারিখ পর্যন্ত মোট {leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : ''} দিনের নৈমিত্তিক ছুটির প্রয়োজন।
                   </p>
 
                   <p className="text-black text-xs leading-relaxed">
-                    উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব <span className="border-b border-black px-1">{delegateName}</span>, <span className="border-b border-black px-1">{delegateDesignation}</span> তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
+                    উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব {delegateName}, {delegateDesignation} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
                   </p>
 
                   <p className="text-black text-xs leading-relaxed">
-                    অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত <span className="border-b border-black px-1">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
+                    অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
                   </p>
                 </div>
 
@@ -768,7 +768,7 @@ export default function LeaveGeneratorPage() {
                   {/* Left Block (Applicant Info Signature block) */}
                   <div className="space-y-1 text-black">
                     <p>আপনার বিশ্বস্ত,</p>
-                    <div className="h-10 w-32 border-b border-slate-200 mt-2" />
+                    <div className="h-10 w-32 mt-2" />
                     <p className="pt-2">নামঃ {applicantName || 'সৈয়দ আরিফুল ইসলাম ইমন'}</p>
                     <p>পদবীঃ {designation || 'সিনিয়র অফিসার-আইটি'}</p>
                     <p className="font-mono">ব্যাংক আইডিঃ {toBanglaDigits(bankId || '০২৬৭৯৫')}</p>
@@ -780,48 +780,44 @@ export default function LeaveGeneratorPage() {
 
                   {/* Right Block (Stay & Mobile during leave) */}
                   <div className="space-y-2 text-black text-xs text-right pr-2">
-                    <p>ছুটিতে থাকাকালীন অবস্থানঃ <span className="border-b border-black px-1.5">{formatStayLocationText()}</span></p>
-                    <p>মোবাইল নংঃ <span className="font-mono border-b border-black px-1.5">{toBanglaDigits(mobileNo)}</span></p>
+                    <p>ছুটিতে থাকাকালীন অবস্থানঃ {formatStayLocationText()}</p>
+                    <p>মোবাইল নংঃ <span className="font-mono">{toBanglaDigits(mobileNo)}</span></p>
                   </div>
                 </div>
 
                 {/* 5. RECOMMENDATION & HIERARCHY APPROVAL BOXES */}
-                <div className="mt-3 border-t border-black pt-2 space-y-4 font-sans text-xs">
+                <div className="mt-3 pt-2 space-y-4 font-sans text-xs">
                   {/* Recommendation notice line */}
-                  <div className="text-center text-black border-b border-dashed border-black/45 pb-1 mt-1">
-                    আবেদনকারীর অনুকূলে উক্ত <span className="border-b border-black px-1">{leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '_______'}</span> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর সুপারিশ করা হলো।
+                  <div className="text-center text-black pb-1 mt-1">
+                    আবেদনকারীর অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর সুপারিশ করা হলো।
                   </div>
 
                   {/* Recommendation signatures */}
                   <div className="flex justify-between items-center text-xs text-black pt-3 px-2">
                     <div className="text-center leading-normal">
-                      <div className="h-20 w-32 border-b border-black/30 mx-auto" />
+                      <div className="h-20 w-32 mx-auto" />
                       <p className="pt-2">সেল ইনচার্জ</p>
                     </div>
 
                     <div className="text-center leading-normal">
-                      <div className="h-20 w-32 border-b border-black/30 mx-auto" />
+                      <div className="h-20 w-32 mx-auto" />
                       <p className="pt-2">সহকারী মহাব্যবস্থাপক</p>
                     </div>
                   </div>
 
                   {/* AGM/DGM/SPO routing lines */}
                   <div className="pt-5 space-y-8 text-[10px] text-black tracking-wide">
-                    <div className="flex items-center justify-between border-b border-black/20 pb-3">
+                    <div className="flex items-center justify-between pb-1">
                       <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                      <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
-                    <div className="flex items-center justify-between border-b border-black/20 pb-3">
+                    <div className="flex items-center justify-between pb-1">
                       <span>ডিজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                      <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
-                    <div className="flex items-center justify-between border-b border-black/20 pb-3">
+                    <div className="flex items-center justify-between pb-1">
                       <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                      <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
-                    <div className="flex items-center justify-between pb-3">
+                    <div className="flex items-center justify-between pb-1">
                       <span>এসপিও (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
-                      <span className="w-16 border-b border-black/30 h-1.5" />
                     </div>
                   </div>
                 </div>
