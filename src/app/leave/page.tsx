@@ -123,7 +123,7 @@ export default function LeaveGeneratorPage() {
           const authData = await authRes.json();
           if (authData.authenticated) {
             setCurrentUser(authData.user);
-            setApplicantName(authData.user.name || '');
+            setApplicantName((authData.user.name || '').replace(/^জনাব\s+/, ''));
             setBankId(authData.user.username || '');
             
             // If they are admin, fetch employees. Search if employee exists matching bankId.
@@ -137,6 +137,7 @@ export default function LeaveGeneratorPage() {
               );
               if (matchedEmp) {
                 setMatchedEmp(matchedEmp);
+                setApplicantName((matchedEmp.name || '').replace(/^জনাব\s+/, ''));
                 setDesignation(matchedEmp.designation);
                 if (matchedEmp.fileNo) {
                   setFileNo(matchedEmp.fileNo);
@@ -823,16 +824,16 @@ export default function LeaveGeneratorPage() {
 
                   {/* AGM/DGM/SPO routing lines */}
                   <div className="text-left pt-14 pb-1">
-                    <span>এজিএম (অনлайн) সমীপেঃ</span>
+                    <span>এজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                   <div className="text-left pt-14 pb-1">
-                    <span>ডিজিএম (অনлайн) সমীপেঃ</span>
+                    <span>ডিজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                   <div className="text-left pt-14 pb-1">
-                    <span>এজিএম (অনлайн) সমীপেঃ</span>
+                    <span>এজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                   <div className="text-left pt-14 pb-1">
-                    <span>এসপিও (অনлайн) সমীপেঃ</span>
+                    <span>এসপিও (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                 </div>
 
