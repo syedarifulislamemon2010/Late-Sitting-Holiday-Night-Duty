@@ -824,16 +824,16 @@ export default function LeaveGeneratorPage() {
 
                   {/* AGM/DGM/SPO routing lines */}
                   <div className="text-left pt-14 pb-1">
-                    <span>এজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                    <span>এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</span>
                   </div>
                   <div className="text-left pt-14 pb-1">
-                    <span>ডিজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                    <span>ডিজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</span>
                   </div>
                   <div className="text-left pt-14 pb-1">
-                    <span>এজিএম (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                    <span>এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</span>
                   </div>
                   <div className="text-left pt-14 pb-1">
-                    <span>এসপিও (অনлайн ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
+                    <span>এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</span>
                   </div>
                 </div>
 
