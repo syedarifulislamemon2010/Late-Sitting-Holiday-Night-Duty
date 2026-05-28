@@ -382,8 +382,7 @@ export default function LeaveGeneratorPage() {
 
             <button
               onClick={handlePrint}
-              disabled={leaveDetails.actualDeducted === 0}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               <Printer size={14} />
               প্রিন্ট করুন
