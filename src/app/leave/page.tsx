@@ -767,7 +767,7 @@ export default function LeaveGeneratorPage() {
 
                 {/* 3. LETTER BODY */}
                 <div className="mt-1.5 text-xs text-black leading-relaxed text-justify space-y-1.5">
-                  <p className="text-xs">প্রিয় মহোদয়,</p>
+                  <p className="text-xs">{leaveType === 'STATION_LEAVE' ? 'মহোদয়,' : 'প্রিয় মহোদয়,'}</p>
                   
                   {leaveType === 'POST_FACTO' ? (
                     <>
@@ -777,6 +777,20 @@ export default function LeaveGeneratorPage() {
 
                       <p className="text-black text-xs leading-relaxed">
                         অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
+                      </p>
+                    </>
+                  ) : leaveType === 'STATION_LEAVE' ? (
+                    <>
+                      <p className="text-black text-xs">
+                        যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী {startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে {endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।
+                      </p>
+
+                      <p className="text-black text-xs leading-relaxed">
+                        উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন অত্র ডিপার্টমেন্টের জনাব {delegateName}, {delegateDesignation} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
+                      </p>
+
+                      <p className="text-black text-xs leading-relaxed">
+                        অতএব, মহোদয় সমীপে আবেদন এই যে, আমার অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরপূর্বক বাধিত করবেন।
                       </p>
                     </>
                   ) : (
