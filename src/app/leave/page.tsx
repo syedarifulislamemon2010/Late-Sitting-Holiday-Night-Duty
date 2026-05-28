@@ -314,9 +314,7 @@ export default function LeaveGeneratorPage() {
   }, [leaveType]);
 
   // Dynamically calculate remaining leaves
-  // নৈমিত্তিক ছুটি ভোগকৃত = Default ভোগকৃত (৯) + Applied Days (যদি নৈমিত্তিক ছুটির কোনো একটি টাইপ সিলেক্ট থাকে)
-  const isCasualLeaveSelected = ['CASUAL', 'POST_FACTO', 'STATION_LEAVE'].includes(leaveType);
-  const currentCasualUsed = casualUsed + (isCasualLeaveSelected ? leaveDetails.actualDeducted : 0);
+  const currentCasualUsed = casualUsed;
   const currentCasualRemaining = Math.max(0, casualTotal - currentCasualUsed);
 
   const currentOrdinaryRemaining = Math.max(0, ordinaryTotal - ordinaryUsed);
