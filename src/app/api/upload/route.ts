@@ -2,9 +2,21 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import fs from 'fs';
 import path from 'path';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    if (!sessionVal) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+    const userId = parseInt(sessionVal, 10);
+    const user = !isNaN(userId) ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইল আপলোড করতে পারবেন।' }, { status: 403 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const name = formData.get('name') as string | null;

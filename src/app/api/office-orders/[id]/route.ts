@@ -4,6 +4,17 @@ import { cookies } from 'next/headers';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    if (!sessionVal) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+    const userId = parseInt(sessionVal, 10);
+    const user = !isNaN(userId) ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন পরিবর্তন করতে পারবেন।' }, { status: 403 });
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id, 10);
     if (isNaN(id)) {
@@ -61,6 +72,17 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    if (!sessionVal) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+    const userId = parseInt(sessionVal, 10);
+    const user = !isNaN(userId) ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন মুছে ফেলতে পারবেন।' }, { status: 403 });
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id, 10);
     if (isNaN(id)) {
@@ -80,18 +102,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       baseRef = baseRef.slice(0, -5);
     }
 
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    let deletedBy: string | null = null;
-    if (sessionVal) {
-      const userId = parseInt(sessionVal, 10);
-      if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (user) {
-          deletedBy = user.username;
-        }
-      }
-    }
+    let deletedBy: string | null = user ? user.username : null;
 
     await prisma.$transaction(async (tx: any) => {
       // 1. Permanently delete associated duties completely from the database

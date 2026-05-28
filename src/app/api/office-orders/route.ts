@@ -1,9 +1,33 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    
+    let userCellNames: string[] = [];
+    let isUserRestricted = false;
+
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { cells: true }
+        });
+        if (user && user.role === 'USER') {
+          isUserRestricted = true;
+          userCellNames = user.cells.map((c: any) => c.name);
+        }
+      }
+    }
+
+    const whereClause = isUserRestricted ? { cellName: { in: userCellNames } } : {};
+
     const orders = await prisma.officeOrder.findMany({
+      where: whereClause,
       orderBy: { createdAt: 'desc' }
     });
 

@@ -29,12 +29,29 @@ interface DocumentFile {
 }
 
 export default function DocumentsPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'files' | 'orders' | 'bills'>('files');
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [officeOrders, setOfficeOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [error, setError] = useState('');
+
+  // Load user role from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('currentUser');
+    if (stored) {
+      try {
+        const userObj = JSON.parse(stored);
+        setCurrentUser(userObj);
+        if (userObj.role === 'USER') {
+          setActiveTab('orders'); // default to office orders since files is restricted for USER
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   
@@ -141,11 +158,14 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     if (activeTab === 'files') {
+      if (currentUser && currentUser.role === 'USER') {
+        return;
+      }
       fetchDocuments();
     } else {
       fetchOfficeOrders();
     }
-  }, [activeTab]);
+  }, [activeTab, currentUser]);
 
   // Format File Size
   const formatFileSize = (bytes: number) => {
@@ -476,27 +496,29 @@ export default function DocumentsPage() {
         <div className="flex items-center gap-2.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100/80 dark:border-indigo-950/30 rounded-2xl w-fit">
           <HardDrive size={16} className="text-indigo-500" />
           <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400">
-            সংরক্ষিত আইটেম: {activeTab === 'files' ? documents.length : officeOrders.length} টি
+            সংরক্ষিত আইটেম: {activeTab === 'files' ? documents.length : (activeTab === 'orders' ? officeOrdersList.length : billMemosList.length)} টি
           </span>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex border-b border-slate-200 dark:border-slate-800">
-        <button
-          onClick={() => {
-            setActiveTab('files');
-            setError('');
-            setSuccessMsg('');
-          }}
-          className={`px-6 py-3.5 text-sm font-semibold border-b-2 transition-all relative ${
-            activeTab === 'files'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
-          }`}
-        >
-          ম্যানুয়াল ফাইল আর্কাইভ
-        </button>
+        {currentUser?.role !== 'USER' && (
+          <button
+            onClick={() => {
+              setActiveTab('files');
+              setError('');
+              setSuccessMsg('');
+            }}
+            className={`px-6 py-3.5 text-sm font-semibold border-b-2 transition-all relative ${
+              activeTab === 'files'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
+            }`}
+          >
+            ম্যানুয়াল ফাইল আর্কাইভ
+          </button>
+        )}
         <button
           onClick={() => {
             setActiveTab('orders');
@@ -888,23 +910,27 @@ export default function DocumentsPage() {
                             <span>ভিউ</span>
                           </button>
                           
-                          <button 
-                            onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
-                            title="রোস্টারে ফিরে এডিট করুন (স্মারক একই থাকবে)"
-                          >
-                            <FileSignature size={12} />
-                            <span>সম্পাদনা (রোস্টার)</span>
-                          </button>
+                          {currentUser?.role !== 'USER' && (
+                            <button 
+                              onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
+                              title="রোস্টারে ফিরে এডিট করুন (স্মারক একই থাকবে)"
+                            >
+                              <FileSignature size={12} />
+                              <span>সম্পাদনা (রোস্টার)</span>
+                            </button>
+                          )}
                         </div>
 
-                        <button 
-                          onClick={() => handleDeleteOrder(order.id)}
-                          className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
-                          title="আর্কাইভ থেকে মুছে ফেলুন"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                        {currentUser?.role !== 'USER' && (
+                          <button 
+                            onClick={() => handleDeleteOrder(order.id)}
+                            className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
+                            title="আর্কাইভ থেকে মুছে ফেলুন"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1011,23 +1037,27 @@ export default function DocumentsPage() {
                             <span>ভিউ</span>
                           </button>
 
-                          <button 
-                            onClick={() => window.location.href = `/billing?edit_ref=${encodeURIComponent(order.orderRef)}`}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
-                            title="বিলিং এ ফিরে এডিট করুন (স্মারক একই থাকবে)"
-                          >
-                            <FileSignature size={12} />
-                            <span>সম্পাদনা (বিলিং)</span>
-                          </button>
+                          {currentUser?.role !== 'USER' && (
+                            <button 
+                              onClick={() => window.location.href = `/billing?edit_ref=${encodeURIComponent(order.orderRef)}`}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
+                              title="বিলিং এ ফিরে এডিট করুন (স্মারক একই থাকবে)"
+                            >
+                              <FileSignature size={12} />
+                              <span>সম্পাদনা (বিলিং)</span>
+                            </button>
+                          )}
                         </div>
 
-                        <button 
-                          onClick={() => handleDeleteOrder(order.id)}
-                          className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
-                          title="আর্কাইভ থেকে মুছে ফেলুন"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                        {currentUser?.role !== 'USER' && (
+                          <button 
+                            onClick={() => handleDeleteOrder(order.id)}
+                            className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
+                            title="আর্কাইভ থেকে মুছে ফেলুন"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

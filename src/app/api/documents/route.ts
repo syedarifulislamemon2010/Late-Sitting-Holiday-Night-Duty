@@ -6,6 +6,17 @@ import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    if (!sessionVal) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+    const userId = parseInt(sessionVal, 10);
+    const user = !isNaN(userId) ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইল দেখতে পারবেন।' }, { status: 403 });
+    }
+
     const docs = await prisma.document.findMany({
       orderBy: { uploadedAt: 'desc' },
     });
@@ -18,6 +29,17 @@ export async function GET() {
 
 export async function DELETE(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    if (!sessionVal) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+    const userId = parseInt(sessionVal, 10);
+    const user = !isNaN(userId) ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইল মুছে ফেলতে পারবেন।' }, { status: 403 });
+    }
+
     const { id } = await request.json();
     
     if (!id) {
@@ -33,18 +55,7 @@ export async function DELETE(request: Request) {
     }
 
     // Save to Trash (keep physical file for restoration support)
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    let deletedBy: string | null = null;
-    if (sessionVal) {
-      const userId = parseInt(sessionVal, 10);
-      if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (user) {
-          deletedBy = user.username;
-        }
-      }
-    }
+    let deletedBy: string | null = user ? user.username : null;
 
     await prisma.trash.create({
       data: {
