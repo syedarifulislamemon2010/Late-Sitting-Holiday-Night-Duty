@@ -666,7 +666,7 @@ export default function LeaveGeneratorPage() {
                     <p>• অডিট টাইপ: <span className="font-bold">{leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : 'আগাম নৈমিত্তিক'}</span></p>
                     <p>• স্যান্ডউইচ পরিস্থিতি: <span className="font-bold">{leaveDetails.isSandwiched ? 'হ্যাঁ (ছুটির মাঝখানে Sandwich হয়েছে)' : 'না'}</span></p>
                     {leaveDetails.isSandwiched && (
-                      <p className="text-rose-600 font-bold">• ছুটি পরবর্তী বন্ধের দিন (+{toBanglaDigits(leaveDetails.sandwichedCount)} দিন) মূল ছুটির সাথে যুক্ত করা হয়েছে।</p>
+                      <p className="text-rose-600 font-bold">• ছুটি পরবর্তী বন্ধের দিন (+{toBanglaDigits(leaveDetails.sandwichedCount)} দিন) মূল ছুটির সাথে যুক্ত করা হয়েছে.</p>
                     )}
                     <div className="h-px bg-amber-250 my-1.5" />
                     <p className="text-xs font-bold text-slate-800">কাটা যাওয়ার জন্য মোট হিসাবকৃত দিন: <span className="text-indigo-700 text-sm font-extrabold">{toBanglaDigits(leaveDetails.actualDeducted)} দিন</span></p>
@@ -682,7 +682,7 @@ export default function LeaveGeneratorPage() {
               {/* Container of simulated sheet */}
               <div 
                 id="printable-leave-sheet" 
-                className="w-[216mm] min-h-[356mm] bg-white text-black p-[20mm] border-2 border-slate-300 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] relative flex flex-col justify-between"
+                className="w-[216mm] min-h-[356mm] bg-white text-black p-[20mm] border-2 border-slate-300 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] relative flex flex-col justify-start"
                 style={{ contentVisibility: 'auto' }}
               >
                 
@@ -744,17 +744,17 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 2. SUBJECT */}
-                <div className="mt-2.5">
+                <div className="mt-4">
                   <p className="text-black text-xs pb-0.5 w-fit bold-text">
                     {leaveDetails.actualDeducted > 0 ? formatSubject() : 'বিষয়ঃ নৈমিত্তিক ছুটি মঞ্জুরির আবেদন।'}
                   </p>
                 </div>
 
                 {/* 3. LETTER BODY */}
-                <div className="mt-1.5 text-xs text-black leading-relaxed text-justify space-y-2">
+                <div className="mt-3 text-xs text-black leading-relaxed text-justify space-y-2">
                   <p className="text-xs">প্রিয় মহোদয়,</p>
                   
-                  <p className="text-black indent-12 text-xs">
+                  <p className="text-black text-xs">
                     যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী {startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে {endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটির প্রয়োজন।
                   </p>
 
@@ -768,7 +768,7 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 4. SIGNATURE CARD SUMMARY */}
-                <div className="mt-2 flex justify-between items-start text-xs font-sans leading-tight">
+                <div className="mt-4 flex justify-between items-start text-xs font-sans leading-tight">
                   {/* Left Block (Applicant Info Signature block) */}
                   <div className="space-y-1 text-black">
                     <p>আপনার বিশ্বস্ত,</p>
@@ -790,10 +790,10 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 5. RECOMMENDATION & HIERARCHY APPROVAL BOXES */}
-                <div className="mt-3 pt-2 space-y-4 font-sans text-xs">
+                <div className="mt-6 pt-2 space-y-4 font-sans text-xs">
                   {/* Recommendation notice line */}
-                  <div className="text-center text-black pb-1 mt-1">
-                    আবেদনকারীর অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর সুপারিশ করা হলো।
+                  <div className="text-left text-black pb-1 mt-1">
+                    আবেদনকারীর অনুকূলে উক্ত {leaveDetails.actualDeducted > 0 ? `${getBanglaDayWord(leaveDetails.actualDeducted)}` : ''} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর সুপারিশ করা হলো।
                   </div>
 
                   {/* Recommendation signatures */}
@@ -810,7 +810,7 @@ export default function LeaveGeneratorPage() {
                   </div>
 
                   {/* AGM/DGM/SPO routing lines */}
-                  <div className="pt-5 space-y-8 text-[10px] text-black tracking-wide">
+                  <div className="pt-6 space-y-12 text-[10px] text-black tracking-wide">
                     <div className="flex items-center justify-between pb-1">
                       <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                     </div>
@@ -873,7 +873,7 @@ export default function LeaveGeneratorPage() {
           #printable-leave-sheet {
             display: flex !important;
             flex-direction: column !important;
-            justify-content: space-between !important;
+            justify-content: flex-start !important;
             width: 216mm !important;
             height: 356mm !important;
             min-height: 356mm !important;
