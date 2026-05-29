@@ -266,23 +266,23 @@ export default function FeedbackPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans select-none">
       
-      {/* 1. TOP PREMIUM GRADIENT BANNER */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-700 via-indigo-650 to-indigo-700 text-white p-6 md:p-8 rounded-3xl shadow-xl flex items-center justify-between border border-white/10">
+      {/* 1. TOP NEAT AND CLEAN BANNER */}
+      <div className="relative bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-xs flex items-center justify-between">
         <div className="space-y-2.5 max-w-3xl relative z-10">
-          <span className="text-[10px] font-bold tracking-widest bg-white/15 px-3 py-1 rounded-full uppercase border border-white/10 backdrop-blur-md">
+          <span className="text-[10px] font-bold tracking-wider bg-slate-100 px-3 py-1 rounded-full uppercase border border-slate-200 text-slate-600 font-sans">
             ⭐ ইউজার ফিডব্যাক ও সাহায্য কেন্দ্র
           </span>
-          <h1 className="text-2xl md:text-3xl font-black tracking-wide font-sans mt-2">
+          <h1 className="text-xl md:text-2xl font-black tracking-wide font-sans text-slate-800 mt-2">
             মতামত এবং সমস্যা ও সমাধান
           </h1>
-          <p className="text-xs md:text-xs leading-relaxed text-indigo-100/90 font-medium">
+          <p className="text-xs md:text-xs leading-relaxed text-slate-500 font-medium">
             লেট সিটিং-হলিডে-নাইট পোর্টালটি আরও সহজ, ব্যবহারকারী-বান্ধব এবং উন্নত করতে আপনার মূল্যবান মতামত জানান। নতুন ফিচার প্রস্তাব, বর্তমান ফিচারের উন্নয়ন, অপ্রয়োজনীয় ফিচার অপসারণের পরামর্শ অথবা সিস্টেমে যেকোনো সমস্যায় পড়লে সরাসরি আমাদের (অ্যাডমিন) কাছে অভিযোগ জমা দিতে পারেন।
           </p>
         </div>
 
-        {/* Floating Bubble Icon */}
-        <div className="absolute right-6 bottom-0 top-0 hidden md:flex items-center justify-center opacity-10 select-none">
-          <MessagesSquare size={160} className="stroke-[1.5]" />
+        {/* Subtle Bubble Icon Outline */}
+        <div className="absolute right-6 bottom-0 top-0 hidden md:flex items-center justify-center text-slate-150 opacity-20 select-none pointer-events-none">
+          <MessagesSquare size={120} className="stroke-[1.2]" />
         </div>
       </div>
 
@@ -483,15 +483,15 @@ export default function FeedbackPage() {
                   />
                 </div>
 
-                {/* Submit Button Block (Logout-styled hover effect in Indigo gradient) */}
+                {/* Submit Button Block (Neat and Clean Solid Indigo) */}
                 <div className="pt-2 shrink-0">
                   <button
                     type="submit"
                     disabled={submitLoading || !newTitle.trim() || !newDescription.trim()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50/80 text-indigo-650 hover:text-white hover:bg-gradient-to-r hover:from-indigo-600 hover:to-indigo-700 hover:scale-[1.02] active:scale-[0.98] border border-indigo-200/60 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm hover:shadow-[0_0_15px_rgba(79,70,229,0.3)] cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 group"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 group"
                   >
                     {submitLoading ? (
-                      <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
                         <Send size={12} className="transition-transform duration-300 group-hover:translate-x-0.5" />
