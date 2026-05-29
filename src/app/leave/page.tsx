@@ -24,6 +24,11 @@ interface Employee {
   bankId: string | null;
   fileNo: string | null;
   cellId: number;
+  cell?: {
+    id: number;
+    name: string;
+    description: string | null;
+  };
 }
 
 interface Holiday {
@@ -66,6 +71,7 @@ const DEFAULT_2026_HOLIDAYS = [
 export default function LeaveGeneratorPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [matchedEmp, setMatchedEmp] = useState<Employee | null>(null);
+  const [selectedApplicantEmp, setSelectedApplicantEmp] = useState<Employee | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [dbHolidays, setDbHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,27 +129,45 @@ export default function LeaveGeneratorPage() {
           const authData = await authRes.json();
           if (authData.authenticated) {
             setCurrentUser(authData.user);
-            setApplicantName((authData.user.name || '').replace(/^জনাব\s+/, ''));
-            setBankId(authData.user.username || '');
             
             // If they are admin, fetch employees. Search if employee exists matching bankId.
             if (empsRes.ok) {
               const empsData = await empsRes.json();
               setEmployees(Array.isArray(empsData) ? empsData : []);
               
-              // Find matching employee to load designation & file number automatically
-              const matchedEmp = empsData.find((e: Employee) => 
-                e.bankId && e.bankId.trim().toLowerCase() === authData.user.username.trim().toLowerCase()
-              );
-              if (matchedEmp) {
-                setMatchedEmp(matchedEmp);
-                setApplicantName((matchedEmp.name || '').replace(/^জনাব\s+/, ''));
-                setDesignation(matchedEmp.designation);
-                if (matchedEmp.fileNo) {
-                  setFileNo(matchedEmp.fileNo);
+              if (authData.user.role === 'ADMIN') {
+                // Admin: pre-select the first employee in the list
+                if (Array.isArray(empsData) && empsData.length > 0) {
+                  const firstEmp = empsData[0];
+                  setSelectedApplicantEmp(firstEmp);
+                  setApplicantName((firstEmp.name || '').replace(/^জনাব\s+/, ''));
+                  setDesignation(firstEmp.designation);
+                  setBankId(firstEmp.bankId || '');
+                  setFileNo(firstEmp.fileNo || '');
+                  if (firstEmp.cell && firstEmp.cell.name) {
+                    setCellName(firstEmp.cell.name);
+                  }
                 }
-                if (matchedEmp.cell && matchedEmp.cell.name) {
-                  setCellName(matchedEmp.cell.name);
+              } else {
+                // USER: load logged in user's profile details
+                setApplicantName((authData.user.name || '').replace(/^জনাব\s+/, ''));
+                setBankId(authData.user.username || '');
+                
+                // Find matching employee to load designation & file number automatically
+                const matchedEmp = empsData.find((e: Employee) => 
+                  e.bankId && e.bankId.trim().toLowerCase() === authData.user.username.trim().toLowerCase()
+                );
+                if (matchedEmp) {
+                  setMatchedEmp(matchedEmp);
+                  setSelectedApplicantEmp(matchedEmp);
+                  setApplicantName((matchedEmp.name || '').replace(/^জনাব\s+/, ''));
+                  setDesignation(matchedEmp.designation);
+                  if (matchedEmp.fileNo) {
+                    setFileNo(matchedEmp.fileNo);
+                  }
+                  if (matchedEmp.cell && matchedEmp.cell.name) {
+                    setCellName(matchedEmp.cell.name);
+                  }
                 }
               }
             }
@@ -322,8 +346,9 @@ export default function LeaveGeneratorPage() {
 
   // Filter Covering Officers: Restricted strictly to the same cell, excluding the applicant themselves
   const eligibleCoveringOfficers = employees.filter((emp: Employee) => {
-    if (!matchedEmp) return true; // Show all as fallback if current user not resolved
-    return emp.cellId === matchedEmp.cellId && emp.bankId?.trim().toLowerCase() !== matchedEmp.bankId?.trim().toLowerCase();
+    const activeEmp = selectedApplicantEmp || matchedEmp;
+    if (!activeEmp) return true; // Show all as fallback if current user not resolved
+    return emp.cellId === activeEmp.cellId && emp.bankId?.trim().toLowerCase() !== activeEmp.bankId?.trim().toLowerCase();
   });
 
   const matchedDelegate = eligibleCoveringOfficers.find(e => String(e.id) === delegateId);
@@ -441,6 +466,37 @@ export default function LeaveGeneratorPage() {
                 </h3>
 
                 <div className="space-y-3.5 text-xs font-sans">
+                  {currentUser?.role === 'ADMIN' && (
+                    <div className="space-y-1.5 pb-2 border-b border-dashed border-indigo-100 dark:border-indigo-950">
+                      <label className="font-bold text-indigo-700 dark:text-indigo-400 block">আবেদনকারী কর্মকর্তা নির্বাচন:</label>
+                      <select
+                        value={selectedApplicantEmp?.id || ''}
+                        onChange={(e) => {
+                          const empId = e.target.value;
+                          const emp = employees.find(emp => String(emp.id) === empId);
+                          if (emp) {
+                            setSelectedApplicantEmp(emp);
+                            setApplicantName((emp.name || '').replace(/^জনাব\s+/, ''));
+                            setDesignation(emp.designation);
+                            setBankId(emp.bankId || '');
+                            setFileNo(emp.fileNo || '');
+                            if (emp.cell && emp.cell.name) {
+                              setCellName(emp.cell.name);
+                            }
+                            setDelegateId(''); // Reset covering officer dropdown selection
+                          }
+                        }}
+                        className="w-full px-3 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-xl outline-none focus:border-indigo-550 font-bold cursor-pointer text-indigo-900 dark:text-indigo-300"
+                      >
+                        <option value="">কর্মকর্তা নির্বাচন করুন...</option>
+                        {employees.map((emp) => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.name} ({emp.designation})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   {/* Name field */}
                   <div className="space-y-1">
                     <label className="font-bold text-slate-500">নাম:</label>
