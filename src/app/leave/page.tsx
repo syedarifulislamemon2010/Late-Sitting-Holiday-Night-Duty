@@ -969,7 +969,7 @@ export default function LeaveGeneratorPage() {
                 >
                   {/* Recommendation notice line */}
                   <div className="text-left text-black">
-                    আবেদনকারীর অনুকূলে উক্ত {displayDaysWord} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর সুপারিশ করা হলো।
+                    আবেদনকারীর অনুকূলে উক্ত {displayDaysWord} দিনের {leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : leaveType === 'STATION_LEAVE' ? 'কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক' : 'নৈমিত্তিক'} ছুটি মঞ্জুরীর সুপারিশ করা হলো।
                   </div>
 
                   {/* Recommendation signatures */}
