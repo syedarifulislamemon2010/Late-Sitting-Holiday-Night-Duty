@@ -136,16 +136,19 @@ export default function LeaveGeneratorPage() {
               setEmployees(Array.isArray(empsData) ? empsData : []);
               
               if (authData.user.role === 'ADMIN') {
-                // Admin: pre-select the first employee in the list
+                // Admin: pre-select the first employee in the list who is NOT the admin themselves
                 if (Array.isArray(empsData) && empsData.length > 0) {
-                  const firstEmp = empsData[0];
-                  setSelectedApplicantEmp(firstEmp);
-                  setApplicantName((firstEmp.name || '').replace(/^জনাব\s+/, ''));
-                  setDesignation(firstEmp.designation);
-                  setBankId(firstEmp.bankId || '');
-                  setFileNo(firstEmp.fileNo || '');
-                  if (firstEmp.cell && firstEmp.cell.name) {
-                    setCellName(firstEmp.cell.name);
+                  const firstNonAdminEmp = empsData.find((e: Employee) => 
+                    e.bankId?.trim().toLowerCase() !== authData.user.username.trim().toLowerCase()
+                  ) || empsData[0];
+                  
+                  setSelectedApplicantEmp(firstNonAdminEmp);
+                  setApplicantName((firstNonAdminEmp.name || '').replace(/^জনাব\s+/, ''));
+                  setDesignation(firstNonAdminEmp.designation);
+                  setBankId(firstNonAdminEmp.bankId || '');
+                  setFileNo(firstNonAdminEmp.fileNo || '');
+                  if (firstNonAdminEmp.cell && firstNonAdminEmp.cell.name) {
+                    setCellName(firstNonAdminEmp.cell.name);
                   }
                 }
               } else {
@@ -348,7 +351,7 @@ export default function LeaveGeneratorPage() {
   const eligibleCoveringOfficers = employees.filter((emp: Employee) => {
     const activeEmp = selectedApplicantEmp || matchedEmp;
     if (!activeEmp) return true; // Show all as fallback if current user not resolved
-    return emp.cellId === activeEmp.cellId && emp.bankId?.trim().toLowerCase() !== activeEmp.bankId?.trim().toLowerCase();
+    return emp.cellId === activeEmp.cellId && emp.id !== activeEmp.id;
   });
 
   const matchedDelegate = eligibleCoveringOfficers.find(e => String(e.id) === delegateId);
@@ -489,11 +492,36 @@ export default function LeaveGeneratorPage() {
                         className="w-full px-3 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-xl outline-none focus:border-indigo-550 font-bold cursor-pointer text-indigo-900 dark:text-indigo-300"
                       >
                         <option value="">কর্মকর্তা নির্বাচন করুন...</option>
-                        {employees.map((emp) => (
-                          <option key={emp.id} value={emp.id}>
-                            {emp.name} ({emp.designation})
-                          </option>
-                        ))}
+                        {(() => {
+                          const displayEmps = employees.filter((emp) => {
+                            if (currentUser?.role === 'ADMIN') {
+                              return emp.bankId?.trim().toLowerCase() !== currentUser.username?.trim().toLowerCase();
+                            }
+                            return true;
+                          });
+
+                          const uniqueCells = Array.from(
+                            new Map(
+                              displayEmps
+                                .filter(emp => emp.cell)
+                                .map(emp => [emp.cellId, emp.cell])
+                            ).values()
+                          ).sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+
+                          return uniqueCells.map((cell: any) => {
+                            const cellEmps = displayEmps.filter(emp => emp.cellId === cell.id);
+                            if (cellEmps.length === 0) return null;
+                            return (
+                              <optgroup key={cell.id} label={cell.name}>
+                                {cellEmps.map((emp) => (
+                                  <option key={emp.id} value={emp.id}>
+                                    {emp.name} ({emp.designation})
+                                  </option>
+                                ))}
+                              </optgroup>
+                            );
+                          });
+                        })()}
                       </select>
                     </div>
                   )}
