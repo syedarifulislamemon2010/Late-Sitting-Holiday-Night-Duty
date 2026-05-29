@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { sortEmployeesBySeniority } from '@/lib/seniority';
+
 import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
 import { BANGLADESH_AREAS } from './bangladesh_areas';
@@ -348,11 +350,13 @@ export default function LeaveGeneratorPage() {
   const currentSpecialRemaining = Math.max(0, specialTotal - specialUsed);
 
   // Filter Covering Officers: Restricted strictly to the same cell, excluding the applicant themselves
-  const eligibleCoveringOfficers = employees.filter((emp: Employee) => {
-    const activeEmp = selectedApplicantEmp || matchedEmp;
-    if (!activeEmp) return true; // Show all as fallback if current user not resolved
-    return emp.cellId === activeEmp.cellId && emp.id !== activeEmp.id;
-  });
+  const eligibleCoveringOfficers = sortEmployeesBySeniority(
+    employees.filter((emp: Employee) => {
+      const activeEmp = selectedApplicantEmp || matchedEmp;
+      if (!activeEmp) return true; // Show all as fallback if current user not resolved
+      return emp.cellId === activeEmp.cellId && emp.id !== activeEmp.id;
+    })
+  );
 
   const matchedDelegate = eligibleCoveringOfficers.find(e => String(e.id) === delegateId);
   const delegateName = matchedDelegate ? matchedDelegate.name : 'আব্দুল্লাহ আল জোবায়ের';
@@ -509,7 +513,7 @@ export default function LeaveGeneratorPage() {
                           ).sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
 
                           return uniqueCells.map((cell: any) => {
-                            const cellEmps = displayEmps.filter(emp => emp.cellId === cell.id);
+                            const cellEmps = sortEmployeesBySeniority(displayEmps.filter(emp => emp.cellId === cell.id));
                             if (cellEmps.length === 0) return null;
                             return (
                               <optgroup key={cell.id} label={cell.name}>

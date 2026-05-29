@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { sortEmployeesBySeniority } from '@/lib/seniority';
+
 import { 
   Plus, 
   Search, 
@@ -820,29 +822,9 @@ export default function EmployeesPage() {
                   return cellEmps.length > 0;
                 })
                 .map((cell) => {
-                  const getDesignationRank = (designation: string): number => {
-                    const d = (designation || '').toUpperCase();
-                    if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SENIOR PRINCIPAL') || d.includes('সিনিয়র প্রিন্সিপাল')) return 1;
-                    if (d.includes('পিও') || d.includes('PO') || d.includes('PRINCIPAL') || d.includes('প্রিন্সিপাল')) return 2;
-                    if (d.includes('এসো') || d.includes('এসও') || d.includes('SO') || d.includes('SENIOR OFFICER') || d.includes('সিনিয়র অফিসার')) return 3;
-                    if (d.includes('ও-আইটি') || d.includes('O-IT') || d.includes('OFFICER') || d.includes('ও') || d.includes('অফিসার')) return 4;
-                    return 99;
-                  };
-
-                  const cellEmps = filteredEmployees
-                    .filter(emp => emp.cellId === cell.id)
-                    .sort((a, b) => {
-                      const rankA = getDesignationRank(a.designation);
-                      const rankB = getDesignationRank(b.designation);
-                      if (rankA !== rankB) return rankA - rankB;
-                      
-                      const aNum = parseInt(a.bankId || '0', 10);
-                      const bNum = parseInt(b.bankId || '0', 10);
-                      if (isNaN(aNum) || isNaN(bNum)) {
-                        return (a.bankId || '').localeCompare(b.bankId || '');
-                      }
-                      return aNum - bNum;
-                    });
+                  const cellEmps = sortEmployeesBySeniority(
+                    filteredEmployees.filter(emp => emp.cellId === cell.id)
+                  );
                   const cellPal = getPalette(cell.id);
                   
                   return (

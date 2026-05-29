@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { sortEmployeesBySeniority } from '@/lib/seniority';
+
 import { 
   Plus, 
   Search, 
@@ -654,27 +656,12 @@ export default function RosterPage() {
       }
     });
 
-    const getDesignationRank = (designation: string): number => {
-      const d = (designation || '').toUpperCase();
-      if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SENIOR PRINCIPAL')) return 1;
-      if (d.includes('পিও') || d.includes('PO') || d.includes('PRINCIPAL OFFICER')) return 2;
-      if (d.includes('এসো-আইটি') || d.includes('এসও-আইটি') || d.includes('এসও') || d.includes('SO-IT') || d.includes('SO') || d.includes('SENIOR OFFICER')) return 3;
-      if (d.includes('ও-আইটি') || d.includes('O-IT') || d.includes('OFFICER') || d.includes('ও')) return 4;
-      return 99;
-    };
-
     const groupedList = Array.from(groupedMap.values());
+    const sortedEmployees = sortEmployeesBySeniority(groupedList.map(g => g.employee));
     groupedList.sort((a, b) => {
-      const rankA = getDesignationRank(a.employee.designation);
-      const rankB = getDesignationRank(b.employee.designation);
-      if (rankA !== rankB) return rankA - rankB;
-      
-      const aNum = parseInt(a.employee.bankId || '0', 10);
-      const bNum = parseInt(b.employee.bankId || '0', 10);
-      if (isNaN(aNum) || isNaN(bNum)) {
-        return (a.employee.bankId || '').localeCompare(b.employee.bankId || '');
-      }
-      return aNum - bNum;
+      const idxA = sortedEmployees.findIndex(emp => emp.id === a.employee.id);
+      const idxB = sortedEmployees.findIndex(emp => emp.id === b.employee.id);
+      return idxA - idxB;
     });
 
     return groupedList;
@@ -732,26 +719,7 @@ export default function RosterPage() {
       const execData = await execRes.json();
       const holidayData = await holidayRes.json();
       
-      const getDesignationRank = (designation: string): number => {
-        const d = (designation || '').toUpperCase();
-        if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SENIOR PRINCIPAL')) return 1;
-        if (d.includes('পিও') || d.includes('PO') || d.includes('PRINCIPAL OFFICER')) return 2;
-        if (d.includes('এসো-আইটি') || d.includes('এসো') || d.includes('এসো-আইটি') || d.includes('এসও-আইটি') || d.includes('এসও') || d.includes('SO-IT') || d.includes('SO') || d.includes('SENIOR OFFICER')) return 3;
-        if (d.includes('ও-আইটি') || d.includes('O-IT') || d.includes('OFFICER') || d.includes('ও')) return 4;
-        return 99;
-      };
-      const sortedEmps = Array.isArray(empData) ? [...empData].sort((a, b) => {
-        const rankA = getDesignationRank(a.designation);
-        const rankB = getDesignationRank(b.designation);
-        if (rankA !== rankB) return rankA - rankB;
-        
-        const aNum = parseInt(a.bankId || '0', 10);
-        const bNum = parseInt(b.bankId || '0', 10);
-        if (isNaN(aNum) || isNaN(bNum)) {
-          return (a.bankId || '').localeCompare(b.bankId || '');
-        }
-        return aNum - bNum;
-      }) : [];
+      const sortedEmps = Array.isArray(empData) ? sortEmployeesBySeniority(empData) : [];
       setEmployees(sortedEmps);
       setCells(Array.isArray(cellData) ? cellData : []);
       setHolidays(Array.isArray(holidayData) ? holidayData : []);
@@ -851,27 +819,7 @@ export default function RosterPage() {
             const localCells = await cellRes.json();
             const orders = await orderRes.json();
             
-            const getDesignationRank = (designation: string): number => {
-              const d = (designation || '').toUpperCase();
-              if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SENIOR PRINCIPAL')) return 1;
-              if (d.includes('পিও') || d.includes('PO') || d.includes('PRINCIPAL OFFICER')) return 2;
-              if (d.includes('এসো-আইটি') || d.includes('এসো') || d.includes('এসো-আইটি') || d.includes('এসও-আইটি') || d.includes('এসও') || d.includes('SO-IT') || d.includes('SO') || d.includes('SENIOR OFFICER')) return 3;
-              if (d.includes('ও-আইটি') || d.includes('O-IT') || d.includes('OFFICER') || d.includes('ও')) return 4;
-              return 99;
-            };
-
-            const sortedLocalEmps = Array.isArray(localEmps) ? [...localEmps].sort((a, b) => {
-              const rankA = getDesignationRank(a.designation);
-              const rankB = getDesignationRank(b.designation);
-              if (rankA !== rankB) return rankA - rankB;
-              
-              const aNum = parseInt(a.bankId || '0', 10);
-              const bNum = parseInt(b.bankId || '0', 10);
-              if (isNaN(aNum) || isNaN(bNum)) {
-                return (a.bankId || '').localeCompare(b.bankId || '');
-              }
-              return aNum - bNum;
-            }) : [];
+            const sortedLocalEmps = Array.isArray(localEmps) ? sortEmployeesBySeniority(localEmps) : [];
             
             setEmployees(sortedLocalEmps);
             setCells(localCells);

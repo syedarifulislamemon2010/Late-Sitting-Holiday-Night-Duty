@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
+import { sortEmployeesBySeniority } from '@/lib/seniority';
 
 export async function GET() {
   try {
@@ -34,51 +35,9 @@ export async function GET() {
       }
     });
 
-    // Helper to map and parse numeric strings (English & Bengali digits)
-    const parseNumberStr = (str: string | null): number => {
-      if (!str) return NaN;
-      const banglaToEnglishMap: Record<string, string> = {
-        '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
-        '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
-      };
-      const engStr = str.replace(/[০-৯]/g, (d) => banglaToEnglishMap[d] || d);
-      const cleanStr = engStr.replace(/[^0-9]/g, '');
-      const num = parseInt(cleanStr, 10);
-      return isNaN(num) ? NaN : num;
-    };
+    const sortedEmployees = sortEmployeesBySeniority(employees);
 
-    // Sort by seniority: Bank ID (ascending), then File No (ascending), then Name (ascending)
-    employees.sort((a, b) => {
-      const bankIdA = parseNumberStr(a.bankId);
-      const bankIdB = parseNumberStr(b.bankId);
-      const hasBankIdA = !isNaN(bankIdA);
-      const hasBankIdB = !isNaN(bankIdB);
-
-      if (hasBankIdA && hasBankIdB) {
-        if (bankIdA !== bankIdB) return bankIdA - bankIdB;
-      } else if (hasBankIdA) {
-        return -1;
-      } else if (hasBankIdB) {
-        return 1;
-      }
-
-      const fileNoA = parseNumberStr(a.fileNo);
-      const fileNoB = parseNumberStr(b.fileNo);
-      const hasFileNoA = !isNaN(fileNoA);
-      const hasFileNoB = !isNaN(fileNoB);
-
-      if (hasFileNoA && hasFileNoB) {
-        if (fileNoA !== fileNoB) return fileNoA - fileNoB;
-      } else if (hasFileNoA) {
-        return -1;
-      } else if (hasFileNoB) {
-        return 1;
-      }
-
-      return (a.name || '').localeCompare(b.name || '');
-    });
-
-    return NextResponse.json(employees);
+    return NextResponse.json(sortedEmployees);
   } catch (error: any) {
     console.error('Error fetching employees:', error);
     return NextResponse.json({ error: 'failed_to_fetch_employees' }, { status: 500 });
