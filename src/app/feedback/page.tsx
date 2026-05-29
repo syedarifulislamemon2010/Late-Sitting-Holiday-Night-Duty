@@ -293,25 +293,31 @@ export default function FeedbackPage() {
         <div className="lg:col-span-5 space-y-5 flex flex-col">
           
           {/* TAB Toggler */}
-          <div className="bg-white border border-slate-200 p-1.5 rounded-2xl shadow-xs flex select-none shrink-0">
-            <button
-              onClick={() => setActiveLeftTab('LIST')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${activeLeftTab === 'LIST' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/10' : 'text-slate-500 hover:text-slate-900'}`}
-            >
-              <MessageSquare size={14} />
-              {currentUser?.role === 'ADMIN' ? 'সকল ইউজার ফিডব্যাক' : 'আমার পাঠানো ফিডব্যাক'}
-            </button>
-            <button
-              onClick={() => setActiveLeftTab('CREATE')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${activeLeftTab === 'CREATE' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/10' : 'text-slate-500 hover:text-slate-900'}`}
-            >
-              <PlusCircle size={14} />
-              নতুন মতামত লিখুন
-            </button>
-          </div>
+          {currentUser?.role !== 'ADMIN' ? (
+            <div className="bg-white border border-slate-200 p-1.5 rounded-2xl shadow-xs flex select-none shrink-0">
+              <button
+                onClick={() => setActiveLeftTab('LIST')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${activeLeftTab === 'LIST' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/10' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                <MessageSquare size={14} />
+                আমার পাঠানো ফিডব্যাক
+              </button>
+              <button
+                onClick={() => setActiveLeftTab('CREATE')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${activeLeftTab === 'CREATE' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/10' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                <PlusCircle size={14} />
+                নতুন মতামত লিখুন
+              </button>
+            </div>
+          ) : (
+            <div className="bg-indigo-50/50 border border-indigo-150 p-3 rounded-2xl text-center text-xs font-extrabold text-indigo-900 shrink-0 select-none">
+              🛡️ সিস্টেম অ্যাডমিন ফিডব্যাক ও সহায়তা ড্যাশবোর্ড
+            </div>
+          )}
 
           {/* TAB 1 CONTENT: FEEDBACK LIST */}
-          {activeLeftTab === 'LIST' ? (
+          {activeLeftTab === 'LIST' || currentUser?.role === 'ADMIN' ? (
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4 flex flex-col min-h-[500px]">
               
               <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-100 pb-2.5 shrink-0">

@@ -120,13 +120,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
     }
 
+    if (currentUser.role === 'ADMIN') {
+      return NextResponse.json({ error: 'admins_cannot_create_feedback' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { title, category, description } = body;
 
     if (!title || title.trim() === '') {
       return NextResponse.json({ error: 'title_required' }, { status: 400 });
     }
-    if (!category || (category !== 'FEEDBACK' && category !== 'ISSUE')) {
+    
+    const validCategories = ['SUGGESTION', 'IMPROVEMENT', 'REMOVE', 'SIMPLIFY', 'ISSUE'];
+    if (!category || !validCategories.includes(category)) {
       return NextResponse.json({ error: 'invalid_category' }, { status: 400 });
     }
     if (!description || description.trim() === '') {
