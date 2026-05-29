@@ -25,7 +25,7 @@ export const getDesignationRank = (designation: string | null | undefined): numb
   const d = (designation || '').toUpperCase();
   if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SENIOR PRINCIPAL') || d.includes('সিনিয়র প্রিন্সিপাল')) return 1;
   if (d.includes('পিও') || d.includes('PO') || d.includes('PRINCIPAL') || d.includes('প্রিন্সিপাল')) return 2;
-  if (d.includes('এসো') || d.includes('এসো') || d.includes('এসও') || d.includes('SO') || d.includes('SENIOR OFFICER') || d.includes('সিনিয়র অফিসার')) return 3;
+  if (d.includes('এসো') || d.includes('এসো') || d.includes('এসো') || d.includes('এসও') || d.includes('SO') || d.includes('SENIOR OFFICER') || d.includes('সিনিয়র অফিসার')) return 3;
   if (d.includes('ও') || d.includes('অফিসার') || d.includes('OFFICER') || d.includes('O-IT')) return 4;
   return 99; // Fallback for other roles/designations
 };
@@ -33,7 +33,9 @@ export const getDesignationRank = (designation: string | null | undefined): numb
 /**
  * Custom seniority sorting logic for employees:
  * 1. Primarily sort by Designation Rank (SPO > PO > SO-IT > O-IT).
- * 2. Within the same designation rank, sort by the minimum value between Bank ID and File No ("যারটা আগে সে আগে বসবে, ব্যাংক আইডি চেক করবে, সাথে ফাইল নং ও চেক করবে, যারটা আগে সে আগে বসবে").
+ * 2. Within the same designation rank, sort primarily by Bank ID (ascending).
+ * 3. If Bank ID is missing or equal, sort secondarily by File No (ascending).
+ * This ensures Syed Rashedul Islam (PO, Bank ID: 021743, File No: 723) is sorted correctly by his Bank ID relative to other POs.
  */
 export function sortEmployeesBySeniority<T extends EmployeeSortable>(list: T[]): T[] {
   if (!Array.isArray(list) || list.length <= 1) return list;
@@ -44,23 +46,33 @@ export function sortEmployeesBySeniority<T extends EmployeeSortable>(list: T[]):
     const rankB = getDesignationRank(b.designation);
     if (rankA !== rankB) return rankA - rankB;
 
-    // 2. Compare effective minimum score between Bank ID and File No
+    // 2. Compare Bank ID primarily (within the same rank)
     const bankA = parseNumberStr(a.bankId);
-    const fileA = parseNumberStr(a.fileNo);
-    const minA = Math.min(isNaN(bankA) ? Infinity : bankA, isNaN(fileA) ? Infinity : fileA);
-
     const bankB = parseNumberStr(b.bankId);
+    const hasBankA = !isNaN(bankA);
+    const hasBankB = !isNaN(bankB);
+
+    if (hasBankA && hasBankB) {
+      if (bankA !== bankB) return bankA - bankB;
+    } else if (hasBankA) {
+      return -1; // bank ID present goes first
+    } else if (hasBankB) {
+      return 1;
+    }
+
+    // 3. Compare File No secondarily
+    const fileA = parseNumberStr(a.fileNo);
     const fileB = parseNumberStr(b.fileNo);
-    const minB = Math.min(isNaN(bankB) ? Infinity : bankB, isNaN(fileB) ? Infinity : fileB);
+    const hasFileA = !isNaN(fileA);
+    const hasFileB = !isNaN(fileB);
 
-    if (minA !== minB) return minA - minB;
-
-    // Fallbacks
-    const bankDiff = (isNaN(bankA) ? Infinity : bankA) - (isNaN(bankB) ? Infinity : bankB);
-    if (bankDiff !== 0) return bankDiff;
-
-    const fileDiff = (isNaN(fileA) ? Infinity : fileA) - (isNaN(fileB) ? Infinity : fileB);
-    if (fileDiff !== 0) return fileDiff;
+    if (hasFileA && hasFileB) {
+      if (fileA !== fileB) return fileA - fileB;
+    } else if (hasFileA) {
+      return -1;
+    } else if (hasFileB) {
+      return 1;
+    }
 
     return (a.name || '').localeCompare(b.name || '');
   });
