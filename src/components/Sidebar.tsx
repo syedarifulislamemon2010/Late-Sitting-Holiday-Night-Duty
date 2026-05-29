@@ -17,7 +17,8 @@ import {
   Trash2,
   Building2,
   Settings,
-  CalendarCheck
+  CalendarCheck,
+  MessageSquare
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -75,6 +76,7 @@ export default function Sidebar() {
     { name: 'অফিস অর্ডার', href: '/roster', icon: CalendarRange },
     { name: 'বিল', href: '/billing', icon: Receipt },
     { name: 'ছুটি আবেদন', href: '/leave', icon: CalendarCheck },
+    { name: 'ফিডব্যাক ও সহায়তা', href: '/feedback', icon: MessageSquare },
     { name: 'আর্কাইভ', href: '/documents', icon: FileText },
     { name: 'রিসাইকেল বিন', href: '/trash', icon: Trash2 },
     { name: 'অডিট লগ', href: '/logs', icon: Shield },

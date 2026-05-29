@@ -23,6 +23,8 @@ model User {
   name      String
   role      String   @default("USER") // ADMIN or USER
   cells     Cell[]   @relation("UserCells")
+  feedbacks Feedback[]
+  messages  FeedbackMessage[]
   createdAt DateTime @default(now())
 }
 
@@ -115,6 +117,28 @@ model AuditLog {
   userAgent  String?
   details    String
   createdAt  DateTime @default(now())
+}
+
+model Feedback {
+  id          Int               @id @default(autoincrement())
+  title       String
+  category    String            // "FEEDBACK" (ফিডব্যাক ও পরামর্শ) or "ISSUE" (সমস্যা ও সমাধান)
+  status      String            @default("PENDING") // "PENDING", "REVIEWED", "RESOLVED"
+  userId      Int
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  messages    FeedbackMessage[]
+}
+
+model FeedbackMessage {
+  id          Int      @id @default(autoincrement())
+  feedbackId  Int
+  feedback    Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  senderId    Int
+  sender      User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  message     String
+  createdAt   DateTime @default(now())
 }
 
 
