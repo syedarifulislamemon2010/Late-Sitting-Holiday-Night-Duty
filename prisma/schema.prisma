@@ -25,6 +25,7 @@ model User {
   cells     Cell[]   @relation("UserCells")
   feedbacks Feedback[]
   messages  FeedbackMessage[]
+  leaveApplications LeaveApplication[]
   createdAt DateTime @default(now())
 }
 
@@ -139,6 +140,43 @@ model FeedbackMessage {
   sender      User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   message     String
   createdAt   DateTime @default(now())
+}
+
+model LeaveApplication {
+  id              Int      @id @default(autoincrement())
+  leaveType       String   // "CASUAL", "POST_FACTO", "STATION_LEAVE"
+  startDate       String   // YYYY-MM-DD
+  endDate         String   // YYYY-MM-DD
+  applicationDate String   // YYYY-MM-DD
+  
+  // Applicant Info
+  applicantName   String
+  designation     String
+  bankId          String
+  fileNo          String?
+  cellName        String
+  leaveLocation   String
+  mobileNo        String
+  selectedDistrict String?
+  
+  // Delegate Covering Officer
+  delegateId      String?
+  
+  // Leaves balance sheet numbers
+  casualTotal     Int
+  casualUsed      Int
+  ordinaryTotal   Int
+  ordinaryUsed    Int
+  specialTotal    Int
+  specialUsed     Int
+  
+  // Relationship
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
 }
 
 

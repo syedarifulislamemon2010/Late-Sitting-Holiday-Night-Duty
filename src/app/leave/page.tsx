@@ -16,7 +16,9 @@ import {
   AlertCircle,
   Settings,
   CalendarRange,
-  Info
+  Info,
+  Trash2,
+  Edit2
 } from 'lucide-react';
 
 interface Employee {
@@ -92,6 +94,225 @@ export default function LeaveGeneratorPage() {
   const [cellName, setCellName] = useState('অনলাইন ব্যাংকিং ডিপার্টমেন্ট');
   const [leaveLocation, setLeaveLocation] = useState('ঢাকা');
   const [mobileNo, setMobileNo] = useState('০১৬৭৪০৫৭৫২৯');
+
+  // Leave Archive & CRUD States
+  const [activeTab, setActiveTab] = useState<'NEW' | 'ARCHIVE'>('NEW');
+  const [archivedLeaves, setArchivedLeaves] = useState<any[]>([]);
+  const [latestLeave, setLatestLeave] = useState<any | null>(null);
+  const [editingLeaveId, setEditingLeaveId] = useState<number | null>(null);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // Fetch all archived leaves for the current officer
+  const fetchArchivedLeaves = async (targetBankId?: string) => {
+    try {
+      let url = '/api/leaves';
+      if (targetBankId) {
+        url += `?bankId=${encodeURIComponent(targetBankId)}`;
+      }
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setArchivedLeaves(data);
+        if (data.length > 0) {
+          setLatestLeave(data[0]);
+        } else {
+          setLatestLeave(null);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching archived leaves:', err);
+    }
+  };
+
+  // Load archive on user/applicant change
+  useEffect(() => {
+    if (currentUser) {
+      const activeBankId = selectedApplicantEmp?.bankId || (currentUser.role === 'ADMIN' ? '' : currentUser.username);
+      fetchArchivedLeaves(activeBankId);
+    }
+  }, [currentUser, selectedApplicantEmp]);
+
+  // Handle Save / Update to Archive
+  const handleSaveToArchive = async () => {
+    if (!startDate || !endDate) {
+      setErrorMsg('অনুগ্রহ করে ছুটির শুরুর এবং শেষের তারিখ নির্বাচন করুন।');
+      setTimeout(() => setErrorMsg(''), 4000);
+      return false;
+    }
+
+    const payload = {
+      leaveType,
+      startDate,
+      endDate,
+      applicationDate,
+      applicantName,
+      designation,
+      bankId,
+      fileNo,
+      cellName,
+      leaveLocation,
+      mobileNo,
+      selectedDistrict,
+      delegateId,
+      casualTotal,
+      casualUsed,
+      ordinaryTotal,
+      ordinaryUsed,
+      specialTotal,
+      specialUsed
+    };
+
+    try {
+      let res;
+      if (editingLeaveId) {
+        res = await fetch(`/api/leaves/${editingLeaveId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        res = await fetch('/api/leaves', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      if (res.ok) {
+        const savedData = await res.json();
+        setSuccessMsg(editingLeaveId ? 'আবেদনটি সফলভাবে আপডেট করা হয়েছে।' : 'আবেদনটি সফলভাবে আর্কাইভে সংরক্ষণ করা হয়েছে।');
+        setErrorMsg('');
+        
+        if (editingLeaveId) {
+          setEditingLeaveId(null);
+        }
+        
+        // Refresh archive list
+        const activeBankId = selectedApplicantEmp?.bankId || (currentUser?.role === 'ADMIN' ? '' : currentUser?.username);
+        await fetchArchivedLeaves(activeBankId);
+        
+        // Auto switch tab
+        setActiveTab('ARCHIVE');
+        
+        setTimeout(() => {
+          setSuccessMsg('');
+        }, 5000);
+        return true;
+      } else {
+        const errData = await res.json();
+        setErrorMsg(errData.error || 'আর্কাইভে সংরক্ষণ করতে সমস্যা হয়েছে।');
+        setTimeout(() => setErrorMsg(''), 4000);
+        return false;
+      }
+    } catch (err) {
+      console.error('Error saving leave application:', err);
+      setErrorMsg('একটি নেটওয়ার্ক সমস্যা হয়েছে।');
+      setTimeout(() => setErrorMsg(''), 4000);
+      return false;
+    }
+  };
+
+  // Load archived leave to form for editing
+  const handleEditLeave = (leave: any) => {
+    setEditingLeaveId(leave.id);
+    setLeaveType(leave.leaveType);
+    setStartDate(leave.startDate);
+    setEndDate(leave.endDate);
+    setApplicationDate(leave.applicationDate);
+    setApplicantName(leave.applicantName);
+    setDesignation(leave.designation);
+    setBankId(leave.bankId);
+    setFileNo(leave.fileNo || '');
+    setCellName(leave.cellName);
+    setLeaveLocation(leave.leaveLocation);
+    setMobileNo(leave.mobileNo);
+    setSelectedDistrict(leave.selectedDistrict || '');
+    setDelegateId(leave.delegateId || '');
+    
+    setCasualTotal(leave.casualTotal);
+    setCasualUsed(leave.casualUsed);
+    setOrdinaryTotal(leave.ordinaryTotal);
+    setOrdinaryUsed(leave.ordinaryUsed);
+    setSpecialTotal(leave.specialTotal);
+    setSpecialUsed(leave.specialUsed);
+
+    setActiveTab('NEW'); // Switch to Form tab
+    setSuccessMsg('আর্কাইভের তথ্য এডিটর ফর্মে লোড করা হয়েছে। পরিবর্তন করে আপডেট করুন।');
+    setTimeout(() => setSuccessMsg(''), 4000);
+  };
+
+  // Load archived leave details strictly for preview/print
+  const handleLoadLeavePreview = (leave: any) => {
+    setLeaveType(leave.leaveType as any);
+    setStartDate(leave.startDate);
+    setEndDate(leave.endDate);
+    setApplicationDate(leave.applicationDate);
+    setApplicantName(leave.applicantName);
+    setDesignation(leave.designation);
+    setBankId(leave.bankId);
+    setFileNo(leave.fileNo || '');
+    setCellName(leave.cellName);
+    setLeaveLocation(leave.leaveLocation);
+    setMobileNo(leave.mobileNo);
+    setSelectedDistrict(leave.selectedDistrict || '');
+    setDelegateId(leave.delegateId || '');
+    
+    setCasualTotal(leave.casualTotal);
+    setCasualUsed(leave.casualUsed);
+    setOrdinaryTotal(leave.ordinaryTotal);
+    setOrdinaryUsed(leave.ordinaryUsed);
+    setSpecialTotal(leave.specialTotal);
+    setSpecialUsed(leave.specialUsed);
+    
+    setEditingLeaveId(null); // Clear editing mode
+    setSuccessMsg('আবেদনের তথ্য প্রিন্ট প্রিভিউতে লোড করা হয়েছে।');
+    setTimeout(() => setSuccessMsg(''), 3000);
+  };
+
+  // Delete archived application
+  const handleDeleteLeave = async (leaveId: number) => {
+    if (!window.confirm('প্রিন্টেড বা প্রিভিউড এপ্লিকেশন ডিলেট না করাই বেটার। আপনি কি সত্যিই এটা ডিলেট করতে চান?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/leaves/${leaveId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        setSuccessMsg('আবেদনটি সফলভাবে ডিলিট করা হয়েছে।');
+        setErrorMsg('');
+        
+        if (editingLeaveId === leaveId) {
+          setEditingLeaveId(null);
+        }
+
+        const activeBankId = selectedApplicantEmp?.bankId || (currentUser?.role === 'ADMIN' ? '' : currentUser?.username);
+        await fetchArchivedLeaves(activeBankId);
+
+        setTimeout(() => {
+          setSuccessMsg('');
+        }, 4500);
+      } else {
+        const errData = await res.json();
+        setErrorMsg(errData.error || 'ডিলিট করতে সমস্যা হয়েছে।');
+        setTimeout(() => setErrorMsg(''), 4000);
+      }
+    } catch (err) {
+      console.error('Error deleting leave application:', err);
+      setErrorMsg('একটি নেটওয়ার্ক সমস্যা হয়েছে।');
+      setTimeout(() => setErrorMsg(''), 4000);
+    }
+  };
+
+  // Reset editing mode
+  const handleCancelEdit = () => {
+    setEditingLeaveId(null);
+    setSuccessMsg('এডিটিং বাতিল করা হয়েছে।');
+    setTimeout(() => setSuccessMsg(''), 3000);
+  };
 
   // Stayed Location State (Only District is needed)
   const [selectedDistrict, setSelectedDistrict] = useState('');
@@ -410,8 +631,42 @@ export default function LeaveGeneratorPage() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  // Dropdown Validation Logic
+  const getDropdownValidation = () => {
+    const missing = [];
+    if (currentUser?.role === 'ADMIN' && !selectedApplicantEmp) {
+      missing.push('আবেদনকারী কর্মকর্তা');
+    }
+    if (!selectedDistrict) {
+      missing.push('ছুটিতে থাকাকালীন অবস্থান (জেলা)');
+    }
+    if (eligibleCoveringOfficers.length > 0 && !delegateId) {
+      missing.push('ছুটিতে দায়িত্ব পালনকারী কর্মকর্তা');
+    }
+    
+    if (missing.length > 0) {
+      return {
+        isValid: false,
+        message: `আপনি ড্রপডাউন মেন্যু থেকে এই ইনফোরমেশন (${missing.join(' ও ')}) সিলেক্ট করতে ভুলে গিয়েছেন।`
+      };
+    }
+    
+    return {
+      isValid: true,
+      message: 'আপনার আবেদন এখন প্রিন্ট করার জন্য সম্পূর্ণরূপে প্রস্তুত, এখন প্রিন্ট প্রিভিউ বা পিডিএফ ডাউনলোড করার জন্য প্রস্তুত।'
+    };
+  };
+
+  const validation = getDropdownValidation();
+
+  const handlePrint = async () => {
+    // Automatically save or update to archive first
+    const successfullySaved = await handleSaveToArchive();
+    
+    // Trigger standard print viewport if save/update is completed
+    if (successfullySaved) {
+      window.print();
+    }
   };
 
   return (
@@ -421,7 +676,7 @@ export default function LeaveGeneratorPage() {
         <div className="no-print flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/60 dark:border-slate-800/80 pb-5">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-wide flex items-center gap-3">
-              <CalendarCheck className="text-indigo-650" size={28} />
+              <CalendarCheck className="text-indigo-600" size={28} />
               ছুটি আবেদন (Leave Application)
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
@@ -430,42 +685,108 @@ export default function LeaveGeneratorPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-55 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold transition-all shadow-sm">
+            <Link href="/" className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer">
               <ArrowLeft size={14} />
               ড্যাশবোর্ড
             </Link>
 
-            <button
-              onClick={handlePrint}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer"
-            >
-              <Printer size={14} />
-              প্রিন্ট প্রিভিউ
-            </button>
+            {validation.isValid && (
+              <>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                >
+                  <Printer size={14} />
+                  প্রিন্ট প্রিভিউ
+                </button>
 
-            <button
-              onClick={handlePrint}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-            >
-              <FileText size={14} />
-              ডাউনলোড পিডিএফ
-            </button>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                >
+                  <FileText size={14} />
+                  ডাউনলোড পিডিএফ
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Loading Spinner */}
         {loading ? (
           <div className="no-print flex flex-col items-center justify-center py-24 space-y-3 glass-card rounded-2xl">
-            <div className="w-10 h-10 border-4 border-indigo-650 border-t-transparent rounded-full animate-spin" />
+            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
             <p className="text-xs font-bold text-slate-500">প্রয়োজনীয় তথ্যসমূহ লোড হচ্ছে...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+          <div className="space-y-6">
             
-            {/* LEFT: Leaf Generator Settings Form (35% width on desktop) */}
-            <div className="no-print xl:col-span-4 space-y-6">
+            {/* Banner Messages */}
+            <div className="no-print space-y-3">
+              {successMsg && (
+                <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-250 dark:border-emerald-900 text-emerald-805 dark:text-emerald-305 text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                  {successMsg}
+                </div>
+              )}
+              {errorMsg && (
+                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/20 border border-rose-250 dark:border-rose-900 text-rose-850 dark:text-rose-300 text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm">
+                  <AlertCircle size={14} className="text-rose-500" />
+                  {errorMsg}
+                </div>
+              )}
+              {editingLeaveId && (
+                <div className="p-3.5 bg-amber-50 dark:bg-amber-955/20 border border-amber-250 dark:border-amber-900 text-amber-855 dark:text-amber-300 text-xs font-bold rounded-xl flex justify-between items-center shadow-sm">
+                  <span className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping" />
+                    আপনি বর্তমানে একটি সংরক্ষিত আবেদন (আইডি #{toBanglaDigits(editingLeaveId)}) এডিট করছেন।
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="px-2.5 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-350 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded-lg transition-colors cursor-pointer text-[10px] font-extrabold"
+                  >
+                    বাতিল করুন
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
               
-              {/* Box 1: applicant information */}
+              {/* LEFT: Leaf Generator Settings Form (35% width on desktop) */}
+              <div className="no-print xl:col-span-4 space-y-6">
+
+                {/* Tab Switcher */}
+                <div className="flex border-b border-slate-200 dark:border-slate-800 pb-px">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('NEW')}
+                    className={`flex-1 pb-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                      activeTab === 'NEW'
+                        ? 'border-indigo-600 text-indigo-600'
+                        : 'border-transparent text-slate-500 hover:text-slate-705'
+                    }`}
+                  >
+                    নতুন আবেদন ফর্ম
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('ARCHIVE')}
+                    className={`flex-1 pb-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                      activeTab === 'ARCHIVE'
+                        ? 'border-indigo-600 text-indigo-600'
+                        : 'border-transparent text-slate-500 hover:text-slate-705'
+                    }`}
+                  >
+                    আর্কাইভ ও বিগত আবেদনসমূহ
+                  </button>
+                </div>
+
+                {activeTab === 'NEW' ? (
+                  <div className="space-y-6">
+                    
+                    {/* Box 1: applicant information */}
               <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
                 <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
                   <User size={16} className="text-indigo-650" />
@@ -786,32 +1107,173 @@ export default function LeaveGeneratorPage() {
                   </div>
                 </div>
               </div>
-
-              {/* Box 4: sandwich leave details display */}
-              {leaveDetails.actualDeducted > 0 && (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2">
-                  <h4 className="font-extrabold text-amber-900 text-xs flex items-center gap-1">
-                    <Info size={14} />
-                    ছুটি হিসাব বিবরণী (স্যান্ডউইচ নিয়ম অনুসারে):
-                  </h4>
-                  <div className="text-[11px] text-amber-800 font-medium space-y-1">
-                    <p>• মোট ক্যালেন্ডার দিন: <span className="font-bold">{toBanglaDigits(leaveDetails.totalDays)} দিন</span></p>
-                    <p>• অডিট টাইপ: <span className="font-bold">{leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : 'আগাম নৈমিত্তিক'}</span></p>
-                    <p>• স্যান্ডউইচ পরিস্থিতি: <span className="font-bold">{leaveDetails.isSandwiched ? 'হ্যাঁ (ছুটির মাঝখানে Sandwich হয়েছে)' : 'না'}</span></p>
-                    {leaveDetails.isSandwiched && (
-                      <p className="text-rose-600 font-bold">• ছুটি পরবর্তী বন্ধের দিন (+{toBanglaDigits(leaveDetails.sandwichedCount)} দিন) মূল ছুটির সাথে যুক্ত করা হয়েছে.</p>
+                    {/* Box 4: sandwich leave details display */}
+                    {leaveDetails.actualDeducted > 0 && (
+                      <div className="p-4 bg-amber-50 dark:bg-amber-955/20 border border-amber-250 dark:border-amber-900 rounded-2xl space-y-2 mt-4">
+                        <h4 className="font-extrabold text-amber-900 dark:text-amber-400 text-xs flex items-center gap-1">
+                          <Info size={14} />
+                          ছুটি হিসাব বিবরণী (স্যান্ডউইচ নিয়ম অনুসারে):
+                        </h4>
+                        <div className="text-[11px] text-amber-805 dark:text-amber-305 font-medium space-y-1">
+                          <p>• মোট ক্যালেন্ডার দিন: <span className="font-bold">{toBanglaDigits(leaveDetails.totalDays)} দিন</span></p>
+                          <p>• অডিট টাইপ: <span className="font-bold">{leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : 'আগাম নৈমিত্তিক'}</span></p>
+                          <p>• স্যান্ডউইচ পরিস্থিতি: <span className="font-bold">{leaveDetails.isSandwiched ? 'হ্যাঁ (ছুটির মাঝখানে Sandwich হয়েছে)' : 'না'}</span></p>
+                          {leaveDetails.isSandwiched && (
+                            <p className="text-rose-650 dark:text-rose-455 font-bold">• ছুটি পরবর্তী বন্ধের দিন (+{toBanglaDigits(leaveDetails.sandwichedCount)} দিন) মূল ছুটির সাথে যুক্ত করা হয়েছে.</p>
+                          )}
+                          <div className="h-px bg-amber-200 dark:bg-amber-900 my-1.5" />
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-205">কাটা যাওয়ার জন্য মোট হিসাবকৃত দিন: <span className="text-indigo-600 dark:text-indigo-400 text-sm font-extrabold">{toBanglaDigits(leaveDetails.actualDeducted)} দিন</span></p>
+                        </div>
+                      </div>
                     )}
-                    <div className="h-px bg-amber-250 my-1.5" />
-                    <p className="text-xs font-bold text-slate-800">কাটা যাওয়ার জন্য মোট হিসাবকৃত দিন: <span className="text-indigo-700 text-sm font-extrabold">{toBanglaDigits(leaveDetails.actualDeducted)} দিন</span></p>
-                  </div>
-                </div>
-              )}
 
-            </div>
+                    {/* Save or Update Button */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleSaveToArchive}
+                        className={`w-full py-3.5 px-4 rounded-xl text-xs font-bold text-white transition-all shadow-md cursor-pointer text-center hover:scale-[1.01] active:scale-[0.99] ${
+                          editingLeaveId 
+                            ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/10 hover:shadow-amber-500/20' 
+                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/10 hover:shadow-indigo-500/20'
+                        }`}
+                      >
+                        {editingLeaveId ? 'আর্কাইভ আপডেট করুন (Update)' : 'আর্কাইভে সংরক্ষণ করুন (Save)'}
+                      </button>
+                    </div>
+
+                  </div>
+                ) : (
+              <div className="space-y-4">
+                
+                {/* Latest Application Box */}
+                {latestLeave ? (
+                  <div className="glass-card p-4 rounded-2xl border border-indigo-150 dark:border-indigo-950 bg-indigo-50/5">
+                    <div className="flex justify-between items-center mb-2.5 border-b border-indigo-100/50 dark:border-indigo-950/50 pb-2">
+                      <h4 className="font-extrabold text-indigo-950 dark:text-indigo-400 text-xs flex items-center gap-1.5">
+                        <FileText size={14} className="text-indigo-600" />
+                        লাস্ট বা লেটেস্ট এপ্লিকেশন (সর্বশেষ আবেদন)
+                      </h4>
+                      <span className="text-[10px] bg-indigo-100 dark:bg-indigo-950 text-indigo-850 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold">
+                        {toDisplayDateStr(latestLeave.applicationDate)}
+                      </span>
+                    </div>
+                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 space-y-1.5 mb-3 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-150 dark:border-slate-800">
+                      <p>ছুটির ধরণ: <span className="font-bold text-slate-900 dark:text-slate-100">
+                        {latestLeave.leaveType === 'CASUAL' ? 'নৈমিত্তিক ছুটি' : latestLeave.leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক ছুটি' : 'কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি'}
+                      </span></p>
+                      <p>সময়কাল: <span className="font-bold text-slate-950 dark:text-slate-55">{toDisplayDateStr(latestLeave.startDate)} হতে {toDisplayDateStr(latestLeave.endDate)}</span></p>
+                      <p>ভোগকৃত ছুটি দিন: <span className="font-bold text-slate-950 dark:text-slate-55">{toBanglaDigits(
+                        latestLeave.startDate === latestLeave.endDate ? 1 : 
+                        Math.round((new Date(latestLeave.endDate).getTime() - new Date(latestLeave.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
+                      )} দিন</span></p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleLoadLeavePreview(latestLeave)}
+                        className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all text-center cursor-pointer shadow-sm shadow-indigo-500/10 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        প্রিন্ট প্রিভিউ
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleEditLeave(latestLeave)}
+                        className="py-2 px-4 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-850 rounded-xl text-xs font-bold transition-all text-center cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        এডিট করুন
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="glass-card p-6 text-center rounded-2xl border border-slate-100 dark:border-slate-850 bg-slate-50/50">
+                    <p className="text-xs text-slate-500 font-bold">কোনো পূর্ববর্তী আবেদন পাওয়া যায়নি।</p>
+                  </div>
+                )}
+
+                {/* Past Applications List */}
+                <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                  <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm border-b border-slate-100 dark:border-slate-850 pb-2 flex justify-between items-center">
+                    <span>বিগত আবেদনসমূহ</span>
+                    <span className="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">
+                      মোট: {toBanglaDigits(archivedLeaves.length)} টি
+                    </span>
+                  </h3>
+
+                  {archivedLeaves.length === 0 ? (
+                    <p className="text-xs text-slate-400 font-medium text-center py-6">আর্কাইভে কোনো ছুটির আবেদন নেই।</p>
+                  ) : (
+                    <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
+                      {archivedLeaves.map((leave) => (
+                        <div key={leave.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl space-y-2 hover:border-indigo-300 dark:hover:border-indigo-900 transition-all">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-extrabold text-slate-905 dark:text-slate-100 text-xs">
+                                {leave.leaveType === 'CASUAL' ? 'নৈমিত্তিক ছুটি' : leave.leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : 'কর্মস্থল ত্যাগসহ নৈমিত্তিক'}
+                              </p>
+                              <p className="text-[10px] text-slate-500 font-bold mt-0.5">
+                                আবেদনের তারিখ: {toDisplayDateStr(leave.applicationDate)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleLoadLeavePreview(leave)}
+                                title="প্রিভিউ ও প্রিন্ট"
+                                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg transition-all hover:scale-110 active:scale-95 cursor-pointer"
+                              >
+                                <Printer size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleEditLeave(leave)}
+                                title="এডিট"
+                                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 text-indigo-600 dark:text-indigo-400 rounded-lg transition-all hover:scale-110 active:scale-95 cursor-pointer"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteLeave(leave.id)}
+                                title="ডিলিট"
+                                className="p-1.5 hover:bg-rose-100 hover:text-rose-600 text-slate-400 dark:text-slate-500 rounded-lg transition-all hover:scale-110 active:scale-95 cursor-pointer"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold bg-white dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-850">
+                            সময়কাল: <span className="font-bold text-slate-850 dark:text-slate-205">{toDisplayDateStr(leave.startDate)} হতে {toDisplayDateStr(leave.endDate)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )}
+
+          </div>
 
             {/* RIGHT: Pixel-Perfect A4 Document Sheet Preview (8 columns) */}
-            <div className="xl:col-span-8 flex justify-center pb-8">
+            <div className="xl:col-span-8 flex flex-col items-center pb-8">
               
+              {/* Dropdown Validation Message Banner */}
+              <div className="no-print w-full max-w-[216mm] mb-4">
+                {validation.isValid ? (
+                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-250 dark:border-emerald-900 text-emerald-805 dark:text-emerald-305 text-xs font-bold rounded-2xl flex items-center gap-2.5 shadow-sm">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping shrink-0" />
+                    <span>{validation.message}</span>
+                  </div>
+                ) : (
+                  <div className="p-3.5 bg-amber-50 dark:bg-amber-955/20 border border-amber-250 dark:border-amber-900 text-amber-850 dark:text-amber-300 text-xs font-bold rounded-2xl flex items-center gap-2.5 shadow-sm">
+                    <AlertCircle size={15} className="text-amber-500 shrink-0" />
+                    <span>{validation.message}</span>
+                  </div>
+                )}
+              </div>
+
               {/* Container of simulated sheet */}
               <div 
                 id="printable-leave-sheet" 
@@ -1010,7 +1472,9 @@ export default function LeaveGeneratorPage() {
             </div>
 
           </div>
-        )}
+
+        </div>
+      )}
 
       </div>
       
