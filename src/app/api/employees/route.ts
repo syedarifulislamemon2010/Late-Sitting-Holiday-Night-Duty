@@ -70,7 +70,41 @@ export async function POST(request: Request) {
     if (sessionVal) {
       const userId = parseInt(sessionVal, 10);
       if (!isNaN(userId)) {
-        currentUser = await prisma.user.findUnique({ where: { id: userId } });
+        currentUser = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { cells: true }
+        });
+      }
+    }
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+
+    // 1. Enforce Cell verification for USER role
+    if (currentUser.role !== 'ADMIN') {
+      const userCellIds = currentUser.cells.map((c: any) => c.id);
+      if (!userCellIds.includes(parsedCellId)) {
+        return NextResponse.json({
+          error: 'forbidden',
+          message: 'এই সেলে কর্মকর্তা যোগ করার অনুমতি আপনার নেই।'
+        }, { status: 403 });
+      }
+
+      // 2. Enforce duplicate bankId restriction for officers already in another cell
+      if (bankId && bankId.trim() !== '') {
+        const existing = await prisma.employee.findFirst({
+          where: { bankId: bankId.trim() }
+        });
+        if (existing) {
+          // If the officer is already in another cell that the user is not assigned to
+          if (!userCellIds.includes(existing.cellId)) {
+            return NextResponse.json({
+              error: 'forbidden',
+              message: 'এই কর্মকর্তা অন্য সেলে কর্মরত আছেন। শুধুমাত্র সিস্টেম এডমিন এটি পরিবর্তন করতে পারবেন।'
+            }, { status: 403 });
+          }
+        }
       }
     }
 

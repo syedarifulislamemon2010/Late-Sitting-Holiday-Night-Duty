@@ -125,6 +125,7 @@ const STRICT_DESIGNATIONS = [
 ];
 
 export default function EmployeesPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'employees' | 'cells'>('employees');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -240,11 +241,15 @@ export default function EmployeesPage() {
   });
   const [showKeyInput, setShowKeyInput] = useState(false);
 
+  const selectableCells = currentUser?.role === 'ADMIN'
+    ? cells
+    : cells.filter(cell => currentUser?.cells?.some((c: any) => c.id === cell.id));
+
   useEffect(() => {
-    if (cells.length > 0 && !bulkEmpCellId) {
-      setBulkEmpCellId(cells[0].id.toString());
+    if (selectableCells.length > 0 && !bulkEmpCellId) {
+      setBulkEmpCellId(selectableCells[0].id.toString());
     }
-  }, [cells, bulkEmpCellId]);
+  }, [selectableCells, bulkEmpCellId]);
 
   // Fetch initial data
   async function loadData() {
@@ -266,7 +271,20 @@ export default function EmployeesPage() {
     }
   }
 
+
   useEffect(() => {
+    async function getProfile() {
+      try {
+        const res = await fetch('/api/auth');
+        const data = await res.json();
+        if (res.ok && data.authenticated) {
+          setCurrentUser(data.user);
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      }
+    }
+    getProfile();
     loadData();
   }, []);
 
@@ -721,22 +739,24 @@ export default function EmployeesPage() {
         </div>
         
         {/* TAB CONTROLLERS */}
-        <div className="flex bg-slate-200/60 dark:bg-slate-800/60 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/80 self-start md:self-auto shadow-inner">
-          <button
-            onClick={() => setActiveTab('employees')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'employees' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
-          >
-            <Users size={14} />
-            কর্মকর্তাবৃন্দ
-          </button>
-          <button
-            onClick={() => setActiveTab('cells')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'cells' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
-          >
-            <Building2 size={14} />
-            সেলসমূহ
-          </button>
-        </div>
+        {currentUser?.role === 'ADMIN' && (
+          <div className="flex bg-slate-200/60 dark:bg-slate-800/60 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/80 self-start md:self-auto shadow-inner">
+            <button
+              onClick={() => setActiveTab('employees')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'employees' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
+            >
+              <Users size={14} />
+              কর্মকর্তাবৃন্দ
+            </button>
+            <button
+              onClick={() => setActiveTab('cells')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'cells' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
+            >
+              <Building2 size={14} />
+              সেলসমূহ
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -773,7 +793,7 @@ export default function EmployeesPage() {
                 className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-indigo-500"
               >
                 <option value="all">সকল সেল (All Cells)</option>
-                {cells.map(c => (
+                {selectableCells.map(c => (
                   <option key={c.id} value={c.id.toString()}>{c.name}</option>
                 ))}
               </select>
@@ -787,29 +807,33 @@ export default function EmployeesPage() {
                 <Download size={16} />
                 এক্সপোর্ট করুন
               </button>
-              <button
-                onClick={() => {
-                  setBulkEmpText('');
-                  setBulkError('');
-                  setIsBulkEmpModalOpen(true);
-                }}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750"
-              >
-                <Plus size={16} />
-                বাল্ক টেক্সট আপলোড
-              </button>
-              <button
-                onClick={() => {
-                  setEditingEmp(null);
-                  setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', cellId: cells[0]?.id.toString() || '' });
-                  setErrorMessage('');
-                  setIsEmpModalOpen(true);
-                }}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors"
-              >
-                <Plus size={16} />
-                নতুন কর্মকর্তা যোগ করুন
-              </button>
+              {selectableCells.length > 0 && (
+                <>
+                  <button
+                    onClick={() => {
+                      setBulkEmpText('');
+                      setBulkError('');
+                      setIsBulkEmpModalOpen(true);
+                    }}
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750"
+                  >
+                    <Plus size={16} />
+                    বাল্ক টেক্সট আপলোড
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingEmp(null);
+                      setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', cellId: selectableCells[0]?.id.toString() || '' });
+                      setErrorMessage('');
+                      setIsEmpModalOpen(true);
+                    }}
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors"
+                  >
+                    <Plus size={16} />
+                    নতুন কর্মকর্তা যোগ করুন
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -877,28 +901,31 @@ export default function EmployeesPage() {
                                 </div>
                               </div>
 
-                              <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80 font-sans">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    startEditEmp(emp);
-                                  }}
-                                  className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-                                  title="সম্পাদনা"
-                                >
-                                  <Edit2 size={13} />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteEmployee(emp.id);
-                                  }}
-                                  className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-650 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
-                                  title="মুছে ফেলুন"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              </div>
+                              {(currentUser?.role === 'ADMIN' || 
+                                (currentUser?.cells && currentUser.cells.some((c: any) => c.id === emp.cellId))) && (
+                                <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80 font-sans">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      startEditEmp(emp);
+                                    }}
+                                    className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                                    title="সম্পাদনা"
+                                  >
+                                    <Edit2 size={13} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteEmployee(emp.id);
+                                    }}
+                                    className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-650 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
+                                    title="মুছে ফেলুন"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -1054,9 +1081,9 @@ export default function EmployeesPage() {
                 <select
                   value={empForm.cellId}
                   onChange={(e) => setEmpForm({ ...empForm, cellId: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
                 >
-                  {cells.map((c) => (
+                  {selectableCells.map((c) => (
                     <option key={c.id} value={c.id.toString()}>{c.name}</option>
                   ))}
                 </select>
@@ -1175,7 +1202,7 @@ export default function EmployeesPage() {
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
                 >
                   <option value="">সেল নির্বাচন করুন</option>
-                  {cells.map((c) => (
+                  {selectableCells.map((c) => (
                     <option key={c.id} value={c.id.toString()}>{c.name}</option>
                   ))}
                 </select>

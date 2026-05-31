@@ -20,12 +20,14 @@ interface Executive {
   designation: string;
   phone: string | null;
   email: string | null;
+  bankId: string | null;
+  fileNo: string | null;
   createdAt: string;
 }
 
 const STRICT_DESIGNATIONS = [
-  'উপ-মহাব্যবস্থাপক',
   'মহাব্যবস্থাপক',
+  'উপ-মহাব্যবস্থাপক',
   'সহকারী মহাব্যবস্থাপক'
 ];
 
@@ -119,6 +121,7 @@ const getPalette = (id: number) => {
 };
 
 export default function ExecutivesPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [executives, setExecutives] = useState<Executive[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -132,8 +135,8 @@ export default function ExecutivesPage() {
   const [form, setForm] = useState({
     name: '',
     designation: STRICT_DESIGNATIONS[0],
-    phone: '',
-    email: ''
+    bankId: '',
+    fileNo: ''
   });
 
   const [errorMessage, setErrorMessage] = useState('');
@@ -169,6 +172,18 @@ export default function ExecutivesPage() {
   }
 
   useEffect(() => {
+    async function getProfile() {
+      try {
+        const res = await fetch('/api/auth');
+        const data = await res.json();
+        if (res.ok && data.authenticated) {
+          setCurrentUser(data.user);
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      }
+    }
+    getProfile();
     loadData();
   }, []);
 
@@ -189,7 +204,12 @@ export default function ExecutivesPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({
+          name: form.name.trim(),
+          designation: form.designation.trim(),
+          bankId: form.bankId.trim() || null,
+          fileNo: form.fileNo.trim() || null
+        })
       });
       
       if (!res.ok) {
@@ -199,7 +219,7 @@ export default function ExecutivesPage() {
 
       setIsModalOpen(false);
       setEditingExec(null);
-      setForm({ name: '', designation: STRICT_DESIGNATIONS[0], phone: '', email: '' });
+      setForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '' });
       loadData();
     } catch (err: any) {
       setErrorMessage('সার্ভার সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
@@ -438,18 +458,31 @@ export default function ExecutivesPage() {
     setForm({
       name: exec.name,
       designation: STRICT_DESIGNATIONS.includes(exec.designation) ? exec.designation : STRICT_DESIGNATIONS[0],
-      phone: exec.phone || '',
-      email: exec.email || ''
+      bankId: exec.bankId || '',
+      fileNo: exec.fileNo || ''
     });
     setErrorMessage('');
     setIsModalOpen(true);
   };
 
-  // Filter lists
+  // Filter and Sort lists by designation priority (GM -> DGM -> AGM)
+  const desigPriority: Record<string, number> = {
+    'মহাব্যবস্থাপক': 1,
+    'উপ-মহাব্যবস্থাপক': 2,
+    'সহকারী মহাব্যবস্থাপক': 3
+  };
+
   const filteredExecutives = executives.filter(exec => {
     const matchesSearch = exec.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           exec.designation.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
+  }).sort((a, b) => {
+    const prioA = desigPriority[a.designation] || 99;
+    const prioB = desigPriority[b.designation] || 99;
+    if (prioA !== prioB) {
+      return prioA - prioB;
+    }
+    return a.id - b.id;
   });
 
   return (
@@ -495,29 +528,33 @@ export default function ExecutivesPage() {
                 <Download size={16} />
                 এক্সপোর্ট করুন
               </button>
-              <button
-                onClick={() => {
-                  setBulkText('');
-                  setBulkError('');
-                  setIsBulkModalOpen(true);
-                }}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750"
-              >
-                <Plus size={16} />
-                বাল্ক টেক্সট আপলোড
-              </button>
-              <button
-                onClick={() => {
-                  setEditingExec(null);
-                  setForm({ name: '', designation: STRICT_DESIGNATIONS[0], phone: '', email: '' });
-                  setErrorMessage('');
-                  setIsModalOpen(true);
-                }}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors"
-              >
-                <Plus size={16} />
-                নতুন নির্বাহী যুক্ত করুন
-              </button>
+              {currentUser?.role === 'ADMIN' && (
+                <>
+                  <button
+                    onClick={() => {
+                      setBulkText('');
+                      setBulkError('');
+                      setIsBulkModalOpen(true);
+                    }}
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750"
+                  >
+                    <Plus size={16} />
+                    বাল্ক টেক্সট আপলোড
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingExec(null);
+                      setForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '' });
+                      setErrorMessage('');
+                      setIsModalOpen(true);
+                    }}
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors"
+                  >
+                    <Plus size={16} />
+                    নতুন নির্বাহী যুক্ত করুন
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -541,24 +578,41 @@ export default function ExecutivesPage() {
                           Executive
                         </span>
                       </div>
+
+                      {(exec.bankId || exec.fileNo) && (
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                          {exec.bankId && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold">আইডি: {exec.bankId}</span>
+                            </div>
+                          )}
+                          {exec.fileNo && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold">নথি নং: {exec.fileNo}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80">
-                      <button
-                        onClick={() => startEditExec(exec)}
-                        className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-                        title="সম্পাদনা"
-                      >
-                        <Edit2 size={13} />
-                      </button>
-                      <button
-                        onClick={() => deleteExec(exec.id)}
-                        className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-655 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
-                        title="মুছে ফেলুন"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
+                    {currentUser?.role === 'ADMIN' && (
+                      <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80 font-sans">
+                        <button
+                          onClick={() => startEditExec(exec)}
+                          className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                          title="সম্পাদনা"
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                        <button
+                          onClick={() => deleteExec(exec.id)}
+                          className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-655 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
+                          title="মুছে ফেলুন"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -615,6 +669,28 @@ export default function ExecutivesPage() {
                     <option key={desig} value={desig}>{desig}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ব্যাংক আইডি (ঐচ্ছিক)</label>
+                <input
+                  type="text"
+                  placeholder="যেমন: 026799"
+                  value={form.bankId}
+                  onChange={(e) => setForm({ ...form, bankId: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ব্যক্তিগত নথি নম্বর (File No) (ঐচ্ছিক)</label>
+                <input
+                  type="text"
+                  placeholder="যেমন: DGM(Com)-026799"
+                  value={form.fileNo}
+                  onChange={(e) => setForm({ ...form, fileNo: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                />
               </div>
 
 
@@ -748,13 +824,13 @@ export default function ExecutivesPage() {
                   <span className="text-[10px] font-bold text-slate-400 uppercase">পদবী</span>
                   <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{profileExec.designation}</p>
                 </div>
-                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">মোবাইল নম্বর</span>
-                  <p className="text-xs font-bold text-slate-855 dark:text-slate-150 font-sans">{profileExec.phone || 'প্রদান করা হয়নি'}</p>
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যাংক আইডি</span>
+                  <p className="text-xs font-bold text-slate-855 dark:text-slate-150 font-sans">{profileExec.bankId || 'প্রদান করা হয়নি'}</p>
                 </div>
-                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">ইমেইল ঠিকানা</span>
-                  <p className="text-xs font-bold text-slate-855 dark:text-slate-150 font-sans">{profileExec.email || 'প্রদান করা হয়নি'}</p>
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যক্তিগত নথি নং</span>
+                  <p className="text-xs font-bold text-slate-855 dark:text-slate-150 font-sans">{profileExec.fileNo || 'প্রদান করা হয়নি'}</p>
                 </div>
               </div>
 
@@ -766,16 +842,18 @@ export default function ExecutivesPage() {
                 >
                   বন্ধ করুন
                 </button>
-                <button
-                  onClick={() => {
-                    const exec = profileExec;
-                    setProfileExec(null);
-                    startEditExec(exec);
-                  }}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors"
-                >
-                  সম্পাদনা করুন
-                </button>
+                {currentUser?.role === 'ADMIN' && (
+                  <button
+                    onClick={() => {
+                      const exec = profileExec;
+                      setProfileExec(null);
+                      startEditExec(exec);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    সম্পাদনা করুন
+                  </button>
+                )}
               </div>
             </div>
           </div>

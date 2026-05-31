@@ -2,11 +2,30 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 
+async function checkAdmin() {
+  const cookieStore = await cookies();
+  const sessionVal = cookieStore.get('session')?.value;
+  if (!sessionVal) return null;
+
+  const userId = parseInt(sessionVal, 10);
+  if (isNaN(userId)) return null;
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.role !== 'ADMIN') return null;
+
+  return user;
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await checkAdmin();
+    if (!admin) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+
     const { id } = await params;
     const execId = parseInt(id, 10);
     
@@ -15,7 +34,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, designation, phone, email } = body;
+    const { name, designation, phone, email, bankId, fileNo } = body;
 
     if (!name || !designation) {
       return NextResponse.json({ error: 'name_and_designation_required' }, { status: 400 });
@@ -27,7 +46,9 @@ export async function PUT(
         name: name.trim(),
         designation: designation.trim(),
         phone: phone?.trim() || null,
-        email: email?.trim() || null
+        email: email?.trim() || null,
+        bankId: bankId?.trim() || null,
+        fileNo: fileNo?.trim() || null
       }
     });
 
@@ -43,6 +64,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await checkAdmin();
+    if (!admin) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+
     const { id } = await params;
     const execId = parseInt(id, 10);
     
@@ -59,26 +85,13 @@ export async function DELETE(
     }
 
     // Save to Trash
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    let deletedBy: string | null = null;
-    if (sessionVal) {
-      const userId = parseInt(sessionVal, 10);
-      if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (user) {
-          deletedBy = user.username;
-        }
-      }
-    }
-
     await prisma.trash.create({
       data: {
         entityType: 'EXECUTIVE',
         entityId: execId,
         name: `নির্বাহী: ${executive.name} (${executive.designation})`,
         data: JSON.stringify(executive),
-        deletedBy
+        deletedBy: admin.username
       }
     });
 

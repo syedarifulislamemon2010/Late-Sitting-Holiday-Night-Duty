@@ -39,7 +39,61 @@ export async function PUT(
     if (sessionVal) {
       const userId = parseInt(sessionVal, 10);
       if (!isNaN(userId)) {
-        currentUser = await prisma.user.findUnique({ where: { id: userId } });
+        currentUser = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { cells: true }
+        });
+      }
+    }
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+
+    const existingEmployee = await prisma.employee.findUnique({
+      where: { id: employeeId }
+    });
+
+    if (!existingEmployee) {
+      return NextResponse.json({ error: 'employee_not_found', message: 'কর্মকর্তা পাওয়া যায়নি।' }, { status: 404 });
+    }
+
+    // 1. Enforce Cell verification for USER role
+    if (currentUser.role !== 'ADMIN') {
+      const userCellIds = currentUser.cells.map((c: any) => c.id);
+
+      // Verify user has access to existing employee's cell
+      if (!userCellIds.includes(existingEmployee.cellId)) {
+        return NextResponse.json({
+          error: 'forbidden',
+          message: 'এই কর্মকর্তার তথ্য সংশোধন করার অনুমতি আপনার নেই।'
+        }, { status: 403 });
+      }
+
+      // Verify user has access to target cell
+      if (!userCellIds.includes(parsedCellId)) {
+        return NextResponse.json({
+          error: 'forbidden',
+          message: 'এই সেলে কর্মকর্তা স্থানান্তর করার অনুমতি আপনার নেই।'
+        }, { status: 403 });
+      }
+
+      // Verify duplicate bankId restriction for officers already in another cell
+      if (bankId && bankId.trim() !== '') {
+        const existingConflict = await prisma.employee.findFirst({
+          where: {
+            bankId: bankId.trim(),
+            id: { not: employeeId }
+          }
+        });
+        if (existingConflict) {
+          if (!userCellIds.includes(existingConflict.cellId)) {
+            return NextResponse.json({
+              error: 'forbidden',
+              message: 'এই ব্যাংক আইডি অন্য সেলের কর্মকর্তার জন্য ব্যবহৃত হচ্ছে। শুধুমাত্র সিস্টেম এডমিন এটি পরিবর্তন করতে পারবেন।'
+            }, { status: 403 });
+          }
+        }
       }
     }
     
@@ -98,32 +152,48 @@ export async function DELETE(
     if (!employee) {
       return NextResponse.json({ error: 'employee_not_found' }, { status: 404 });
     }
-    
-    // Create soft-delete Trash entry
+
     const cookieStore = await cookies();
     const sessionVal = cookieStore.get('session')?.value;
+    let currentUser: any = null;
     let deletedBy: string | null = null;
     if (sessionVal) {
       const userId = parseInt(sessionVal, 10);
       if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (user) {
-          deletedBy = user.username;
-
-          const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
-          const userAgent = request.headers.get('user-agent') || 'Unknown';
-          await logActivity({
-            username: user.username,
-            action: 'DELETE',
-            entityType: 'EMPLOYEE',
-            entityId: String(employeeId),
-            ipAddress,
-            userAgent,
-            details: `${user.name} (@${user.username}) কর্মকর্তা "${employee.name}" (${employee.designation}) কে সিস্টেম থেকে সরিয়ে দিয়েছেন।`
-          });
-        }
+        currentUser = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { cells: true }
+        });
       }
     }
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
+    }
+
+    // Enforce Cell verification for USER role on delete
+    if (currentUser.role !== 'ADMIN') {
+      const userCellIds = currentUser.cells.map((c: any) => c.id);
+      if (!userCellIds.includes(employee.cellId)) {
+        return NextResponse.json({
+          error: 'forbidden',
+          message: 'এই কর্মকর্তা মুছে ফেলার অনুমতি আপনার নেই।'
+        }, { status: 403 });
+      }
+    }
+
+    deletedBy = currentUser.username;
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    const userAgent = request.headers.get('user-agent') || 'Unknown';
+    await logActivity({
+      username: currentUser.username,
+      action: 'DELETE',
+      entityType: 'EMPLOYEE',
+      entityId: String(employeeId),
+      ipAddress,
+      userAgent,
+      details: `${currentUser.name} (@${currentUser.username}) কর্মকর্তা "${employee.name}" (${employee.designation}) কে সিস্টেম থেকে সরিয়ে দিয়েছেন।`
+    });
 
     await prisma.trash.create({
       data: {

@@ -97,6 +97,8 @@ model Executive {
   designation String   // মহাব্যবস্থাপক (জিএম), উপ-মহাব্যবস্থাপক (ডিজিএম), সহকারী মহাব্যবস্থাপক (এজিএম)
   phone       String?
   email       String?
+  bankId      String?
+  fileNo      String?
   createdAt   DateTime @default(now())
 }
 
