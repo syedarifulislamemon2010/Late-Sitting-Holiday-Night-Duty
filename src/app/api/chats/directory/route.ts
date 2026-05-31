@@ -41,7 +41,27 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json(users);
+    // Retrieve employee designations to join with users by bankId (username)
+    const employees = await prisma.employee.findMany({
+      select: {
+        bankId: true,
+        designation: true
+      }
+    });
+
+    const employeeMap = new Map<string, string>();
+    employees.forEach(emp => {
+      if (emp.bankId) {
+        employeeMap.set(emp.bankId, emp.designation);
+      }
+    });
+
+    const usersWithDesignation = users.map(user => ({
+      ...user,
+      designation: employeeMap.get(user.username) || null
+    }));
+
+    return NextResponse.json(usersWithDesignation);
   } catch (error: any) {
     console.error('Error fetching chat directory:', error);
     return NextResponse.json({ error: 'failed_to_fetch_directory' }, { status: 500 });

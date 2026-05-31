@@ -65,6 +65,7 @@ interface DirectoryUser {
   name: string;
   role: string;
   cells: { id: number; name: string }[];
+  designation?: string | null;
 }
 
 const PRESET_EMOJIS = ['😀', '😂', '😍', '👍', '❤️', '🎉', '🔥', '👏', '🙏', '💡', '⚠️', '✅'];
@@ -975,32 +976,41 @@ export default function ChatPage() {
             </div>
 
             {/* Directory listing list */}
-            <div className="max-h-[280px] overflow-y-auto space-y-1.5 pr-1 divide-y divide-slate-50">
+            <div className="max-h-[280px] overflow-y-auto space-y-3 pr-1">
               {filteredDir.length === 0 ? (
                 <p className="text-[10px] text-slate-400 font-bold text-center py-8">কোনো কর্মকর্তা পাওয়া যায়নি।</p>
               ) : (
-                filteredDir.map((u) => {
-                  return (
-                    <div
-                      key={u.id}
-                      onClick={() => handleStartDM(u.id)}
-                      className="p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-all flex items-center justify-between border border-transparent hover:border-slate-200/50 mt-1"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-extrabold flex items-center justify-center text-xs uppercase shrink-0">
-                          {u.name.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-extrabold text-slate-800 truncate">{u.name}</p>
-                          <p className="text-[8px] text-slate-400 -mt-0.5 truncate">আইডিঃ {u.username} • {u.cells[0]?.name || 'সাধারণ সেকশন'}</p>
-                        </div>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[7px] font-black border leading-none shrink-0 ${getCategoryColor(u.role)}`}>
-                        {u.role === 'ADMIN' ? 'অ্যাডমিন' : 'ইউজার'}
+                Object.entries(groupUsersByCell(filteredDir)).map(([cellName, cellUsers]) => (
+                  <div key={cellName} className="space-y-1">
+                    <div className="sticky top-0 bg-white z-10 py-1 border-b border-slate-100/80 mb-1 flex items-center justify-between">
+                      <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50/60 border border-indigo-100/50 px-2.5 py-0.5 rounded-full">
+                        🏢 {cellName} ({toBanglaDigits(cellUsers.length)} জন)
                       </span>
                     </div>
-                  );
-                })
+                    {cellUsers.map((u) => (
+                      <div
+                        key={u.id}
+                        onClick={() => handleStartDM(u.id)}
+                        className="p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-all flex items-center justify-between border border-transparent hover:border-slate-200/50"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-extrabold flex items-center justify-center text-xs uppercase shrink-0">
+                            {u.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-extrabold text-slate-800 truncate">{u.name}</p>
+                            <p className="text-[8px] text-slate-400 -mt-0.5 truncate">
+                              {u.designation ? `${u.designation} • ` : ''}আইডিঃ {u.username}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-[7px] font-black border leading-none shrink-0 ${getCategoryColor(u.role)}`}>
+                          {u.role === 'ADMIN' ? 'অ্যাডমিন' : 'ইউজার'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))
               )}
             </div>
           </div>
@@ -1063,39 +1073,50 @@ export default function ChatPage() {
                   <Search size={11} className="absolute left-2.5 top-2.5 text-slate-400" />
                 </div>
 
-                <div className="max-h-[190px] overflow-y-auto space-y-1.5 pr-1 divide-y divide-slate-50">
+                <div className="max-h-[190px] overflow-y-auto space-y-3 pr-1">
                   {filteredDir.length === 0 ? (
                     <p className="text-[10px] text-slate-400 font-bold text-center py-6">কোনো কর্মকর্তা পাওয়া যায়নি।</p>
                   ) : (
-                    filteredDir.map((u) => {
-                      const isChecked = selectedGroupMembers.has(u.id);
-                      return (
-                        <div
-                          key={u.id}
-                          onClick={() => toggleGroupMember(u.id)}
-                          className="p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-all flex items-center justify-between border border-transparent hover:border-slate-200/50 mt-1"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => toggleGroupMember(u.id)}
-                              className="w-3.5 h-3.5 accent-indigo-600 rounded cursor-pointer shrink-0"
-                            />
-                            <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-extrabold flex items-center justify-center text-[10px] uppercase shrink-0">
-                              {u.name.charAt(0)}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-extrabold text-slate-800 truncate">{u.name}</p>
-                              <p className="text-[7px] text-slate-400 -mt-0.5 truncate">আইডিঃ {u.username} • {u.cells[0]?.name || 'সাধারণ সেকশন'}</p>
-                            </div>
-                          </div>
-                          <span className={`px-2 py-0.5 rounded-full text-[7px] font-black border leading-none shrink-0 ${getCategoryColor(u.role)}`}>
-                            {u.role === 'ADMIN' ? 'অ্যাডমিন' : 'ইউজার'}
+                    Object.entries(groupUsersByCell(filteredDir)).map(([cellName, cellUsers]) => (
+                      <div key={cellName} className="space-y-1">
+                        <div className="sticky top-0 bg-white z-10 py-1 border-b border-slate-100/80 mb-1">
+                          <span className="text-[8px] font-extrabold text-indigo-650 bg-indigo-50/60 border border-indigo-150/40 px-2 py-0.5 rounded-full">
+                            🏢 {cellName}
                           </span>
                         </div>
-                      );
-                    })
+                        {cellUsers.map((u) => {
+                          const isChecked = selectedGroupMembers.has(u.id);
+                          return (
+                            <div
+                              key={u.id}
+                              onClick={() => toggleGroupMember(u.id)}
+                              className="p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-all flex items-center justify-between border border-transparent hover:border-slate-200/50"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => toggleGroupMember(u.id)}
+                                  className="w-3.5 h-3.5 accent-indigo-600 rounded cursor-pointer shrink-0"
+                                />
+                                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-extrabold flex items-center justify-center text-[10px] uppercase shrink-0">
+                                  {u.name.charAt(0)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-extrabold text-slate-800 truncate">{u.name}</p>
+                                  <p className="text-[7px] text-slate-400 -mt-0.5 truncate">
+                                    {u.designation ? `${u.designation} • ` : ''}আইডিঃ {u.username}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-full text-[7px] font-black border leading-none shrink-0 ${getCategoryColor(u.role)}`}>
+                                {u.role === 'ADMIN' ? 'অ্যাডমিন' : 'ইউজার'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))
                   )}
                 </div>
               </div>
@@ -1122,4 +1143,17 @@ export default function ChatPage() {
 function toBanglaDigits(num: number | string): string {
   const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   return String(num).split('').map(d => banglaDigits[parseInt(d, 10)] || d).join('');
+}
+
+// Group directory users cell-wise
+function groupUsersByCell(usersList: DirectoryUser[]): { [cellName: string]: DirectoryUser[] } {
+  const groups: { [cellName: string]: DirectoryUser[] } = {};
+  usersList.forEach(u => {
+    const cellName = u.cells[0]?.name || 'সাধারণ সেকশন';
+    if (!groups[cellName]) {
+      groups[cellName] = [];
+    }
+    groups[cellName].push(u);
+  });
+  return groups;
 }

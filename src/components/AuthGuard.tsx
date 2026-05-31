@@ -330,8 +330,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // Loading spinner
   if (authenticated === null) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-[#e3f2fd]">
-        <div className="w-10 h-10 border-4 border-[#1976D2] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen w-full flex items-center justify-center bg-[#e3f2fd]" suppressHydrationWarning={true}>
+        <div className="w-10 h-10 border-4 border-[#1976D2] border-t-transparent rounded-full animate-spin" suppressHydrationWarning={true} />
       </div>
     );
   }
@@ -339,7 +339,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // Login Screen
   if (!authenticated) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden font-sans"
+      <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden font-sans" suppressHydrationWarning={true}
         style={{ background: 'linear-gradient(160deg, #e3f2fd 0%, #bbdefb 35%, #90caf9 65%, #64b5f6 100%)' }}
       >
         {/* Animated floating orbs */}
