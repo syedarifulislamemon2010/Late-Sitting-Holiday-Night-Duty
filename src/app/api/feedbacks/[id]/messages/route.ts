@@ -44,7 +44,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     }
 
     const body = await request.json();
-    const { message } = body;
+    const { message, attachmentUrl } = body;
 
     if (!message || message.trim() === '') {
       return NextResponse.json({ error: 'message_required' }, { status: 400 });
@@ -62,7 +62,8 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         data: {
           feedbackId,
           senderId: currentUser.id,
-          message: message.trim()
+          message: message.trim(),
+          attachmentUrl: attachmentUrl || null
         },
         include: {
           sender: {

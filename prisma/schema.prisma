@@ -26,6 +26,8 @@ model User {
   feedbacks Feedback[]
   messages  FeedbackMessage[]
   leaveApplications LeaveApplication[]
+  chatParticipants ChatParticipant[]
+  chatMessages     ChatMessage[]
   createdAt DateTime @default(now())
 }
 
@@ -133,13 +135,14 @@ model Feedback {
 }
 
 model FeedbackMessage {
-  id          Int      @id @default(autoincrement())
-  feedbackId  Int
-  feedback    Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
-  senderId    Int
-  sender      User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  message     String
-  createdAt   DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  feedbackId    Int
+  feedback      Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  senderId      Int
+  sender        User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  message       String
+  attachmentUrl String?  // Stored path of screenshot attachments
+  createdAt     DateTime @default(now())
 }
 
 model LeaveApplication {
@@ -177,6 +180,46 @@ model LeaveApplication {
   createdAt       DateTime @default(now())
 
   @@index([userId])
+}
+
+model Chat {
+  id           Int               @id @default(autoincrement())
+  type         String            // "DIRECT" (1-on-1) or "GROUP" (Multiple)
+  name         String?           // Only for GROUP chat
+  avatar       String?           // Optional group image path
+  creatorId    Int?              // Admin/creator user ID of group
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+}
+
+model ChatParticipant {
+  id         Int      @id @default(autoincrement())
+  chatId     Int
+  chat       Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt   DateTime @default(now())
+  lastReadAt DateTime @default(now())
+  
+  @@unique([chatId, userId])
+}
+
+model ChatMessage {
+  id              Int      @id @default(autoincrement())
+  chatId          Int
+  chat            Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  senderId        Int
+  sender          User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  message         String   // Text content (stored transparently encrypted via AES-256)
+  attachmentUrl   String?  // File attachment relative path
+  attachmentName  String?  // Original filename
+  attachmentSize  Int?     // Size in bytes
+  isUnsent        Boolean  @default(false) // Unsent for everyone
+  deletedForUsers String   @default("[]")  // JSON array of user IDs who deleted this message "for me"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 

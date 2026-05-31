@@ -15,7 +15,9 @@ import {
   Lightbulb,
   Zap,
   MinusCircle,
-  HelpCircle as QuestionIcon
+  HelpCircle as QuestionIcon,
+  Trash2,
+  Image
 } from 'lucide-react';
 
 interface FeedbackMessage {
@@ -23,6 +25,7 @@ interface FeedbackMessage {
   feedbackId: number;
   senderId: number;
   message: string;
+  attachmentUrl?: string;
   createdAt: string;
   sender: {
     id: number;
@@ -81,19 +84,135 @@ export default function FeedbackPage() {
   const [replyText, setReplyText] = useState('');
   const [replyLoading, setReplyLoading] = useState(false);
 
-  const chatBottomRef = useRef<HTMLDivElement>(null);
+  // Screenshot Upload State
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
+  // Clear staged image when switching threads or active tabs
   useEffect(() => {
-    // Get currentUser
-    const stored = localStorage.getItem('currentUser');
-    if (stored) {
-      try {
-        setCurrentUser(JSON.parse(stored));
-      } catch {
-        setCurrentUser(null);
+    handleClearSelectedImage();
+  }, [selectedFeedbackId, activeLeftTab]);
+
+  const handleClearSelectedImage = () => {
+    setSelectedImage(null);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl(null);
+    }
+  };
+
+  // Helper to stage selected image file
+  const stageImageFile = (file: File) => {
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      alert('শুধুমাত্র ইমেজ (.png, .jpg, .jpeg, .webp, .gif) ফাইল স্ক্রিনশট হিসেবে আপলোড করা যাবে।');
+      return;
+    }
+    // Set file and preview
+    setSelectedImage(file);
+    const url = URL.createObjectURL(file);
+    setImagePreviewUrl(url);
+  };
+
+  // Shared file upload function (returns uploaded relative URL or null)
+  const uploadScreenshotToServer = async (): Promise<string | null> => {
+    if (!selectedImage) return null;
+    try {
+      const form = new FormData();
+      form.append('file', selectedImage);
+      const res = await fetch('/api/feedbacks/upload', {
+        method: 'POST',
+        body: form
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.filePath;
+      } else {
+        const errData = await res.json();
+        alert(errData.message || 'ইমেজ আপলোড করতে সমস্যা হয়েছে।');
+        return null;
+      }
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      alert('নেটওয়ার্ক সমস্যার কারণে ইমেজ আপলোড করা যায়নি।');
+      return null;
+    }
+  };
+
+  // Clipboard Paste Interception Handler
+  const handleClipboardPaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          stageImageFile(file);
+          e.preventDefault(); // Stop default text pasting
+          break;
+        }
       }
     }
+  };
+
+  // Drag & Drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      stageImageFile(files[0]);
+    }
+  };
+
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const loadUser = () => {
+      const stored = localStorage.getItem('currentUser');
+      if (stored) {
+        try {
+          setCurrentUser(JSON.parse(stored));
+        } catch {
+          setCurrentUser(null);
+        }
+      } else {
+        // Fallback to API if not in localStorage yet
+        fetch('/api/auth')
+          .then(res => res.json())
+          .then(data => {
+            if (data.authenticated) {
+              setCurrentUser(data.user);
+              localStorage.setItem('currentUser', JSON.stringify(data.user));
+            }
+          })
+          .catch(() => setCurrentUser(null));
+      }
+    };
+
+    loadUser();
+    window.addEventListener('storage', loadUser);
+    window.addEventListener('user-profile-updated', loadUser);
+
     fetchFeedbacks();
+
+    return () => {
+      window.removeEventListener('storage', loadUser);
+      window.removeEventListener('user-profile-updated', loadUser);
+    };
   }, []);
 
   useEffect(() => {
@@ -127,13 +246,26 @@ export default function FeedbackPage() {
 
     try {
       setSubmitLoading(true);
+      
+      // 1. Upload screenshot if selected
+      let attachmentUrl: string | null = null;
+      if (selectedImage) {
+        attachmentUrl = await uploadScreenshotToServer();
+        if (!attachmentUrl) {
+          setSubmitLoading(false);
+          return;
+        }
+      }
+
+      // 2. Post thread creation
       const res = await fetch('/api/feedbacks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: newTitle.trim(),
           category: newCategory,
-          description: newDescription.trim()
+          description: newDescription.trim(),
+          attachmentUrl
         })
       });
 
@@ -144,6 +276,7 @@ export default function FeedbackPage() {
         setNewTitle('');
         setNewDescription('');
         setNewCategory('SUGGESTION');
+        handleClearSelectedImage();
         setActiveLeftTab('LIST'); // Switch back to feedback list
       }
     } catch (err) {
@@ -163,10 +296,25 @@ export default function FeedbackPage() {
 
     try {
       setReplyLoading(true);
+      
+      // 1. Upload screenshot if selected
+      let attachmentUrl: string | null = null;
+      if (selectedImage) {
+        attachmentUrl = await uploadScreenshotToServer();
+        if (!attachmentUrl) {
+          setReplyLoading(false);
+          return;
+        }
+      }
+
+      // 2. Post reply message
       const res = await fetch(`/api/feedbacks/${selectedFeedbackId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: replyText.trim() })
+        body: JSON.stringify({ 
+          message: replyText.trim(),
+          attachmentUrl
+        })
       });
 
       if (res.ok) {
@@ -187,6 +335,7 @@ export default function FeedbackPage() {
           return fb;
         }));
         setReplyText('');
+        handleClearSelectedImage();
       }
     } catch (err) {
       console.error('Error posting reply:', err);
@@ -471,16 +620,84 @@ export default function FeedbackPage() {
                   />
                 </div>
 
-                {/* Description Textarea */}
-                <div className="space-y-1 flex-1 flex flex-col">
-                  <label className="font-bold text-slate-500">বিস্তারিত বিবরণ ও প্রস্তাবনাঃ</label>
+                {/* Description Textarea with Drag and Drop / Paste support */}
+                <div 
+                  className={`space-y-1 flex-1 flex flex-col relative transition-all duration-205 rounded-xl p-0.5 ${isDragging ? 'ring-2 ring-indigo-500 bg-indigo-50/10' : ''}`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <label className="font-bold text-slate-500 flex items-center justify-between">
+                    <span>বিস্তারিত বিবরণ ও প্রস্তাবনাঃ</span>
+                    <span className="text-[9px] text-slate-400 font-normal">ইমেজ পেস্ট (Ctrl+V) বা ড্র্যাগ-ড্রপ করতে পারেন</span>
+                  </label>
+
                   <textarea
                     placeholder="আপনার সুনির্দিষ্ট প্রস্তাবনা, ফিচার আইডিয়া, কি কি সমস্যা ফেস করছেন, অথবা কি উন্নত করা উচিত তা বিস্তারিত লিখুন..."
                     value={newDescription}
                     onChange={(e) => setNewDescription(e.target.value)}
+                    onPaste={handleClipboardPaste}
                     className="w-full flex-1 px-3 py-2 bg-slate-50 border border-slate-250 rounded-xl outline-none focus:border-indigo-550 focus:bg-white font-semibold resize-none min-h-[100px]"
                     required
                   />
+
+                  {/* Drag and Drop Visual Overlay */}
+                  {isDragging && (
+                    <div className="absolute inset-0 bg-indigo-500/10 backdrop-blur-xs border-2 border-dashed border-indigo-500 rounded-xl flex items-center justify-center pointer-events-none z-10">
+                      <p className="text-[10px] font-extrabold text-indigo-700 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-full shadow-xs">
+                        স্ক্রিনশট ইমেজটি এখানে ছেড়ে দিন (Drop here)
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Hidden File Picker Input */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (files && files.length > 0) {
+                        stageImageFile(files[0]);
+                      }
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
+
+                  {/* Image Picker Trigger & Screenshot Preview Area */}
+                  <div className="pt-1 flex flex-col gap-2">
+                    {!imagePreviewUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-1.5 py-1 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-bold transition-all w-fit cursor-pointer border border-slate-200/60 hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <Image size={11} />
+                        স্ক্রিনশট ফাইল যুক্ত করুন
+                      </button>
+                    ) : (
+                      <div className="p-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between gap-3 shadow-inner">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img 
+                            src={imagePreviewUrl} 
+                            alt="Screenshot Preview" 
+                            className="w-12 h-12 object-cover rounded-lg border border-slate-200 dark:border-slate-800 shrink-0" 
+                          />
+                          <div className="min-w-0 text-[10px] font-semibold text-slate-500">
+                            <p className="truncate text-slate-800 dark:text-slate-200 font-extrabold">{selectedImage?.name || 'clipboard_screenshot.png'}</p>
+                            <p>{selectedImage ? `${(selectedImage.size / 1024).toFixed(1)} KB` : ''}</p>
+                          </div>
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={handleClearSelectedImage}
+                          className="p-1.5 hover:bg-rose-100 hover:text-rose-600 text-slate-400 rounded-lg transition-all hover:scale-110 active:scale-95 cursor-pointer shrink-0"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Submit Button Block (Neat and Clean Solid Indigo) */}
@@ -579,6 +796,26 @@ export default function FeedbackPage() {
 
                         {/* Telegram bubble content */}
                         <div className={`px-4 py-2.5 rounded-2xl text-[11px] leading-relaxed shadow-xs whitespace-pre-wrap ${isMyMessage ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-150 text-slate-800 rounded-tl-none'}`}>
+                          {msg.attachmentUrl && (
+                            <div className="mb-2.5 max-w-full rounded-lg overflow-hidden border border-slate-200/50 shadow-inner bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+                              <a 
+                                href={msg.attachmentUrl} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                title="ক্লিক করে বড় আকারে দেখুন" 
+                                className="block relative cursor-zoom-in group"
+                              >
+                                <img 
+                                  src={msg.attachmentUrl} 
+                                  alt="Attachment Screenshot" 
+                                  className="max-h-48 w-auto object-contain hover:opacity-90 transition-opacity" 
+                                />
+                                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] text-white font-bold transition-opacity">
+                                  🔍 নতুন ট্যাবে দেখুন
+                                </div>
+                              </a>
+                            </div>
+                          )}
                           {msg.message}
                           <div className={`text-[7px] font-bold text-right mt-1.5 select-none ${isMyMessage ? 'text-indigo-200' : 'text-slate-400'}`}>
                             {formatToBengaliDate(msg.createdAt)}
@@ -592,7 +829,45 @@ export default function FeedbackPage() {
               </div>
 
               {/* Bottom Send Reply Message Input box */}
-              <div className="p-4 bg-white border-t border-slate-150 shrink-0">
+              <div 
+                className={`p-4 bg-white border-t border-slate-150 shrink-0 relative transition-all duration-200 rounded-b-3xl ${isDragging ? 'bg-indigo-50/10 border-indigo-300' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                {/* Drag and drop overlay for reply area */}
+                {isDragging && (
+                  <div className="absolute inset-0 bg-indigo-500/10 backdrop-blur-xs border border-dashed border-indigo-500 rounded-b-3xl flex items-center justify-center pointer-events-none z-10">
+                    <p className="text-[9px] font-black text-indigo-700 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-full shadow-xs">
+                      স্ক্রিনশট ইমেজটি এখানে ছেড়ে দিন (Drop here)
+                    </p>
+                  </div>
+                )}
+
+                {/* Staged screenshot preview in reply box */}
+                {imagePreviewUrl && (
+                  <div className="mb-2.5 p-2 bg-indigo-50/20 dark:bg-slate-900/60 border border-indigo-100/50 dark:border-indigo-950/50 rounded-xl flex items-center justify-between gap-3 shadow-inner">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <img 
+                        src={imagePreviewUrl} 
+                        alt="Reply Attachment" 
+                        className="w-10 h-10 object-cover rounded-lg border border-slate-200 dark:border-slate-800 shrink-0" 
+                      />
+                      <div className="min-w-0 text-[9px] font-semibold text-slate-500">
+                        <p className="truncate text-slate-800 dark:text-slate-200 font-extrabold">{selectedImage?.name || 'pasted_screenshot.png'}</p>
+                        <p>{selectedImage ? `${(selectedImage.size / 1024).toFixed(1)} KB` : ''}</p>
+                      </div>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={handleClearSelectedImage}
+                      className="p-1 hover:bg-rose-100 hover:text-rose-600 text-slate-400 rounded-lg transition-all hover:scale-110 active:scale-95 cursor-pointer shrink-0"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
+
                 {selectedFeedback.status === 'RESOLVED' ? (
                   /* Reply Disabled UI when ticket is resolved */
                   <div className="bg-emerald-50/50 border border-emerald-150 rounded-xl p-3.5 text-center text-[10px] font-bold text-emerald-800 select-none">
@@ -600,19 +875,44 @@ export default function FeedbackPage() {
                   </div>
                 ) : (
                   <form onSubmit={handlePostReply} className="flex gap-2 items-center">
+                    {/* Hidden input sharing same file picker ref */}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={(e) => {
+                        const files = e.target.files;
+                        if (files && files.length > 0) {
+                          stageImageFile(files[0]);
+                        }
+                      }}
+                      accept="image/*"
+                      className="hidden"
+                    />
+
+                    {/* Screenshot attachment trigger button */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-2 hover:bg-slate-100 dark:hover:bg-slate-850 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-xl transition-all flex items-center justify-center cursor-pointer shrink-0 border border-slate-200/50 hover:scale-[1.02] active:scale-[0.98]"
+                      title="স্ক্রিনশট ফাইল আপলোড করুন"
+                    >
+                      <Image size={14} />
+                    </button>
+
                     <input
                       type="text"
-                      placeholder="এখানে আপনার উত্তর বা রিপ্লাই লিখুন..."
+                      placeholder="এখানে আপনার উত্তর বা রিপ্লাই লিখুন... (Ctrl+V দিয়ে সরাসরি স্ক্রিনশট পেস্ট করুন)"
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
+                      onPaste={handleClipboardPaste}
                       className="flex-1 px-4 py-2 border border-slate-200 bg-slate-50 focus:bg-white rounded-xl outline-none focus:border-indigo-500 text-xs font-semibold"
                       disabled={replyLoading}
                       required
                     />
                     <button
                       type="submit"
-                      disabled={replyLoading || !replyText.trim()}
-                      className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 active:scale-95 transition-all shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                      disabled={replyLoading || (!replyText.trim() && !selectedImage)}
+                      className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 active:scale-95 transition-all shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 hover:scale-[1.02]"
                     >
                       {replyLoading ? (
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

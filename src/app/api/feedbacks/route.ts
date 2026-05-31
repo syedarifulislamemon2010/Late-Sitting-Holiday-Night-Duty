@@ -45,6 +45,7 @@ export async function GET() {
               sender: {
                 select: {
                   id: true,
+                  username: true,
                   name: true,
                   role: true
                 }
@@ -78,6 +79,7 @@ export async function GET() {
               sender: {
                 select: {
                   id: true,
+                  username: true,
                   name: true,
                   role: true
                 }
@@ -125,7 +127,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, category, description } = body;
+    const { title, category, description, attachmentUrl } = body;
 
     if (!title || title.trim() === '') {
       return NextResponse.json({ error: 'title_required' }, { status: 400 });
@@ -154,7 +156,8 @@ export async function POST(request: Request) {
         data: {
           feedbackId: fb.id,
           senderId: currentUser.id,
-          message: description.trim()
+          message: description.trim(),
+          attachmentUrl: attachmentUrl || null
         }
       });
 
