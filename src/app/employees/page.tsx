@@ -247,6 +247,21 @@ export default function EmployeesPage() {
     ? cells
     : cells.filter(cell => currentUser?.cells?.some((c: any) => c.id === cell.id));
 
+  const formSelectableCells = (() => {
+    if (currentUser?.role === 'ADMIN') {
+      return cells;
+    }
+    if (editingEmp) {
+      const isEmon = editingEmp.name.includes('ইমন') || editingEmp.name.includes('Emon');
+      if (isEmon) {
+        return cells.filter(cell => currentUser?.cells?.some((c: any) => c.id === cell.id));
+      } else {
+        return cells.filter(cell => cell.id === editingEmp.cellId);
+      }
+    }
+    return cells.filter(cell => currentUser?.cells?.some((c: any) => c.id === cell.id));
+  })();
+
   useEffect(() => {
     if (selectableCells.length > 0 && !bulkEmpCellId) {
       setBulkEmpCellId(selectableCells[0].id.toString());
@@ -1098,7 +1113,7 @@ export default function EmployeesPage() {
                   onChange={(e) => setEmpForm({ ...empForm, cellId: e.target.value })}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
                 >
-                  {selectableCells.map((c) => (
+                  {formSelectableCells.map((c) => (
                     <option key={c.id} value={c.id.toString()}>{c.name}</option>
                   ))}
                 </select>
