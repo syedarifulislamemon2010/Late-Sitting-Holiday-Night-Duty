@@ -95,35 +95,14 @@ export async function POST(request: Request) {
           `;
         });
 
-        // Cell Sub-total Multi-rows (১ থেকে ৬ কলাম ও সেল ওয়াইজ আলাদা হিসেব)
+        // Cell Sub-total Unified Row (কলাম সারিবদ্ধ হিসাব)
         rowsHtml += `
-          <!-- ১. মোট দাবী রো -->
-          <tr style="background-color: #f8fafc; font-weight: bold; font-size: 9px;">
-            <td colspan="6" style="text-align: right; padding-right: 12px;">সর্বমোট দাবী (১ থেকে ${toBnDigits(cellGroup.records.length)} নং কর্মকর্তা) =</td>
+          <tr style="background-color: #cbd5e1; font-weight: bold; font-size: 9px;">
+            <td colspan="6" style="text-align: right; padding-right: 12px; font-weight: 900;">সর্বমোট (${cellGroup.cellName}) =</td>
             <td class="font-bold">${toBnDigits(cellClaim)}/-</td>
-            <td colspan="6">-</td>
-          </tr>
-          <!-- ২. রেভেনিউ স্ট্যাম্প রো -->
-          <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9px;">
-            <td colspan="7" style="text-align: right; padding-right: 12px;">রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট ${toBnDigits(cellGroup.records.length)} জনের) =</td>
-            <td style="color: #b45309;">৳${toBnDigits(cellStamp)}/-</td>
-            <td colspan="5">-</td>
-          </tr>
-          <!-- ৩. অতিরিক্ত কর্তন রো -->
-          <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9px;">
-            <td colspan="8" style="text-align: right; padding-right: 12px;">সর্বমোট অতিরিক্ত কর্তন =</td>
-            <td style="color: #b45309;">৳${toBnDigits(cellExtra)}/-</td>
-            <td colspan="4">-</td>
-          </tr>
-          <!-- ৪. মোট কর্তন রো -->
-          <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 9px;">
-            <td colspan="9" style="text-align: right; padding-right: 12px;">সর্বমোট কর্তন =</td>
-            <td style="color: #b91c1c;">৳${toBnDigits(cellStamp + cellExtra)}/-</td>
-            <td colspan="3">-</td>
-          </tr>
-          <!-- ৫. প্রাপ্তব্য রো -->
-          <tr style="background-color: #cbd5e1; font-weight: bold; font-size: 9.5px;">
-            <td colspan="10" style="text-align: right; padding-right: 12px; font-weight: 900;">সর্বমোট প্রাপ্তব্য (${cellGroup.cellName}) =</td>
+            <td style="color: #b45309; font-weight: bold;">৳${toBnDigits(cellStamp)}/-</td>
+            <td style="color: #b45309; font-weight: bold;">৳${toBnDigits(cellExtra)}/-</td>
+            <td style="color: #b91c1c; font-weight: 900;">৳${toBnDigits(cellStamp + cellExtra)}/-</td>
             <td style="color: #15803d; font-weight: 900;">৳${toBnDigits(cellGrand)}/-</td>
             <td colspan="2">-</td>
           </tr>
@@ -181,35 +160,14 @@ export async function POST(request: Request) {
         `;
       });
 
-      // Executive Sub-total Multi-rows
+      // Executive Sub-total Unified Row (কলাম সারিবদ্ধ হিসাব)
       rowsHtml += `
-        <!-- ১. মোট দাবী রো -->
-        <tr style="background-color: #fff1f2; font-weight: bold; font-size: 9px;">
-          <td colspan="6" style="text-align: right; padding-right: 12px; color: #db2777;">সর্বমোট দাবী (নির্বাহী প্যানেল) =</td>
+        <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 9px;">
+          <td colspan="6" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777;">সর্বমোট (নির্বাহী প্যানেল) =</td>
           <td class="font-bold" style="color: #db2777;">${toBnDigits(execClaim)}/-</td>
-          <td colspan="6">-</td>
-        </tr>
-        <!-- ২. রেভেনিউ স্ট্যাম্প রো -->
-        <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9px;">
-          <td colspan="7" style="text-align: right; padding-right: 12px; color: #db2777;">রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট ${toBnDigits(executivesData.records.length)} জনের) =</td>
-          <td style="color: #b45309;">৳${toBnDigits(execStamp)}/-</td>
-          <td colspan="5">-</td>
-        </tr>
-        <!-- ৩. অতিরিক্ত কর্তন রো -->
-        <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9px;">
-          <td colspan="8" style="text-align: right; padding-right: 12px; color: #db2777;">সর্বমোট অতিরিক্ত কর্তন =</td>
-          <td style="color: #b45309;">৳${toBnDigits(execExtra)}/-</td>
-          <td colspan="4">-</td>
-        </tr>
-        <!-- ৪. মোট কর্তন রো -->
-        <tr style="background-color: #fff1f2; font-weight: bold; font-size: 9px;">
-          <td colspan="9" style="text-align: right; padding-right: 12px; color: #db2777;">সর্বমোট কর্তন =</td>
-          <td style="color: #b91c1c;">৳${toBnDigits(execStamp + execExtra)}/-</td>
-          <td colspan="3">-</td>
-        </tr>
-        <!-- ৫. প্রাপ্তব্য রো -->
-        <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 9.5px;">
-          <td colspan="10" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777;">সর্বমোট প্রাপ্তব্য (নির্বাহী প্যানেল) =</td>
+          <td style="color: #b45309; font-weight: bold;">৳${toBnDigits(execStamp)}/-</td>
+          <td style="color: #b45309; font-weight: bold;">৳${toBnDigits(execExtra)}/-</td>
+          <td style="color: #b91c1c; font-weight: 900;">৳${toBnDigits(execStamp + execExtra)}/-</td>
           <td style="color: #db2777; font-weight: 900;">৳${toBnDigits(execGrand)}/-</td>
           <td colspan="2">-</td>
         </tr>
