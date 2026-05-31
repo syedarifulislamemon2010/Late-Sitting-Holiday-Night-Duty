@@ -325,7 +325,7 @@ export default function Dashboard() {
                 ঝটপট অ্যাডমিন অ্যাকশন
               </h3>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-sans">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 font-sans">
               <Link href="/roster" className="p-4 rounded-2xl bg-indigo-50/30 hover:bg-indigo-50 dark:bg-indigo-950/10 dark:hover:bg-indigo-950/20 border border-indigo-100/40 dark:border-indigo-900/20 text-center flex flex-col items-center gap-3 transition-all group cursor-pointer">
                 <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-200 dark:shadow-none group-hover:scale-110 transition-transform">
                   <CalendarPlus size={20} />
@@ -363,6 +363,16 @@ export default function Dashboard() {
                 <div>
                   <h4 className="text-xs font-bold text-sky-900 dark:text-sky-200">রোস্টার ও জেনারেট</h4>
                   <p className="text-[9px] text-slate-400 mt-1">অফিস আদেশ ডাউনলোড</p>
+                </div>
+              </Link>
+
+              <Link href="/lunch-bill" className="p-4 rounded-2xl bg-rose-50/30 hover:bg-rose-50 dark:bg-rose-950/10 dark:hover:bg-rose-950/20 border border-rose-100/40 dark:border-rose-900/20 text-center flex flex-col items-center gap-3 transition-all group cursor-pointer">
+                <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-200 dark:shadow-none group-hover:scale-110 transition-transform">
+                  <Receipt size={20} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-rose-900 dark:text-rose-200">লাঞ্চ বিল শিট</h4>
+                  <p className="text-[9px] text-slate-400 mt-1">খাবার ভাতার হিসাব</p>
                 </div>
               </Link>
             </div>

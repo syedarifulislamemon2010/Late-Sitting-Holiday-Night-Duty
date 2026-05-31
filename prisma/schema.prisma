@@ -13,6 +13,7 @@ model Cell {
   description String?
   employees   Employee[]
   users       User[]     @relation("UserCells")
+  lunchBills  LunchBill[]
   createdAt   DateTime   @default(now())
 }
 
@@ -224,6 +225,20 @@ model ChatMessage {
   deletedForUsers String   @default("[]")  // JSON array of user IDs who deleted this message "for me"
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model LunchBill {
+  id           Int      @id @default(autoincrement())
+  month        String   // YYYY-MM
+  cellId       Int
+  cell         Cell     @relation(fields: [cellId], references: [id], onDelete: Cascade)
+  workingDays  Int
+  recordsJson  String   // JSON string of records
+  generatedBy  String   // Username of creator
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([month, cellId])
 }
 
 
