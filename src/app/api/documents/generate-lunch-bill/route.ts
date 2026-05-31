@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         // Group Header
         rowsHtml += `
           <tr class="group-header-row">
-            <td colspan="11" style="background-color: #f1f5f9; font-weight: bold; text-align: left; padding: 6px 12px; font-size: 11px;">
+            <td colspan="13" style="background-color: #f1f5f9; font-weight: bold; text-align: left; padding: 6px 12px; font-size: 11px;">
               ● সেল: ${cellGroup.cellName}
             </td>
           </tr>
@@ -60,7 +60,6 @@ export async function POST(request: Request) {
         let cellExtra = 0;
         let cellClaim = 0;
         let cellGrand = 0;
-        let cellDays = 0;
 
         // Cell Officers Rows
         cellGroup.records.forEach((r: any) => {
@@ -71,7 +70,6 @@ export async function POST(request: Request) {
           cellExtra += additional;
           cellClaim += r.totalBill;
           cellGrand += r.netPayable;
-          cellDays += r.presentDays;
 
           totalStampAll += stamp;
           totalExtraAll += additional;
@@ -91,6 +89,8 @@ export async function POST(request: Request) {
               <td>${toBnDigits(additional)}/-</td>
               <td class="font-bold">${toBnDigits(totalDed)}/-</td>
               <td class="font-bold">${toBnDigits(r.netPayable)}/-</td>
+              <td style="height: 32px; vertical-align: bottom;"><span style="font-size: 7.5px; color: #888; border-top: 0.5px dashed #bbb; width: 85%; display: block; margin: 0 auto 2px auto;">স্বাক্ষর</span></td>
+              <td style="text-align: left; padding-left: 4px; font-size: 8px;">${r.remarks || ''}</td>
             </tr>
           `;
         });
@@ -98,33 +98,34 @@ export async function POST(request: Request) {
         // Cell Sub-total Multi-rows (১ থেকে ৬ কলাম ও সেল ওয়াইজ আলাদা হিসেব)
         rowsHtml += `
           <!-- ১. মোট দাবী রো -->
-          <tr style="background-color: #f8fafc; font-weight: bold; font-size: 9.5px;">
+          <tr style="background-color: #f8fafc; font-weight: bold; font-size: 9px;">
             <td colspan="6" style="text-align: right; padding-right: 12px;">সর্বমোট দাবী (১ থেকে ${toBnDigits(cellGroup.records.length)} নং কর্মকর্তা) =</td>
             <td class="font-bold">${toBnDigits(cellClaim)}/-</td>
-            <td colspan="4">-</td>
+            <td colspan="6">-</td>
           </tr>
           <!-- ২. রেভেনিউ স্ট্যাম্প রো -->
-          <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9.5px;">
+          <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9px;">
             <td colspan="7" style="text-align: right; padding-right: 12px;">রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট ${toBnDigits(cellGroup.records.length)} জনের) =</td>
             <td style="color: #b45309;">৳${toBnDigits(cellStamp)}/-</td>
-            <td colspan="3">-</td>
+            <td colspan="5">-</td>
           </tr>
           <!-- ৩. অতিরিক্ত কর্তন রো -->
-          <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9.5px;">
+          <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9px;">
             <td colspan="8" style="text-align: right; padding-right: 12px;">সর্বমোট অতিরিক্ত কর্তন =</td>
             <td style="color: #b45309;">৳${toBnDigits(cellExtra)}/-</td>
-            <td colspan="2">-</td>
+            <td colspan="4">-</td>
           </tr>
           <!-- ৪. মোট কর্তন রো -->
-          <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 9.5px;">
+          <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 9px;">
             <td colspan="9" style="text-align: right; padding-right: 12px;">সর্বমোট কর্তন =</td>
             <td style="color: #b91c1c;">৳${toBnDigits(cellStamp + cellExtra)}/-</td>
-            <td>-</td>
+            <td colspan="3">-</td>
           </tr>
           <!-- ৫. প্রাপ্তব্য রো -->
-          <tr style="background-color: #cbd5e1; font-weight: bold; font-size: 10px;">
+          <tr style="background-color: #cbd5e1; font-weight: bold; font-size: 9.5px;">
             <td colspan="10" style="text-align: right; padding-right: 12px; font-weight: 900;">সর্বমোট প্রাপ্তব্য (${cellGroup.cellName}) =</td>
             <td style="color: #15803d; font-weight: 900;">৳${toBnDigits(cellGrand)}/-</td>
+            <td colspan="2">-</td>
           </tr>
         `;
       });
@@ -135,7 +136,7 @@ export async function POST(request: Request) {
       // Group Header
       rowsHtml += `
         <tr class="group-header-row">
-          <td colspan="11" style="background-color: #fdf2f8; font-weight: bold; text-align: left; padding: 6px 12px; font-size: 11px; color: #db2777;">
+          <td colspan="13" style="background-color: #fdf2f8; font-weight: bold; text-align: left; padding: 6px 12px; font-size: 11px; color: #db2777;">
             ● নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
           </td>
         </tr>
@@ -174,6 +175,8 @@ export async function POST(request: Request) {
             <td>${toBnDigits(additional)}/-</td>
             <td class="font-bold">${toBnDigits(totalDed)}/-</td>
             <td class="font-bold">${toBnDigits(r.netPayable)}/-</td>
+            <td style="height: 32px; vertical-align: bottom;"><span style="font-size: 7.5px; color: #888; border-top: 0.5px dashed #bbb; width: 85%; display: block; margin: 0 auto 2px auto;">স্বাক্ষর</span></td>
+            <td style="text-align: left; padding-left: 4px; font-size: 8px;">${r.remarks || ''}</td>
           </tr>
         `;
       });
@@ -181,33 +184,34 @@ export async function POST(request: Request) {
       // Executive Sub-total Multi-rows
       rowsHtml += `
         <!-- ১. মোট দাবী রো -->
-        <tr style="background-color: #fff1f2; font-weight: bold; font-size: 9.5px;">
+        <tr style="background-color: #fff1f2; font-weight: bold; font-size: 9px;">
           <td colspan="6" style="text-align: right; padding-right: 12px; color: #db2777;">সর্বমোট দাবী (নির্বাহী প্যানেল) =</td>
           <td class="font-bold" style="color: #db2777;">${toBnDigits(execClaim)}/-</td>
-          <td colspan="4">-</td>
+          <td colspan="6">-</td>
         </tr>
         <!-- ২. রেভেনিউ স্ট্যাম্প রো -->
-        <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9.5px;">
+        <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9px;">
           <td colspan="7" style="text-align: right; padding-right: 12px; color: #db2777;">রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট ${toBnDigits(executivesData.records.length)} জনের) =</td>
           <td style="color: #b45309;">৳${toBnDigits(execStamp)}/-</td>
-          <td colspan="3">-</td>
+          <td colspan="5">-</td>
         </tr>
         <!-- ৩. অতিরিক্ত কর্তন রো -->
-        <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9.5px;">
+        <tr style="background-color: #fffdfd; font-weight: bold; font-size: 9px;">
           <td colspan="8" style="text-align: right; padding-right: 12px; color: #db2777;">সর্বমোট অতিরিক্ত কর্তন =</td>
           <td style="color: #b45309;">৳${toBnDigits(execExtra)}/-</td>
-          <td colspan="2">-</td>
+          <td colspan="4">-</td>
         </tr>
         <!-- ৪. মোট কর্তন রো -->
-        <tr style="background-color: #fff1f2; font-weight: bold; font-size: 9.5px;">
+        <tr style="background-color: #fff1f2; font-weight: bold; font-size: 9px;">
           <td colspan="9" style="text-align: right; padding-right: 12px; color: #db2777;">সর্বমোট কর্তন =</td>
           <td style="color: #b91c1c;">৳${toBnDigits(execStamp + execExtra)}/-</td>
-          <td>-</td>
+          <td colspan="3">-</td>
         </tr>
         <!-- ৫. প্রাপ্তব্য রো -->
-        <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 10px;">
+        <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 9.5px;">
           <td colspan="10" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777;">সর্বমোট প্রাপ্তব্য (নির্বাহী প্যানেল) =</td>
           <td style="color: #db2777; font-weight: 900;">৳${toBnDigits(execGrand)}/-</td>
+          <td colspan="2">-</td>
         </tr>
       `;
     }
@@ -228,30 +232,30 @@ export async function POST(request: Request) {
   }
   @page {
     size: A4 portrait;
-    margin-top: 0.4in;
-    margin-bottom: 0.5in;
-    margin-left: 0.5in;
-    margin-right: 0.4in;
+    margin-top: 0.35in;
+    margin-bottom: 0.4in;
+    margin-left: 0.4in;
+    margin-right: 0.35in;
   }
   body {
     font-family: "Noto Sans Bengali", "Kalpurush", sans-serif;
-    font-size: 9px;
+    font-size: 8px;
     line-height: 1.15;
     color: #000;
     background-color: #fff;
   }
   .header-container {
     width: 100%;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     text-align: center;
     line-height: 1.25;
   }
   .header-main-title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
   }
   .header-sub-title {
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: bold;
     color: #333;
     margin-top: 1px;
@@ -271,18 +275,18 @@ export async function POST(request: Request) {
     padding-bottom: 3px;
   }
   .cell-title {
-    font-size: 10px;
+    font-size: 9.5px;
     color: #111;
   }
   .report-date {
-    font-size: 8px;
+    font-size: 7.5px;
   }
   .report-title-box {
     text-align: center;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .report-title {
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: bold;
     text-decoration: underline;
     display: inline-block;
@@ -290,12 +294,12 @@ export async function POST(request: Request) {
   table {
     width: 100%;
     border-collapse: collapse;
-    margin: 6px 0;
-    font-size: 8.5px;
+    margin: 4px 0;
+    font-size: 7.5px;
   }
   th, td {
     border: 1px solid #000;
-    padding: 4px 2px;
+    padding: 3px 2px;
     text-align: center;
     vertical-align: middle;
   }
@@ -305,7 +309,7 @@ export async function POST(request: Request) {
   }
   .text-left {
     text-align: left;
-    padding-left: 4px;
+    padding-left: 3px;
   }
   .font-bold {
     font-weight: bold;
@@ -315,23 +319,23 @@ export async function POST(request: Request) {
     background-color: #cbd5e1;
   }
   .bill-summary-text {
-    margin-top: 8px;
-    font-size: 9px;
+    margin-top: 6px;
+    font-size: 8px;
     line-height: 1.4;
     text-align: justify;
   }
   .deductions-breakdown {
-    margin-top: 8px;
+    margin-top: 6px;
     border: 1px solid #000;
-    padding: 6px 10px;
+    padding: 5px 8px;
     background-color: #f8fafc;
     border-radius: 4px;
-    line-height: 1.4;
-    font-size: 8.5px;
+    line-height: 1.35;
+    font-size: 7.5px;
   }
   .signature-container {
     width: 100%;
-    margin-top: 0.6in;
+    margin-top: 0.5in;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -349,10 +353,7 @@ export async function POST(request: Request) {
   }
   .signature-title {
     font-weight: bold;
-    font-size: 8.5px;
-  }
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
+    font-size: 8px;
   }
 </style>
 </head>
@@ -375,30 +376,33 @@ export async function POST(request: Request) {
   <table>
     <thead>
       <tr>
-        <th style="width: 4%;">ক্রমিক</th>
-        <th style="width: 18%; text-align: left; padding-left: 4px;">কর্মকর্তার নাম</th>
-        <th style="width: 15%;">পদবী</th>
-        <th style="width: 8%;">দৈনিক হার</th>
-        <th style="width: 8%;">অনুপস্থিত দিন (CL)</th>
-        <th style="width: 8%;">উপস্থিত দিন</th>
-        <th style="width: 9%;">মোট দাবী</th>
-        <th style="width: 8%;">রেভেনিউ স্ট্যাম্প</th>
-        <th style="width: 8%;">অতিরিক্ত কর্তন</th>
-        <th style="width: 8%;">মোট কর্তন</th>
-        <th style="width: 10%;">প্রাপ্তব্য</th>
+        <th style="width: 3.5%;">ক্রমিক</th>
+        <th style="width: 15%; text-align: left; padding-left: 3px;">কর্মকর্তার নাম</th>
+        <th style="width: 12%;">পদবী</th>
+        <th style="width: 6.5%;">দৈনিক হার</th>
+        <th style="width: 6.5%;">অনুপস্থিত দিন (CL)</th>
+        <th style="width: 6.5%;">উপস্থিত দিন</th>
+        <th style="width: 8.5%;">মোট দাবী</th>
+        <th style="width: 7%;">রেভেনিউ স্ট্যাম্প</th>
+        <th style="width: 7.5%;">অতিরিক্ত কর্তন</th>
+        <th style="width: 7.5%;">মোট কর্তন</th>
+        <th style="width: 8.5%;">প্রাপ্তব্য</th>
+        <th style="width: 11%;">স্বাক্ষর</th>
+        <th style="width: 11%;">মন্তব্য</th>
       </tr>
     </thead>
     <tbody>
       ${rowsHtml}
       
       <!-- বিভাগীয় সর্বমোট সমন্বিত হিসাবসমূহ -->
-      <tr style="background-color: #e2e8f0; font-weight: bold; font-size: 10px;">
+      <tr style="background-color: #e2e8f0; font-weight: bold; font-size: 9.5px;">
         <td colspan="6" style="text-align: right; padding-right: 12px; font-weight: 900;">বিভাগীয় সর্বমোট সমন্বিত দাবী সমষ্টি =</td>
-        <td class="font-bold" style="font-size: 10.5px;">৳${toBnDigits(totalClaimAll)}/-</td>
+        <td class="font-bold" style="font-size: 10px;">৳${toBnDigits(totalClaimAll)}/-</td>
         <td>৳${toBnDigits(totalStampAll)}/-</td>
         <td>৳${toBnDigits(totalExtraAll)}/-</td>
         <td style="color: #b91c1c; font-weight: 900;">৳${toBnDigits(finalTotalDeduction)}/-</td>
-        <td style="color: #15803d; font-weight: 900; font-size: 10.5px;">৳${toBnDigits(grandTotalAll)}/-</td>
+        <td style="color: #15803d; font-weight: 900; font-size: 10px;">৳${toBnDigits(grandTotalAll)}/-</td>
+        <td colspan="2">-</td>
       </tr>
     </tbody>
   </table>
@@ -422,17 +426,17 @@ export async function POST(request: Request) {
     <div class="signature-block">
       <div class="signature-line"></div>
       <p class="signature-title">প্রস্তুতকারী কর্মকর্তা</p>
-      <p style="font-size: 8px; color: #444; margin-top: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+      <p style="font-size: 7.5px; color: #444; margin-top: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
     </div>
     <div class="signature-block">
       <div class="signature-line"></div>
       <p class="signature-title">যাচাইকারী কর্মকর্তা (এজিএম)</p>
-      <p style="font-size: 8px; color: #444; margin-top: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+      <p style="font-size: 7.5px; color: #444; margin-top: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
     </div>
     <div class="signature-block">
       <div class="signature-line"></div>
       <p class="signature-title">উপ-মহাব্যবস্থাপক</p>
-      <p style="font-size: 8px; color: #444; margin-top: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+      <p style="font-size: 7.5px; color: #444; margin-top: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
     </div>
   </div>
   

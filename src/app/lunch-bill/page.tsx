@@ -56,6 +56,7 @@ interface LunchRecord {
   netPayable: number;
   cellId: number;       // For cell officers
   isExecutive: boolean; // True for DGM/AGM
+  remarks?: string;      // Remarks/মন্তব্য
 }
 
 export default function LunchBillPage() {
@@ -182,7 +183,8 @@ export default function LunchBillPage() {
             setWorkingDays(data.workingDays);
             const parsed = JSON.parse(data.recordsJson).map((r: any) => ({
               ...r,
-              additionalDeduction: r.additionalDeduction ?? 0
+              additionalDeduction: r.additionalDeduction ?? 0,
+              remarks: r.remarks ?? ''
             }));
             setRecords(parsed);
             return;
@@ -208,7 +210,8 @@ export default function LunchBillPage() {
             additionalDeduction: 0,
             netPayable: (workingDays * 400) - 15,
             cellId: emp.cellId,
-            isExecutive: false
+            isExecutive: false,
+            remarks: ''
           });
         });
 
@@ -226,7 +229,8 @@ export default function LunchBillPage() {
             additionalDeduction: 0,
             netPayable: (workingDays * 400) - 15,
             cellId: 0, // No cell for executives
-            isExecutive: true
+            isExecutive: true,
+            remarks: ''
           });
         });
 
@@ -317,6 +321,13 @@ export default function LunchBillPage() {
     );
     applyDeductionRates('manual', flatDeductionRate, designationRates, workingDays, updated);
     setDeductionMode('manual');
+  };
+
+  const handleRemarksChange = (empId: number, isExec: boolean, val: string) => {
+    const updated = records.map(r => 
+      (r.employeeId === empId && r.isExecutive === isExec) ? { ...r, remarks: val } : r
+    );
+    setRecords(updated);
   };
 
   const handleWorkingDaysChange = (daysStr: string) => {
@@ -470,7 +481,7 @@ export default function LunchBillPage() {
     const execRecs = records.filter(r => r.isExecutive);
     const execsData = {
       records: execRecs,
-      totalDays: execRecs.reduce((sum, r) => sum + r.presentDays, 0),
+      totalDays: execRecs.reduce((sum, r) => sum + execRecs.reduce((s, o) => s + o.presentDays, 0), 0),
       totalClaim: execRecs.reduce((sum, r) => sum + r.totalBill, 0),
       totalDeduction: execRecs.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
       grandTotal: execRecs.reduce((sum, r) => sum + r.netPayable, 0)
@@ -640,7 +651,7 @@ export default function LunchBillPage() {
 
           {/* Dynamic configs dependent panel */}
           {isAdminOrAdminCell && deductionMode === 'flat' && (
-            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850/80 rounded-xl flex items-center gap-4 animate-fade-in">
+            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855/80 rounded-xl flex items-center gap-4 animate-fade-in">
               <span className="text-xs font-bold text-slate-500 uppercase">ফ্ল্যাট অতিরিক্ত কর্তনের হার:</span>
               <input
                 type="number"
@@ -654,14 +665,14 @@ export default function LunchBillPage() {
           )}
 
           {isAdminOrAdminCell && deductionMode === 'designation' && (
-            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850/80 rounded-xl grid grid-cols-2 sm:grid-cols-5 gap-4 animate-fade-in">
+            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855/80 rounded-xl grid grid-cols-2 sm:grid-cols-5 gap-4 animate-fade-in animate-scale-up">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">SPO / SSPO:</span>
                 <input
                   type="number"
                   value={designationRates.SPO}
                   onChange={(e) => applyDesignationRates('SPO', parseInt(e.target.value, 10) || 0)}
-                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs"
+                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs border-indigo-200 focus:border-indigo-550"
                 />
               </div>
               <div className="space-y-1">
@@ -831,6 +842,8 @@ export default function LunchBillPage() {
                               <th className="py-2.5 px-3">অতিরিক্ত কর্তন</th>
                               <th className="py-2.5 px-3">মোট কর্তন</th>
                               <th className="py-2.5 px-3">প্রাপ্তব্য</th>
+                              <th className="py-2.5 px-3">স্বাক্ষর</th>
+                              <th className="py-2.5 px-3">মন্তব্য</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
@@ -882,6 +895,23 @@ export default function LunchBillPage() {
                                   <td className="py-3 px-3">
                                     <span className="font-extrabold text-indigo-650 dark:text-indigo-400 font-sans text-sm">৳{toBanglaDigits(r.netPayable)}</span>
                                   </td>
+
+                                  {/* স্বাক্ষর */}
+                                  <td className="py-3 px-3 font-semibold text-xs text-slate-400 dark:text-slate-500 italic select-none">
+                                    হাতে স্বাক্ষর
+                                  </td>
+
+                                  {/* মন্তব্য */}
+                                  <td className="py-1 px-2 w-44">
+                                    <input
+                                      type="text"
+                                      disabled={!isAdminOrAdminCell}
+                                      value={r.remarks || ''}
+                                      placeholder="মন্তব্য লিখুন..."
+                                      onChange={(e) => handleRemarksChange(r.employeeId, false, e.target.value)}
+                                      className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-550 font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed text-left text-slate-800 dark:text-slate-100 font-medium"
+                                    />
+                                  </td>
                                 </tr>
                               );
                             })}
@@ -891,10 +921,10 @@ export default function LunchBillPage() {
                               <td colSpan={6} className="py-2.5 px-4 text-right pr-6 text-slate-500 text-xs">
                                 সর্বমোট দাবী (১ থেকে {toBanglaDigits(cellRecs.length)} নং কর্মকর্তা) =
                               </td>
-                              <td className="py-2.5 px-4 font-sans font-bold text-slate-850 dark:text-slate-200">
+                              <td className="py-2.5 px-4 font-sans font-bold text-slate-855 dark:text-slate-200">
                                 ৳{toBanglaDigits(cellClaim)}/-
                               </td>
-                              <td colSpan={4}>-</td>
+                              <td colSpan={6}>-</td>
                             </tr>
                             {/* ২. রেভেনিউ স্ট্যাম্প কর্তন রো */}
                             <tr className="bg-white dark:bg-slate-900 font-bold border-b border-slate-150">
@@ -904,7 +934,7 @@ export default function LunchBillPage() {
                               <td className="py-2.5 px-4 font-sans font-bold text-amber-600">
                                 ৳{toBanglaDigits(cellStamp)}/-
                               </td>
-                              <td colSpan={3}>-</td>
+                              <td colSpan={5}>-</td>
                             </tr>
                             {/* ৩. অতিরিক্ত কর্তন রো */}
                             <tr className="bg-white dark:bg-slate-900 font-bold border-b border-slate-150">
@@ -914,7 +944,7 @@ export default function LunchBillPage() {
                               <td className="py-2.5 px-4 font-sans font-bold text-amber-600">
                                 ৳{toBanglaDigits(cellExtra)}/-
                               </td>
-                              <td colSpan={2}>-</td>
+                              <td colSpan={4}>-</td>
                             </tr>
                             {/* ৪. মোট কর্তন রো */}
                             <tr className="bg-slate-50/50 dark:bg-slate-950/10 font-bold border-b border-slate-150">
@@ -924,7 +954,7 @@ export default function LunchBillPage() {
                               <td className="py-2.5 px-4 font-sans font-bold text-rose-600 dark:text-rose-450">
                                 ৳{toBanglaDigits(cellStamp + cellExtra)}/-
                               </td>
-                              <td>-</td>
+                              <td colSpan={3}>-</td>
                             </tr>
                             {/* ৫. প্রাপ্তব্য রো */}
                             <tr className="bg-indigo-50/20 dark:bg-indigo-950/10 font-extrabold border-b border-slate-150">
@@ -934,6 +964,7 @@ export default function LunchBillPage() {
                               <td className="py-3 px-4 font-sans font-bold text-emerald-600 dark:text-emerald-450 text-sm animate-pulse">
                                 ৳{toBanglaDigits(cellGrand)}/-
                               </td>
+                              <td colSpan={2}>-</td>
                             </tr>
                           </tbody>
                         </table>
@@ -980,6 +1011,8 @@ export default function LunchBillPage() {
                             <th className="py-2.5 px-3">অতিরিক্ত কর্তন</th>
                             <th className="py-2.5 px-3">মোট কর্তন</th>
                             <th className="py-2.5 px-3">প্রাপ্তব্য</th>
+                            <th className="py-2.5 px-3">স্বাক্ষর</th>
+                            <th className="py-2.5 px-3">মন্তব্য</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-rose-50 dark:divide-rose-950/20">
@@ -1009,7 +1042,7 @@ export default function LunchBillPage() {
                                 <td className="py-3 px-3 font-bold font-sans">{toBanglaDigits(r.presentDays)}</td>
                                 <td className="py-3 px-3 font-bold font-sans">৳{toBanglaDigits(r.totalBill)}</td>
                                 
-                                {/* रेवेन्यू स्टैम्प */}
+                                {/* রেভেনিউ স্ট্যাম্প */}
                                 <td className="py-3 px-3 font-bold font-sans text-slate-500">৳{toBanglaDigits(15)}</td>
 
                                 {/* অতিরিক্ত কর্তন */}
@@ -1024,12 +1057,29 @@ export default function LunchBillPage() {
                                   />
                                 </td>
 
-                                {/* कुल कटौती */}
-                                <td className="py-3 px-3 font-bold font-sans text-rose-700 dark:text-rose-450">৳{toBanglaDigits(totalDed)}</td>
+                                {/* মোট কর্তন */}
+                                <td className="py-3 px-3 font-bold font-sans text-rose-700 dark:text-rose-455">৳{toBanglaDigits(totalDed)}</td>
 
                                 {/* Net Payable */}
                                 <td className="py-3 px-3">
                                   <span className="font-extrabold text-rose-700 dark:text-rose-455 font-sans text-sm">৳{toBanglaDigits(r.netPayable)}</span>
+                                </td>
+
+                                {/* স্বাক্ষর */}
+                                <td className="py-3 px-3 font-semibold text-xs text-slate-400 dark:text-slate-500 italic select-none">
+                                  হাতে স্বাক্ষর
+                                </td>
+
+                                {/* মন্তব্য */}
+                                <td className="py-1 px-2 w-44">
+                                  <input
+                                    type="text"
+                                    disabled={!isAdminOrAdminCell}
+                                    value={r.remarks || ''}
+                                    placeholder="মন্তব্য লিখুন..."
+                                    onChange={(e) => handleRemarksChange(r.employeeId, true, e.target.value)}
+                                    className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-550 font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed text-left text-slate-800 dark:text-slate-100 font-medium"
+                                  />
                                 </td>
                               </tr>
                             );
@@ -1043,7 +1093,7 @@ export default function LunchBillPage() {
                             <td className="py-2.5 px-4 font-sans font-bold text-rose-900 dark:text-rose-200">
                               ৳{toBanglaDigits(execClaim)}/-
                             </td>
-                            <td colSpan={4}>-</td>
+                            <td colSpan={6}>-</td>
                           </tr>
                           {/* ২. রেভেনিউ স্ট্যাম্প কর্তন রো */}
                           <tr className="bg-white dark:bg-slate-900 font-bold">
@@ -1053,7 +1103,7 @@ export default function LunchBillPage() {
                             <td className="py-2.5 px-4 font-sans font-bold text-amber-600">
                               ৳{toBanglaDigits(execStamp)}/-
                             </td>
-                            <td colSpan={3}>-</td>
+                            <td colSpan={5}>-</td>
                           </tr>
                           {/* ৩. অতিরিক্ত কর্তন রো */}
                           <tr className="bg-white dark:bg-slate-900 font-bold">
@@ -1063,7 +1113,7 @@ export default function LunchBillPage() {
                             <td className="py-2.5 px-4 font-sans font-bold text-amber-600">
                               ৳{toBanglaDigits(execExtra)}/-
                             </td>
-                            <td colSpan={2}>-</td>
+                            <td colSpan={4}>-</td>
                           </tr>
                           {/* ৪. মোট কর্তন রো */}
                           <tr className="bg-rose-50/15 dark:bg-rose-950/5 font-bold">
@@ -1073,7 +1123,7 @@ export default function LunchBillPage() {
                             <td className="py-2.5 px-4 font-sans font-bold text-rose-600 dark:text-rose-455">
                               ৳{toBanglaDigits(execStamp + execExtra)}/-
                             </td>
-                            <td>-</td>
+                            <td colSpan={3}>-</td>
                           </tr>
                           {/* ৫. প্রাপ্তব্য রো */}
                           <tr className="bg-rose-100/30 dark:bg-rose-950/20 font-extrabold">
@@ -1083,6 +1133,7 @@ export default function LunchBillPage() {
                             <td className="py-3 px-4 font-sans font-bold text-rose-750 dark:text-rose-400 text-sm">
                               ৳{toBanglaDigits(execGrand)}/-
                             </td>
+                            <td colSpan={2}>-</td>
                           </tr>
                         </tbody>
                       </table>
@@ -1092,9 +1143,9 @@ export default function LunchBillPage() {
               })()}
 
               {/* Deductions Breakdown Summary Box */}
-              <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2">
-                <h5 className="font-extrabold text-slate-850 dark:text-slate-100 text-xs">● কর্তনের বিস্তারিত বিবরণী:</h5>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-slate-600 dark:text-slate-350">
+              <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2 animate-scale-up">
+                <h5 className="font-extrabold text-slate-855 dark:text-slate-100 text-xs">● কর্তনের বিস্তারিত বিবরণী:</h5>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-slate-600 dark:text-slate-355">
                   <p>- রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট {toBanglaDigits(totalEmployeesCount)} জনের): <span className="font-extrabold font-sans text-slate-850 dark:text-slate-100">৳{toBanglaDigits(totalStampAll)}</span></p>
                   <p>- অতিরিক্ত কর্তন (ডিজিএম/নির্বাহী নির্দেশানুযায়ী): <span className="font-extrabold font-sans text-slate-850 dark:text-slate-100">৳{toBanglaDigits(totalExtraAll)}</span></p>
                   <p className="sm:border-l border-slate-250 dark:border-slate-750 sm:pl-4 font-extrabold" style={{ color: '#db2777' }}>
@@ -1106,7 +1157,7 @@ export default function LunchBillPage() {
               {/* Grand Unified Summary Table Footer Breakdown */}
               <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                 <div className="px-5 py-3 bg-slate-100/50 dark:bg-slate-950/20 border-b border-slate-200 dark:border-slate-800">
-                  <span className="font-extrabold text-xs text-slate-850 dark:text-slate-50 uppercase tracking-wide">
+                  <span className="font-extrabold text-xs text-slate-855 dark:text-slate-50 uppercase tracking-wide">
                     বিভাগীয় সমন্বিত হিসাব বিবরণী (Grand Summary Table Footer Breakdown)
                   </span>
                 </div>
@@ -1118,15 +1169,16 @@ export default function LunchBillPage() {
                         <td colSpan={6} className="py-2.5 px-4 text-right pr-6 text-slate-500">
                           বিভাগীয় সর্বমোট সমন্বিত দাবী সমষ্টি =
                         </td>
-                        <td className="py-2.5 px-4 font-sans font-bold w-28">৳{toBanglaDigits(totalClaimAll)}/-</td>
+                        <td className="py-2.5 px-4 font-sans font-bold w-24">৳{toBanglaDigits(totalClaimAll)}/-</td>
                         <td className="py-2.5 px-4 font-sans font-bold w-24">৳{toBanglaDigits(totalStampAll)}/-</td>
-                        <td className="py-2.5 px-4 font-sans font-bold w-28">৳{toBanglaDigits(totalExtraAll)}/-</td>
-                        <td className="py-2.5 px-4 font-sans font-bold text-rose-600 dark:text-rose-400 w-28">
+                        <td className="py-2.5 px-4 font-sans font-bold w-24">৳{toBanglaDigits(totalExtraAll)}/-</td>
+                        <td className="py-2.5 px-4 font-sans font-bold text-rose-600 dark:text-rose-450 w-24">
                           ৳{toBanglaDigits(totalDeductionAll)}/-
                         </td>
-                        <td className="py-2.5 px-4 font-sans font-bold text-emerald-600 dark:text-emerald-400 text-base w-32 animate-pulse">
+                        <td className="py-2.5 px-4 font-sans font-bold text-emerald-600 dark:text-emerald-450 text-base w-28 animate-pulse">
                           ৳{toBanglaDigits(grandTotalAll)}/-
                         </td>
+                        <td colSpan={2} className="w-48">-</td>
                       </tr>
                     </tbody>
                   </table>
@@ -1149,7 +1201,7 @@ export default function LunchBillPage() {
               <Lock size={28} />
             </div>
             <div className="space-y-2">
-              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">লাঞ্চ বিল প্রস্তুত করা হয়নি</h3>
+              <h3 className="font-extrabold text-slate-850 dark:text-slate-100 text-lg">লাঞ্চ বিল প্রস্তুত করা হয়নি</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
                 {isAdminOrAdminCell 
                   ? 'এই সেলে এই মাসের কোনো সক্রিয় কর্মকর্তা ডেটাবেজে তালিকাভুক্ত নেই। অনুগ্রহ করে কর্মকর্তা তথ্য যুক্ত করুন।'
@@ -1196,10 +1248,10 @@ export default function LunchBillPage() {
         {/* Premium In-Page Print Preview Modal */}
         {isPreviewOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
-            <div className="bg-white dark:bg-slate-950 w-full max-w-5xl rounded-[32px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-scale-up h-[90vh]">
+            <div className="bg-white dark:bg-slate-955 w-full max-w-5xl rounded-[32px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-scale-up h-[90vh]">
               
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between">
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-855 flex items-center justify-between">
                 <div>
                   <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-sm">ইন-পেজ লাঞ্চ বিল প্রিন্ট প্রিভিউ</h4>
                   <p className="text-[10px] text-slate-400 mt-0.5">নতুন ট্যাবে ওপেন না করে সরাসরি ড্যাশবোর্ড থেকে প্রিভিউ করুন।</p>
@@ -1228,11 +1280,11 @@ export default function LunchBillPage() {
               </div>
 
               {/* Modal Body: Printable HTML loaded inside Iframe */}
-              <div className="flex-1 bg-slate-50/50 dark:bg-slate-950/10 p-4 relative">
+              <div className="flex-1 bg-slate-50/50 dark:bg-slate-955/10 p-4 relative">
                 <iframe 
                   id="preview-print-iframe"
                   src={iframeUrl}
-                  className="w-full h-full border border-slate-150 dark:border-slate-850 rounded-2xl shadow-inner bg-white"
+                  className="w-full h-full border border-slate-150 dark:border-slate-850 rounded-2xl shadow-inner bg-white animate-scale-up"
                 />
               </div>
 
