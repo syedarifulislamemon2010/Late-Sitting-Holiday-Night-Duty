@@ -28,7 +28,7 @@ function abbreviateDesignation(desig: string | null | undefined): string {
   if (lower.includes('উপ-মহাব্যবস্থাপক') || lower.includes('ডিজিএম') || lower.includes('dgm')) {
     return 'ডিজিএম';
   }
-  if (lower.includes('সহকারী মহাব্যবস্থাপক') || lower.includes('এজিএম') || lower.includes('agm')) {
+  if (lower.includes('सहकारी महाव्यबस्थापक') || lower.includes('এজিএম') || lower.includes('agm')) {
     return 'এজিএম';
   }
   if (lower.includes('মহাব্যবস্থাপক') || lower.includes('জিএম') || lower.includes('gm')) {
@@ -51,15 +51,14 @@ function abbreviateDesignation(desig: string | null | undefined): string {
 
 export async function POST(request: Request) {
   try {
-    const payload = await request.url.includes('generate-lunch-bill') ? await request.json() : {};
+    const payload = await request.json();
     const {
       monthName,
-      groupedData, // Array of: { cellName, records, totalDays, totalClaim, totalDeduction, grandTotal }
-      executivesData, // { records, totalDays, totalClaim, totalDeduction, grandTotal }
-      workingDays,
-      totalDaysAll,
+      groupedData, // Array of: { cellName, records, totalClaim, totalDeduction, grandTotal }
+      executivesData, // { records, totalClaim, totalDeduction, grandTotal }
+      totalEmployeesCount,
       totalClaimAll,
-      totalDeductionAll,
+      totalStampAll,
       grandTotalAll,
       grandTotalInWords,
       reportDate
@@ -67,25 +66,17 @@ export async function POST(request: Request) {
 
     let tablesHtml = '';
     let globalIndex = 1;
-    let totalEmployeesCount = 0;
-    let totalStampAll = 0;
-    let totalExtraAll = 0;
 
     const tableHeaders = `
       <thead>
         <tr>
-          <th style="width: 4%;">ক্রমিক</th>
-          <th style="width: 18%; text-align: left; padding-left: 3px;">কর্মকর্তার নাম</th>
-          <th style="width: 10%;">পদবী</th>
-          <th style="width: 10%;">ব্যাংক আইডি</th>
-          <th style="width: 8%;">দৈনিক হার</th>
-          <th style="width: 8%;">উপস্থিত দিন</th>
-          <th style="width: 8%;">অনুপস্থিত দিন (CL)</th>
-          <th style="width: 9%;">মোট দাবী</th>
-          <th style="width: 8%;">রেভেনিউ স্ট্যাম্প</th>
-          <th style="width: 8%;">অতিরিক্ত কর্তন</th>
-          <th style="width: 8%;">মোট কর্তন</th>
-          <th style="width: 9%;">প্রাপ্তব্য</th>
+          <th style="width: 5%;">ক্রমিক</th>
+          <th style="width: 25%; text-align: left; padding-left: 3px;">কর্মকর্তার নাম</th>
+          <th style="width: 15%;">পদবী</th>
+          <th style="width: 15%;">ব্যাংক আইডি</th>
+          <th style="width: 13%;">ভাতার পরিমাণ</th>
+          <th style="width: 13%;">রেভেনিউ স্ট্যাম্প</th>
+          <th style="width: 14%;">প্রাপ্তব্য</th>
         </tr>
       </thead>
     `;
@@ -95,46 +86,29 @@ export async function POST(request: Request) {
       groupedData.forEach((cellGroup: any) => {
         if (!cellGroup.records || cellGroup.records.length === 0) return;
 
-        let cellStamp = 0;
-        let cellExtra = 0;
         let cellClaim = 0;
+        let cellStamp = 0;
         let cellGrand = 0;
         let cellRows = '';
 
-        // Cell Officers Rows
         cellGroup.records.forEach((r: any) => {
-          totalEmployeesCount++;
-          const stamp = 15;
-          const additional = r.additionalDeduction ?? 0;
-          cellStamp += stamp;
-          cellExtra += additional;
-          cellClaim += r.totalBill;
-          cellGrand += r.netPayable;
-
-          totalStampAll += stamp;
-          totalExtraAll += additional;
-
-          const totalDed = stamp + additional;
+          cellClaim += 2000;
+          cellStamp += 15;
+          cellGrand += 1985;
           
           cellRows += `
             <tr>
-              <td style="width: 4%;">${toBnDigits(globalIndex++)}</td>
-              <td class="text-left font-bold" style="width: 18%;">${r.employeeName}</td>
-              <td style="width: 10%;">${abbreviateDesignation(r.designation)}</td>
-              <td style="width: 10%; font-family: sans-serif; font-size: 8.5px;">${r.bankId || '-'}</td>
-              <td style="width: 8%;">${toBnDigits(400)}/-</td>
-              <td style="width: 8%;">${toBnDigits(r.presentDays)}</td>
-              <td style="width: 8%;">${toBnDigits(r.absenceDays)}</td>
-              <td class="font-bold" style="width: 9%;">${toBnDigits(r.totalBill)}/-</td>
-              <td style="width: 8%;">${toBnDigits(stamp)}/-</td>
-              <td style="width: 8%;">${toBnDigits(additional)}/-</td>
-              <td class="font-bold" style="width: 8%;">${toBnDigits(totalDed)}/-</td>
-              <td class="font-bold" style="width: 9%;">${toBnDigits(r.netPayable)}/-</td>
+              <td style="width: 5%;">${toBnDigits(globalIndex++)}</td>
+              <td class="text-left font-bold" style="width: 25%;">${r.employeeName}</td>
+              <td style="width: 15%;">${abbreviateDesignation(r.designation)}</td>
+              <td style="width: 15%; font-family: sans-serif; font-size: 8.5px;">${r.bankId || '-'}</td>
+              <td style="width: 13%;">${toBnDigits(2000)}/-</td>
+              <td style="width: 13%;">${toBnDigits(15)}/-</td>
+              <td class="font-bold" style="width: 14%;">${toBnDigits(1985)}/-</td>
             </tr>
           `;
         });
 
-        // Add the table for this cell
         tablesHtml += `
           <div style="margin-bottom: 12px; page-break-inside: avoid;">
             <div style="background-color: #f1f5f9; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 9px; border: 1px solid #000; border-bottom: none;">
@@ -145,12 +119,10 @@ export async function POST(request: Request) {
               <tbody>
                 ${cellRows}
                 <tr style="background-color: #cbd5e1; font-weight: bold; font-size: 10px;">
-                  <td colspan="7" style="text-align: right; padding-right: 12px; font-weight: 900; width: 66%;">সর্বমোট (${cellGroup.cellName}) =</td>
-                  <td class="font-bold" style="width: 9%;">৳${toBnDigits(cellClaim)}/-</td>
-                  <td style="color: #b45309; font-weight: bold; width: 8%;">৳${toBnDigits(cellStamp)}/-</td>
-                  <td style="color: #b45309; font-weight: bold; width: 8%;">৳${toBnDigits(cellExtra)}/-</td>
-                  <td style="color: #b91c1c; font-weight: 900; width: 8%;">৳${toBnDigits(cellStamp + cellExtra)}/-</td>
-                  <td style="color: #15803d; font-weight: 900; width: 9%;">৳${toBnDigits(cellGrand)}/-</td>
+                  <td colspan="4" style="text-align: right; padding-right: 12px; font-weight: 900; width: 60%;">সর্বমোট (${cellGroup.cellName}) =</td>
+                  <td class="font-bold" style="width: 13%;">৳${toBnDigits(cellClaim)}/-</td>
+                  <td style="color: #b45309; font-weight: bold; width: 13%;">৳${toBnDigits(cellStamp)}/-</td>
+                  <td style="color: #15803d; font-weight: 900; width: 14%;">৳${toBnDigits(cellGrand)}/-</td>
                 </tr>
               </tbody>
             </table>
@@ -161,41 +133,25 @@ export async function POST(request: Request) {
 
     // 2. Render DGM & AGM Executives
     if (executivesData && executivesData.records && executivesData.records.length > 0) {
-      let execStamp = 0;
-      let execExtra = 0;
       let execClaim = 0;
+      let execStamp = 0;
       let execGrand = 0;
       let execRows = '';
 
-      // Executive Rows
       executivesData.records.forEach((r: any) => {
-        totalEmployeesCount++;
-        const stamp = 15;
-        const additional = r.additionalDeduction ?? 0;
-        execStamp += stamp;
-        execExtra += additional;
-        execClaim += r.totalBill;
-        execGrand += r.netPayable;
-
-        totalStampAll += stamp;
-        totalExtraAll += additional;
-
-        const totalDed = stamp + additional;
+        execClaim += 2000;
+        execStamp += 15;
+        execGrand += 1985;
 
         execRows += `
           <tr style="background-color: #fffdfd;">
-            <td style="width: 4%;">${toBnDigits(globalIndex++)}</td>
-            <td class="text-left font-bold" style="color: #c2185b; width: 18%;">${r.employeeName}</td>
-            <td style="color: #c2185b; font-weight: bold; width: 10%;">${abbreviateDesignation(r.designation)}</td>
-            <td style="color: #c2185b; font-family: sans-serif; font-size: 8.5px; width: 10%;">${r.bankId || '-'}</td>
-            <td style="width: 8%;">${toBnDigits(400)}/-</td>
-            <td style="width: 8%;">${toBnDigits(r.presentDays)}</td>
-            <td style="width: 8%;">${toBnDigits(r.absenceDays)}</td>
-            <td class="font-bold" style="width: 9%;">${toBnDigits(r.totalBill)}/-</td>
-            <td style="width: 8%;">${toBnDigits(stamp)}/-</td>
-            <td style="width: 8%;">${toBnDigits(additional)}/-</td>
-            <td class="font-bold" style="width: 8%;">${toBnDigits(totalDed)}/-</td>
-            <td class="font-bold" style="width: 9%;">${toBnDigits(r.netPayable)}/-</td>
+            <td style="width: 5%;">${toBnDigits(globalIndex++)}</td>
+            <td class="text-left font-bold" style="color: #c2185b; width: 25%;">${r.employeeName}</td>
+            <td style="color: #c2185b; font-weight: bold; width: 15%;">${abbreviateDesignation(r.designation)}</td>
+            <td style="color: #c2185b; font-family: sans-serif; font-size: 8.5px; width: 15%;">${r.bankId || '-'}</td>
+            <td style="width: 13%;">${toBnDigits(2000)}/-</td>
+            <td style="width: 13%;">${toBnDigits(15)}/-</td>
+            <td class="font-bold" style="width: 14%;">${toBnDigits(1985)}/-</td>
           </tr>
         `;
       });
@@ -210,12 +166,10 @@ export async function POST(request: Request) {
             <tbody>
               ${execRows}
               <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 10px;">
-                <td colspan="7" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777; width: 66%;">সর্বমোট (নির্বাহী প্যানেল) =</td>
-                <td class="font-bold" style="color: #db2777; width: 9%;">৳${toBnDigits(execClaim)}/-</td>
-                <td style="color: #b45309; font-weight: bold; width: 8%;">৳${toBnDigits(execStamp)}/-</td>
-                <td style="color: #b45309; font-weight: bold; width: 8%;">৳${toBnDigits(execExtra)}/-</td>
-                <td style="color: #b91c1c; font-weight: 900; width: 8%;">৳${toBnDigits(execStamp + execExtra)}/-</td>
-                <td style="color: #db2777; font-weight: 900; width: 9%;">৳${toBnDigits(execGrand)}/-</td>
+                <td colspan="4" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777; width: 60%;">সর্বমোট (নির্বাহী প্যানেল) =</td>
+                <td class="font-bold" style="color: #db2777; width: 13%;">৳${toBnDigits(execClaim)}/-</td>
+                <td style="color: #b45309; font-weight: bold; width: 13%;">৳${toBnDigits(execStamp)}/-</td>
+                <td style="color: #db2777; font-weight: 900; width: 14%;">৳${toBnDigits(execGrand)}/-</td>
               </tr>
             </tbody>
           </table>
@@ -223,16 +177,12 @@ export async function POST(request: Request) {
       `;
     }
 
-    const finalTotalDeduction = totalStampAll + totalExtraAll;
-
     // 3. Render Grand Departmental Total Summary at the bottom
     tablesHtml += `
       <div style="margin-top: 15px; margin-bottom: 12px; page-break-inside: avoid; border: 1.5px solid #000; padding: 10px 14px; background-color: #cbd5e1; text-align: center;">
         <p style="font-size: 11px; font-weight: 900; color: #000; margin: 0; line-height: 1.6;">
           <strong>সেলের প্রাপ্তব্য টাকার পরিমাণ = ৳${toBnDigits(totalClaimAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
           <strong>রেভেনিউ স্ট্যাম্প = ৳${toBnDigits(totalStampAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
-          <strong>অতিরিক্ত কর্তন = ৳${toBnDigits(totalExtraAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
-          <strong>মোট কর্তন = ৳${toBnDigits(finalTotalDeduction)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
           <span style="font-size: 13px; color: #15803d; font-weight: 900;">প্রাপ্তব্য = ৳${toBnDigits(grandTotalAll)}/-</span>
         </p>
       </div>
@@ -354,33 +304,11 @@ export async function POST(request: Request) {
     line-height: 1.4;
     font-size: 10px;
   }
-  .signature-container {
-    width: 100%;
-    margin-top: 0.5in;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-  .signature-block {
-    text-align: center;
-    width: 30%;
-  }
-  .signature-line {
-    border-top: 1px solid #000;
-    margin-bottom: 3px;
-    width: 80%;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .signature-title {
-    font-weight: bold;
-    font-size: 8px;
-  }
 </style>
 </head>
 <body>
   <div class="report-meta" style="margin-top: 10px;">
-    <span class="cell-title">লাঞ্চ বিল রিপোর্ট</span>
+    <span class="cell-title">ক্লোজিং বিল রিপোর্ট</span>
     <div style="text-align: right;">
       <div style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</div>
       <span class="report-date">তারিখ: ${getBnDate(reportDate)} ইং</span>
@@ -388,20 +316,15 @@ export async function POST(request: Request) {
   </div>
 
   <div class="report-title-box">
-    <p class="report-title">${monthName} মাসের লাঞ্চ ভাতা বিল শিট (মোট কার্যদিবস: ${toBnDigits(workingDays)} দিন)</p>
+    <p class="report-title">${monthName} মাসের ক্লোজিং ভাতা বিল শিট</p>
   </div>
 
   ${tablesHtml}
-
 
   <!-- Deductions detailed breakdown box -->
   <div class="deductions-breakdown">
     <p style="font-weight: bold; margin-bottom: 2px;">● কর্তনের বিস্তারিত বিবরণী:</p>
     <p style="margin-left: 12px;">- রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট ${toBnDigits(totalEmployeesCount)} জনের): <strong>৳${toBnDigits(totalStampAll)}/-</strong></p>
-    <p style="margin-left: 12px;">- অতিরিক্ত কর্তন (ডিজিএম/নির্বাহী নির্দেশানুযায়ী): <strong>৳${toBnDigits(totalExtraAll)}/-</strong></p>
-    <p style="margin-left: 12px; font-weight: bold; border-top: 1px dashed #000; padding-top: 2px; margin-top: 2px; width: fit-content;">
-      = সর্বমোট কর্তন (RS+EXTRA): <strong>৳${toBnDigits(finalTotalDeduction)}/-</strong>
-    </p>
   </div>
 
   <div class="bill-summary-text">
@@ -423,35 +346,21 @@ export async function POST(request: Request) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const filename = `lunch_bill_combined_${monthName.replace(/\s+/g, '_')}_${Math.floor(Date.now() / 1000)}.html`;
+    const filename = `closing_bill_combined_${monthName.replace(/\s+/g, '_')}_${Math.floor(Date.now() / 1000)}.html`;
     const filePathDisk = path.join(uploadsDir, filename);
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');
 
     const relativePath = `/uploads/${filename}`;
     const fileSize = fs.statSync(filePathDisk).size;
 
-    // Check if a document with this file path already exists
-    let doc = await prisma.document.findFirst({
-      where: { filePath: relativePath }
+    // Save under the Document archive
+    const doc = await prisma.document.create({
+      data: {
+        name: `সমন্বিত ক্লোজিং বিল: ${monthName}`,
+        filePath: relativePath,
+        fileSize: fileSize
+      }
     });
-
-    if (doc) {
-      doc = await prisma.document.update({
-        where: { id: doc.id },
-        data: {
-          fileSize: fileSize,
-          uploadedAt: new Date()
-        }
-      });
-    } else {
-      doc = await prisma.document.create({
-        data: {
-          name: `সমন্বিত লাঞ্চ বিল: ${monthName}`,
-          filePath: relativePath,
-          fileSize: fileSize
-        }
-      });
-    }
 
     return NextResponse.json({
       success: true,
@@ -460,7 +369,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error: any) {
-    console.error('Error generating lunch bill document:', error);
-    return NextResponse.json({ error: 'failed_to_generate_lunch_bill', message: error.message }, { status: 500 });
+    console.error('Error generating closing bill document:', error);
+    return NextResponse.json({ error: 'failed_to_generate_closing_bill', message: error.message }, { status: 500 });
   }
 }

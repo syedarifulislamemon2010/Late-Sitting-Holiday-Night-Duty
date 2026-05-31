@@ -71,6 +71,17 @@ export default function Sidebar() {
     }
   };
 
+  const isAdministrationCell = currentUser?.cells?.some((c: any) => 
+    c.name.includes('প্রশাসন') || 
+    c.name.toLowerCase().includes('admin') || 
+    c.name.toLowerCase().includes('administration')
+  );
+  
+  const isAdminOrAdminCell = currentUser?.role === 'ADMIN' || isAdministrationCell;
+
+  const currentMonth = new Date().getMonth() + 1; // 1-12
+  const showClosingBill = isAdminOrAdminCell || currentMonth === 6 || currentMonth === 12;
+
   const navItems = [
     { name: 'ড্যাশবোর্ড', href: '/', icon: LayoutDashboard },
     { name: 'নির্বাহী প্যানেল', href: '/executive', icon: UserCheck },
@@ -78,6 +89,7 @@ export default function Sidebar() {
     { name: 'অফিস অর্ডার', href: '/roster', icon: CalendarRange },
     { name: 'বিল', href: '/billing', icon: Receipt },
     { name: 'লাঞ্চ বিল শিট', href: '/lunch-bill', icon: Utensils },
+    ...(showClosingBill ? [{ name: 'ক্লোজিং বিল শিট', href: '/closing-bill', icon: CalendarCheck }] : []),
     { name: 'ছুটি আবেদন', href: '/leave', icon: CalendarCheck },
     { name: 'ফিডব্যাক ও সহায়তা', href: '/feedback', icon: MessageSquare },
     { name: 'মেসেঞ্জার চ্যাট', href: '/chat', icon: MessagesSquare },
