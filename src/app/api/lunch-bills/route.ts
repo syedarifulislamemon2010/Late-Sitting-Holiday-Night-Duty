@@ -41,60 +41,62 @@ export async function GET(request: Request) {
         c.name.toLowerCase().includes('administration')
       );
 
+    // Default cellId for combined sheet
+    let targetCellId = 0;
     if (cellIdStr) {
-      const cellId = parseInt(cellIdStr, 10);
-      if (isNaN(cellId)) {
-        return NextResponse.json({ error: 'invalid_cell_id', message: 'অবৈধ সেল আইডি।' }, { status: 400 });
-      }
-
-      // Enforce cell privacy: standard users can only view their own cell's lunch bills
-      if (!isAdminOrAdminCell) {
-        const userCellIds = currentUser.cells.map((c: any) => c.id);
-        if (!userCellIds.includes(cellId)) {
-          return NextResponse.json({ 
-            error: 'forbidden', 
-            message: 'এই সেলের লাঞ্চ বিল দেখার অনুমতি আপনার নেই।' 
-          }, { status: 403 });
-        }
-      }
-
-      const lunchBill = await prisma.lunchBill.findUnique({
-        where: {
-          month_cellId: {
-            month,
-            cellId
-          }
-        },
-        include: {
-          cell: true
-        }
-      });
-
-      return NextResponse.json(lunchBill || null);
-    } else {
-      // Return lists
-      let cellIdsFilter: number[] = [];
-      if (!isAdminOrAdminCell) {
-        cellIdsFilter = currentUser.cells.map((c: any) => c.id);
-      }
-
-      const whereClause: any = { month };
-      if (cellIdsFilter.length > 0) {
-        whereClause.cellId = { in: cellIdsFilter };
-      }
-
-      const lunchBills = await prisma.lunchBill.findMany({
-        where: whereClause,
-        include: {
-          cell: true
-        },
-        orderBy: {
-          cellId: 'asc'
-        }
-      });
-
-      return NextResponse.json(lunchBills);
+      targetCellId = parseInt(cellIdStr, 10);
     }
+
+    // Standard user cell privacy check
+    if (!isAdminOrAdminCell) {
+      const userCellIds = currentUser.cells.map((c: any) => c.id);
+      if (targetCellId !== 0 && !userCellIds.includes(targetCellId)) {
+        return NextResponse.json({ 
+          error: 'forbidden', 
+          message: 'এই সেলের লাঞ্চ বিল দেখার অনুমতি আপনার নেই।' 
+        }, { status: 403 });
+      }
+      // If no cellId specified, target standard user's first cell
+      if (targetCellId === 0 && userCellIds.length > 0) {
+        targetCellId = userCellIds[0];
+      }
+    }
+
+    // Load the combined LunchBill record (cellId = 0)
+    const combinedBill = await prisma.lunchBill.findUnique({
+      where: {
+        month_cellId: {
+          month,
+          cellId: 0
+        }
+      }
+    });
+
+    if (!combinedBill) {
+      return NextResponse.json(null);
+    }
+
+    // If request is from Admin, return the full combined record
+    if (isAdminOrAdminCell && targetCellId === 0) {
+      return NextResponse.json(combinedBill);
+    }
+
+    // For standard users (or if specific cell is queried), filter records dynamically
+    const allRecords = JSON.parse(combinedBill.recordsJson);
+    const filteredRecords = allRecords.filter((r: any) => r.cellId === targetCellId && !r.isExecutive);
+
+    // Return synthetic cell-specific LunchBill structure
+    return NextResponse.json({
+      id: combinedBill.id,
+      month: combinedBill.month,
+      cellId: targetCellId,
+      workingDays: combinedBill.workingDays,
+      recordsJson: JSON.stringify(filteredRecords),
+      generatedBy: combinedBill.generatedBy,
+      createdAt: combinedBill.createdAt,
+      updatedAt: combinedBill.updatedAt
+    });
+
   } catch (error: any) {
     console.error('Error in LunchBill GET:', error);
     return NextResponse.json({ error: 'failed_to_fetch_lunch_bills', message: error.message }, { status: 500 });
@@ -104,16 +106,15 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { month, cellId, workingDays, records } = body;
+    const { month, workingDays, records } = body;
 
-    if (!month || !cellId || !workingDays || !records) {
+    if (!month || !workingDays || !records) {
       return NextResponse.json({ error: 'missing_fields', message: 'সকল প্রয়োজনীয় ফিল্ড প্রদান করুন।' }, { status: 400 });
     }
 
-    const parsedCellId = parseInt(cellId, 10);
     const parsedWorkingDays = parseInt(workingDays, 10);
-    if (isNaN(parsedCellId) || isNaN(parsedWorkingDays)) {
-      return NextResponse.json({ error: 'invalid_values', message: 'অবৈধ সেল আইডি বা কার্যদিবস।' }, { status: 400 });
+    if (isNaN(parsedWorkingDays)) {
+      return NextResponse.json({ error: 'invalid_values', message: 'অবৈধ কার্যদিবস।' }, { status: 400 });
     }
 
     const cookieStore = await cookies();
@@ -153,11 +154,12 @@ export async function POST(request: Request) {
 
     const recordsJson = JSON.stringify(records);
 
+    // Save the combined sheet under cellId = 0 (representing Combined Departmental Sheet)
     const lunchBill = await prisma.lunchBill.upsert({
       where: {
         month_cellId: {
           month,
-          cellId: parsedCellId
+          cellId: 0
         }
       },
       update: {
@@ -167,13 +169,10 @@ export async function POST(request: Request) {
       },
       create: {
         month,
-        cellId: parsedCellId,
+        cellId: 0,
         workingDays: parsedWorkingDays,
         recordsJson,
         generatedBy: currentUser.name
-      },
-      include: {
-        cell: true
       }
     });
 
@@ -187,42 +186,56 @@ export async function POST(request: Request) {
       entityId: String(lunchBill.id),
       ipAddress,
       userAgent,
-      details: `${currentUser.name} (@${currentUser.username}) ${lunchBill.cell.name} সেলের ${month} মাসের লাঞ্চ বিলের হিসাব সংরক্ষণ করেছেন (মোট কার্যদিবস: ${workingDays})।`
+      details: `${currentUser.name} (@${currentUser.username}) সকল সেলের জন্য ${month} মাসের সমন্বিত লাঞ্চ বিলের হিসাব সংরক্ষণ করেছেন (মোট কার্যদিবস: ${workingDays})।`
     });
 
+    // Trigger cell-wide notifications
     try {
-      // Fetch users of this cell to notify them
-      const cellUsers = await prisma.user.findMany({
-        where: {
-          cells: {
-            some: {
-              id: parsedCellId
+      // Find all unique cell IDs present in the saved records (excluding executives)
+      const uniqueCellIds = Array.from(new Set(
+        records
+          .filter((r: any) => !r.isExecutive && r.cellId)
+          .map((r: any) => r.cellId)
+      )) as number[];
+
+      if (uniqueCellIds.length > 0) {
+        // Fetch all users belonging to these cells
+        const cellUsers = await prisma.user.findMany({
+          where: {
+            cells: {
+              some: {
+                id: { in: uniqueCellIds }
+              }
             }
-          }
-        }
-      });
-
-      const monthNames = [
-        'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
-        'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
-      ];
-      const [year, mStr] = month.split('-');
-      const mIdx = parseInt(mStr, 10) - 1;
-      const toBnDigits = (nStr: string) => nStr.replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
-      const banglaMonthStr = `${monthNames[mIdx]} ${toBnDigits(year)}`;
-
-      const notifyPromises = cellUsers.map(u => {
-        if (u.id === currentUser.id) return Promise.resolve();
-        return prisma.notification.create({
-          data: {
-            userId: u.id,
-            title: 'লাঞ্চ ভাতা চূড়ান্তকরণ',
-            message: `আপনার সেল "${lunchBill.cell.name}" এর "${banglaMonthStr}" মাসের লাঞ্চ ভাতা বিল প্রশাসন সেল কর্তৃক চূড়ান্ত করা হয়েছে।`,
-            link: '/lunch-bill'
-          }
+          },
+          include: { cells: true }
         });
-      });
-      await Promise.all(notifyPromises);
+
+        const monthNames = [
+          'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+          'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+        ];
+        const [year, mStr] = month.split('-');
+        const mIdx = parseInt(mStr, 10) - 1;
+        const toBnDigits = (nStr: string) => nStr.replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+        const banglaMonthStr = `${monthNames[mIdx]} ${toBnDigits(year)}`;
+
+        const notifyPromises = cellUsers.map(u => {
+          if (u.id === currentUser.id) return Promise.resolve();
+          // Find which cell of theirs is notified
+          const matchedCell = u.cells.find(c => uniqueCellIds.includes(c.id));
+          const cellName = matchedCell ? matchedCell.name : 'ডিপার্টমেন্ট';
+          return prisma.notification.create({
+            data: {
+              userId: u.id,
+              title: 'লাঞ্চ ভাতা চূড়ান্তকরণ',
+              message: `আপনার সেল "${cellName}" এর "${banglaMonthStr}" মাসের লাঞ্চ ভাতা বিল প্রশাসন সেল কর্তৃক চূড়ান্ত করা হয়েছে।`,
+              link: '/lunch-bill'
+            }
+          });
+        });
+        await Promise.all(notifyPromises);
+      }
     } catch (notifErr) {
       console.error('Error creating cell lunch notifications:', notifErr);
     }

@@ -1,20 +1,22 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Printer, 
-  ChevronLeft, 
   Calendar, 
   DollarSign, 
-  Clock,
-  ShieldCheck,
-  Award,
-  Loader2,
-  CheckCircle,
-  AlertTriangle,
-  Lock,
-  Users,
-  Info
+  Loader2, 
+  CheckCircle, 
+  AlertTriangle, 
+  Lock, 
+  Users, 
+  Settings, 
+  FileText,
+  Eye,
+  Sliders,
+  ChevronDown,
+  ChevronUp,
+  X
 } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 
@@ -33,6 +35,14 @@ interface Employee {
   cellId: number;
 }
 
+interface Executive {
+  id: number;
+  name: string;
+  designation: string;
+  bankId: string | null;
+  fileNo: string | null;
+}
+
 interface LunchRecord {
   employeeId: number;
   employeeName: string;
@@ -44,33 +54,52 @@ interface LunchRecord {
   stampDeduction: number;
   additionalDeduction: number;
   netPayable: number;
+  cellId: number;       // For cell officers
+  isExecutive: boolean; // True for DGM/AGM
 }
 
 export default function LunchBillPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [executives, setExecutives] = useState<Executive[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   
-  // Filter configs
+  // Gregorian Month (defaults to current year/month)
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const today = new Date();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     return `${today.getFullYear()}-${mm}`;
   });
-  const [selectedCellId, setSelectedCellId] = useState<string>('');
+  
   const [workingDays, setWorkingDays] = useState<number>(17);
 
   // Active records sheet state
   const [records, setRecords] = useState<LunchRecord[]>([]);
   const [savedLunchBill, setSavedLunchBill] = useState<any>(null);
 
-  // Warning pop-up alert state
+  // Additional Deduction Mode & Configuration
+  const [deductionMode, setDeductionMode] = useState<'manual' | 'flat' | 'designation'>('manual');
+  const [flatDeductionRate, setFlatDeductionRate] = useState<number>(0);
+  const [designationRates, setDesignationRates] = useState({
+    SPO: 0,
+    PO: 0,
+    SO_IT: 0,
+    O_IT: 0,
+    EXEC: 0
+  });
+
+  // Warning, print, and modal state
   const [isWarningOpen, setIsWarningOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [iframeUrl, setIframeUrl] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Collapsible Cell sections on the form list
+  const [collapsedCells, setCollapsedCells] = useState<Record<string, boolean>>({});
 
   // Fetch initial profile
   useEffect(() => {
@@ -88,28 +117,48 @@ export default function LunchBillPage() {
     loadProfile();
   }, []);
 
-  // Fetch cells & employees lists
+  // Fetch cells, employees, and executives lists
   useEffect(() => {
-    async function loadStaticData() {
+    async function loadData() {
       try {
-        const [cellRes, empRes] = await Promise.all([
+        const [cellRes, empRes, execRes] = await Promise.all([
           fetch('/api/cells'),
-          fetch('/api/employees')
+          fetch('/api/employees'),
+          fetch('/api/executives')
         ]);
         const cellData = await cellRes.json();
         const empData = await empRes.json();
+        const execData = await execRes.json();
+        
         setCells(Array.isArray(cellData) ? cellData : []);
         setEmployees(Array.isArray(empData) ? empData : []);
+        
+        // Filter out GMs strictly, leaving only DGMs and AGMs
+        const filteredExecs = (Array.isArray(execData) ? execData : []).filter(e => {
+          const d = e.designation.trim();
+          return (
+            d.includes('উপ-মহাব্যবস্থাপক') || 
+            d.includes('সহকারী মহাব্যবস্থাপক') || 
+            d.includes('ডিজিএম') || 
+            d.includes('এজিএম') || 
+            d.toLowerCase().includes('dgm') || 
+            d.toLowerCase().includes('agm')
+          ) && !(
+            d.includes('মহাব্যবস্থাপক') && 
+            !d.includes('উপ-') && 
+            !d.includes('সহকারী')
+          );
+        });
+        setExecutives(filteredExecs);
       } catch (err) {
-        console.error('Error loading lunch static data:', err);
+        console.error('Error loading lunch structural lists:', err);
       } finally {
         setLoading(false);
       }
     }
-    loadStaticData();
+    loadData();
   }, []);
 
-  // Determine authorized cells list based on logged-in user role
   const isAdministrationCell = currentUser?.cells?.some((c: any) => 
     c.name.includes('প্রশাসন') || 
     c.name.toLowerCase().includes('admin') || 
@@ -118,118 +167,157 @@ export default function LunchBillPage() {
   
   const isAdminOrAdminCell = currentUser?.role === 'ADMIN' || isAdministrationCell;
 
-  const selectableCells = currentUser?.role === 'ADMIN'
-    ? cells
-    : cells.filter(cell => currentUser?.cells?.some((c: any) => c.id === cell.id));
-
-  // Initialize selectedCellId once cells are loaded
+  // Load saved combined sheet (cellId = 0) or initialize defaults
   useEffect(() => {
-    if (selectableCells.length > 0 && !selectedCellId) {
-      setSelectedCellId(selectableCells[0].id.toString());
-    }
-  }, [selectableCells, selectedCellId]);
+    if (!selectedMonth || loading) return;
 
-  // Load or construct active lunch bill records when cell, month, or working days change
-  useEffect(() => {
-    if (!selectedCellId || !selectedMonth) return;
-
-    async function loadLunchBill() {
+    async function fetchCombinedLunchBill() {
       try {
-        const cellId = parseInt(selectedCellId, 10);
-        const res = await fetch(`/api/lunch-bills?month=${selectedMonth}&cellId=${cellId}`);
+        // Query the combined sheet saved under cellId = 0
+        const res = await fetch(`/api/lunch-bills?month=${selectedMonth}&cellId=0`);
         if (res.ok) {
           const data = await res.json();
           if (data) {
             setSavedLunchBill(data);
             setWorkingDays(data.workingDays);
-            const parsedRecords = JSON.parse(data.recordsJson);
-            setRecords(parsedRecords);
+            const parsed = JSON.parse(data.recordsJson);
+            setRecords(parsed);
             return;
           }
         }
-        
-        // Fallback: If not saved in database, generate default records list from active employees
+
+        // Fallback: Build default combined list (cell officers + DGM/AGM executives)
         setSavedLunchBill(null);
-        const cellEmps = employees.filter(e => e.cellId === cellId);
-        const defaultRecords = cellEmps.map(emp => {
-          const absence = 0;
-          const present = Math.max(0, workingDays - absence);
-          const totalBill = present * 400;
-          const stamp = 15;
-          const additional = 0;
-          const net = totalBill - (stamp + additional);
-          return {
+        
+        const defaultRecords: LunchRecord[] = [];
+
+        // 1. Add Cell Officers
+        employees.forEach(emp => {
+          defaultRecords.push({
             employeeId: emp.id,
             employeeName: emp.name,
             designation: emp.designation,
             rate: 400,
-            presentDays: present,
-            absenceDays: absence,
-            totalBill,
-            stampDeduction: stamp,
-            additionalDeduction: additional,
-            netPayable: net
-          };
+            presentDays: workingDays,
+            absenceDays: 0,
+            totalBill: workingDays * 400,
+            stampDeduction: 15,
+            additionalDeduction: 0,
+            netPayable: (workingDays * 400) - 15,
+            cellId: emp.cellId,
+            isExecutive: false
+          });
         });
+
+        // 2. Add Executives (DGMs & AGMs)
+        executives.forEach(exec => {
+          defaultRecords.push({
+            employeeId: exec.id,
+            employeeName: exec.name,
+            designation: exec.designation,
+            rate: 400,
+            presentDays: workingDays,
+            absenceDays: 0,
+            totalBill: workingDays * 400,
+            stampDeduction: 15,
+            additionalDeduction: 0,
+            netPayable: (workingDays * 400) - 15,
+            cellId: 0, // No cell for executives
+            isExecutive: true
+          });
+        });
+
         setRecords(defaultRecords);
       } catch (err) {
-        console.error('Error loading active lunch bill:', err);
+        console.error('Error loading combined sheet:', err);
       }
     }
 
-    loadLunchBill();
-  }, [selectedCellId, selectedMonth, employees]);
+    fetchCombinedLunchBill();
+  }, [selectedMonth, employees, executives, loading]);
 
-  // Handle live recalculation when Working Days, Absence, or Additional Deductions change
-  const handleRecalculation = (updatedWorkingDays: number, updatedRecords: LunchRecord[]) => {
-    const recalculated = updatedRecords.map(r => {
-      const present = Math.max(0, updatedWorkingDays - r.absenceDays);
+  // Recalculations hook for deduction configs (flat or designation based)
+  const applyDeductionRates = (mode: 'manual' | 'flat' | 'designation', flatRate: number, rates: typeof designationRates, currentWorkingDays: number, currentRecords: LunchRecord[]) => {
+    const updated = currentRecords.map(r => {
+      let addDed = r.additionalDeduction;
+
+      if (mode === 'flat') {
+        addDed = flatRate;
+      } else if (mode === 'designation') {
+        if (r.isExecutive) {
+          addDed = rates.EXEC;
+        } else {
+          const des = r.designation.toUpperCase();
+          if (des.includes('SPO') || des.includes('SSPO')) {
+            addDed = rates.SPO;
+          } else if (des.includes('PO') || des.includes('SNPO')) {
+            addDed = rates.PO;
+          } else if (des.includes('SO') || des.includes('SO-IT')) {
+            addDed = rates.SO_IT;
+          } else if (des.includes('O-IT') || des.includes('OFFICER') || des.includes('O_IT')) {
+            addDed = rates.O_IT;
+          } else {
+            addDed = rates.PO; // Default fallback
+          }
+        }
+      }
+
+      const present = Math.max(0, currentWorkingDays - r.absenceDays);
       const totalBill = present * 400;
-      const stamp = 15;
-      const additional = r.additionalDeduction;
-      const net = totalBill - (stamp + additional);
+      const net = totalBill - (15 + addDed);
+
       return {
         ...r,
         presentDays: present,
         totalBill,
+        additionalDeduction: addDed,
         netPayable: net
       };
     });
-    setRecords(recalculated);
+    setRecords(updated);
   };
 
-  const handleAbsenceChange = (empId: number, absenceStr: string) => {
-    const val = parseInt(absenceStr, 10) || 0;
-    const updated = records.map(r => r.employeeId === empId ? { ...r, absenceDays: val } : r);
-    handleRecalculation(workingDays, updated);
+  const handleAbsenceChange = (empId: number, isExec: boolean, valStr: string) => {
+    const val = parseInt(valStr, 10) || 0;
+    const updated = records.map(r => 
+      (r.employeeId === empId && r.isExecutive === isExec) ? { ...r, absenceDays: val } : r
+    );
+    applyDeductionRates(deductionMode, flatDeductionRate, designationRates, workingDays, updated);
   };
 
-  const handleAdditionalDeductionChange = (empId: number, additionalStr: string) => {
-    const val = parseInt(additionalStr, 10) || 0;
-    const updated = records.map(r => r.employeeId === empId ? { ...r, additionalDeduction: val } : r);
-    handleRecalculation(workingDays, updated);
+  const handleManualDeductionChange = (empId: number, isExec: boolean, valStr: string) => {
+    const val = parseInt(valStr, 10) || 0;
+    const updated = records.map(r => 
+      (r.employeeId === empId && r.isExecutive === isExec) ? { ...r, additionalDeduction: val } : r
+    );
+    applyDeductionRates('manual', flatDeductionRate, designationRates, workingDays, updated);
+    setDeductionMode('manual');
   };
 
   const handleWorkingDaysChange = (daysStr: string) => {
     const val = parseInt(daysStr, 10) || 0;
     setWorkingDays(val);
-    handleRecalculation(val, records);
+    applyDeductionRates(deductionMode, flatDeductionRate, designationRates, val, records);
   };
 
-  // Calculations for bottom total row
-  const totalPresentDaysAll = records.reduce((sum, r) => sum + r.presentDays, 0);
-  const totalClaimAll = records.reduce((sum, r) => sum + r.totalBill, 0);
-  const totalDeductionAll = records.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0);
-  const grandTotalAll = records.reduce((sum, r) => sum + r.netPayable, 0);
+  const applyFlatRate = (rateVal: number) => {
+    setFlatDeductionRate(rateVal);
+    applyDeductionRates('flat', rateVal, designationRates, workingDays, records);
+  };
 
-  // Convert English digits/text to Bengali digits
+  const applyDesignationRates = (field: keyof typeof designationRates, val: number) => {
+    const updatedRates = { ...designationRates, [field]: val };
+    setDesignationRates(updatedRates);
+    applyDeductionRates('designation', flatDeductionRate, updatedRates, workingDays, records);
+  };
+
+  // Safe Bengali digit translation
   const toBanglaDigits = (num: number | string | undefined | null): string => {
     if (num === undefined || num === null) return '';
     const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
     return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
   };
 
-  // Convert Gregorian Month string to formal Bengali (e.g. "মে ২০২৬")
   const getBanglaMonthName = (monthStr: string): string => {
     if (!monthStr || !monthStr.includes('-')) return '';
     const [year, month] = monthStr.split('-');
@@ -241,10 +329,8 @@ export default function LunchBillPage() {
     return `${monthNames[idx]} ${toBanglaDigits(year)}`;
   };
 
-  // Convert total number into Bengali Words for legal certification note
   const getBanglaNumberWords = (num: number) => {
     if (num === 0) return 'অনুল্লেখ্য';
-    
     const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
     const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
     const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
@@ -284,7 +370,23 @@ export default function LunchBillPage() {
     return wordStr.trim() + ' টাকা মাত্র';
   };
 
-  // Save changes to Database (Admin only)
+  // Filter records by cell/executive for standard users
+  const getFilteredRecordsForUser = () => {
+    if (isAdminOrAdminCell) return records;
+    // Standard user gets only officers belonging to their specific cell
+    const userCellIds = currentUser?.cells?.map((c: any) => c.id) || [];
+    return records.filter(r => !r.isExecutive && userCellIds.includes(r.cellId));
+  };
+
+  const activeRecords = getFilteredRecordsForUser();
+
+  // Combined sums
+  const totalPresentDaysAll = activeRecords.reduce((sum, r) => sum + r.presentDays, 0);
+  const totalClaimAll = activeRecords.reduce((sum, r) => sum + r.totalBill, 0);
+  const totalDeductionAll = activeRecords.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0);
+  const grandTotalAll = activeRecords.reduce((sum, r) => sum + r.netPayable, 0);
+
+  // Save entire combined record
   const saveLunchBill = async () => {
     if (!isAdminOrAdminCell) return;
     setSaving(true);
@@ -296,97 +398,147 @@ export default function LunchBillPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           month: selectedMonth,
-          cellId: selectedCellId,
           workingDays: workingDays,
-          records: records
+          records: records // Saves entire combined department records list
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         setSavedLunchBill(data.lunchBill);
-        setSuccessMessage('লাঞ্চ ভাতার বিল হিসাব সফলভাবে সংরক্ষণ করা হয়েছে!');
+        setSuccessMessage('সমন্বিত লাঞ্চ ভাতার বিল সফলভাবে ডাটাবেজে সংরক্ষণ করা হয়েছে!');
         setTimeout(() => setSuccessMessage(null), 5000);
       } else {
         setErrorMessage(data.message || 'লাঞ্চ বিল সংরক্ষণ করতে ব্যর্থ হয়েছে।');
       }
     } catch (err) {
       console.error('Error saving lunch bill:', err);
-      setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।');
+      setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     } finally {
       setSaving(false);
     }
   };
 
-  // Generate HTML sheet inside public/uploads/ and open Print window
-  const generateAndPrintBill = async () => {
+  // Build Payload structures for HTML generator
+  const getPrintPayload = () => {
+    // 1. Group cell officers
+    const cellGroups = cells.map(cell => {
+      const cellRecs = records.filter(r => !r.isExecutive && r.cellId === cell.id);
+      return {
+        cellName: cell.name,
+        records: cellRecs,
+        totalDays: cellRecs.reduce((sum, r) => sum + r.presentDays, 0),
+        totalClaim: cellRecs.reduce((sum, r) => sum + r.totalBill, 0),
+        totalDeduction: cellRecs.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
+        grandTotal: cellRecs.reduce((sum, r) => sum + r.netPayable, 0)
+      };
+    }).filter(g => g.records.length > 0);
+
+    // 2. Gather Executives
+    const execRecs = records.filter(r => r.isExecutive);
+    const execsData = {
+      records: execRecs,
+      totalDays: execRecs.reduce((sum, r) => sum + r.presentDays, 0),
+      totalClaim: execRecs.reduce((sum, r) => sum + r.totalBill, 0),
+      totalDeduction: execRecs.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
+      grandTotal: execRecs.reduce((sum, r) => sum + r.netPayable, 0)
+    };
+
+    return {
+      monthName: getBanglaMonthName(selectedMonth),
+      groupedData: cellGroups,
+      executivesData: execsData,
+      workingDays: workingDays,
+      totalDaysAll: records.reduce((sum, r) => sum + r.presentDays, 0),
+      totalClaimAll: records.reduce((sum, r) => sum + r.totalBill, 0),
+      totalDeductionAll: records.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
+      grandTotalAll: records.reduce((sum, r) => sum + r.netPayable, 0),
+      grandTotalInWords: getBanglaNumberWords(records.reduce((sum, r) => sum + r.netPayable, 0)),
+      reportDate: new Date().toISOString().split('T')[0]
+    };
+  };
+
+  // Generate printable HTML document
+  const generateBillReport = async (): Promise<string | null> => {
     setGenerating(true);
     setErrorMessage(null);
     try {
-      // 1. Ensure the latest records are saved to the database first
+      // 1. Auto-save latest admin states first
       if (isAdminOrAdminCell) {
         const saveRes = await fetch('/api/lunch-bills', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             month: selectedMonth,
-            cellId: selectedCellId,
             workingDays: workingDays,
             records: records
           })
         });
         if (!saveRes.ok) {
-          throw new Error('বিল জেনারেট করার আগে ডাটাবেজ সংরক্ষণ করতে ব্যর্থ হয়েছে।');
+          throw new Error('বিল জেনারেট করার আগে ডাটাবেজ আপডেট সংরক্ষণ ব্যর্থ হয়েছে।');
         }
       }
 
-      const activeCell = cells.find(c => c.id.toString() === selectedCellId);
-      const activeCellName = activeCell ? activeCell.name : 'Unknown Cell';
-
-      // 2. Call PDF/Print HTML Generator API
+      // 2. Call combined report generator
       const res = await fetch('/api/documents/generate-lunch-bill', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          monthName: getBanglaMonthName(selectedMonth),
-          cellName: activeCellName,
-          records: records,
-          workingDays: workingDays,
-          totalDays: totalPresentDaysAll,
-          totalClaim: totalClaimAll,
-          totalDeduction: totalDeductionAll,
-          grandTotal: grandTotalAll,
-          grandTotalInWords: getBanglaNumberWords(grandTotalAll),
-          signingOfficer: 'উপ-মহাব্যবস্থাপক',
-          signingDesignation: 'অনলাইন ব্যাংকিং ডিপার্টমেন্ট',
-          reportDate: new Date().toISOString().split('T')[0]
-        })
+        body: JSON.stringify(getPrintPayload())
       });
 
       const data = await res.json();
       if (res.ok && data.success && data.filePath) {
-        // Open the generated print HTML page in a new window/tab
-        window.open(data.filePath, '_blank');
+        return data.filePath;
       } else {
         setErrorMessage(data.message || 'প্রিন্ট মেমো প্রস্তুত করতে ব্যর্থ হয়েছে।');
+        return null;
       }
     } catch (err: any) {
-      console.error('Error generating printable lunch bill:', err);
+      console.error('Error generating lunch bill:', err);
       setErrorMessage(err.message || 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+      return null;
     } finally {
       setGenerating(false);
     }
   };
 
-  // Intercept Print Action to check if additional deductions are modified
-  const handlePrintClick = () => {
-    // Check if additionalDeductions are all 0
-    const hasAdditionalDeductions = records.some(r => r.additionalDeduction > 0);
-    if (!hasAdditionalDeductions) {
-      // Show warning modal
+  // In-Page Iframe Printing without opening new tabs
+  const handleDirectPrint = async () => {
+    const path = await generateBillReport();
+    if (path) {
+      const iframe = document.getElementById('silent-print-iframe') as HTMLIFrameElement;
+      if (iframe) {
+        iframe.src = path;
+        iframe.onload = () => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        };
+      }
+    }
+  };
+
+  // In-Page Iframe Print Preview Modal
+  const handlePrintPreview = async () => {
+    const path = await generateBillReport();
+    if (path) {
+      setIframeUrl(path);
+      setIsPreviewOpen(true);
+    }
+  };
+
+  const handlePrintWarningCheck = () => {
+    const hasAddDeds = records.some(r => r.additionalDeduction > 0);
+    if (!hasAddDeds) {
       setIsWarningOpen(true);
     } else {
-      generateAndPrintBill();
+      handleDirectPrint();
     }
+  };
+
+  const toggleCellCollapse = (cellId: number) => {
+    setCollapsedCells(prev => ({
+      ...prev,
+      [cellId]: !prev[cellId]
+    }));
   };
 
   return (
@@ -396,30 +548,19 @@ export default function LunchBillPage() {
         {/* Header Action Banner */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">লাঞ্চ ভাতা বিল জেনারেটর</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">কর্মকর্তাদের দৈনিক লাঞ্চ ভাতার নিখুঁত হিসাব প্রস্তুতকরণ ও স্বয়ংক্রিয় সেল ভিত্তিক রিপোর্ট বিতরণ প্যানেল।</p>
+            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">সমন্বিত লাঞ্চ বিল জেনারেটর</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              {isAdminOrAdminCell 
+                ? 'সকল সেল এবং ডিজিএম ও এজিএম নির্বাহীদের সমন্বিত খাবার ভাতার হিসাব ও পেমেন্ট রেকর্ড শিট প্রস্তুতকারক প্যানেল।'
+                : 'আপনার সেলের চূড়ান্তকৃত খাবার ভাতা বিল ও প্রিন্ট প্রিভিউ বিবরণী।'}
+            </p>
           </div>
         </div>
 
         {/* Configurations Filter Panel */}
-        <div className="glass-card p-6 rounded-2xl space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="glass-card p-6 rounded-2xl space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
-            {/* Cell Selection Dropdown */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেল সিলেক্ট করুন</label>
-              <select
-                value={selectedCellId}
-                disabled={!isAdminOrAdminCell && selectableCells.length <= 1}
-                onChange={(e) => setSelectedCellId(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
-              >
-                {selectableCells.map((c) => (
-                  <option key={c.id} value={c.id.toString()}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-
             {/* Month Selection */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মাস নির্বাচন করুন</label>
@@ -448,7 +589,94 @@ export default function LunchBillPage() {
               />
             </div>
 
+            {/* Deduction Settings Mode Trigger */}
+            {isAdminOrAdminCell && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sliders size={12} /> অতিরিক্ত কর্তন কনফিগারেশন
+                </label>
+                <select
+                  value={deductionMode}
+                  onChange={(e) => {
+                    const mode = e.target.value as any;
+                    setDeductionMode(mode);
+                    applyDeductionRates(mode, flatDeductionRate, designationRates, workingDays, records);
+                  }}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
+                >
+                  <option value="manual">ম্যানুয়াল ইনপুট (আলাদা আলাদা)</option>
+                  <option value="flat">সবার জন্য সমান অতিরিক্ত কর্তন (ফ্ল্যাট)</option>
+                  <option value="designation">পদবী ভিত্তিক অতিরিক্ত কর্তন</option>
+                </select>
+              </div>
+            )}
+
           </div>
+
+          {/* Dynamic configs dependent panel */}
+          {isAdminOrAdminCell && deductionMode === 'flat' && (
+            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850/80 rounded-xl flex items-center gap-4 animate-fade-in">
+              <span className="text-xs font-bold text-slate-500 uppercase">ফ্ল্যাট অতিরিক্ত কর্তনের হার:</span>
+              <input
+                type="number"
+                min="0"
+                value={flatDeductionRate}
+                onChange={(e) => applyFlatRate(parseInt(e.target.value, 10) || 0)}
+                className="w-24 px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs"
+              />
+              <span className="text-[10px] text-slate-400 font-bold">এটি সেল কর্মকর্তা ও ডিজিএম/এজিএম নির্বাহীদের ওপর অভিন্নভাবে প্রয়োগ হবে।</span>
+            </div>
+          )}
+
+          {isAdminOrAdminCell && deductionMode === 'designation' && (
+            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850/80 rounded-xl grid grid-cols-2 sm:grid-cols-5 gap-4 animate-fade-in">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">SPO / SSPO:</span>
+                <input
+                  type="number"
+                  value={designationRates.SPO}
+                  onChange={(e) => applyDesignationRates('SPO', parseInt(e.target.value, 10) || 0)}
+                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">PO / SNPO:</span>
+                <input
+                  type="number"
+                  value={designationRates.PO}
+                  onChange={(e) => applyDesignationRates('PO', parseInt(e.target.value, 10) || 0)}
+                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">SO-IT:</span>
+                <input
+                  type="number"
+                  value={designationRates.SO_IT}
+                  onChange={(e) => applyDesignationRates('SO_IT', parseInt(e.target.value, 10) || 0)}
+                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">O-IT / Officers:</span>
+                <input
+                  type="number"
+                  value={designationRates.O_IT}
+                  onChange={(e) => applyDesignationRates('O_IT', parseInt(e.target.value, 10) || 0)}
+                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase" style={{ color: '#db2777' }}>ডিজিএম ও এজিএম:</span>
+                <input
+                  type="number"
+                  value={designationRates.EXEC}
+                  onChange={(e) => applyDesignationRates('EXEC', parseInt(e.target.value, 10) || 0)}
+                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Messages Alerts */}
@@ -471,18 +699,18 @@ export default function LunchBillPage() {
             <Loader2 className="animate-spin text-indigo-600" size={36} />
             <p className="text-sm font-bold text-slate-500">ডাটা লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...</p>
           </div>
-        ) : records.length > 0 ? (
+        ) : activeRecords.length > 0 ? (
           <div className="glass-card rounded-2xl overflow-hidden border border-slate-200/60 dark:border-slate-800/80">
             
             {/* Card Header Actions */}
             <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">
-                  লাঞ্চ ভাতা বিল শিট - {getBanglaMonthName(selectedMonth)}
+                  {isAdminOrAdminCell ? 'সমন্বিত লাঞ্চ বিল এন্ট্রি শিট' : `লাঞ্চ ভাতা বিল শিট - ${currentUser?.cells?.[0]?.name}`} - {getBanglaMonthName(selectedMonth)}
                 </h3>
                 <p className="text-[10px] text-slate-400 mt-0.5">
                   {savedLunchBill ? (
-                    <span className="text-emerald-600 font-bold">● administration সেল কর্তৃক চূড়ান্ত সংরক্ষিত রেকর্ড</span>
+                    <span className="text-emerald-600 font-bold">● administration সেল কর্তৃক চূড়ান্ত সমন্বিত রেকর্ড</span>
                   ) : (
                     <span className="text-amber-500 font-bold">● খসড়া (ডাটাবেজে এখনও চূড়ান্ত সংরক্ষণ করা হয়নি)</span>
                   )}
@@ -501,105 +729,250 @@ export default function LunchBillPage() {
                     সেভ করুন
                   </button>
                 )}
+                
                 <button
-                  onClick={handlePrintClick}
+                  onClick={handlePrintPreview}
+                  disabled={generating}
+                  className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-2 border border-slate-200/50 dark:border-slate-750 transition-colors"
+                >
+                  <Eye size={14} />
+                  প্রিন্ট প্রিভিউ
+                </button>
+
+                <button
+                  onClick={handlePrintWarningCheck}
                   disabled={generating}
                   className="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer flex items-center gap-2 transition-colors shadow-md shadow-indigo-500/10"
                 >
                   {generating && <Loader2 className="animate-spin" size={12} />}
                   <Printer size={14} />
-                  প্রিন্ট ও পিডিএফ
+                  প্রিন্ট পিডিএফ
                 </button>
               </div>
             </div>
 
-            {/* Table Container */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-center border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/70 dark:bg-slate-950/20 text-slate-500 dark:text-slate-400 font-bold text-xs border-b border-slate-150 dark:border-slate-850 uppercase tracking-wider">
-                    <th className="py-3.5 px-4">ক্রমিক</th>
-                    <th className="py-3.5 px-4 text-left">কর্মকর্তার নাম</th>
-                    <th className="py-3.5 px-4">পদবী</th>
-                    <th className="py-3.5 px-4">দৈনিক হার</th>
-                    <th className="py-3.5 px-4">অনুপস্থিত দিন</th>
-                    <th className="py-3.5 px-4">উপস্থিত দিন</th>
-                    <th className="py-3.5 px-4">মোট দাবী</th>
-                    <th className="py-3.5 px-4">রেভেনিউ স্ট্যাম্প</th>
-                    <th className="py-3.5 px-4">অতিরিক্ত কর্তন</th>
-                    <th className="py-3.5 px-4">প্রাপ্তব্য</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                  {records.map((r, index) => (
-                    <tr key={r.employeeId} className="hover:bg-slate-50/30 dark:hover:bg-slate-950/5 transition-colors">
-                      <td className="py-3 px-4 font-bold">{toBanglaDigits(index + 1)}</td>
-                      <td className="py-3 px-4 text-left font-extrabold text-slate-800 dark:text-slate-200">{r.employeeName}</td>
-                      <td className="py-3 px-4">{r.designation}</td>
-                      <td className="py-3 px-4 font-bold font-sans">৳{toBanglaDigits(400)}</td>
-                      
-                      {/* Absence Days input */}
-                      <td className="py-2 px-4 w-28">
-                        <input
-                          type="number"
-                          min="0"
-                          max={workingDays}
-                          disabled={!isAdminOrAdminCell}
-                          value={r.absenceDays}
-                          onChange={(e) => handleAbsenceChange(r.employeeId, e.target.value)}
-                          className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
-                        />
-                      </td>
+            {/* List and Combined view */}
+            <div className="p-6 space-y-8">
+              
+              {/* Group A: Cell-wise Officers */}
+              {cells.map(cell => {
+                const cellRecs = activeRecords.filter(r => !r.isExecutive && r.cellId === cell.id);
+                if (cellRecs.length === 0) return null;
 
-                      <td className="py-3 px-4 font-bold font-sans">{toBanglaDigits(r.presentDays)}</td>
-                      <td className="py-3 px-4 font-bold font-sans">৳{toBanglaDigits(r.totalBill)}</td>
-                      <td className="py-3 px-4 font-bold font-sans">৳{toBanglaDigits(15)}</td>
-                      
-                      {/* Additional Deduction input */}
-                      <td className="py-2 px-4 w-32">
-                        <input
-                          type="number"
-                          min="0"
-                          disabled={!isAdminOrAdminCell}
-                          value={r.additionalDeduction}
-                          onChange={(e) => handleAdditionalDeductionChange(r.employeeId, e.target.value)}
-                          className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
-                        />
-                      </td>
+                const isCollapsed = collapsedCells[cell.id];
+                
+                const cellDays = cellRecs.reduce((sum, r) => sum + r.presentDays, 0);
+                const cellClaim = cellRecs.reduce((sum, r) => sum + r.totalBill, 0);
+                const cellGrand = cellRecs.reduce((sum, r) => sum + r.netPayable, 0);
 
-                      <td className="py-3 px-4 font-extrabold text-indigo-650 dark:text-indigo-400 font-sans">৳{toBanglaDigits(r.netPayable)}</td>
-                    </tr>
-                  ))}
+                return (
+                  <div key={cell.id} className="border border-slate-150 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                    {/* Collapsible header */}
+                    <div 
+                      onClick={() => toggleCellCollapse(cell.id)}
+                      className="px-5 py-3 bg-slate-100/50 dark:bg-slate-950/20 border-b border-slate-150 dark:border-slate-800 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-950/30 transition-colors font-sans select-none"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Users size={16} className="text-slate-400" />
+                        <span className="font-extrabold text-xs text-slate-850 dark:text-slate-50 uppercase tracking-wide">
+                          সেল: {cell.name} ({cellRecs.length} জন কর্মকর্তা)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
+                        <span>সেলের দাবী: ৳{toBanglaDigits(cellGrand)}</span>
+                        {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                      </div>
+                    </div>
 
-                  {/* Summary/Totals row */}
-                  <tr className="bg-slate-50/40 dark:bg-slate-950/10 font-bold text-slate-800 dark:text-slate-100 border-t border-slate-200 dark:border-slate-800">
-                    <td colSpan={4} className="py-4 px-4 text-right">মোট =</td>
-                    <td className="py-4 px-4 text-center font-sans">-</td>
-                    <td className="py-4 px-4 font-extrabold font-sans text-center">{toBanglaDigits(totalPresentDaysAll)}</td>
-                    <td className="py-4 px-4 font-extrabold font-sans">৳{toBanglaDigits(totalClaimAll)}</td>
-                    <td className="py-4 px-4 font-extrabold font-sans">-</td>
-                    <td className="py-4 px-4 font-extrabold font-sans">-</td>
-                    <td className="py-4 px-4 font-black text-indigo-700 dark:text-indigo-350 font-sans">৳{toBanglaDigits(grandTotalAll)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                    {!isCollapsed && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-center border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50/50 dark:bg-slate-950/10 text-slate-500 dark:text-slate-400 font-bold text-xs border-b border-slate-150 dark:border-slate-800 uppercase tracking-wider">
+                              <th className="py-2.5 px-4 w-12">ক্রমিক</th>
+                              <th className="py-2.5 px-4 text-left">কর্মকর্তার নাম</th>
+                              <th className="py-2.5 px-4">পদবী</th>
+                              <th className="py-2.5 px-4">দৈনিক হার</th>
+                              <th className="py-2.5 px-4">অনুপস্থিত দিন (CL)</th>
+                              <th className="py-2.5 px-4">উপস্থিত দিন</th>
+                              <th className="py-2.5 px-4">মোট দাবী</th>
+                              <th className="py-2.5 px-4">রেভেনিউ স্ট্যাম্প</th>
+                              <th className="py-2.5 px-4">অতিরিক্ত কর্তন</th>
+                              <th className="py-2.5 px-4">প্রাপ্তব্য</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                            {cellRecs.map((r, index) => {
+                              const additional = r.additionalDeduction || 0;
+                              const totalDed = 15 + additional;
+                              return (
+                                <tr key={r.employeeId} className="hover:bg-slate-50/30 dark:hover:bg-slate-950/5 transition-colors">
+                                  <td className="py-3 px-4 font-bold">{toBanglaDigits(index + 1)}</td>
+                                  <td className="py-3 px-4 text-left font-extrabold text-slate-850 dark:text-slate-200">{r.employeeName}</td>
+                                  <td className="py-3 px-4">{r.designation}</td>
+                                  <td className="py-3 px-4 font-bold font-sans text-slate-500">৳{toBanglaDigits(400)}</td>
+                                  
+                                  {/* CL absence input */}
+                                  <td className="py-1 px-4 w-28">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max={workingDays}
+                                      disabled={!isAdminOrAdminCell}
+                                      value={r.absenceDays}
+                                      onChange={(e) => handleAbsenceChange(r.employeeId, false, e.target.value)}
+                                      className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
+                                    />
+                                  </td>
 
-            {/* In Words display */}
-            <div className="p-6 bg-slate-50/20 dark:bg-slate-950/5 border-t border-slate-100 dark:border-slate-850 flex items-center justify-between text-xs font-bold text-slate-500">
-              <p>কথায়: <span className="text-indigo-650 dark:text-indigo-400 font-extrabold">{getBanglaNumberWords(grandTotalAll)}</span></p>
-              <p>হার ও স্ট্যাম্প কর্তন প্রবিধান অনুযায়ী স্থায়ী এবং অপরিবর্তনযোগ্য।</p>
+                                  <td className="py-3 px-4 font-bold font-sans">{toBanglaDigits(r.presentDays)}</td>
+                                  <td className="py-3 px-4 font-bold font-sans">৳{toBanglaDigits(r.totalBill)}</td>
+                                  <td className="py-3 px-4 font-bold font-sans text-slate-500">৳{toBanglaDigits(15)}</td>
+                                  
+                                  {/* Additional deduction input */}
+                                  <td className="py-1 px-4 w-32">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      disabled={!isAdminOrAdminCell}
+                                      value={r.additionalDeduction}
+                                      onChange={(e) => handleManualDeductionChange(r.employeeId, false, e.target.value)}
+                                      className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
+                                    />
+                                  </td>
+
+                                  {/* Conditional display of Total Deduction alongside Net Pay */}
+                                  <td className="py-3 px-4">
+                                    <span className="font-extrabold text-indigo-650 dark:text-indigo-400 font-sans">৳{toBanglaDigits(r.netPayable)}</span>
+                                    {additional > 0 && (
+                                      <span className="block text-[9px] text-slate-400 font-bold mt-0.5" style={{ color: '#db2777' }}>
+                                        (মোট কর্তন: {toBanglaDigits(totalDed)})
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Group B: DGM & AGM Executives */}
+              {activeRecords.some(r => r.isExecutive) && (
+                <div className="border border-rose-150 dark:border-rose-900/40 rounded-xl overflow-hidden shadow-sm" style={{ borderLeft: '3px solid #db2777' }}>
+                  <div className="px-5 py-3 bg-rose-50/40 dark:bg-rose-950/10 border-b border-rose-150 dark:border-rose-900/40 flex items-center justify-between font-sans">
+                    <div className="flex items-center gap-2">
+                      <Lock size={16} className="text-rose-500" />
+                      <span className="font-extrabold text-xs text-rose-800 dark:text-rose-300 uppercase tracking-wide">
+                        নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-rose-600 dark:text-rose-350">
+                      নির্বাহীদের বিল সমষ্টি: ৳{toBanglaDigits(activeRecords.filter(r => r.isExecutive).reduce((sum, r) => sum + r.netPayable, 0))}
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-center border-collapse">
+                      <thead>
+                        <tr className="bg-rose-50/20 dark:bg-rose-950/5 text-rose-900 dark:text-rose-300 font-bold text-xs border-b border-rose-150 dark:border-rose-900/30 uppercase tracking-wider">
+                          <th className="py-2.5 px-4 w-12">ক্রমিক</th>
+                          <th className="py-2.5 px-4 text-left">নির্বাহীর নাম</th>
+                          <th className="py-2.5 px-4">পদবী</th>
+                          <th className="py-2.5 px-4">দৈনিক হার</th>
+                          <th className="py-2.5 px-4">অনুপস্থিত দিন (CL)</th>
+                          <th className="py-2.5 px-4">উপস্থিত দিন</th>
+                          <th className="py-2.5 px-4">মোট দাবী</th>
+                          <th className="py-2.5 px-4">রেভেনিউ স্ট্যাম্প</th>
+                          <th className="py-2.5 px-4">অতিরিক্ত কর্তন</th>
+                          <th className="py-2.5 px-4">প্রাপ্তব্য</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-rose-50 dark:divide-rose-950/20">
+                        {activeRecords.filter(r => r.isExecutive).map((r, index) => {
+                          const additional = r.additionalDeduction || 0;
+                          const totalDed = 15 + additional;
+                          return (
+                            <tr key={r.employeeId} className="hover:bg-rose-50/10 dark:hover:bg-rose-950/5 transition-colors" style={{ backgroundColor: '#fffdfd' }}>
+                              <td className="py-3 px-4 font-bold text-rose-800">{toBanglaDigits(index + 1)}</td>
+                              <td className="py-3 px-4 text-left font-extrabold text-rose-800 dark:text-rose-200">{r.employeeName}</td>
+                              <td className="py-3 px-4 font-bold text-rose-700 dark:text-rose-300">{r.designation}</td>
+                              <td className="py-3 px-4 font-bold font-sans text-slate-500">৳{toBanglaDigits(400)}</td>
+                              
+                              {/* CL absence input */}
+                              <td className="py-1 px-4 w-28">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max={workingDays}
+                                  disabled={!isAdminOrAdminCell}
+                                  value={r.absenceDays}
+                                  onChange={(e) => handleAbsenceChange(r.employeeId, true, e.target.value)}
+                                  className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
+                                />
+                              </td>
+
+                              <td className="py-3 px-4 font-bold font-sans">{toBanglaDigits(r.presentDays)}</td>
+                              <td className="py-3 px-4 font-bold font-sans">৳{toBanglaDigits(r.totalBill)}</td>
+                              <td className="py-3 px-4 font-bold font-sans text-slate-500">৳{toBanglaDigits(15)}</td>
+                              
+                              {/* Additional deduction input */}
+                              <td className="py-1 px-4 w-32">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  disabled={!isAdminOrAdminCell}
+                                  value={r.additionalDeduction}
+                                  onChange={(e) => handleManualDeductionChange(r.employeeId, true, e.target.value)}
+                                  className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
+                                />
+                              </td>
+
+                              {/* Net Payable and conditional total deductions display */}
+                              <td className="py-3 px-4">
+                                <span className="font-extrabold text-rose-700 dark:text-rose-400 font-sans">৳{toBanglaDigits(r.netPayable)}</span>
+                                {additional > 0 && (
+                                  <span className="block text-[9px] text-slate-400 font-bold mt-0.5" style={{ color: '#db2777' }}>
+                                    (মোট কর্তন: {toBanglaDigits(totalDed)})
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Department Grand totals */}
+              <div className="p-5 bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-150/40 dark:border-indigo-900/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h4 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">বিভাগীয় সামগ্রিক সমষ্টি (Grand Total Sums)</h4>
+                  <p className="text-[10px] text-slate-400 mt-0.5">কথায়: <span className="text-indigo-650 dark:text-indigo-400 font-extrabold">{getBanglaNumberWords(grandTotalAll)}</span></p>
+                </div>
+                <div className="flex items-center gap-6 text-sm font-bold text-slate-600 dark:text-slate-350">
+                  <p>মোট দাবী: <span className="font-extrabold text-slate-800 dark:text-slate-100 font-sans">৳{toBanglaDigits(totalClaimAll)}</span></p>
+                  <p>মোট প্রাপ্তব্য: <span className="font-extrabold text-indigo-650 dark:text-indigo-400 font-sans text-base">৳{toBanglaDigits(grandTotalAll)}</span></p>
+                </div>
+              </div>
+
             </div>
 
           </div>
         ) : (
-          /* Empty / Not prepared state card */
+          /* Empty / Lock placeholder */
           <div className="glass-card p-10 rounded-3xl text-center space-y-6 flex flex-col items-center justify-center max-w-2xl mx-auto border border-slate-200/60 dark:border-slate-800/80 animate-scale-up">
             <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-950 text-slate-400 dark:text-slate-600 flex items-center justify-center">
               <Lock size={28} />
             </div>
             <div className="space-y-2">
-              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">লাঞ্চ ভাতা বিল প্রস্তুত করা হয়নি</h3>
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">লাঞ্চ বিল প্রস্তুত করা হয়নি</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
                 {isAdminOrAdminCell 
                   ? 'এই সেলে এই মাসের কোনো সক্রিয় কর্মকর্তা ডেটাবেজে তালিকাভুক্ত নেই। অনুগ্রহ করে কর্মকর্তা তথ্য যুক্ত করুন।'
@@ -612,9 +985,9 @@ export default function LunchBillPage() {
         {/* Warning verification Modal */}
         {isWarningOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
-            <div className="bg-white dark:bg-slate-900 rounded-[28px] w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl animate-scale-up p-6 text-center space-y-5">
+            <div className="bg-white dark:bg-slate-900 rounded-[28px] w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl p-6 text-center space-y-5 animate-scale-up">
               <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/20 text-amber-500 flex items-center justify-center mx-auto">
-                <ShieldCheck size={26} />
+                <AlertTriangle size={26} />
               </div>
               <div className="space-y-2">
                 <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-base">অতিরিক্ত কর্তন যাচাইকরণ</h4>
@@ -632,7 +1005,7 @@ export default function LunchBillPage() {
                 <button
                   onClick={() => {
                     setIsWarningOpen(false);
-                    generateAndPrintBill();
+                    handleDirectPrint();
                   }}
                   className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors shadow-md shadow-indigo-500/10"
                 >
@@ -642,6 +1015,60 @@ export default function LunchBillPage() {
             </div>
           </div>
         )}
+
+        {/* Premium In-Page Print Preview Modal */}
+        {isPreviewOpen && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
+            <div className="bg-white dark:bg-slate-950 w-full max-w-5xl rounded-[32px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-scale-up h-[90vh]">
+              
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between">
+                <div>
+                  <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-sm">ইন-পেজ লাঞ্চ বিল প্রিন্ট প্রিভিউ</h4>
+                  <p className="text-[10px] text-slate-400 mt-0.5">নতুন ট্যাবে ওপেন না করে সরাসরি ড্যাশবোর্ড থেকে প্রিভিউ করুন।</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => {
+                      const iframe = document.getElementById('preview-print-iframe') as HTMLIFrameElement;
+                      if (iframe) {
+                        iframe.contentWindow?.focus();
+                        iframe.contentWindow?.print();
+                      }
+                    }}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md cursor-pointer"
+                  >
+                    <Printer size={13} />
+                    প্রিন্ট করুন
+                  </button>
+                  <button 
+                    onClick={() => setIsPreviewOpen(false)}
+                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 rounded-full cursor-pointer"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body: Printable HTML loaded inside Iframe */}
+              <div className="flex-1 bg-slate-50/50 dark:bg-slate-950/10 p-4 relative">
+                <iframe 
+                  id="preview-print-iframe"
+                  src={iframeUrl}
+                  className="w-full h-full border border-slate-150 dark:border-slate-850 rounded-2xl shadow-inner bg-white"
+                />
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* Hidden Iframe for silent printing */}
+        <iframe 
+          id="silent-print-iframe" 
+          className="hidden" 
+          style={{ width: '0px', height: '0px', border: '0px' }}
+        />
 
       </div>
     </AuthGuard>

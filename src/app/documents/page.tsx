@@ -787,15 +787,28 @@ export default function DocumentsPage() {
                             >
                               <FileDown size={12} />
                             </a>
+
+                            {doc.name.includes('লাঞ্চ বিল') && currentUser?.role !== 'USER' && (
+                              <button 
+                                onClick={() => window.location.href = `/lunch-bill`}
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-305 rounded-lg text-[10px] font-extrabold transition-all border border-slate-200 dark:border-slate-750"
+                                title="লাঞ্চ বিল শিটে ফিরে এডিট করুন"
+                              >
+                                <FileSignature size={12} />
+                                <span>সম্পাদনা</span>
+                              </button>
+                            )}
                           </div>
 
-                          <button 
-                            onClick={() => handleDelete(doc.id)}
-                            className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
-                            title="মুছে ফেলুন"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                          {currentUser?.role !== 'USER' && (
+                            <button 
+                              onClick={() => handleDelete(doc.id)}
+                              className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
+                              title="মুছে ফেলুন"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
