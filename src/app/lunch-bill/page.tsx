@@ -251,13 +251,35 @@ export default function LunchBillPage() {
           addDed = rates.EXEC;
         } else {
           const des = r.designation.toUpperCase();
-          if (des.includes('SPO') || des.includes('SSPO')) {
+          if (
+            des.includes('SPO') || 
+            des.includes('SSPO') || 
+            des.includes('এসপিও') || 
+            des.includes('এসএসপিও')
+          ) {
             addDed = rates.SPO;
-          } else if (des.includes('PO') || des.includes('SNPO')) {
+          } else if (
+            des.includes('PO') || 
+            des.includes('SNPO') || 
+            des.includes('পিও') || 
+            des.includes('এসএনপিও')
+          ) {
             addDed = rates.PO;
-          } else if (des.includes('SO') || des.includes('SO-IT')) {
+          } else if (
+            des.includes('SO-IT') || 
+            des.includes('SO_IT') || 
+            des.includes('SO') || 
+            des.includes('এসও-আইটি') || 
+            des.includes('এসও')
+          ) {
             addDed = rates.SO_IT;
-          } else if (des.includes('O-IT') || des.includes('OFFICER') || des.includes('O_IT')) {
+          } else if (
+            des.includes('O-IT') || 
+            des.includes('O_IT') || 
+            des.includes('ও-আইটি') || 
+            des.includes('অফিসার') || 
+            des.includes('OFFICER')
+          ) {
             addDed = rates.O_IT;
           } else {
             addDed = rates.PO; // Default fallback
