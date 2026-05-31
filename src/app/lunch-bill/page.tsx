@@ -912,56 +912,29 @@ export default function LunchBillPage() {
                               );
                             })}
 
-                            {/* ১. মোট দাবী রো */}
-                            <tr className="bg-slate-50/50 dark:bg-slate-950/10 font-bold border-t border-slate-200 dark:border-slate-800">
-                              <td colSpan={6} className="py-2.5 px-4 text-right pr-6 text-slate-500 text-xs">
-                                সর্বমোট দাবী (১ থেকে {toBanglaDigits(cellRecs.length)} নং কর্মকর্তা) =
+                            {/* ১. সর্বমোট দাবী ও কর্তন রো */}
+                            <tr className="bg-slate-100/80 dark:bg-slate-900/60 font-bold border-t border-slate-200 dark:border-slate-800">
+                              <td colSpan={7} className="py-3 px-4 text-right pr-6 text-slate-855 dark:text-slate-200 text-xs">
+                                সর্বমোট (১ থেকে {toBanglaDigits(cellRecs.length)} নং কর্মকর্তা) =
                               </td>
-                              <td className="py-2.5 px-4 font-sans font-bold text-slate-855 dark:text-slate-200">
+                              <td className="py-3 px-4 font-sans font-bold text-slate-855 dark:text-slate-200">
                                 ৳{toBanglaDigits(cellClaim)}/-
                               </td>
-                              <td colSpan={6}>-</td>
-                            </tr>
-                            {/* ২. রেভেনিউ স্ট্যাম্প কর্তন রো */}
-                            <tr className="bg-white dark:bg-slate-900 font-bold border-b border-slate-150">
-                              <td colSpan={7} className="py-2.5 px-4 text-right pr-6 text-slate-500 text-xs">
-                                রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট {toBanglaDigits(cellRecs.length)} জনের) =
-                              </td>
-                              <td className="py-2.5 px-4 font-sans font-bold text-amber-600">
+                              <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500">
                                 ৳{toBanglaDigits(cellStamp)}/-
                               </td>
-                              <td colSpan={5}>-</td>
-                            </tr>
-                            {/* ৩. অতিরিক্ত কর্তন রো */}
-                            <tr className="bg-white dark:bg-slate-900 font-bold border-b border-slate-150">
-                              <td colSpan={8} className="py-2.5 px-4 text-right pr-6 text-slate-500 text-xs">
-                                সর্বমোট অতিরিক্ত কর্তন =
-                              </td>
-                              <td className="py-2.5 px-4 font-sans font-bold text-amber-600">
+                              <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500">
                                 ৳{toBanglaDigits(cellExtra)}/-
                               </td>
-                              <td colSpan={4}>-</td>
-                            </tr>
-                            {/* ৪. মোট কর্তন রো */}
-                            <tr className="bg-slate-50/50 dark:bg-slate-950/10 font-bold border-b border-slate-150">
-                              <td colSpan={9} className="py-2.5 px-4 text-right pr-6 text-slate-500 text-xs">
-                                সর্বমোট কর্তন =
-                              </td>
-                              <td className="py-2.5 px-4 font-sans font-bold text-rose-600 dark:text-rose-450">
+                              <td className="py-3 px-4 font-sans font-bold text-rose-600 dark:text-rose-455">
                                 ৳{toBanglaDigits(cellStamp + cellExtra)}/-
                               </td>
-                              <td colSpan={3}>-</td>
-                            </tr>
-                            {/* ৫. প্রাপ্তব্য রো */}
-                            <tr className="bg-indigo-50/20 dark:bg-indigo-950/10 font-extrabold border-b border-slate-150">
-                              <td colSpan={10} className="py-3 px-4 text-right pr-6 text-indigo-900 dark:text-indigo-300 text-xs">
-                                সর্বমোট প্রাপ্তব্য ({cell.name}) =
-                              </td>
-                              <td className="py-3 px-4 font-sans font-bold text-emerald-600 dark:text-emerald-450 text-sm animate-pulse">
+                              <td className="py-3 px-4 font-sans font-bold text-emerald-600 dark:text-emerald-450 text-sm">
                                 ৳{toBanglaDigits(cellGrand)}/-
                               </td>
-                              <td colSpan={2}>-</td>
+                              <td className="py-3 px-4 text-slate-400">-</td>
                             </tr>
+
                           </tbody>
                         </table>
                       </div>
