@@ -1174,7 +1174,7 @@ export default function UserManagement() {
                         <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.fileNo || 'নেই'}</p>
                       </div>
                       <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5 col-span-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">セル</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">সেল</span>
                         <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.cell?.name || 'নেই'}</p>
                       </div>
                     </>

@@ -819,7 +819,7 @@ export default function LunchBillPage() {
                       <div className="flex items-center gap-2">
                         <Users size={16} className="text-slate-400" />
                         <span className="font-extrabold text-xs text-slate-850 dark:text-slate-50 uppercase tracking-wide">
-                          セル: {cell.name} ({cellRecs.length} জন কর্মকর্তা)
+                          সেল: {cell.name} ({cellRecs.length} জন কর্মকর্তা)
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
