@@ -190,6 +190,43 @@ export async function POST(request: Request) {
       details: `${currentUser.name} (@${currentUser.username}) ${lunchBill.cell.name} সেলের ${month} মাসের লাঞ্চ বিলের হিসাব সংরক্ষণ করেছেন (মোট কার্যদিবস: ${workingDays})।`
     });
 
+    try {
+      // Fetch users of this cell to notify them
+      const cellUsers = await prisma.user.findMany({
+        where: {
+          cells: {
+            some: {
+              id: parsedCellId
+            }
+          }
+        }
+      });
+
+      const monthNames = [
+        'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+        'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+      ];
+      const [year, mStr] = month.split('-');
+      const mIdx = parseInt(mStr, 10) - 1;
+      const toBnDigits = (nStr: string) => nStr.replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+      const banglaMonthStr = `${monthNames[mIdx]} ${toBnDigits(year)}`;
+
+      const notifyPromises = cellUsers.map(u => {
+        if (u.id === currentUser.id) return Promise.resolve();
+        return prisma.notification.create({
+          data: {
+            userId: u.id,
+            title: 'লাঞ্চ ভাতা চূড়ান্তকরণ',
+            message: `আপনার সেল "${lunchBill.cell.name}" এর "${banglaMonthStr}" মাসের লাঞ্চ ভাতা বিল প্রশাসন সেল কর্তৃক চূড়ান্ত করা হয়েছে।`,
+            link: '/lunch-bill'
+          }
+        });
+      });
+      await Promise.all(notifyPromises);
+    } catch (notifErr) {
+      console.error('Error creating cell lunch notifications:', notifErr);
+    }
+
     return NextResponse.json({ success: true, lunchBill });
 
   } catch (error: any) {

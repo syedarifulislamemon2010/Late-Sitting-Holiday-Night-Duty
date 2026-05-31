@@ -186,6 +186,82 @@ export async function POST(request: Request) {
       details: `${currentUser.name} (@${currentUser.username}) ${isEdit ? 'অফিস আদেশ বা বিল মেমো সংশোধন' : 'নতুন অফিস আদেশ বা বিল মেমো তৈরি'} করেছেন (সূত্র: ${orderRef})।`
     });
 
+    // Dynamic Notification triggers
+    try {
+      const dutiesList = await prisma.duty.findMany({
+        where: { orderRef: orderRef },
+        include: { employee: true }
+      });
+
+      const uniqueEmps = Array.from(new Map(dutiesList.map(d => [d.employee.id, d.employee])).values());
+      const toBnDigits = (nStr: string | number) => nStr.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+
+      if (category.startsWith('BILL_')) {
+        // 1. Notify Representative Payee
+        const payeeUser = await prisma.user.findFirst({
+          where: { name: { contains: employeeName.trim() } }
+        });
+
+        const totalAmount = dutiesList.reduce((sum, d) => sum + d.totalBill, 0);
+
+        if (payeeUser) {
+          await prisma.notification.create({
+            data: {
+              userId: payeeUser.id,
+              title: 'অতিরিক্ত কাজের বিল মঞ্জুর',
+              message: `জনাব ${employeeName}, আপনার নামে "${cellName || 'অনলাইন ব্যাংকিং'}" সেলের অতিরিক্ত কাজের মোট ৳${toBnDigits(totalAmount)} টাকার বিল মঞ্জুর করা হয়েছে। অনুগ্রহ করে সংশ্লিষ্ট হিসাব থেকে অর্থ সংগ্রহ করে বণ্টন করুন।`,
+              link: '/billing'
+            }
+          });
+        }
+
+        // 2. Notify other employees in the list
+        const otherEmps = uniqueEmps.filter(emp => !emp.name.includes(employeeName));
+        for (const emp of otherEmps) {
+          const user = await prisma.user.findFirst({
+            where: { name: { contains: emp.name.trim() } }
+          });
+          if (user) {
+            const empAmount = dutiesList.filter(d => d.employeeId === emp.id).reduce((sum, d) => sum + d.totalBill, 0);
+            await prisma.notification.create({
+              data: {
+                userId: user.id,
+                title: 'বিল প্রস্তুত নোটিশ',
+                message: `জনাব ${emp.name}, আপনার অতিরিক্ত কাজের বিল প্রস্তুত করেছেন জনাব ${employeeName}। আপনার প্রাপ্য ৳${toBnDigits(empAmount)} টাকা ওনার কাছ থেকে সংগ্রহ করবেন।`,
+                link: '/billing'
+              }
+            });
+          }
+        }
+      } else {
+        // Standard Office Order
+        const categoryMap: any = {
+          'LATE_SITTING': 'লেট সিটিং',
+          'HOLIDAY': 'হলিডে',
+          'NIGHT_SHIFT': 'নাইট শিফট'
+        };
+        const categoryBn = categoryMap[category] || category;
+
+        for (const emp of uniqueEmps) {
+          const user = await prisma.user.findFirst({
+            where: { name: { contains: emp.name.trim() } }
+          });
+          if (user) {
+            await prisma.notification.create({
+              data: {
+                userId: user.id,
+                title: 'নতুন অফিস নির্দেশ জারি',
+                message: `আপনার নামে ${toBnDigits(orderDate)} তারিখে ${categoryBn} ডিউটির একটি নতুন অফিস নির্দেশ জারি করা হয়েছে (স্মারক: ${orderRef})।`,
+                link: '/documents'
+              }
+            });
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.error('Error generating office order notifications:', notifErr);
+    }
+
     return NextResponse.json({ success: true, id: result.order.id, order: result.order });
   } catch (error: any) {
     console.error('Error creating office order:', error);

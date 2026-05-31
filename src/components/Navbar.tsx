@@ -24,7 +24,10 @@ import {
   LogOut,
   User,
   Grid,
-  Building2
+  Building2,
+  Utensils,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -33,6 +36,117 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Notification panel states
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  // Fetch notifications
+  async function loadNotifications() {
+    try {
+      const res = await fetch('/api/notifications');
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+    }
+  }
+
+  // Poll notifications
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle outside click for both dropdowns
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Mark all as read
+  const markAllAsRead = async () => {
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markAllRead' })
+      });
+      if (res.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      }
+    } catch (err) {
+      console.error('Error marking all as read:', err);
+    }
+  };
+
+  // Mark single as read and navigate
+  const handleNotifClick = async (n: any) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markRead', id: n.id })
+      });
+      setIsNotifOpen(false);
+      if (n.link) {
+        window.location.href = n.link;
+      } else {
+        loadNotifications();
+      }
+    } catch (err) {
+      console.error('Error handling notif click:', err);
+      if (n.link) {
+        window.location.href = n.link;
+      }
+    }
+  };
+
+  const getNotifIcon = (title: string) => {
+    const t = title.toLowerCase();
+    if (t.includes('লাঞ্চ') || t.includes('lunch')) {
+      return <Utensils size={14} className="text-rose-500" />;
+    }
+    if (t.includes('অফিস') || t.includes('order') || t.includes('নির্দেশ')) {
+      return <CalendarRange size={14} className="text-sky-500" />;
+    }
+    if (t.includes('বিল') || t.includes('billing') || t.includes('টাকা') || t.includes('মঞ্জুর')) {
+      return <Receipt size={14} className="text-amber-500" />;
+    }
+    if (t.includes('মেসেজ') || t.includes('message') || t.includes('চ্যাট')) {
+      return <MessageSquare size={14} className="text-emerald-500" />;
+    }
+    return <Bell size={14} className="text-indigo-500" />;
+  };
+
+  const getRelativeTimeStr = (dateStr: string) => {
+    const elapsed = Date.now() - new Date(dateStr).getTime();
+    const seconds = Math.floor(elapsed / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    const toBnDigits = (n: number) => n.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+
+    if (seconds < 60) return 'এইমাত্র';
+    if (minutes < 60) return `${toBnDigits(minutes)} মিনিট আগে`;
+    if (hours < 24) return `${toBnDigits(hours)} ঘণ্টা আগে`;
+    return `${toBnDigits(days)} দিন আগে`;
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   // Load user from localStorage
   useEffect(() => {
@@ -124,11 +238,10 @@ export default function Navbar() {
     { name: 'ড্যাশবোর্ড', href: '/', icon: LayoutDashboard },
     { name: 'নির্বাহী প্যানেল', href: '/executive', icon: UserCheck },
     { name: 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
-    { name: 'সেল', href: '/employees', icon: Building2 },
     { name: 'অফিস অর্ডার', href: '/roster', icon: CalendarRange },
     { name: 'বিল', href: '/billing', icon: Receipt },
+    { name: 'লাঞ্চ বিল', href: '/lunch-bill', icon: Utensils },
     { name: 'আর্কাইভ', href: '/documents', icon: FileText },
-    { name: 'বিন', href: '/trash', icon: Trash2 },
     { name: 'সেটিংস', href: '/users', icon: Settings },
   ];
 
@@ -176,11 +289,72 @@ export default function Navbar() {
             <span className="absolute -top-1.5 -right-1 bg-rose-500 text-white font-sans text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">৩</span>
           </button>
           
-          {/* Notifications mock */}
-          <button className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors relative" title="নোটিফিকেশন">
-            <Bell size={16} />
-            <span className="absolute -top-1.5 -right-1 bg-rose-500 text-white font-sans text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">৫</span>
-          </button>
+          {/* Notifications dynamic */}
+          <div className="relative" ref={notifRef}>
+            <button 
+              onClick={() => setIsNotifOpen(!isNotifOpen)}
+              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors relative cursor-pointer" 
+              title="নোটিফিকেশন"
+            >
+              <Bell size={16} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1 bg-rose-500 text-white font-sans text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Notification Dropdown List */}
+            {isNotifOpen && (
+              <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-4 text-slate-800 dark:text-slate-100 animate-in fade-in slide-in-from-top-4 duration-200 z-50">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 mb-2">
+                  <h4 className="font-extrabold text-slate-900 dark:text-slate-50 text-base">নোটিফিকেশন প্যানেল</h4>
+                  {unreadCount > 0 && (
+                    <button 
+                      onClick={markAllAsRead}
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer"
+                    >
+                      সব পঠিত চিহ্নিত করুন
+                    </button>
+                  )}
+                </div>
+
+                {notifications.length > 0 ? (
+                  <div className="max-h-80 overflow-y-auto space-y-1.5 no-scrollbar">
+                    {notifications.map((n) => (
+                      <div 
+                        key={n.id}
+                        onClick={() => handleNotifClick(n)}
+                        className={`flex gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer relative items-start ${!n.isRead ? 'bg-indigo-50/20 dark:bg-indigo-950/10' : ''}`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 mt-0.5">
+                          {getNotifIcon(n.title)}
+                        </div>
+                        <div className="flex-1 leading-tight space-y-1">
+                          <p className={`text-xs text-slate-800 dark:text-slate-100 ${!n.isRead ? 'font-extrabold' : 'font-medium'}`}>
+                            {n.title}
+                          </p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                            {n.message}
+                          </p>
+                          <p className="text-[8px] text-slate-400 font-bold tracking-wide">
+                            {getRelativeTimeStr(n.createdAt)}
+                          </p>
+                        </div>
+                        {!n.isRead && (
+                          <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0 mt-2" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 space-y-2">
+                    <p className="text-xs text-slate-400 font-bold">কোনো নোটিফিকেশন নেই।</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Facebook active profile image clicking triggers dropdown */}

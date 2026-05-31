@@ -30,6 +30,7 @@ model User {
   leaveApplications LeaveApplication[]
   chatParticipants ChatParticipant[]
   chatMessages     ChatMessage[]
+  notifications    Notification[]
   createdAt DateTime @default(now())
 }
 
@@ -239,6 +240,19 @@ model LunchBill {
   updatedAt    DateTime @updatedAt
 
   @@unique([month, cellId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  link      String?  // Navigation path, e.g. "/lunch-bill"
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 
