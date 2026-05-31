@@ -267,10 +267,16 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const checkAuth = async () => {
       try {
         const res = await fetch('/api/auth');
-        const data = await res.json();
-        if (res.ok && data.authenticated) {
-          setAuthenticated(true);
-          setUserProfile(data.user);
+        const contentType = res.headers.get('content-type');
+        if (res.ok && contentType && contentType.includes('application/json')) {
+          const data = await res.json();
+          if (data.authenticated) {
+            setAuthenticated(true);
+            setUserProfile(data.user);
+          } else {
+            setAuthenticated(false);
+            setUserProfile(null);
+          }
         } else {
           setAuthenticated(false);
           setUserProfile(null);

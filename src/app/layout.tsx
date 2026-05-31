@@ -17,13 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" className="h-full" suppressHydrationWarning>
-      <body className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300" suppressHydrationWarning>
+    <html lang="bn" className="h-full" suppressHydrationWarning={true}>
+      <body className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300" suppressHydrationWarning={true}>
         <AuthGuard>
-          <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+          <div className="flex-1 flex flex-col lg:flex-row min-h-0" suppressHydrationWarning={true}>
             <Sidebar />
-            <main className="flex-1 flex flex-col min-w-0">
-              <div className="flex-1 p-4 lg:p-8 overflow-y-auto">
+            <main className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
+              <div className="flex-1 p-4 lg:p-8 overflow-y-auto" suppressHydrationWarning={true}>
                 {children}
               </div>
             </main>
