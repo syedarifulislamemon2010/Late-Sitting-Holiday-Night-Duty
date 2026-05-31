@@ -33,6 +33,7 @@ interface Employee {
   bankId: string | null;
   fileNo: string | null;
   cellId: number;
+  mobile?: string | null;
 }
 
 interface Executive {
@@ -41,6 +42,7 @@ interface Executive {
   designation: string;
   bankId: string | null;
   fileNo: string | null;
+  phone?: string | null;
 }
 
 interface LunchRecord {
@@ -834,6 +836,7 @@ export default function LunchBillPage() {
                               <th className="py-2.5 px-3 w-10">ক্রমিক</th>
                               <th className="py-2.5 px-3 text-left">কর্মকর্তার নাম</th>
                               <th className="py-2.5 px-3">পদবী</th>
+                              <th className="py-2.5 px-3">মোবাইল নম্বর</th>
                               <th className="py-2.5 px-3">দৈনিক হার</th>
                               <th className="py-2.5 px-3">অনুপস্থিত দিন (CL)</th>
                               <th className="py-2.5 px-3">উপস্থিত দিন</th>
@@ -843,7 +846,6 @@ export default function LunchBillPage() {
                               <th className="py-2.5 px-3">মোট কর্তন</th>
                               <th className="py-2.5 px-3">প্রাপ্তব্য</th>
                               <th className="py-2.5 px-3">স্বাক্ষর</th>
-                              <th className="py-2.5 px-3">মন্তব্য</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
@@ -855,6 +857,12 @@ export default function LunchBillPage() {
                                   <td className="py-3 px-3 font-bold">{toBanglaDigits(index + 1)}</td>
                                   <td className="py-3 px-3 text-left font-extrabold text-slate-850 dark:text-slate-200">{r.employeeName}</td>
                                   <td className="py-3 px-3 text-xs">{r.designation}</td>
+                                  <td className="py-3 px-3 font-semibold font-sans text-xs text-slate-600 dark:text-slate-400">
+                                    {(() => {
+                                      const emp = employees.find(e => e.id === r.employeeId);
+                                      return emp?.mobile ? toBanglaDigits(emp.mobile) : 'N/A';
+                                    })()}
+                                  </td>
                                   <td className="py-3 px-3 font-bold font-sans text-slate-500">৳{toBanglaDigits(400)}</td>
                                   
                                   {/* CL absence input */}
@@ -899,18 +907,6 @@ export default function LunchBillPage() {
                                   {/* স্বাক্ষর */}
                                   <td className="py-3 px-3 font-semibold text-xs text-slate-400 dark:text-slate-500 italic select-none">
                                     হাতে স্বাক্ষর
-                                  </td>
-
-                                  {/* মন্তব্য */}
-                                  <td className="py-1 px-2 w-44">
-                                    <input
-                                      type="text"
-                                      disabled={!isAdminOrAdminCell}
-                                      value={r.remarks || ''}
-                                      placeholder="মন্তব্য লিখুন..."
-                                      onChange={(e) => handleRemarksChange(r.employeeId, false, e.target.value)}
-                                      className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-550 font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed text-left text-slate-800 dark:text-slate-100 font-medium"
-                                    />
                                   </td>
                                 </tr>
                               );
@@ -1003,6 +999,7 @@ export default function LunchBillPage() {
                             <th className="py-2.5 px-3 w-10">ক্রমিক</th>
                             <th className="py-2.5 px-3 text-left">নির্বাহীর নাম</th>
                             <th className="py-2.5 px-3">পদবী</th>
+                            <th className="py-2.5 px-3">মোবাইল নম্বর</th>
                             <th className="py-2.5 px-3">দৈনিক হার</th>
                             <th className="py-2.5 px-3">অনুপস্থিত দিন (CL)</th>
                             <th className="py-2.5 px-3">উপস্থিত দিন</th>
@@ -1012,7 +1009,6 @@ export default function LunchBillPage() {
                             <th className="py-2.5 px-3">মোট কর্তন</th>
                             <th className="py-2.5 px-3">প্রাপ্তব্য</th>
                             <th className="py-2.5 px-3">স্বাক্ষর</th>
-                            <th className="py-2.5 px-3">মন্তব্য</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-rose-50 dark:divide-rose-950/20">
@@ -1024,6 +1020,12 @@ export default function LunchBillPage() {
                                 <td className="py-3 px-3 font-bold text-rose-800">{toBanglaDigits(index + 1)}</td>
                                 <td className="py-3 px-3 text-left font-extrabold text-rose-800 dark:text-rose-200">{r.employeeName}</td>
                                 <td className="py-3 px-3 font-bold text-rose-700 dark:text-rose-300 text-xs">{r.designation}</td>
+                                <td className="py-3 px-3 font-semibold font-sans text-xs text-rose-850 dark:text-rose-300">
+                                  {(() => {
+                                    const exec = executives.find(e => e.id === r.employeeId);
+                                    return exec?.phone ? toBanglaDigits(exec.phone) : 'N/A';
+                                  })()}
+                                </td>
                                 <td className="py-3 px-3 font-bold font-sans text-slate-500">৳{toBanglaDigits(400)}</td>
                                 
                                 {/* CL absence input */}
@@ -1068,18 +1070,6 @@ export default function LunchBillPage() {
                                 {/* স্বাক্ষর */}
                                 <td className="py-3 px-3 font-semibold text-xs text-slate-400 dark:text-slate-500 italic select-none">
                                   হাতে স্বাক্ষর
-                                </td>
-
-                                {/* মন্তব্য */}
-                                <td className="py-1 px-2 w-44">
-                                  <input
-                                    type="text"
-                                    disabled={!isAdminOrAdminCell}
-                                    value={r.remarks || ''}
-                                    placeholder="মন্তব্য লিখুন..."
-                                    onChange={(e) => handleRemarksChange(r.employeeId, true, e.target.value)}
-                                    className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-550 font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed text-left text-slate-800 dark:text-slate-100 font-medium"
-                                  />
                                 </td>
                               </tr>
                             );
