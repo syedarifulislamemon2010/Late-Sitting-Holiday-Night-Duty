@@ -1145,7 +1145,7 @@ function toBanglaDigits(num: number | string): string {
   return String(num).split('').map(d => banglaDigits[parseInt(d, 10)] || d).join('');
 }
 
-// Group directory users cell-wise
+// Group directory users cell-wise and sort them by seniority (designation + bank ID)
 function groupUsersByCell(usersList: DirectoryUser[]): { [cellName: string]: DirectoryUser[] } {
   const groups: { [cellName: string]: DirectoryUser[] } = {};
   usersList.forEach(u => {
@@ -1155,5 +1155,36 @@ function groupUsersByCell(usersList: DirectoryUser[]): { [cellName: string]: Dir
     }
     groups[cellName].push(u);
   });
+
+  const getDesignationRank = (designation: string | null | undefined): number => {
+    const d = (designation || '').toUpperCase();
+    if (d.includes('এসপিও') || d.includes('SPO') || d.includes('SSPO') || d.includes('SENIOR PRINCIPAL') || d.includes('সিনিয়র প্রিন্সিপাল')) return 1;
+    if (d.includes('পিও') || d.includes('PO') || d.includes('SNPO') || d.includes('PRINCIPAL') || d.includes('প্রিন্সিপাল')) return 2;
+    if (d.includes('এসও') || d.includes('SO') || d.includes('SENIOR OFFICER') || d.includes('সিনিয়র অফিসার')) return 3;
+    if (d.includes('ও') || d.includes('অফিসার') || d.includes('OFFICER') || d.includes('O-IT')) return 4;
+    return 99; // Fallback
+  };
+
+  const parseBankId = (username: string): number => {
+    const clean = username.replace(/[^0-9]/g, '');
+    const num = parseInt(clean, 10);
+    return isNaN(num) ? Infinity : num;
+  };
+
+  // Sort each cell's user list
+  Object.keys(groups).forEach(cellName => {
+    groups[cellName].sort((a, b) => {
+      // 1. Sort by designation seniority
+      const rankA = getDesignationRank(a.designation);
+      const rankB = getDesignationRank(b.designation);
+      if (rankA !== rankB) return rankA - rankB;
+
+      // 2. Sort by Bank ID (username) numerically ascending
+      const idA = parseBankId(a.username);
+      const idB = parseBankId(b.username);
+      return idA - idB;
+    });
+  });
+
   return groups;
 }
