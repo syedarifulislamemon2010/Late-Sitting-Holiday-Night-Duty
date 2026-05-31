@@ -16,7 +16,7 @@ export async function PUT(
     }
     
     const body = await request.json();
-    const { name, designation, bankId, fileNo, cellId } = body;
+    const { name, designation, bankId, fileNo, mobile, cellId } = body;
     
     if (!name || name.trim() === '') {
       return NextResponse.json({ error: 'name_required' }, { status: 400 });
@@ -86,13 +86,11 @@ export async function PUT(
             id: { not: employeeId }
           }
         });
-        if (existingConflict) {
-          if (!userCellIds.includes(existingConflict.cellId)) {
-            return NextResponse.json({
-              error: 'forbidden',
-              message: 'এই ব্যাংক আইডি অন্য সেলের কর্মকর্তার জন্য ব্যবহৃত হচ্ছে। শুধুমাত্র সিস্টেম এডমিন এটি পরিবর্তন করতে পারবেন।'
-            }, { status: 403 });
-          }
+        if (existingConflict && existingConflict.cellId !== parsedCellId) {
+          return NextResponse.json({
+            error: 'forbidden',
+            message: 'এই কর্মকর্তা অন্য সেলে কর্মরত আছেন। শুধুমাত্র সিস্টেম এডমিন এটি পরিবর্তন করতে পারবেন।'
+          }, { status: 403 });
         }
       }
     }
@@ -104,6 +102,7 @@ export async function PUT(
         designation: designation.trim(),
         bankId: bankId?.trim() || null,
         fileNo: fileNo?.trim() || null,
+        mobile: mobile?.trim() || null,
         cellId: parsedCellId
       },
       include: {

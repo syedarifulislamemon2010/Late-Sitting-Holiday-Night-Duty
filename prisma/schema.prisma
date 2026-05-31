@@ -38,6 +38,7 @@ model Employee {
   designation String
   bankId      String?
   fileNo      String?
+  mobile      String?
   cellId      Int
   cell        Cell     @relation(fields: [cellId], references: [id])
   duties      Duty[]

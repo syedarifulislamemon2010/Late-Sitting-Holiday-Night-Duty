@@ -32,6 +32,7 @@ interface Employee {
   designation: string;
   bankId: string | null;
   fileNo: string | null;
+  mobile: string | null;
   cellId: number;
   cell: Cell;
 }
@@ -215,6 +216,7 @@ export default function EmployeesPage() {
     designation: STRICT_DESIGNATIONS[0],
     bankId: '',
     fileNo: '',
+    mobile: '',
     cellId: ''
   });
   const [cellForm, setCellForm] = useState({
@@ -315,7 +317,7 @@ export default function EmployeesPage() {
 
       setIsEmpModalOpen(false);
       setEditingEmp(null);
-      setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', cellId: '' });
+      setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', mobile: '', cellId: '' });
       loadData();
     } catch (err: any) {
       setErrorMessage(err.message === 'cell_required' ? 'অনুগ্রহ করে সেল সিলেক্ট করুন।' : 'সার্ভার সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
@@ -666,6 +668,7 @@ export default function EmployeesPage() {
       designation: STRICT_DESIGNATIONS.includes(emp.designation) ? emp.designation : STRICT_DESIGNATIONS[0],
       bankId: emp.bankId || '',
       fileNo: emp.fileNo || '',
+      mobile: emp.mobile || '',
       cellId: emp.cellId.toString()
     });
     setErrorMessage('');
@@ -683,14 +686,15 @@ export default function EmployeesPage() {
   };
 
   const exportEmployeesToCSV = () => {
-    let csvContent = '\uFEFFনাম,পদবী,ব্যাংক আইডি,নথি নং,সেল\n';
+    let csvContent = '\uFEFFনাম,পদবী,ব্যাংক আইডি,নথি নং,মোবাইল নম্বর,সেল\n';
     filteredEmployees.forEach(emp => {
       const name = `"${emp.name.replace(/"/g, '""')}"`;
       const designation = `"${emp.designation.replace(/"/g, '""')}"`;
       const bankId = `"${(emp.bankId || '').replace(/"/g, '""')}"`;
       const fileNo = `"${(emp.fileNo || '').replace(/"/g, '""')}"`;
+      const mobile = `"${(emp.mobile || '').replace(/"/g, '""')}"`;
       const cellName = `"${(emp.cell?.name || '').replace(/"/g, '""')}"`;
-      csvContent += `${name},${designation},${bankId},${fileNo},${cellName}\n`;
+      csvContent += `${name},${designation},${bankId},${fileNo},${mobile},${cellName}\n`;
     });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -823,7 +827,7 @@ export default function EmployeesPage() {
                   <button
                     onClick={() => {
                       setEditingEmp(null);
-                      setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', cellId: selectableCells[0]?.id.toString() || '' });
+                      setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', mobile: '', cellId: selectableCells[0]?.id.toString() || '' });
                       setErrorMessage('');
                       setIsEmpModalOpen(true);
                     }}
@@ -1077,6 +1081,17 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মোবাইল নম্বর (ঐচ্ছিক)</label>
+                <input
+                  type="text"
+                  placeholder="যেমন: 017XXXXXXXX"
+                  value={empForm.mobile || ''}
+                  onChange={(e) => setEmpForm({ ...empForm, mobile: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেল সিলেক্ট করুন *</label>
                 <select
                   value={empForm.cellId}
@@ -1321,6 +1336,10 @@ export default function EmployeesPage() {
                   <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যক্তিগত নথি নং</span>
                   <p className="text-xs font-bold text-slate-850 dark:text-slate-150 font-sans">{profileEmp.fileNo || 'প্রদান করা হয়নি'}</p>
                 </div>
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">মোবাইল নম্বর</span>
+                  <p className="text-xs font-bold text-slate-850 dark:text-slate-150 font-sans">{profileEmp.mobile || 'প্রদান করা হয়নি'}</p>
+                </div>
               </div>
 
               {/* Close Buttons */}
@@ -1331,16 +1350,19 @@ export default function EmployeesPage() {
                 >
                   বন্ধ করুন
                 </button>
-                <button
-                  onClick={() => {
-                    const emp = profileEmp;
-                    setProfileEmp(null);
-                    startEditEmp(emp);
-                  }}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors"
-                >
-                  সম্পাদনা করুন
-                </button>
+                {(currentUser?.role === 'ADMIN' || 
+                  (currentUser?.cells && currentUser.cells.some((c: any) => c.id === profileEmp.cellId))) && (
+                  <button
+                    onClick={() => {
+                      const emp = profileEmp;
+                      setProfileEmp(null);
+                      startEditEmp(emp);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    সম্পাদনা করুন
+                  </button>
+                )}
               </div>
             </div>
           </div>

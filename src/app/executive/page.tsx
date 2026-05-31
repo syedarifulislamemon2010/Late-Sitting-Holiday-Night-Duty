@@ -434,13 +434,13 @@ export default function ExecutivesPage() {
   };
 
   const exportExecutivesToCSV = () => {
-    let csvContent = '\uFEFFনাম,পদবী,মোবাইল নম্বর,ইমেইল ঠিকানা\n';
+    let csvContent = '\uFEFFনাম,পদবী,ব্যাংক আইডি,নথি নম্বর\n';
     filteredExecutives.forEach(exec => {
       const name = `"${exec.name.replace(/"/g, '""')}"`;
       const designation = `"${exec.designation.replace(/"/g, '""')}"`;
-      const phone = `"${(exec.phone || '').replace(/"/g, '""')}"`;
-      const email = `"${(exec.email || '').replace(/"/g, '""')}"`;
-      csvContent += `${name},${designation},${phone},${email}\n`;
+      const bankId = `"${(exec.bankId || '').replace(/"/g, '""')}"`;
+      const fileNo = `"${(exec.fileNo || '').replace(/"/g, '""')}"`;
+      csvContent += `${name},${designation},${bankId},${fileNo}\n`;
     });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

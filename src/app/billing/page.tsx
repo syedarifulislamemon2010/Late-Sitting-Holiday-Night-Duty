@@ -147,9 +147,20 @@ export default function BillingPage() {
         setCells(Array.isArray(cellData) ? cellData : []);
         setEmployees(Array.isArray(empData) ? empData : []);
         if (Array.isArray(execData)) {
-          setExecutives(execData);
-          if (execData.length > 0) {
-            const defaultExec = execData.find((ex: any) => ex.name.includes('মোহাম্মদ সোহরাব হোসেন') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || execData[0];
+          const desigPriority: Record<string, number> = {
+            'মহাব্যবস্থাপক': 1,
+            'উপ-মহাব্যবস্থাপক': 2,
+            'সহকারী মহাব্যবস্থাপক': 3
+          };
+          const sortedExecs = [...execData].sort((a, b) => {
+            const prioA = desigPriority[a.designation] || 99;
+            const prioB = desigPriority[b.designation] || 99;
+            if (prioA !== prioB) return prioA - prioB;
+            return a.id - b.id;
+          });
+          setExecutives(sortedExecs);
+          if (sortedExecs.length > 0) {
+            const defaultExec = sortedExecs.find((ex: any) => ex.name.includes('মোহাম্মদ সোহরাব হোসেন') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || sortedExecs[0];
             if (defaultExec) {
               setSelectedExecutiveId(defaultExec.id.toString());
               setSigningOfficer(defaultExec.name);

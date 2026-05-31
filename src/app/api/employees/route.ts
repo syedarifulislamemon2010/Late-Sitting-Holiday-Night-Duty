@@ -47,7 +47,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, designation, bankId, fileNo, cellId } = body;
+    const { name, designation, bankId, fileNo, mobile, cellId } = body;
     
     if (!name || name.trim() === '') {
       return NextResponse.json({ error: 'name_required' }, { status: 400 });
@@ -96,14 +96,11 @@ export async function POST(request: Request) {
         const existing = await prisma.employee.findFirst({
           where: { bankId: bankId.trim() }
         });
-        if (existing) {
-          // If the officer is already in another cell that the user is not assigned to
-          if (!userCellIds.includes(existing.cellId)) {
-            return NextResponse.json({
-              error: 'forbidden',
-              message: 'এই কর্মকর্তা অন্য সেলে কর্মরত আছেন। শুধুমাত্র সিস্টেম এডমিন এটি পরিবর্তন করতে পারবেন।'
-            }, { status: 403 });
-          }
+        if (existing && existing.cellId !== parsedCellId) {
+          return NextResponse.json({
+            error: 'forbidden',
+            message: 'এই কর্মকর্তা অন্য সেলে কর্মরত আছেন। শুধুমাত্র সিস্টেম এডমিন এটি পরিবর্তন করতে পারবেন।'
+          }, { status: 403 });
         }
       }
     }
@@ -114,6 +111,7 @@ export async function POST(request: Request) {
         designation: designation.trim(),
         bankId: bankId?.trim() || null,
         fileNo: fileNo?.trim() || null,
+        mobile: mobile?.trim() || null,
         cellId: parsedCellId
       },
       include: {
