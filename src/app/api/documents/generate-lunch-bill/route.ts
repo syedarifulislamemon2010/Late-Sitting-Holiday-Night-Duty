@@ -60,7 +60,7 @@ export async function POST(request: Request) {
         cellGroup.records.forEach((r: any) => {
           totalEmployeesCount++;
           const stamp = 15;
-          const additional = r.additionalDeduction || 0;
+          const additional = r.additionalDeduction ?? 0;
           totalExtraAllowances += additional;
           const totalDed = stamp + additional;
           
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
       executivesData.records.forEach((r: any) => {
         totalEmployeesCount++;
         const stamp = 15;
-        const additional = r.additionalDeduction || 0;
+        const additional = r.additionalDeduction ?? 0;
         totalExtraAllowances += additional;
         const totalDed = stamp + additional;
 
@@ -237,7 +237,7 @@ export async function POST(request: Request) {
   }
   .total-row {
     font-weight: bold;
-    background-color: #e2e8f0;
+    background-color: #cbd5e1;
   }
   .bill-summary-text {
     margin-top: 12px;
@@ -312,12 +312,32 @@ export async function POST(request: Request) {
     </thead>
     <tbody>
       ${rowsHtml}
-      <tr class="total-row" style="background-color: #cbd5e1; font-weight: 900; font-size: 11px;">
-        <td colspan="4" style="text-align: right; padding-right: 12px; font-weight: bold;">সর্বমোট সমষ্টি (Grand Total) =</td>
+      
+      <!-- ১. সর্বমোট দাবী রো -->
+      <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 10px;">
+        <td colspan="4" style="text-align: right; padding-right: 12px;">সর্বমোট দাবী (১ থেকে ${toBnDigits(totalEmployeesCount)} নং কলামের কর্মকর্তা ও নির্বাহী) =</td>
         <td>${toBnDigits(totalDaysAll)}</td>
         <td>${toBnDigits(totalClaimAll)}/-</td>
-        <td>${toBnDigits(finalTotalDeduction)}/-</td>
-        <td>${toBnDigits(grandTotalAll)}/-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <!-- ২. রেভেনিউ স্ট্যাম্প কর্তন রো -->
+      <tr style="background-color: #fffdfd; font-weight: bold; font-size: 10px;">
+        <td colspan="6" style="text-align: right; padding-right: 12px;">রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট ${toBnDigits(totalEmployeesCount)} জনের) =</td>
+        <td style="color: #b45309; font-weight: bold;">৳${toBnDigits(totalStampAllowances)}/-</td>
+        <td>-</td>
+      </tr>
+      <!-- ৩. অতিরিক্ত কর্তন রো -->
+      <tr style="background-color: #fffdfd; font-weight: bold; font-size: 10px;">
+        <td colspan="6" style="text-align: right; padding-right: 12px;">অতিরিক্ত কর্তন (ডিজিএম/নির্বাহী নির্দেশানুযায়ী) =</td>
+        <td style="color: #b45309; font-weight: bold;">৳${toBnDigits(totalExtraAllowances)}/-</td>
+        <td>-</td>
+      </tr>
+      <!-- ৪. সর্বমোট কর্তন ও সর্বমোট প্রাপ্তব্য রো -->
+      <tr style="background-color: #cbd5e1; font-weight: 900; font-size: 11px;">
+        <td colspan="6" style="text-align: right; padding-right: 12px; font-weight: bold;">সর্বমোট কর্তন ও সর্বমোট প্রাপ্তব্য সমষ্টি (Grand Total) =</td>
+        <td style="color: #b91c1c; font-weight: bold;">৳${toBnDigits(finalTotalDeduction)}/-</td>
+        <td style="color: #15803d; font-weight: bold;">৳${toBnDigits(grandTotalAll)}/-</td>
       </tr>
     </tbody>
   </table>
