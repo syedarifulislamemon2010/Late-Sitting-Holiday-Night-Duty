@@ -35,7 +35,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, password, role, cellIds } = body;
+    const { name, password, role, cellIds, mobile } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'name_required', message: 'নাম পূরণ করা আবশ্যক।' }, { status: 400 });
@@ -75,6 +75,7 @@ export async function PUT(
       data: {
         name: name.trim(),
         role: finalRole,
+        mobile: mobile !== undefined ? (mobile ? mobile.trim() : null) : undefined,
         ...(password && password.trim() ? { password: password.trim() } : {}),
         ...(cellConnection ? { cells: { connect: cellConnection } } : {})
       },

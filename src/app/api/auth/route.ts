@@ -46,7 +46,8 @@ export async function POST(request: Request) {
             id: user.id,
             username: user.username,
             name: user.name,
-            role: user.role
+            role: user.role,
+            mobile: user.mobile
           }
         });
         
@@ -90,6 +91,7 @@ export async function GET() {
         username: true,
         name: true,
         role: true,
+        mobile: true,
         cells: {
           select: {
             id: true,

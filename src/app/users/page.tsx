@@ -26,6 +26,7 @@ interface User {
   name: string;
   role: string;
   cells: { id: number; name: string }[];
+  mobile?: string | null;
 }
 
 const extractNickname = (nameStr: string): string => {
@@ -86,6 +87,7 @@ export default function UserManagement() {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [mobile, setMobile] = useState('');
   const [role, setRole] = useState('USER');
   const [selectedCellIds, setSelectedCellIds] = useState<number[]>([]);
   const [profileUser, setProfileUser] = useState<User | null>(null);
@@ -95,6 +97,7 @@ export default function UserManagement() {
   
   // Profile settings update form
   const [profileName, setProfileName] = useState('');
+  const [profileMobile, setProfileMobile] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profileError, setProfileError] = useState('');
@@ -212,6 +215,9 @@ export default function UserManagement() {
               )}
               <div className="flex flex-col gap-0.5 mt-1.5">
                 <span className="text-[11px] font-bold text-slate-450 dark:text-slate-500 font-sans">ব্যাংক আইডি: {user.username}</span>
+                {user.mobile && (
+                  <span className="text-[11px] font-bold text-slate-450 dark:text-slate-500 font-sans">মোবাইল: {user.mobile}</span>
+                )}
                 {emp?.fileNo && (
                   <span className="text-[11px] font-bold text-slate-450 dark:text-slate-500 font-sans">নথি নম্বর: {emp.fileNo}</span>
                 )}
@@ -287,6 +293,7 @@ export default function UserManagement() {
         if (res.ok && data.authenticated) {
           setCurrentUser(data.user);
           setProfileName(data.user.name);
+          setProfileMobile(data.user.mobile || '');
         }
       } catch (err) {
         console.error('Profile fetch error:', err);
@@ -352,6 +359,7 @@ export default function UserManagement() {
     setName('');
     setUsername('');
     setPassword('123456');
+    setMobile('');
     setRole('USER');
     setSelectedCellIds([]);
     setError('');
@@ -378,6 +386,7 @@ export default function UserManagement() {
     setName(user.name);
     setUsername(user.username);
     setPassword(''); // leave blank if keeping same
+    setMobile(user.mobile || '');
     setRole(user.role);
     setSelectedCellIds(user.cells.map(c => c.id));
     setError('');
@@ -428,7 +437,8 @@ export default function UserManagement() {
       username: username.trim(),
       password: password ? password.trim() : undefined,
       role,
-      cellIds: selectedCellIds
+      cellIds: selectedCellIds,
+      mobile: mobile.trim()
     };
 
     try {
@@ -507,7 +517,8 @@ export default function UserManagement() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: profileName.trim(),
-          password: newPassword ? newPassword.trim() : undefined
+          password: newPassword ? newPassword.trim() : undefined,
+          mobile: profileMobile.trim()
         })
       });
       const data = await res.json();
@@ -515,7 +526,7 @@ export default function UserManagement() {
         setProfileSuccess('আপনার প্রোফাইল তথ্য ও পাসওয়ার্ড সফলভাবে আপডেট হয়েছে!');
         setNewPassword('');
         setConfirmPassword('');
-        const updatedUser = { ...currentUser, name: profileName.trim() };
+        const updatedUser = { ...currentUser, name: profileName.trim(), mobile: profileMobile.trim() };
         setCurrentUser(updatedUser);
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         window.dispatchEvent(new Event('user-profile-updated'));
@@ -619,6 +630,17 @@ export default function UserManagement() {
                 required
                 value={profileName}
                 onChange={(e) => setProfileName(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">মোবাইল নম্বর</label>
+              <input
+                type="text"
+                placeholder="যেমন: ০১৭XXXXXXXX"
+                value={profileMobile}
+                onChange={(e) => setProfileMobile(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
               />
             </div>
@@ -966,6 +988,18 @@ export default function UserManagement() {
                 />
               </div>
 
+              {/* Mobile */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">মোবাইল নম্বর</label>
+                <input
+                  type="text"
+                  placeholder="যেমন: ০১৭XXXXXXXX"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 focus:bg-white"
+                />
+              </div>
+
               {/* 2. Username */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">ইউজারনেম (ব্যাংক আইডি) *</label>
@@ -1145,6 +1179,11 @@ export default function UserManagement() {
                       </div>
                     </>
                   )}
+
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5 col-span-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">মোবাইল নম্বর</span>
+                    <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{profileUser.mobile || 'যুক্ত করা হয়নি'}</p>
+                  </div>
 
                   <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5 col-span-2">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">প্রবেশাধিকার প্রাপ্ত সেলসমূহ</span>
