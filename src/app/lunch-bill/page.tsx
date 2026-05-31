@@ -167,13 +167,13 @@ export default function LunchBillPage() {
   
   const isAdminOrAdminCell = currentUser?.role === 'ADMIN' || isAdministrationCell;
 
-  // Load saved combined sheet (cellId = 0) or initialize defaults
+  // Load saved combined sheet (cellId = 0 maps to system combined cell internally)
   useEffect(() => {
     if (!selectedMonth || loading) return;
 
     async function fetchCombinedLunchBill() {
       try {
-        // Query the combined sheet saved under cellId = 0
+        // Query the combined sheet
         const res = await fetch(`/api/lunch-bills?month=${selectedMonth}&cellId=0`);
         if (res.ok) {
           const data = await res.json();
@@ -381,14 +381,19 @@ export default function LunchBillPage() {
   const activeRecords = getFilteredRecordsForUser();
 
   // Combined sums
+  const totalEmployeesCount = activeRecords.length;
   const totalPresentDaysAll = activeRecords.reduce((sum, r) => sum + r.presentDays, 0);
   const totalClaimAll = activeRecords.reduce((sum, r) => sum + r.totalBill, 0);
-  const totalDeductionAll = activeRecords.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0);
+  
+  const totalStampAll = totalEmployeesCount * 15;
+  const totalExtraAll = activeRecords.reduce((sum, r) => sum + (r.additionalDeduction || 0), 0);
+  const totalDeductionAll = totalStampAll + totalExtraAll;
+  
   const grandTotalAll = activeRecords.reduce((sum, r) => sum + r.netPayable, 0);
 
   // Save entire combined record
-  const saveLunchBill = async () => {
-    if (!isAdminOrAdminCell) return;
+  const saveLunchBill = async (): Promise<any> => {
+    if (!isAdminOrAdminCell) return null;
     setSaving(true);
     setSuccessMessage(null);
     setErrorMessage(null);
@@ -407,12 +412,15 @@ export default function LunchBillPage() {
         setSavedLunchBill(data.lunchBill);
         setSuccessMessage('সমন্বিত লাঞ্চ ভাতার বিল সফলভাবে ডাটাবেজে সংরক্ষণ করা হয়েছে!');
         setTimeout(() => setSuccessMessage(null), 5000);
+        return data.lunchBill;
       } else {
         setErrorMessage(data.message || 'লাঞ্চ বিল সংরক্ষণ করতে ব্যর্থ হয়েছে।');
+        return null;
       }
     } catch (err) {
       console.error('Error saving lunch bill:', err);
       setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+      return null;
     } finally {
       setSaving(false);
     }
@@ -462,18 +470,10 @@ export default function LunchBillPage() {
     setGenerating(true);
     setErrorMessage(null);
     try {
-      // 1. Auto-save latest admin states first
+      // 1. Auto-save latest admin states first and immediately update frontend saved state!
       if (isAdminOrAdminCell) {
-        const saveRes = await fetch('/api/lunch-bills', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            month: selectedMonth,
-            workingDays: workingDays,
-            records: records
-          })
-        });
-        if (!saveRes.ok) {
+        const savedRecord = await saveLunchBill();
+        if (!savedRecord) {
           throw new Error('বিল জেনারেট করার আগে ডাটাবেজ আপডেট সংরক্ষণ ব্যর্থ হয়েছে।');
         }
       }
@@ -708,11 +708,15 @@ export default function LunchBillPage() {
                 <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">
                   {isAdminOrAdminCell ? 'সমন্বিত লাঞ্চ বিল এন্ট্রি শিট' : `লাঞ্চ ভাতা বিল শিট - ${currentUser?.cells?.[0]?.name}`} - {getBanglaMonthName(selectedMonth)}
                 </h3>
-                <p className="text-[10px] text-slate-400 mt-0.5">
+                <p className="text-[10px] mt-0.5 font-sans">
                   {savedLunchBill ? (
-                    <span className="text-emerald-600 font-bold">● administration সেল কর্তৃক চূড়ান্ত সমন্বিত রেকর্ড</span>
+                    <span className="text-emerald-600 font-bold flex items-center gap-1">
+                      <CheckCircle size={10} /> administration সেল কর্তৃক চূড়ান্ত সমন্বিত রেকর্ড
+                    </span>
                   ) : (
-                    <span className="text-amber-500 font-bold">● খসড়া (ডাটাবেজে এখনও চূড়ান্ত সংরক্ষণ করা হয়নি)</span>
+                    <span className="text-amber-500 font-bold flex items-center gap-1">
+                      <AlertTriangle size={10} /> খসড়া (ডাটাবেজে এখনও চূড়ান্ত সংরক্ষণ করা হয়নি)
+                    </span>
                   )}
                 </p>
               </div>
@@ -775,7 +779,7 @@ export default function LunchBillPage() {
                       <div className="flex items-center gap-2">
                         <Users size={16} className="text-slate-400" />
                         <span className="font-extrabold text-xs text-slate-850 dark:text-slate-50 uppercase tracking-wide">
-                          সেল: {cell.name} ({cellRecs.length} জন কর্মকর্তা)
+                          セル: {cell.name} ({cellRecs.length} জন কর্মকর্তা)
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
@@ -796,8 +800,7 @@ export default function LunchBillPage() {
                               <th className="py-2.5 px-4">অনুপস্থিত দিন (CL)</th>
                               <th className="py-2.5 px-4">উপস্থিত দিন</th>
                               <th className="py-2.5 px-4">মোট দাবী</th>
-                              <th className="py-2.5 px-4">রেভেনিউ স্ট্যাম্প</th>
-                              <th className="py-2.5 px-4">অতিরিক্ত কর্তন</th>
+                              <th className="py-2.5 px-4">RS+EXTRA কর্তন</th>
                               <th className="py-2.5 px-4">প্রাপ্তব্য</th>
                             </tr>
                           </thead>
@@ -827,28 +830,26 @@ export default function LunchBillPage() {
 
                                   <td className="py-3 px-4 font-bold font-sans">{toBanglaDigits(r.presentDays)}</td>
                                   <td className="py-3 px-4 font-bold font-sans">৳{toBanglaDigits(r.totalBill)}</td>
-                                  <td className="py-3 px-4 font-bold font-sans text-slate-500">৳{toBanglaDigits(15)}</td>
                                   
-                                  {/* Additional deduction input */}
+                                  {/* RS+EXTRA deduction input */}
                                   <td className="py-1 px-4 w-32">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      disabled={!isAdminOrAdminCell}
-                                      value={r.additionalDeduction}
-                                      onChange={(e) => handleManualDeductionChange(r.employeeId, false, e.target.value)}
-                                      className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
-                                    />
+                                    <div className="flex items-center gap-1 justify-center">
+                                      <span className="text-[10px] text-slate-400 font-bold">১৫ +</span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        disabled={!isAdminOrAdminCell}
+                                        value={r.additionalDeduction}
+                                        onChange={(e) => handleManualDeductionChange(r.employeeId, false, e.target.value)}
+                                        className="w-16 px-1.5 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
+                                      />
+                                      <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 font-sans">= ৳{toBanglaDigits(totalDed)}</span>
+                                    </div>
                                   </td>
 
-                                  {/* Conditional display of Total Deduction alongside Net Pay */}
+                                  {/* Net Payable */}
                                   <td className="py-3 px-4">
-                                    <span className="font-extrabold text-indigo-650 dark:text-indigo-400 font-sans">৳{toBanglaDigits(r.netPayable)}</span>
-                                    {additional > 0 && (
-                                      <span className="block text-[9px] text-slate-400 font-bold mt-0.5" style={{ color: '#db2777' }}>
-                                        (মোট কর্তন: {toBanglaDigits(totalDed)})
-                                      </span>
-                                    )}
+                                    <span className="font-extrabold text-indigo-650 dark:text-indigo-400 font-sans text-sm">৳{toBanglaDigits(r.netPayable)}</span>
                                   </td>
                                 </tr>
                               );
@@ -887,8 +888,7 @@ export default function LunchBillPage() {
                           <th className="py-2.5 px-4">অনুপস্থিত দিন (CL)</th>
                           <th className="py-2.5 px-4">উপস্থিত দিন</th>
                           <th className="py-2.5 px-4">মোট দাবী</th>
-                          <th className="py-2.5 px-4">রেভেনিউ স্ট্যাম্প</th>
-                          <th className="py-2.5 px-4">অতিরিক্ত কর্তন</th>
+                          <th className="py-2.5 px-4">RS+EXTRA কর্তন</th>
                           <th className="py-2.5 px-4">প্রাপ্তব্য</th>
                         </tr>
                       </thead>
@@ -918,28 +918,26 @@ export default function LunchBillPage() {
 
                               <td className="py-3 px-4 font-bold font-sans">{toBanglaDigits(r.presentDays)}</td>
                               <td className="py-3 px-4 font-bold font-sans">৳{toBanglaDigits(r.totalBill)}</td>
-                              <td className="py-3 px-4 font-bold font-sans text-slate-500">৳{toBanglaDigits(15)}</td>
                               
-                              {/* Additional deduction input */}
+                              {/* RS+EXTRA deduction input */}
                               <td className="py-1 px-4 w-32">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  disabled={!isAdminOrAdminCell}
-                                  value={r.additionalDeduction}
-                                  onChange={(e) => handleManualDeductionChange(r.employeeId, true, e.target.value)}
-                                  className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
-                                />
+                                <div className="flex items-center gap-1 justify-center">
+                                  <span className="text-[10px] text-slate-400 font-bold">১৫ +</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    disabled={!isAdminOrAdminCell}
+                                    value={r.additionalDeduction}
+                                    onChange={(e) => handleManualDeductionChange(r.employeeId, true, e.target.value)}
+                                    className="w-16 px-1.5 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
+                                  />
+                                  <span className="text-xs font-extrabold text-rose-700 dark:text-rose-400 font-sans">= ৳{toBanglaDigits(totalDed)}</span>
+                                </div>
                               </td>
 
-                              {/* Net Payable and conditional total deductions display */}
+                              {/* Net Payable */}
                               <td className="py-3 px-4">
-                                <span className="font-extrabold text-rose-700 dark:text-rose-400 font-sans">৳{toBanglaDigits(r.netPayable)}</span>
-                                {additional > 0 && (
-                                  <span className="block text-[9px] text-slate-400 font-bold mt-0.5" style={{ color: '#db2777' }}>
-                                    (মোট কর্তন: {toBanglaDigits(totalDed)})
-                                  </span>
-                                )}
+                                <span className="font-extrabold text-rose-700 dark:text-rose-450 font-sans text-sm">৳{toBanglaDigits(r.netPayable)}</span>
                               </td>
                             </tr>
                           );
@@ -949,6 +947,18 @@ export default function LunchBillPage() {
                   </div>
                 </div>
               )}
+
+              {/* Deductions Breakdown Summary Box */}
+              <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2">
+                <h5 className="font-extrabold text-slate-850 dark:text-slate-100 text-xs">● কর্তনের বিস্তারিত বিবরণী:</h5>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-slate-600 dark:text-slate-350">
+                  <p>- রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট {toBanglaDigits(totalEmployeesCount)} জনের): <span className="font-extrabold font-sans text-slate-850 dark:text-slate-100">৳{toBanglaDigits(totalStampAll)}</span></p>
+                  <p>- অতিরিক্ত কর্তন (ডিজিএম/নির্বাহী নির্দেশানুযায়ী): <span className="font-extrabold font-sans text-slate-850 dark:text-slate-100">৳{toBanglaDigits(totalExtraAll)}</span></p>
+                  <p className="sm:border-l border-slate-250 dark:border-slate-750 sm:pl-4 font-extrabold" style={{ color: '#db2777' }}>
+                    = সর্বমোট কর্তন (RS+EXTRA): <span className="font-sans text-sm">৳{toBanglaDigits(totalDeductionAll)}</span>
+                  </p>
+                </div>
+              </div>
 
               {/* Department Grand totals */}
               <div className="p-5 bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-150/40 dark:border-indigo-900/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">

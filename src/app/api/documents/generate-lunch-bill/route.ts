@@ -38,6 +38,9 @@ export async function POST(request: Request) {
 
     let rowsHtml = '';
     let globalIndex = 1;
+    let totalEmployeesCount = 0;
+    let totalStampAllowances = 0;
+    let totalExtraAllowances = 0;
 
     // 1. Render cell groupings
     if (groupedData && Array.isArray(groupedData)) {
@@ -55,13 +58,12 @@ export async function POST(request: Request) {
 
         // Cell Officers Rows
         cellGroup.records.forEach((r: any) => {
+          totalEmployeesCount++;
           const stamp = 15;
           const additional = r.additionalDeduction || 0;
+          totalExtraAllowances += additional;
           const totalDed = stamp + additional;
-          // Conditional rendering: if additional deduction is 0, leave total deduction column blank
-          const totalDedDisplay = additional > 0 ? `${toBnDigits(totalDed)}/-` : '';
-          const additionalDisplay = additional > 0 ? `${toBnDigits(additional)}` : '০';
-
+          
           rowsHtml += `
             <tr>
               <td>${toBnDigits(globalIndex++)}</td>
@@ -70,10 +72,7 @@ export async function POST(request: Request) {
               <td>${toBnDigits(400)}/-</td>
               <td>${toBnDigits(r.presentDays)}</td>
               <td class="font-bold">${toBnDigits(r.totalBill)}/-</td>
-              <td>
-                <span class="font-bold">${totalDedDisplay}</span>
-                ${additional > 0 ? `<span style="font-size: 8px; color: #555; display: block; margin-top: 1px;">(স্ট্যাম্প: ১৫ + অতিরিক্ত: ${toBnDigits(additional)})</span>` : ''}
-              </td>
+              <td class="font-bold">${toBnDigits(totalDed)}/-</td>
               <td class="font-bold">${toBnDigits(r.netPayable)}/-</td>
             </tr>
           `;
@@ -105,10 +104,11 @@ export async function POST(request: Request) {
 
       // Executive Rows
       executivesData.records.forEach((r: any) => {
+        totalEmployeesCount++;
         const stamp = 15;
         const additional = r.additionalDeduction || 0;
+        totalExtraAllowances += additional;
         const totalDed = stamp + additional;
-        const totalDedDisplay = additional > 0 ? `${toBnDigits(totalDed)}/-` : '';
 
         rowsHtml += `
           <tr style="background-color: #fffdfd;">
@@ -118,10 +118,7 @@ export async function POST(request: Request) {
             <td>${toBnDigits(400)}/-</td>
             <td>${toBnDigits(r.presentDays)}</td>
             <td class="font-bold">${toBnDigits(r.totalBill)}/-</td>
-            <td>
-              <span class="font-bold">${totalDedDisplay}</span>
-              ${additional > 0 ? `<span style="font-size: 8px; color: #555; display: block; margin-top: 1px;">(স্ট্যাম্প: ১৫ + অতিরিক্ত: ${toBnDigits(additional)})</span>` : ''}
-            </td>
+            <td class="font-bold">${toBnDigits(totalDed)}/-</td>
             <td class="font-bold">${toBnDigits(r.netPayable)}/-</td>
           </tr>
         `;
@@ -138,6 +135,9 @@ export async function POST(request: Request) {
         </tr>
       `;
     }
+
+    totalStampAllowances = totalEmployeesCount * 15;
+    const finalTotalDeduction = totalStampAllowances + totalExtraAllowances;
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -245,6 +245,15 @@ export async function POST(request: Request) {
     line-height: 1.5;
     text-align: justify;
   }
+  .deductions-breakdown {
+    margin-top: 12px;
+    border: 1px solid #000;
+    padding: 8px 12px;
+    background-color: #f8fafc;
+    border-radius: 6px;
+    line-height: 1.5;
+    font-size: 9.5px;
+  }
   .signature-container {
     width: 100%;
     margin-top: 0.8in;
@@ -296,9 +305,9 @@ export async function POST(request: Request) {
         <th style="width: 14%;">পদবী</th>
         <th style="width: 11%;">দৈনিক হার</th>
         <th style="width: 10%;">উপস্থিতি</th>
-        <th style="width: 11%;">মোট দাবী</th>
-        <th style="width: 12%;">মোট কর্তন</th>
-        <th style="width: 11%;">প্রাপ্তব্য</th>
+        <th style="width: 12%;">মোট দাবী</th>
+        <th style="width: 12%;">RS+EXTRA কর্তন</th>
+        <th style="width: 10%;">প্রাপ্তব্য</th>
       </tr>
     </thead>
     <tbody>
@@ -307,11 +316,21 @@ export async function POST(request: Request) {
         <td colspan="4" style="text-align: right; padding-right: 12px; font-weight: bold;">সর্বমোট সমষ্টি (Grand Total) =</td>
         <td>${toBnDigits(totalDaysAll)}</td>
         <td>${toBnDigits(totalClaimAll)}/-</td>
-        <td>${toBnDigits(totalDeductionAll)}/-</td>
+        <td>${toBnDigits(finalTotalDeduction)}/-</td>
         <td>${toBnDigits(grandTotalAll)}/-</td>
       </tr>
     </tbody>
   </table>
+
+  <!-- Deductions detailed breakdown box -->
+  <div class="deductions-breakdown">
+    <p style="font-weight: bold; margin-bottom: 2px;">● কর্তনের বিস্তারিত বিবরণী:</p>
+    <p style="margin-left: 12px;">- রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট ${toBnDigits(totalEmployeesCount)} জনের): <strong>৳${toBnDigits(totalStampAllowances)}/-</strong></p>
+    <p style="margin-left: 12px;">- অতিরিক্ত কর্তন (ডিজিএম/নির্বাহী নির্দেশানুযায়ী): <strong>৳${toBnDigits(totalExtraAllowances)}/-</strong></p>
+    <p style="margin-left: 12px; font-weight: bold; border-top: 1px dashed #000; padding-top: 2px; margin-top: 2px; width: fit-content;">
+      = সর্বমোট কর্তন (RS+EXTRA): <strong>৳${toBnDigits(finalTotalDeduction)}/-</strong>
+    </p>
+  </div>
 
   <div class="bill-summary-text">
     <p>কথায়: <strong>${grandTotalInWords}</strong>।</p>

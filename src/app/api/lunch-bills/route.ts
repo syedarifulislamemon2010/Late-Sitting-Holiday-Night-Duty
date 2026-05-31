@@ -3,6 +3,21 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
 
+async function getOrCreateCombinedCell() {
+  let combinedCell = await prisma.cell.findUnique({
+    where: { name: 'Combined Departmental Sheet' }
+  });
+  if (!combinedCell) {
+    combinedCell = await prisma.cell.create({
+      data: {
+        name: 'Combined Departmental Sheet',
+        description: 'System Combined Sheet Cell Reference'
+      }
+    });
+  }
+  return combinedCell;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -41,6 +56,9 @@ export async function GET(request: Request) {
         c.name.toLowerCase().includes('administration')
       );
 
+    const combinedCell = await getOrCreateCombinedCell();
+    const combinedCellId = combinedCell.id;
+
     // Default cellId for combined sheet
     let targetCellId = 0;
     if (cellIdStr) {
@@ -62,12 +80,12 @@ export async function GET(request: Request) {
       }
     }
 
-    // Load the combined LunchBill record (cellId = 0)
+    // Load the combined LunchBill record (cellId = combinedCellId)
     const combinedBill = await prisma.lunchBill.findUnique({
       where: {
         month_cellId: {
           month,
-          cellId: 0
+          cellId: combinedCellId
         }
       }
     });
@@ -76,7 +94,7 @@ export async function GET(request: Request) {
       return NextResponse.json(null);
     }
 
-    // If request is from Admin, return the full combined record
+    // If request is from Admin and querying combined sheet (targetCellId === 0)
     if (isAdminOrAdminCell && targetCellId === 0) {
       return NextResponse.json(combinedBill);
     }
@@ -152,14 +170,17 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
+    const combinedCell = await getOrCreateCombinedCell();
+    const combinedCellId = combinedCell.id;
+
     const recordsJson = JSON.stringify(records);
 
-    // Save the combined sheet under cellId = 0 (representing Combined Departmental Sheet)
+    // Save the combined sheet under cellId = combinedCellId (System Combined Cell)
     const lunchBill = await prisma.lunchBill.upsert({
       where: {
         month_cellId: {
           month,
-          cellId: 0
+          cellId: combinedCellId
         }
       },
       update: {
@@ -169,7 +190,7 @@ export async function POST(request: Request) {
       },
       create: {
         month,
-        cellId: 0,
+        cellId: combinedCellId,
         workingDays: parsedWorkingDays,
         recordsJson,
         generatedBy: currentUser.name
