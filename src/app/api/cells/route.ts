@@ -24,7 +24,8 @@ export async function GET() {
       }
     }
 
-    const whereClause = isUserRestricted ? { id: { in: cellIds } } : {};
+    const whereClause: any = isUserRestricted ? { id: { in: cellIds } } : {};
+    whereClause.name = { not: 'Combined Departmental Sheet' };
 
     const cells = await prisma.cell.findMany({
       where: whereClause,

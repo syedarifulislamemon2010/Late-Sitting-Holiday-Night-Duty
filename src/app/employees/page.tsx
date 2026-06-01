@@ -14,7 +14,11 @@ import {
   Briefcase,
   Hash,
   CreditCard,
-  Download
+  Download,
+  Printer,
+  Eye,
+  X,
+  Loader2
 } from 'lucide-react';
 
 interface Cell {
@@ -133,6 +137,16 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [cellFilter, setCellFilter] = useState('all');
+  const [generating, setGenerating] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [iframeUrl, setIframeUrl] = useState('');
+
+  const isAdministrationCell = currentUser?.cells?.some((c: any) => 
+    c.name.includes('প্রশাসন') || 
+    c.name.toLowerCase().includes('admin') || 
+    c.name.toLowerCase().includes('administration')
+  );
+  const isAdminOrAdminCell = currentUser?.role === 'ADMIN' || isAdministrationCell;
 
   // Modals state
   const [isEmpModalOpen, setIsEmpModalOpen] = useState(false);
@@ -243,12 +257,12 @@ export default function EmployeesPage() {
   });
   const [showKeyInput, setShowKeyInput] = useState(false);
 
-  const selectableCells = currentUser?.role === 'ADMIN'
+  const selectableCells = isAdminOrAdminCell
     ? cells
     : cells.filter(cell => currentUser?.cells?.some((c: any) => c.id === cell.id));
 
   const formSelectableCells = (() => {
-    if (currentUser?.role === 'ADMIN') {
+    if (isAdminOrAdminCell) {
       return cells;
     }
     if (editingEmp) {
@@ -267,6 +281,53 @@ export default function EmployeesPage() {
       setBulkEmpCellId(selectableCells[0].id.toString());
     }
   }, [selectableCells, bulkEmpCellId]);
+
+  const generateEmployeeList = async (): Promise<string | null> => {
+    setGenerating(true);
+    setErrorMessage('');
+    try {
+      const res = await fetch('/api/documents/generate-employee-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cellFilter })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.filePath) {
+        return data.filePath;
+      } else {
+        setErrorMessage(data.message || 'কর্মকর্তা তালিকা প্রস্তুত করতে ব্যর্থ হয়েছে।');
+        return null;
+      }
+    } catch (err: any) {
+      console.error('Error generating employee list:', err);
+      setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+      return null;
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleDirectPrint = async () => {
+    const path = await generateEmployeeList();
+    if (path) {
+      const iframe = document.getElementById('silent-print-iframe') as HTMLIFrameElement;
+      if (iframe) {
+        iframe.src = path;
+        iframe.onload = () => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        };
+      }
+    }
+  };
+
+  const handlePrintPreview = async () => {
+    const path = await generateEmployeeList();
+    if (path) {
+      setIframeUrl(path);
+      setIsPreviewOpen(true);
+    }
+  };
 
   // Fetch initial data
   async function loadData() {
@@ -758,7 +819,7 @@ export default function EmployeesPage() {
         </div>
         
         {/* TAB CONTROLLERS */}
-        {currentUser?.role === 'ADMIN' && (
+        {isAdminOrAdminCell && (
           <div className="flex bg-slate-200/60 dark:bg-slate-800/60 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/80 self-start md:self-auto shadow-inner">
             <button
               onClick={() => setActiveTab('employees')}
@@ -821,10 +882,28 @@ export default function EmployeesPage() {
             <div className="flex gap-2">
               <button
                 onClick={exportEmployeesToCSV}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5"
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
               >
                 <Download size={16} />
                 এক্সপোর্ট করুন
+              </button>
+              
+              <button
+                onClick={handlePrintPreview}
+                disabled={generating}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750 cursor-pointer disabled:opacity-50"
+              >
+                {generating ? <Loader2 className="animate-spin" size={16} /> : <Eye size={16} />}
+                প্রিন্ট প্রিভিউ
+              </button>
+              
+              <button
+                onClick={handleDirectPrint}
+                disabled={generating}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {generating ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
+                ডাউনলোড পিডিএফ
               </button>
               {selectableCells.length > 0 && (
                 <>
@@ -920,7 +999,7 @@ export default function EmployeesPage() {
                                 </div>
                               </div>
 
-                              {(currentUser?.role === 'ADMIN' || 
+                              {(isAdminOrAdminCell || 
                                 (currentUser?.cells && currentUser.cells.some((c: any) => c.id === emp.cellId))) && (
                                 <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80 font-sans">
                                   <button
@@ -1365,7 +1444,7 @@ export default function EmployeesPage() {
                 >
                   বন্ধ করুন
                 </button>
-                {(currentUser?.role === 'ADMIN' || 
+                {(isAdminOrAdminCell || 
                   (currentUser?.cells && currentUser.cells.some((c: any) => c.id === profileEmp.cellId))) && (
                   <button
                     onClick={() => {
@@ -1383,6 +1462,59 @@ export default function EmployeesPage() {
           </div>
         </div>
       )}
+      {/* Premium In-Page Print Preview Modal */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
+          <div className="bg-white dark:bg-slate-955 w-full max-w-5xl rounded-[32px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-scale-up h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-855 flex items-center justify-between">
+              <div>
+                <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-sm">কর্মকর্তা ডিরেক্টরি প্রিন্ট প্রিভিউ</h4>
+                <p className="text-[10px] text-slate-400 mt-0.5">নতুন ট্যাবে ওপেন না করে সরাসরি ড্যাশবোর্ড থেকে প্রিভিউ করুন।</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => {
+                    const iframe = document.getElementById('preview-print-iframe') as HTMLIFrameElement;
+                    if (iframe) {
+                      iframe.contentWindow?.focus();
+                      iframe.contentWindow?.print();
+                    }
+                  }}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md cursor-pointer"
+                >
+                  <Printer size={13} />
+                  প্রিন্ট করুন
+                </button>
+                <button 
+                  onClick={() => setIsPreviewOpen(false)}
+                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 rounded-full cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 bg-slate-50/50 dark:bg-slate-955/10 p-4 relative">
+              <iframe 
+                id="preview-print-iframe"
+                src={iframeUrl}
+                className="w-full h-full border border-slate-150 dark:border-slate-850 rounded-2xl shadow-inner bg-white"
+              />
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Hidden Iframe for silent printing */}
+      <iframe 
+        id="silent-print-iframe" 
+        className="hidden" 
+        style={{ width: '0px', height: '0px', border: '0px' }}
+      />
     </div>
   );
 }
