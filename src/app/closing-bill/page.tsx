@@ -319,8 +319,9 @@ export default function ClosingBillPage() {
   // Filter records by cell/executives for standard users
   const getFilteredRecordsForUser = () => {
     if (isAdminOrAdminCell) return records;
-    const userCellIds = currentUser?.cells?.map((c: any) => c.id) || [];
-    return records.filter(r => !r.isExecutive && userCellIds.includes(r.cellId));
+    // Standard user gets only officers belonging to their specific cell (primary cell only)
+    const primaryCellId = currentUser?.cells?.[0]?.id;
+    return records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
   };
 
   const activeRecords = getFilteredRecordsForUser();
@@ -365,9 +366,20 @@ export default function ClosingBillPage() {
   };
 
   const getPrintPayload = () => {
+    const primaryCellId = currentUser?.cells?.[0]?.id;
+
+    // Filter records and cells according to user role/assigned primary cell
+    const allowedRecords = isAdminOrAdminCell 
+      ? records 
+      : records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
+      
+    const allowedCells = isAdminOrAdminCell 
+      ? cells 
+      : cells.filter(c => c.id === primaryCellId);
+
     // 1. Group cell officers
-    const cellGroups = cells.map(cell => {
-      const cellRecs = records.filter(r => !r.isExecutive && r.cellId === cell.id);
+    const cellGroups = allowedCells.map(cell => {
+      const cellRecs = allowedRecords.filter(r => !r.isExecutive && r.cellId === cell.id);
       return {
         cellName: cell.name,
         records: cellRecs,
@@ -378,7 +390,7 @@ export default function ClosingBillPage() {
     }).filter(g => g.records.length > 0);
 
     // 2. Executives
-    const execRecs = records.filter(r => r.isExecutive);
+    const execRecs = isAdminOrAdminCell ? records.filter(r => r.isExecutive) : [];
     const execsData = {
       records: execRecs,
       totalClaim: execRecs.reduce((sum, r) => sum + r.totalBill, 0),
@@ -386,15 +398,19 @@ export default function ClosingBillPage() {
       grandTotal: execRecs.reduce((sum, r) => sum + r.netPayable, 0)
     };
 
+    const allowedTotalClaim = allowedRecords.reduce((sum, r) => sum + r.totalBill, 0);
+    const allowedTotalStamp = allowedRecords.length * 15;
+    const allowedGrandTotal = allowedRecords.reduce((sum, r) => sum + r.netPayable, 0);
+
     return {
       monthName: getBanglaMonthLabel(selectedMonth),
       groupedData: cellGroups,
       executivesData: execsData,
-      totalEmployeesCount: records.length,
-      totalClaimAll: records.reduce((sum, r) => sum + r.totalBill, 0),
-      totalStampAll: records.length * 15,
-      grandTotalAll: records.reduce((sum, r) => sum + r.netPayable, 0),
-      grandTotalInWords: getBanglaNumberWords(records.reduce((sum, r) => sum + r.netPayable, 0)),
+      totalEmployeesCount: allowedRecords.length,
+      totalClaimAll: allowedTotalClaim,
+      totalStampAll: allowedTotalStamp,
+      grandTotalAll: allowedGrandTotal,
+      grandTotalInWords: getBanglaNumberWords(allowedGrandTotal),
       reportDate: new Date().toISOString().split('T')[0]
     };
   };

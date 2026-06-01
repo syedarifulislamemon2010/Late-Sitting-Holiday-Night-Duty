@@ -502,9 +502,9 @@ export default function LunchBillPage() {
   // Filter records by cell/executive for standard users
   const getFilteredRecordsForUser = () => {
     if (isAdminOrAdminCell) return records;
-    // Standard user gets only officers belonging to their specific cell
-    const userCellIds = currentUser?.cells?.map((c: any) => c.id) || [];
-    return records.filter(r => !r.isExecutive && userCellIds.includes(r.cellId));
+    // Standard user gets only officers belonging to their specific cell (primary cell only)
+    const primaryCellId = currentUser?.cells?.[0]?.id;
+    return records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
   };
 
   const activeRecords = getFilteredRecordsForUser();
@@ -557,9 +557,20 @@ export default function LunchBillPage() {
 
   // Build Payload structures for HTML generator
   const getPrintPayload = () => {
+    const primaryCellId = currentUser?.cells?.[0]?.id;
+
+    // Filter records and cells according to user role/assigned primary cell
+    const allowedRecords = isAdminOrAdminCell 
+      ? records 
+      : records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
+      
+    const allowedCells = isAdminOrAdminCell 
+      ? cells 
+      : cells.filter(c => c.id === primaryCellId);
+
     // 1. Group cell officers
-    const cellGroups = cells.map(cell => {
-      const cellRecs = records.filter(r => !r.isExecutive && r.cellId === cell.id);
+    const cellGroups = allowedCells.map(cell => {
+      const cellRecs = allowedRecords.filter(r => !r.isExecutive && r.cellId === cell.id);
       return {
         cellName: cell.name,
         records: cellRecs,
@@ -571,7 +582,7 @@ export default function LunchBillPage() {
     }).filter(g => g.records.length > 0);
 
     // 2. Gather Executives
-    const execRecs = records.filter(r => r.isExecutive);
+    const execRecs = isAdminOrAdminCell ? records.filter(r => r.isExecutive) : [];
     const execsData = {
       records: execRecs,
       totalDays: execRecs.reduce((sum, r) => sum + execRecs.reduce((s, o) => s + o.presentDays, 0), 0),
@@ -585,11 +596,11 @@ export default function LunchBillPage() {
       groupedData: cellGroups,
       executivesData: execsData,
       workingDays: workingDays,
-      totalDaysAll: records.reduce((sum, r) => sum + r.presentDays, 0),
-      totalClaimAll: records.reduce((sum, r) => sum + r.totalBill, 0),
-      totalDeductionAll: records.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
-      grandTotalAll: records.reduce((sum, r) => sum + r.netPayable, 0),
-      grandTotalInWords: getBanglaNumberWords(records.reduce((sum, r) => sum + r.netPayable, 0)),
+      totalDaysAll: allowedRecords.reduce((sum, r) => sum + r.presentDays, 0),
+      totalClaimAll: allowedRecords.reduce((sum, r) => sum + r.totalBill, 0),
+      totalDeductionAll: allowedRecords.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
+      grandTotalAll: allowedRecords.reduce((sum, r) => sum + r.netPayable, 0),
+      grandTotalInWords: getBanglaNumberWords(allowedRecords.reduce((sum, r) => sum + r.netPayable, 0)),
       reportDate: new Date().toISOString().split('T')[0]
     };
   };

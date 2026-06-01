@@ -58,3 +58,6 @@ next-env.d.ts
 
 # temp drive uploads
 .tmp.driveupload/
+
+# uploads
+public/uploads/
