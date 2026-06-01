@@ -20,6 +20,38 @@ import {
 } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 
+// Default 2026 Bangladesh public holidays
+const DEFAULT_2026_HOLIDAYS = [
+  { date: '2026-02-04', name: 'পবিত্র শবে বরাত' },
+  { date: '2026-02-21', name: 'শহীদ দিবস ও আন্তর্জাতিক মাতৃভাষা দিবস' },
+  { date: '2026-03-17', name: 'পবিত্র শবে কদর' },
+  { date: '2026-03-19', name: 'পবিত্র ঈদ-উল-ফিতর' },
+  { date: '2026-03-20', name: 'পবিত্র ঈদ-উল-ফিতর' },
+  { date: '2026-03-21', name: 'পবিত্র ঈদ-উল-ফিতর' },
+  { date: '2026-03-22', name: 'পবিত্র ঈদ-উল-ফিতর' },
+  { date: '2026-03-23', name: 'পবিত্র ঈদ-উল-ফিতর' },
+  { date: '2026-03-26', name: 'স্বাধীনতা ও জাতীয় দিবস' },
+  { date: '2026-04-14', name: 'বাংলা নববর্ষ (পহেলা বৈশাখ)' },
+  { date: '2026-05-01', name: 'মে দিবস ও বুদ্ধ পূর্ণিমা' },
+  { date: '2026-05-25', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-26', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-27', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-28', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-29', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-30', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-31', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-06-26', name: 'পবিত্র আশুরা' },
+  { date: '2026-07-01', name: 'ব্যাংক ছুটির দিন (অর্ধ-বার্ষিকী)' },
+  { date: '2026-08-05', name: 'জুলাই গণঅভ্যুত্থান দিবস' },
+  { date: '2026-08-26', name: 'পবিত্র ঈদে মিলাদুন্নবী (সা.)' },
+  { date: '2026-09-04', name: 'শুভ জন্মাষ্টমী' },
+  { date: '2026-10-20', name: 'দূর্গাপূজা (মহা নবমী)' },
+  { date: '2026-10-21', name: 'দূর্গাপূজা (বিজয়া দশমী)' },
+  { date: '2026-12-16', name: 'বিজয় দিবস' },
+  { date: '2026-12-25', name: 'যীশু খ্রীষ্টের জন্মদিন (বড় দিন)' },
+  { date: '2026-12-31', name: 'ব্যাংক ছুটির দিন (বার্ষিকী)' },
+];
+
 interface Cell {
   id: number;
   name: string;
@@ -79,6 +111,7 @@ export default function LunchBillPage() {
   });
   
   const [workingDays, setWorkingDays] = useState<number>(17);
+  const [holidays, setHolidays] = useState<any[]>([]);
 
   // Active records sheet state
   const [records, setRecords] = useState<LunchRecord[]>([]);
@@ -121,21 +154,24 @@ export default function LunchBillPage() {
     loadProfile();
   }, []);
 
-  // Fetch cells, employees, and executives lists
+  // Fetch cells, employees, executives, and holidays lists
   useEffect(() => {
     async function loadData() {
       try {
-        const [cellRes, empRes, execRes] = await Promise.all([
+        const [cellRes, empRes, execRes, holidayRes] = await Promise.all([
           fetch('/api/cells'),
           fetch('/api/employees'),
-          fetch('/api/executives')
+          fetch('/api/executives'),
+          fetch('/api/holidays')
         ]);
         const cellData = await cellRes.json();
         const empData = await empRes.json();
         const execData = await execRes.json();
+        const holidayData = await holidayRes.json();
         
         setCells(Array.isArray(cellData) ? cellData : []);
         setEmployees(Array.isArray(empData) ? empData : []);
+        setHolidays(Array.isArray(holidayData) ? holidayData : []);
         
         // Filter out GMs strictly, leaving only DGMs and AGMs
         const filteredExecs = (Array.isArray(execData) ? execData : []).filter(e => {
@@ -210,6 +246,45 @@ export default function LunchBillPage() {
         // Fallback: Build default combined list (cell officers + DGM/AGM executives)
         setSavedLunchBill(null);
         
+        // Dynamically compute the default working days for the selected month
+        let computedDays = 17; // standard fallback
+        if (selectedMonth && selectedMonth.includes('-')) {
+          const [yearStr, monthStr] = selectedMonth.split('-');
+          const year = parseInt(yearStr, 10);
+          const month = parseInt(monthStr, 10);
+          const daysInMonth = new Date(year, month, 0).getDate();
+          
+          let count = 0;
+          for (let day = 1; day <= daysInMonth; day++) {
+            const dayStr = String(day).padStart(2, '0');
+            const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+            
+            const dateObj = new Date(year, month - 1, day);
+            const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
+            
+            const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+            const isHoliday = DEFAULT_2026_HOLIDAYS.some(h => h.date === dateStr);
+            
+            const dbHol = holidays.find(h => h.date === dateStr);
+            let isWorking = true;
+            if (dbHol) {
+              isWorking = dbHol.isWorkingDay;
+            } else {
+              if (dateStr === '2026-05-23') {
+                isWorking = true;
+              } else if (isWeekend || isHoliday) {
+                isWorking = false;
+              }
+            }
+            if (isWorking) {
+              count++;
+            }
+          }
+          computedDays = count;
+        }
+
+        setWorkingDays(computedDays);
+        
         const defaultRecords: LunchRecord[] = [];
 
         // 1. Add Cell Officers
@@ -220,12 +295,12 @@ export default function LunchBillPage() {
             designation: emp.designation,
             bankId: emp.bankId,
             rate: 400,
-            presentDays: workingDays,
+            presentDays: computedDays,
             absenceDays: 0,
-            totalBill: workingDays * 400,
+            totalBill: computedDays * 400,
             stampDeduction: 15,
             additionalDeduction: 0,
-            netPayable: (workingDays * 400) - 15,
+            netPayable: (computedDays * 400) - 15,
             cellId: emp.cellId,
             isExecutive: false,
             remarks: ''
@@ -240,12 +315,12 @@ export default function LunchBillPage() {
             designation: exec.designation,
             bankId: exec.bankId,
             rate: 400,
-            presentDays: workingDays,
+            presentDays: computedDays,
             absenceDays: 0,
-            totalBill: workingDays * 400,
+            totalBill: computedDays * 400,
             stampDeduction: 15,
             additionalDeduction: 0,
-            netPayable: (workingDays * 400) - 15,
+            netPayable: (computedDays * 400) - 15,
             cellId: 0, // No cell for executives
             isExecutive: true,
             remarks: ''
@@ -259,7 +334,7 @@ export default function LunchBillPage() {
     }
 
     fetchCombinedLunchBill();
-  }, [selectedMonth, employees, executives, loading]);
+  }, [selectedMonth, employees, executives, holidays, loading]);
 
   // Recalculations hook for deduction configs (flat or designation based)
   const applyDeductionRates = (mode: 'manual' | 'flat' | 'designation', flatRate: number, rates: typeof designationRates, currentWorkingDays: number, currentRecords: LunchRecord[]) => {
