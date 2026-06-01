@@ -849,9 +849,11 @@ export default function EmployeesPage() {
       const pA = priority(a.designation);
       const pB = priority(b.designation);
       if (pA !== pB) return pA - pB;
-      return a.id - b.id;
+      return (a.fileNo || '').localeCompare(b.fileNo || '', undefined, { numeric: true, sensitivity: 'base' });
     });
   };
+
+
   const sortedFilteredExecutives = sortExecutives(filteredExecutives);
 
   return (

@@ -172,13 +172,31 @@ export default function ExecutivesPage() {
     try {
       const res = await fetch('/api/executives');
       const data = await res.json();
-      setExecutives(Array.isArray(data) ? data : []);
+      const rawList = Array.isArray(data) ? data : [];
+      // Filter out GMs strictly, leaving only DGMs and AGMs
+      const filteredExecs = rawList.filter(e => {
+        const d = e.designation.trim();
+        return (
+          d.includes('উপ-মহাব্যবস্থাপক') || 
+          d.includes('সহকারী মহাব্যবস্থাপক') || 
+          d.includes('ডিজিএম') || 
+          d.includes('এজিএম') || 
+          d.toLowerCase().includes('dgm') || 
+          d.toLowerCase().includes('agm')
+        ) && !(
+          d.includes('মহাব্যবস্থাপক') && 
+          !d.includes('উপ-') && 
+          !d.includes('সহকারী')
+        );
+      });
+      setExecutives(filteredExecs);
     } catch (err) {
       console.error('Error loading executives:', err);
     } finally {
       setLoading(false);
     }
   }
+
 
   useEffect(() => {
     async function getProfile() {
@@ -516,8 +534,9 @@ export default function ExecutivesPage() {
     if (prioA !== prioB) {
       return prioA - prioB;
     }
-    return a.id - b.id;
+    return (a.fileNo || '').localeCompare(b.fileNo || '', undefined, { numeric: true, sensitivity: 'base' });
   });
+
 
   return (
     <div className="space-y-6">

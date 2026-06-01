@@ -120,14 +120,10 @@ export async function POST(request: Request) {
         const pB = priority(b.designation);
         if (pA !== pB) return pA - pB;
         
-        // Sort AGMs by fileNo
-        if (pA === 2) {
-          return (a.fileNo || '').localeCompare(b.fileNo || '', undefined, { numeric: true, sensitivity: 'base' });
-        }
-        
-        return a.id - b.id;
+        return (a.fileNo || '').localeCompare(b.fileNo || '', undefined, { numeric: true, sensitivity: 'base' });
       });
     };
+
     const sortedExecs = sortExecutives(executives);
 
     let execTableHtml = '';
