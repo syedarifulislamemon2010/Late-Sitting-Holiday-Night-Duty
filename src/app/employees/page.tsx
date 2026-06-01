@@ -134,6 +134,7 @@ export default function EmployeesPage() {
   const [activeTab, setActiveTab] = useState<'employees' | 'cells'>('employees');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
+  const [executives, setExecutives] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [cellFilter, setCellFilter] = useState('all');
@@ -333,15 +334,35 @@ export default function EmployeesPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [empRes, cellRes] = await Promise.all([
+      const [empRes, cellRes, execRes] = await Promise.all([
         fetch('/api/employees'),
-        fetch('/api/cells')
+        fetch('/api/cells'),
+        fetch('/api/executives')
       ]);
       const empData = await empRes.json();
       const cellData = await cellRes.json();
+      const execData = await execRes.json();
       
       setEmployees(Array.isArray(empData) ? empData : []);
       setCells(Array.isArray(cellData) ? cellData : []);
+
+      // Filter out GMs strictly, leaving only DGMs and AGMs
+      const filteredExecs = (Array.isArray(execData) ? execData : []).filter(e => {
+        const d = e.designation.trim();
+        return (
+          d.includes('উপ-মহাব্যবস্থাপক') || 
+          d.includes('সহকারী মহাব্যবস্থাপক') || 
+          d.includes('ডিজিএম') || 
+          d.includes('এজিএম') || 
+          d.toLowerCase().includes('dgm') || 
+          d.toLowerCase().includes('agm')
+        ) && !(
+          d.includes('মহাব্যবস্থাপক') && 
+          !d.includes('উপ-') && 
+          !d.includes('সহকারী')
+        );
+      });
+      setExecutives(filteredExecs);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -809,6 +830,30 @@ export default function EmployeesPage() {
     return matchesSearch && matchesCell;
   });
 
+  const filteredExecutives = executives.filter(exec => {
+    const matchesSearch = exec.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          exec.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (exec.bankId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (exec.fileNo || '').toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
+
+  const sortExecutives = (execs: any[]) => {
+    return [...execs].sort((a, b) => {
+      const priority = (desig: string) => {
+        const d = desig.toLowerCase();
+        if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
+        if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
+        return 3;
+      };
+      const pA = priority(a.designation);
+      const pB = priority(b.designation);
+      if (pA !== pB) return pA - pB;
+      return a.id - b.id;
+    });
+  };
+  const sortedFilteredExecutives = sortExecutives(filteredExecutives);
+
   return (
     <div className="space-y-6">
       {/* Page Title & Tabs Toggler */}
@@ -870,9 +915,16 @@ export default function EmployeesPage() {
               <select
                 value={cellFilter}
                 onChange={(e) => setCellFilter(e.target.value)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-indigo-500"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-indigo-500 font-bold"
               >
-                <option value="all">সকল সেল (All Cells)</option>
+                {isAdminOrAdminCell ? (
+                  <>
+                    <option value="all">সকল সেল ও নির্বাহী (All Cells & Executives)</option>
+                    <option value="executives">নির্বাহী কর্মকর্তা (Executive Officers)</option>
+                  </>
+                ) : (
+                  <option value="all">সকল সেল (All Cells)</option>
+                )}
                 {selectableCells.map(c => (
                   <option key={c.id} value={c.id.toString()}>{c.name}</option>
                 ))}
@@ -936,8 +988,71 @@ export default function EmployeesPage() {
           </div>
 
           {/* Grouped Officers List by Cell */}
-          {filteredEmployees.length > 0 ? (
+          {(filteredEmployees.length > 0 || (isAdminOrAdminCell && (cellFilter === 'executives' || cellFilter === 'all') && sortedFilteredExecutives.length > 0)) ? (
             <div className="space-y-10">
+              
+              {/* 1. Executive Panel (DGM & AGM) */}
+              {isAdminOrAdminCell && (cellFilter === 'all' || cellFilter === 'executives') && sortedFilteredExecutives.length > 0 && (
+                <div className="space-y-4 animate-fade-in">
+                  {/* Executive Header Badge */}
+                  <div className="flex items-center justify-between p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-955/5 shadow-xs" style={{ borderLeft: '4px solid #db2777' }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-rose-600 animate-pulse">
+                        <Users size={16} />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-rose-800 dark:text-rose-300 text-sm tracking-wide">নির্বাহী প্যানেল (ডিজিএম ও এজিএম)</h3>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">অনলাইন ব্যাংকিং ডিপার্টমেন্টের উপ-মহাব্যবস্থাপক ও সহকারী মহাব্যবস্থাপকগণ।</p>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-sans bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400">
+                      {toBanglaDigits(sortedFilteredExecutives.length)} জন নির্বাহী কর্মকর্তা
+                    </span>
+                  </div>
+
+                  {/* Executives Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {sortedFilteredExecutives.map((exec) => {
+                      const pal = {
+                        border: 'border-rose-200 dark:border-rose-900/50',
+                        bg: 'bg-rose-50/10 dark:bg-rose-955/5 text-rose-850 dark:text-rose-300'
+                      };
+                      return (
+                        <div key={exec.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group border-l-3 ${pal.border} ${pal.bg}`} style={{ borderLeft: '3px solid #db2777' }}>
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <h3 className="font-extrabold text-rose-800 dark:text-rose-200 text-base leading-tight group-hover:text-indigo-655 dark:group-hover:text-indigo-400 transition-colors">{exec.name}</h3>
+                                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
+                                  <Briefcase size={12} className="text-slate-400" />
+                                  {exec.designation}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                              <div className="flex items-center gap-1">
+                                <Hash size={12} className="text-slate-400" />
+                                <span>ব্যাংক আইডি: <strong>{exec.bankId || '-'}</strong></span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <CreditCard size={12} className="text-slate-400" />
+                                <span>নথি নং: <strong className="font-mono">{exec.fileNo || '-'}</strong></span>
+                              </div>
+                            </div>
+
+                            <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 pt-2 border-t border-dashed border-slate-100 dark:border-slate-800/80">
+                              <span>মোবাইল নম্বর: <strong className="font-sans">{exec.phone ? toBanglaDigits(exec.phone) : '-'}</strong></span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Cell Groups */}
               {cells
                 .filter(cell => {
                   const cellEmps = filteredEmployees.filter(emp => emp.cellId === cell.id);

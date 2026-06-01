@@ -67,13 +67,13 @@ export async function POST(request: Request) {
         cellIds = userCellIds;
       }
     } else {
-      if (cellFilter && cellFilter !== 'all') {
+      if (cellFilter && cellFilter !== 'all' && cellFilter !== 'executives') {
         cellIds = [parseInt(cellFilter, 10)];
       }
     }
 
     // Define where condition
-    const cellWhere = cellIds.length > 0 ? { id: { in: cellIds } } : {};
+    const cellWhere = cellFilter === 'executives' ? { id: -1 } : (cellIds.length > 0 ? { id: { in: cellIds } } : {});
     
     // Fetch cells and their employees
     const cells = await prisma.cell.findMany({
@@ -86,6 +86,83 @@ export async function POST(request: Request) {
         employees: true
       }
     });
+
+    let executives: any[] = [];
+    if (isAdminOrAdminCell && (cellFilter === 'all' || cellFilter === 'executives')) {
+      const execList = await prisma.executive.findMany();
+      // Filter out GMs strictly, leaving only DGMs and AGMs
+      executives = execList.filter(e => {
+        const d = e.designation.trim();
+        return (
+          d.includes('উপ-মহাব্যবস্থাপক') || 
+          d.includes('সহকারী মহাব্যবস্থাপক') || 
+          d.includes('ডিজিএম') || 
+          d.includes('এজিএম') || 
+          d.toLowerCase().includes('dgm') || 
+          d.toLowerCase().includes('agm')
+        ) && !(
+          d.includes('মহাব্যবস্থাপক') && 
+          !d.includes('উপ-') && 
+          !d.includes('সহকারী')
+        );
+      });
+    }
+
+    const sortExecutives = (execs: any[]) => {
+      return [...execs].sort((a, b) => {
+        const priority = (desig: string) => {
+          const d = desig.toLowerCase();
+          if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
+          if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
+          return 3;
+        };
+        const pA = priority(a.designation);
+        const pB = priority(b.designation);
+        if (pA !== pB) return pA - pB;
+        return a.id - b.id;
+      });
+    };
+    const sortedExecs = sortExecutives(executives);
+
+    let execTableHtml = '';
+    if (sortedExecs.length > 0) {
+      let execRowsHtml = '';
+      sortedExecs.forEach((exec, index) => {
+        execRowsHtml += `
+          <tr>
+            <td>${toBnDigits(index + 1)}</td>
+            <td class="text-left font-bold" style="color: #c2185b;">${exec.name}</td>
+            <td style="color: #c2185b; font-weight: bold;">${exec.designation}</td>
+            <td class="font-mono">${exec.bankId || '-'}</td>
+            <td class="font-mono">${exec.fileNo || '-'}</td>
+            <td class="font-mono">${exec.phone ? toBnDigits(exec.phone) : '-'}</td>
+          </tr>
+        `;
+      });
+
+      execTableHtml = `
+        <div class="cell-block" style="margin-bottom: 20px; page-break-inside: avoid; border-left: 3px solid #db2777;">
+          <div class="cell-header" style="background-color: #fdf2f8; color: #db2777; font-weight: bold;">
+            <span>নির্বাহী প্যানেল (ডিজিএম ও এজিএম) (${toBnDigits(sortedExecs.length)} জন নির্বাহী কর্মকর্তা)</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 8%;">ক্রমিক</th>
+                <th style="width: 25%; text-align: left; padding-left: 5px;">নির্বাহীর নাম</th>
+                <th style="width: 25%;">পদবী</th>
+                <th style="width: 14%;">ব্যাংক আইডি</th>
+                <th style="width: 14%;">নথি নম্বর</th>
+                <th style="width: 14%;">মোবাইল নম্বর</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${execRowsHtml}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
 
     const reportDate = new Date().toISOString().split('T')[0];
 
@@ -146,7 +223,7 @@ export async function POST(request: Request) {
       `;
     });
 
-    if (tablesHtml === '') {
+    if (tablesHtml === '' && execTableHtml === '') {
       tablesHtml = `
         <div style="text-align: center; padding: 40px; font-weight: bold; font-size: 12px;">
           কোনো কর্মকর্তার তালিকা পাওয়া যায়নি।
@@ -262,6 +339,7 @@ export async function POST(request: Request) {
     <p class="report-title">কর্মকর্তাদের সেল-ভিত্তিক তালিকা</p>
   </div>
 
+  ${execTableHtml}
   ${tablesHtml}
 
   <script>
