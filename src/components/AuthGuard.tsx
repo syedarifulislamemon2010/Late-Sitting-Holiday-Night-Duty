@@ -401,7 +401,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full border border-emerald-100">Night Duty</span>
               </div>
 
-              <p className="text-[11px] text-slate-400 font-medium">জনতা ব্যাংক পিএলসি.</p>
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider text-[#00B7DE]">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+
             </div>
 
             {/* Login Form */}
