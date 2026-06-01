@@ -236,11 +236,17 @@ export default function Dashboard() {
               
               {/* Month Name and Summary Header */}
               <div className="text-center pb-4">
-                <h4 className="text-base font-extrabold text-slate-800 dark:text-slate-200">
+                <h4 className="text-lg sm:text-xl font-extrabold text-slate-800 dark:text-slate-200">
                   {MONTH_NAMES[selectedMonth]} ২০২৬
                 </h4>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  এই মাসে মোট সরকারি ছুটি: <span className="font-extrabold text-indigo-600">{toBanglaDigits(selectedMonthHolidays.length)}</span> টি
+                <p className="font-sans mt-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-4">
+                  <span className="text-red-500 font-extrabold text-base sm:text-lg">
+                    মোট সরকারি ছুটি: {toBanglaDigits(selectedMonthHolidays.length)} টি
+                  </span>
+                  <span className="hidden sm:inline text-slate-300">|</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-base sm:text-lg">
+                    ওয়ার্কিং ডে {toBanglaDigits(slots.filter(s => s.day !== null && !s.isWeekend && !s.isHoliday).length)} দিন
+                  </span>
                 </p>
               </div>
 
