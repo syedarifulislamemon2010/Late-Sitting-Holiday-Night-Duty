@@ -725,16 +725,22 @@ export default function RosterPage() {
       setHolidays(Array.isArray(holidayData) ? holidayData : []);
       
       if (Array.isArray(execData)) {
+        // Exclude AGMs from signing executive list in Office Orders
+        const nonAgmExecs = execData.filter((ex: any) => {
+          const d = ex.designation.trim().toLowerCase();
+          return !(d.includes('সহকারী') || d.includes('এজিএম') || d.includes('agm'));
+        });
+
         const desigPriority: Record<string, number> = {
           'মহাব্যবস্থাপক': 1,
           'উপ-মহাব্যবস্থাপক': 2,
           'সহকারী মহাব্যবস্থাপক': 3
         };
-        const sortedExecs = [...execData].sort((a, b) => {
+        const sortedExecs = [...nonAgmExecs].sort((a, b) => {
           const prioA = desigPriority[a.designation] || 99;
           const prioB = desigPriority[b.designation] || 99;
           if (prioA !== prioB) return prioA - prioB;
-          return a.id - b.id;
+          return (a.fileNo || '').localeCompare(b.fileNo || '', undefined, { numeric: true, sensitivity: 'base' });
         });
         setExecutives(sortedExecs);
         if (sortedExecs.length > 0) {
@@ -2122,7 +2128,7 @@ export default function RosterPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">৩. আদেশ অনুমোদনকারী উপ-মহাব্যবস্থাপক (ডিজিএম)</label>
+                  <label className="text-xs font-bold text-slate-500">৩. আদেশ অনুমোদনকারী জিএম/ডিজিএম</label>
                   <select
                     value={selectedExecutiveId}
                     onChange={(e) => {
@@ -2136,7 +2142,7 @@ export default function RosterPage() {
                     }}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
                   >
-                    <option value="">Select DGM (ডিজিএম নির্বাচন)</option>
+                    <option value="">Select GM/DGM (জিএম/ডিজিএম নির্বাচন)</option>
                     {executives.map(ex => (
                       <option key={ex.id} value={ex.id.toString()}>
                         {ex.name} ({ex.designation})

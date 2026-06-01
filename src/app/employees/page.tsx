@@ -1013,16 +1013,42 @@ export default function EmployeesPage() {
                   {/* Executives Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {sortedFilteredExecutives.map((exec) => {
-                      const pal = {
-                        border: 'border-rose-200 dark:border-rose-900/50',
-                        bg: 'bg-rose-50/10 dark:bg-rose-955/5 text-rose-850 dark:text-rose-300'
-                      };
+                      const dgmIndices = sortedFilteredExecutives
+                        .filter(e => e.designation.includes('উপ-মহাব্যবস্থাপক') || e.designation.includes('ডিজিএম') || e.designation.toLowerCase().includes('dgm'))
+                        .map(e => e.id);
+                      const dgmRank = dgmIndices.indexOf(exec.id) + 1;
+                      const isDGM = dgmRank > 0;
+                      
+                      let accentColor = '#db2777'; // default rose/pink for AGMs
+                      let borderClass = 'border-rose-200 dark:border-rose-900/50';
+                      let bgClass = 'bg-rose-50/10 dark:bg-rose-955/5 text-rose-850 dark:text-rose-300';
+                      let textClass = 'text-rose-800 dark:text-rose-200 group-hover:text-rose-900';
+                      
+                      if (isDGM) {
+                        if (dgmRank === 1) {
+                          accentColor = '#2563eb'; // Royal Blue for 1st DGM
+                          borderClass = 'border-blue-200 dark:border-blue-900/50';
+                          bgClass = 'bg-blue-50/10 dark:bg-blue-955/5 text-blue-850 dark:text-blue-300';
+                          textClass = 'text-blue-800 dark:text-blue-200 group-hover:text-blue-950';
+                        } else if (dgmRank === 2) {
+                          accentColor = '#d97706'; // Amber/Orange for 2nd DGM
+                          borderClass = 'border-amber-200 dark:border-amber-900/50';
+                          bgClass = 'bg-amber-50/10 dark:bg-amber-955/5 text-amber-850 dark:text-amber-300';
+                          textClass = 'text-amber-800 dark:text-amber-250 group-hover:text-amber-950';
+                        } else {
+                          accentColor = '#0d9488'; // Teal for subsequent DGMs
+                          borderClass = 'border-teal-200 dark:border-teal-900/50';
+                          bgClass = 'bg-teal-50/10 dark:bg-teal-955/5 text-teal-850 dark:text-teal-300';
+                          textClass = 'text-teal-800 dark:text-teal-250 group-hover:text-teal-950';
+                        }
+                      }
+                      
                       return (
-                        <div key={exec.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group border-l-3 ${pal.border} ${pal.bg}`} style={{ borderLeft: '3px solid #db2777' }}>
+                        <div key={exec.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group border-l-3 ${borderClass} ${bgClass}`} style={{ borderLeft: `3px solid ${accentColor}` }}>
                           <div className="space-y-4">
                             <div className="flex items-start justify-between gap-3">
                               <div>
-                                <h3 className="font-extrabold text-rose-800 dark:text-rose-200 text-base leading-tight group-hover:text-indigo-655 dark:group-hover:text-indigo-400 transition-colors">{exec.name}</h3>
+                                <h3 className={`font-extrabold text-base leading-tight transition-colors ${textClass}`}>{exec.name}</h3>
                                 <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
                                   <Briefcase size={12} className="text-slate-400" />
                                   {exec.designation}
@@ -1088,13 +1114,22 @@ export default function EmployeesPage() {
                       {/* Employees Grid in this Cell */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {cellEmps.map((emp) => {
+                          const firstSpoId = cellEmps.find(e => e.designation === 'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)')?.id || null;
+                          const isCellIncharge = emp.id === firstSpoId;
                           const pal = getPalette(emp.cellId);
                           return (
-                            <div key={emp.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group ${pal.border} ${pal.bg}`}>
+                            <div key={emp.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group border-l-3 ${isCellIncharge ? 'border-teal-200 dark:border-teal-900/50 bg-teal-50/10 dark:bg-teal-955/5 shadow-xs' : pal.border} ${isCellIncharge ? '' : pal.bg}`} style={isCellIncharge ? { borderLeft: '3px solid #0d9488' } : {}}>
                               <div className="space-y-4 cursor-pointer" onClick={() => setProfileEmp(emp)}>
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
-                                    <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">{emp.name}</h3>
+                                    <h3 className={`font-extrabold text-base leading-tight transition-colors flex items-center gap-2 ${isCellIncharge ? 'text-teal-700 dark:text-teal-400 group-hover:text-teal-800' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400'}`}>
+                                      {emp.name}
+                                      {isCellIncharge && (
+                                        <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-450 text-[9px] font-bold rounded-lg border border-teal-200/50 dark:border-teal-955/30">
+                                          সেল ইনচার্জ
+                                        </span>
+                                      )}
+                                    </h3>
                                     <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
                                       <Briefcase size={12} className="text-slate-400" />
                                       {emp.designation}

@@ -119,6 +119,12 @@ export async function POST(request: Request) {
         const pA = priority(a.designation);
         const pB = priority(b.designation);
         if (pA !== pB) return pA - pB;
+        
+        // Sort AGMs by fileNo
+        if (pA === 2) {
+          return (a.fileNo || '').localeCompare(b.fileNo || '', undefined, { numeric: true, sensitivity: 'base' });
+        }
+        
         return a.id - b.id;
       });
     };
@@ -127,15 +133,33 @@ export async function POST(request: Request) {
     let execTableHtml = '';
     if (sortedExecs.length > 0) {
       let execRowsHtml = '';
+      let dgmCount = 0;
       sortedExecs.forEach((exec, index) => {
+        const isDGM = exec.designation.includes('উপ-মহাব্যবস্থাপক') || 
+                      exec.designation.includes('ডিজিএম') || 
+                      exec.designation.toLowerCase().includes('dgm');
+        
+        let textColor = '#db2777'; // AGMs default to pink
+        
+        if (isDGM) {
+          dgmCount++;
+          if (dgmCount === 1) {
+            textColor = '#1e3a8a'; // Royal Blue for 1st DGM
+          } else if (dgmCount === 2) {
+            textColor = '#b45309'; // Amber/Orange for 2nd DGM
+          } else {
+            textColor = '#0f766e'; // Teal for subsequent DGMs
+          }
+        }
+
         execRowsHtml += `
-          <tr>
-            <td>${toBnDigits(index + 1)}</td>
-            <td class="text-left font-bold" style="color: #c2185b;">${exec.name}</td>
-            <td style="color: #c2185b; font-weight: bold;">${exec.designation}</td>
-            <td class="font-mono">${exec.bankId || '-'}</td>
-            <td class="font-mono">${exec.fileNo || '-'}</td>
-            <td class="font-mono">${exec.phone ? toBnDigits(exec.phone) : '-'}</td>
+          <tr style="color: ${textColor};">
+            <td style="font-weight: bold;">${toBnDigits(index + 1)}</td>
+            <td class="text-left font-bold" style="color: ${textColor};">${exec.name}</td>
+            <td style="font-weight: bold; color: ${textColor};">${exec.designation}</td>
+            <td class="font-mono" style="color: ${textColor};">${exec.bankId || '-'}</td>
+            <td class="font-mono" style="color: ${textColor};">${exec.fileNo || '-'}</td>
+            <td class="font-mono" style="color: ${textColor};">${exec.phone ? toBnDigits(exec.phone) : '-'}</td>
           </tr>
         `;
       });
@@ -165,6 +189,9 @@ export async function POST(request: Request) {
     }
 
     const reportDate = new Date().toISOString().split('T')[0];
+    const isExecReport = cellFilter === 'executives';
+    const cellTitle = isExecReport ? 'নির্বাহী ডিরেক্টরি রিপোর্ট' : 'নির্বাহী ও কর্মকর্তা ডিরেক্টরি রিপোর্ট';
+    const reportTitle = isExecReport ? 'নির্বাহীদের তালিকা' : 'নির্বাহী ও কর্মকর্তাদের সেল-ভিত্তিক তালিকা';
 
     let tablesHtml = '';
     
@@ -186,15 +213,25 @@ export async function POST(request: Request) {
       });
 
       let rowsHtml = '';
+      let hasFoundFirstSPO = false;
       sortedEmployees.forEach((emp, index) => {
+        let isCellIncharge = false;
+        if (emp.designation === 'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)' && !hasFoundFirstSPO) {
+          isCellIncharge = true;
+          hasFoundFirstSPO = true;
+        }
+
+        const textColor = isCellIncharge ? '#0f766e' : '#000000';
+        const inchargeBadge = isCellIncharge ? ' <span style="font-size: 8px; font-weight: bold; background-color: #ccfbf1; color: #0f766e; padding: 1px 3px; border-radius: 4px; margin-left: 4px; display: inline-block; vertical-align: middle;">ইনচার্জ</span>' : '';
+
         rowsHtml += `
-          <tr>
-            <td>${toBnDigits(index + 1)}</td>
-            <td class="text-left font-bold">${emp.name}</td>
-            <td>${emp.designation}</td>
-            <td class="font-mono">${emp.bankId || '-'}</td>
-            <td class="font-mono">${emp.fileNo || '-'}</td>
-            <td class="font-mono">${emp.mobile ? toBnDigits(emp.mobile) : '-'}</td>
+          <tr style="color: ${textColor};">
+            <td style="font-weight: ${isCellIncharge ? 'bold' : 'normal'};">${toBnDigits(index + 1)}</td>
+            <td class="text-left font-bold" style="color: ${textColor};">${emp.name}${inchargeBadge}</td>
+            <td style="font-weight: ${isCellIncharge ? 'bold' : 'normal'};">${emp.designation}</td>
+            <td class="font-mono" style="color: ${textColor};">${emp.bankId || '-'}</td>
+            <td class="font-mono" style="color: ${textColor};">${emp.fileNo || '-'}</td>
+            <td class="font-mono" style="color: ${textColor};">${emp.mobile ? toBnDigits(emp.mobile) : '-'}</td>
           </tr>
         `;
       });
@@ -202,7 +239,7 @@ export async function POST(request: Request) {
       tablesHtml += `
         <div class="cell-block" style="margin-bottom: 20px; page-break-inside: avoid;">
           <div class="cell-header">
-            <span>セル: ${cell.name} (${toBnDigits(cell.employees.length)} জন কর্মকর্তা)</span>
+            <span>সেল: ${cell.name} (${toBnDigits(cell.employees.length)} জন কর্মকর্তা)</span>
           </div>
           <table>
             <thead>
@@ -328,7 +365,7 @@ export async function POST(request: Request) {
 </head>
 <body>
   <div class="report-meta">
-    <span class="cell-title">কর্মকর্তা ডিরেক্টরি রিপোর্ট</span>
+    <span class="cell-title">${cellTitle}</span>
     <div style="text-align: right;">
       <div style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</div>
       <span class="report-date">তারিখ: ${getBnDate(reportDate)} ইং</span>
@@ -336,7 +373,7 @@ export async function POST(request: Request) {
   </div>
 
   <div class="report-title-box">
-    <p class="report-title">কর্মকর্তাদের সেল-ভিত্তিক তালিকা</p>
+    <p class="report-title">${reportTitle}</p>
   </div>
 
   ${execTableHtml}
@@ -366,7 +403,7 @@ export async function POST(request: Request) {
 
     const doc = await prisma.document.create({
       data: {
-        name: `কর্মকর্তা ডিরেক্টরি রিপোর্ট (${getBnDate(reportDate)})`,
+        name: `${cellTitle} (${getBnDate(reportDate)})`,
         filePath: relativePath,
         fileSize: fileSize
       }

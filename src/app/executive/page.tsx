@@ -11,7 +11,11 @@ import {
   Briefcase,
   Phone,
   Mail,
-  Download
+  Download,
+  Eye,
+  Printer,
+  Loader2,
+  X
 } from 'lucide-react';
 
 interface Executive {
@@ -126,6 +130,11 @@ export default function ExecutivesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Printing states
+  const [generating, setGenerating] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [iframeUrl, setIframeUrl] = useState('');
+
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExec, setEditingExec] = useState<Executive | null>(null);
@@ -234,6 +243,31 @@ export default function ExecutivesPage() {
       if (res.ok) loadData();
     } catch (err) {
       console.error('Error deleting executive:', err);
+    }
+  };
+
+  const generateEmployeeList = async (): Promise<string | null> => {
+    setGenerating(true);
+    setErrorMessage('');
+    try {
+      const res = await fetch('/api/documents/generate-employee-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cellFilter: 'executives' })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.filePath) {
+        return data.filePath;
+      } else {
+        setErrorMessage(data.message || 'নির্বাহী তালিকা প্রস্তুত করতে ব্যর্থ হয়েছে।');
+        return null;
+      }
+    } catch (err: any) {
+      console.error('Error generating employee list:', err);
+      setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+      return null;
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -528,6 +562,40 @@ export default function ExecutivesPage() {
                 <Download size={16} />
                 এক্সপোর্ট করুন
               </button>
+              <button
+                onClick={async () => {
+                  const path = await generateEmployeeList();
+                  if (path) {
+                    setIframeUrl(path);
+                    setIsPreviewOpen(true);
+                  }
+                }}
+                disabled={generating}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold border border-slate-250 dark:border-slate-750 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Eye size={16} />
+                প্রিন্ট প্রিভিউ
+              </button>
+              <button
+                onClick={async () => {
+                  const path = await generateEmployeeList();
+                  if (path) {
+                    const printIframe = document.getElementById('silent-print-iframe') as HTMLIFrameElement;
+                    if (printIframe) {
+                      printIframe.src = path;
+                      printIframe.onload = () => {
+                        printIframe.contentWindow?.focus();
+                        printIframe.contentWindow?.print();
+                      };
+                    }
+                  }
+                }}
+                disabled={generating}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {generating ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
+                ডাউনলোড পিডিএফ
+              </button>
               {currentUser?.role === 'ADMIN' && (
                 <>
                   <button
@@ -562,19 +630,55 @@ export default function ExecutivesPage() {
           {filteredExecutives.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredExecutives.map((exec) => {
-                const pal = getPalette(exec.id);
+                const dgmIndices = filteredExecutives
+                  .filter(e => e.designation.includes('উপ-মহাব্যবস্থাপক') || e.designation.includes('ডিজিএম') || e.designation.toLowerCase().includes('dgm'))
+                  .map(e => e.id);
+                const dgmRank = dgmIndices.indexOf(exec.id) + 1;
+                const isDGM = dgmRank > 0;
+                
+                let accentColor = '#db2777'; // default pink for AGMs
+                let borderClass = 'border-rose-200 dark:border-rose-900/50';
+                let bgClass = 'bg-rose-50/10 dark:bg-rose-955/5 text-rose-850 dark:text-rose-300';
+                let textClass = 'text-rose-800 dark:text-rose-200 group-hover:text-rose-900';
+                let badgeClass = 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-450 border border-rose-100 dark:border-rose-900/30';
+                
+                if (isDGM) {
+                  if (dgmRank === 1) {
+                    // Royal Blue
+                    accentColor = '#2563eb';
+                    borderClass = 'border-blue-200 dark:border-blue-900/50';
+                    bgClass = 'bg-blue-50/10 dark:bg-blue-955/5 text-blue-850 dark:text-blue-300';
+                    textClass = 'text-blue-800 dark:text-blue-200 group-hover:text-blue-950';
+                    badgeClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-455 border border-blue-100 dark:border-blue-900/30';
+                  } else if (dgmRank === 2) {
+                    // Amber/Orange
+                    accentColor = '#d97706';
+                    borderClass = 'border-amber-200 dark:border-amber-900/50';
+                    bgClass = 'bg-amber-50/10 dark:bg-amber-955/5 text-amber-850 dark:text-amber-300';
+                    textClass = 'text-amber-800 dark:text-amber-250 group-hover:text-amber-950';
+                    badgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-455 border border-amber-100 dark:border-amber-900/30';
+                  } else {
+                    // Teal
+                    accentColor = '#0d9488';
+                    borderClass = 'border-teal-200 dark:border-teal-900/50';
+                    bgClass = 'bg-teal-50/10 dark:bg-teal-955/5 text-teal-850 dark:text-teal-300';
+                    textClass = 'text-teal-800 dark:text-teal-250 group-hover:text-teal-950';
+                    badgeClass = 'bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-455 border border-teal-100 dark:border-teal-900/30';
+                  }
+                }
+                
                 return (
-                  <div key={exec.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 ${pal.border} ${pal.bg} ${pal.name === 'indigo' ? 'shadow-[0_0_15px_-3px_rgba(99,102,241,0.06)]' : ''} group`}>
+                  <div key={exec.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group border-l-3 ${borderClass} ${bgClass}`} style={{ borderLeft: `3px solid ${accentColor}` }}>
                     <div className="space-y-4 cursor-pointer" onClick={() => setProfileExec(exec)}>
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">{exec.name}</h3>
+                          <h3 className={`font-extrabold text-base leading-tight transition-colors ${textClass}`}>{exec.name}</h3>
                           <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
                             <Briefcase size={12} className="text-slate-450" />
                             {exec.designation}
                           </p>
                         </div>
-                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold font-sans ${pal.badge} shrink-0`}>
+                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold font-sans ${badgeClass} shrink-0`}>
                           Executive
                         </span>
                       </div>
