@@ -55,7 +55,17 @@ export async function POST(request: Request) {
     let cellIds: number[] = [];
     if (!isAdminOrAdminCell) {
       // Normal user is restricted to their own cells
-      cellIds = currentUser.cells.map((c: any) => c.id);
+      const userCellIds = currentUser.cells.map((c: any) => c.id);
+      if (cellFilter && cellFilter !== 'all') {
+        const filterId = parseInt(cellFilter, 10);
+        if (userCellIds.includes(filterId)) {
+          cellIds = [filterId];
+        } else {
+          cellIds = [];
+        }
+      } else {
+        cellIds = userCellIds;
+      }
     } else {
       if (cellFilter && cellFilter !== 'all') {
         cellIds = [parseInt(cellFilter, 10)];
