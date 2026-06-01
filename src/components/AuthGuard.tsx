@@ -354,8 +354,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         <div className="absolute top-[50%] right-[5%] w-36 h-36 bg-white/10 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
         <div className="absolute bottom-[5%] left-[20%] w-28 h-28 bg-blue-300/15 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
 
-        {/* Main Login Card */}
-        <div className="w-full max-w-[400px] bg-white/95 backdrop-blur-2xl rounded-[32px] shadow-2xl shadow-blue-900/15 border border-white/80 overflow-hidden relative p-8 space-y-6">
+        {/* Main Login Wrapper */}
+        <div className="flex flex-col items-center gap-6 z-10 w-full max-w-[400px] px-2">
+          {/* Main Login Card */}
+          <div className="w-full bg-white/95 backdrop-blur-2xl rounded-[32px] shadow-2xl shadow-blue-900/15 border border-white/80 overflow-hidden relative p-8 space-y-6">
           
           {/* ===== TOP: Large Janata Bank Logo ===== */}
           <div className="flex items-center justify-center gap-3 pt-2">
@@ -458,6 +460,18 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               </button>
             </form>
           </div>
+        </div>
+
+        {/* Premium International Footer */}
+        <footer className="text-center space-y-1 text-blue-900/60 font-semibold tracking-wide select-none">
+
+            <p className="text-[10px] sm:text-[11px]">
+              Designed & Developed by <span className="font-extrabold text-[#0D47A1] hover:underline cursor-pointer">CBS Integrated Development Cell</span>
+            </p>
+            <p className="text-[9px] sm:text-[10px] opacity-80">
+              Online Banking Department | © 2026 Janata Bank PLC. All Rights Reserved.
+            </p>
+          </footer>
         </div>
 
         {/* CSS Keyframe Animations for Mascot & Shake */}
