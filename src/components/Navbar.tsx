@@ -388,20 +388,10 @@ export default function Navbar() {
 
               {/* Options */}
               <div className="space-y-1">
-                {/* Settings link */}
-                <Link 
-                  href="/users"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 transition-colors text-left font-sans cursor-pointer"
-                >
-                  <Settings size={16} />
-                  <span className="text-xs font-bold">সেটিংস (Settings)</span>
-                </Link>
-
                 {/* Log out */}
                 <button 
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 transition-colors text-left cursor-pointer"
+                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 transition-colors text-left cursor-pointer font-sans"
                 >
                   <LogOut size={16} />
                   <span className="text-xs font-bold">লগ আউট (Log Out)</span>

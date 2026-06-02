@@ -1297,12 +1297,12 @@ export default function LeaveGeneratorPage() {
                   </div>
 
                   {/* Right block: Leaves Balance Table */}
-                  <div className="w-[85mm] border border-black p-1 text-[10px] bg-white font-sans text-black">
-                    <div className="text-center font-bold pb-1 text-[10px]">
-                      {getSelectedYear()} সালের ছুটির বিবরণ
-                    </div>
+                  <div className="w-[85mm] text-[10px] bg-white font-sans text-black">
                     <table className="w-full text-center border-collapse border border-black">
                       <thead>
+                        <tr className="border border-black font-bold text-center">
+                          <th colSpan={5} className="border border-black px-1.5 py-1 text-center bg-slate-50 text-xs">ছুটির বিবরণ</th>
+                        </tr>
                         <tr className="bg-slate-50 font-bold border-b border-black">
                           <th className="border border-black px-1.5 py-0.5 w-[12mm]">ক্র.নং</th>
                           <th className="border border-black px-1.5 py-0.5">ছুটির ধরণ</th>

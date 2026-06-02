@@ -994,14 +994,7 @@ export default function EmployeesPage() {
                 className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-indigo-500 font-bold"
               >
                 <option value="select">সিলেক্ট করুন (Select Cell)</option>
-                {isAdminOrAdminCell ? (
-                  <>
-                    <option value="all">সকল সেলের কর্মকর্তা (All Cells Employees)</option>
-                    <option value="executives">নির্বাহী কর্মকর্তা (Executive Officers)</option>
-                  </>
-                ) : (
-                  <option value="all">সকল সেলের কর্মকর্তা (All Cells Employees)</option>
-                )}
+                <option value="all">সকল সেলের কর্মকর্তা (All Cells Employees)</option>
                 {cells.map(c => (
                   <option key={c.id} value={c.id.toString()}>{c.name}</option>
                 ))}
