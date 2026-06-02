@@ -11,18 +11,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
     }
     const userId = parseInt(sessionVal, 10);
-    const user = !isNaN(userId) ? await prisma.user.findUnique({ where: { id: userId }, include: { cells: true } }) : null;
+    const user = !isNaN(userId) ? await prisma.user.findUnique({ where: { id: userId } }) : null;
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'ব্যবহারকারী পাওয়া যায়নি।' }, { status: 403 });
-    }
-    const isAdministrationCell = user.cells?.some((c: any) => 
-      c.name.includes('প্রশাসন') || 
-      c.name.toLowerCase().includes('admin') || 
-      c.name.toLowerCase().includes('administration')
-    );
-    const isAdminOrAdminCell = user.role === 'ADMIN' || isAdministrationCell;
-    if (!isAdminOrAdminCell) {
-      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন বা প্রশাসনিক সেলের ব্যবহারকারী পরিবর্তন করতে পারবেন।' }, { status: 403 });
     }
 
     const resolvedParams = await params;
@@ -100,18 +91,9 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
     }
     const userId = parseInt(sessionVal, 10);
-    const user = !isNaN(userId) ? await prisma.user.findUnique({ where: { id: userId }, include: { cells: true } }) : null;
+    const user = !isNaN(userId) ? await prisma.user.findUnique({ where: { id: userId } }) : null;
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'ব্যবহারকারী পাওয়া যায়নি।' }, { status: 403 });
-    }
-    const isAdministrationCell = user.cells?.some((c: any) => 
-      c.name.includes('প্রশাসন') || 
-      c.name.toLowerCase().includes('admin') || 
-      c.name.toLowerCase().includes('administration')
-    );
-    const isAdminOrAdminCell = user.role === 'ADMIN' || isAdministrationCell;
-    if (!isAdminOrAdminCell) {
-      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন বা প্রশাসনিক সেলের ব্যবহারকারী মুছে ফেলতে পারবেন।' }, { status: 403 });
     }
 
     const resolvedParams = await params;

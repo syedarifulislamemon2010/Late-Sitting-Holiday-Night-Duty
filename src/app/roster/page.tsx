@@ -586,10 +586,13 @@ export default function RosterPage() {
           loadDuties();
         }
       } else {
-        console.error('Failed to archive office order');
+        const errData = await res.json().catch(() => ({}));
+        console.error('Failed to archive office order:', res.status, errData);
+        alert(`অফিস আদেশ আর্কাইভে সংরক্ষণ করতে ব্যর্থ হয়েছে। সার্ভার মেসেজ: ${errData.message || errData.error || 'অজানা ত্রুটি (Status: ' + res.status + ')'}`);
       }
     } catch (err) {
       console.error('Error archiving office order:', err);
+      alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে। আপনার ইন্টারনেট কানেকশন বা সার্ভার সচল আছে কিনা চেক করুন।');
     }
   };
 
