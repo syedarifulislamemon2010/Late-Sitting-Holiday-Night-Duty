@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     const isAdminOrAdminCell = currentUser.role === 'ADMIN' || isAdministrationCell;
 
     const payload = await request.json();
-    const { cellFilter } = payload; // 'all' or string representing cellId
+    const { cellFilter } = payload; // 'all', 'select', 'executives', or string representing cellId
 
     let cellIds: number[] = [];
     if (!isAdminOrAdminCell) {
@@ -66,7 +66,17 @@ export async function POST(request: Request) {
         cellIds = [];
       }
     } else {
-      if (cellFilter && cellFilter !== 'all' && cellFilter !== 'executives') {
+      if (cellFilter === 'select') {
+        const ownEmployee = await prisma.employee.findFirst({
+          where: { bankId: currentUser.username }
+        });
+        const ownCellId = ownEmployee ? ownEmployee.cellId : (currentUser.cells[0]?.id || null);
+        if (ownCellId) {
+          cellIds = [ownCellId];
+        } else {
+          cellIds = [];
+        }
+      } else if (cellFilter && cellFilter !== 'all' && cellFilter !== 'executives') {
         cellIds = [parseInt(cellFilter, 10)];
       }
     }

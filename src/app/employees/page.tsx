@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
@@ -137,7 +137,11 @@ export default function EmployeesPage() {
   const [executives, setExecutives] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [cellFilter, setCellFilter] = useState('all');
+  const [cellFilter, setCellFilter] = useState('select');
+  const [isBulkCellModalOpen, setIsBulkCellModalOpen] = useState(false);
+  const [bulkCellText, setBulkCellText] = useState('');
+  const [bulkCellError, setBulkCellError] = useState('');
+  const [bulkCellImporting, setBulkCellImporting] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [iframeUrl, setIframeUrl] = useState('');
@@ -263,9 +267,18 @@ export default function EmployeesPage() {
   const ownEmployee = employees.find(emp => emp.bankId?.trim() === currentUser?.username?.trim());
   const ownCellId = ownEmployee ? ownEmployee.cellId : (currentUser?.cells?.[0]?.id || null);
 
-  const selectableCells = (!currentUser || currentUser.role === 'ADMIN')
-    ? cells
-    : cells.filter(cell => cell.id === ownCellId);
+  const selectableCells = (() => {
+    if (cellFilter === 'select') {
+      return cells.filter(cell => cell.id === ownCellId);
+    }
+    if (cellFilter === 'all') {
+      return cells;
+    }
+    if (cellFilter === 'executives') {
+      return [];
+    }
+    return cells.filter(cell => cell.id.toString() === cellFilter);
+  })();
 
   const formSelectableCells = (() => {
     if (!currentUser || currentUser.role === 'ADMIN') {
@@ -275,10 +288,10 @@ export default function EmployeesPage() {
   })();
 
   useEffect(() => {
-    if (selectableCells.length > 0 && !bulkEmpCellId) {
-      setBulkEmpCellId(selectableCells[0].id.toString());
+    if (cells.length > 0 && !bulkEmpCellId) {
+      setBulkEmpCellId(cells[0].id.toString());
     }
-  }, [selectableCells, bulkEmpCellId]);
+  }, [cells, bulkEmpCellId]);
 
   const generateEmployeeList = async (): Promise<string | null> => {
     setGenerating(true);
@@ -457,33 +470,33 @@ export default function EmployeesPage() {
 
   // Delete Officer
   const deleteEmployee = async (id: number) => {
-    if (!confirm('আপনি কি নিশ্চিতভাবে এই কর্মকর্তাকে মুছে ফেলতে চান? এর ফলে তার সব ডিউটি হিস্ট্রি ডিলিট হবে।')) return;
+    if (!confirm("আপনি কি নিশ্চিতভাবে এই কর্মকর্তাকে মুছে ফেলতে চান? এর ফলে তার সব ডিউটি হিস্ট্রি ডিলিট হবে।")) return;
     try {
-      const res = await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/employees/${id}`, { method: "DELETE" });
       if (res.ok) loadData();
     } catch (err) {
-      console.error('Error deleting officer:', err);
+      console.error("Error deleting officer:", err);
     }
   };
 
   // Delete Cell
   const deleteCell = async (cell: Cell) => {
     if (cell._count && cell._count.employees > 0) {
-      alert('এই সেলে কর্মকর্তা কর্মরত রয়েছে! সেলটি ডিলিট করার আগে কর্মকর্তাদের অন্য সেলে স্থানান্তর করুন।');
+      alert("এই সেলে কর্মকর্তা কর্মরত রয়েছে! সেলটি ডিলিট করার আগে কর্মকর্তাদের অন্য সেলে স্থানান্তর করুন।");
       return;
     }
     if (!confirm(`আপনি কি নিশ্চিতভাবে "${cell.name}" সেলটি মুছে ফেলতে চান?`)) return;
     
     try {
-      const res = await fetch(`/api/cells/${cell.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/cells/${cell.id}`, { method: "DELETE" });
       if (res.ok) {
         loadData();
       } else {
         const err = await res.json();
-        alert(err.error === 'cell_has_employees' ? 'সেলটি ডিলিট করা যাচ্ছে না কারণ এতে কর্মকর্তা কর্মরত আছে।' : 'সেল মুছে ফেলতে সমস্যা হয়েছে।');
+        alert(err.error === "cell_has_employees" ? "সেলটি ডিলিট করা যাচ্ছে না কারণ এতে কর্মকর্তা কর্মরত আছে।" : "সেল মুছে ফেলতে সমস্যা হয়েছে।");
       }
     } catch (err) {
-      console.error('Error deleting cell:', err);
+      console.error("Error deleting cell:", err);
     }
   };
 
@@ -496,203 +509,265 @@ export default function EmployeesPage() {
       return;
     }
     
-    const isCSV = bulkEmpText.trim().startsWith('নাম,') || bulkEmpText.trim().startsWith('"নাম"') || bulkEmpText.includes('\n"জনাব') || bulkEmpText.includes('\nজনাব') || bulkEmpText.trim().startsWith('জনাব');
-    
-    let parsed: any[] = [];
-    
-    if (isCSV || bulkEmpText.includes(',')) {
-      try {
-        const rows = parseCSVText(bulkEmpText);
-        if (rows.length === 0) {
-          throw new Error('কোনো ভ্যালিড CSV রো পাওয়া যায়নি।');
-        }
-        
-        let hasHeader = false;
-        let nameIdx = 0;
-        let desigIdx = 1;
-        let bankIdx = 2;
-        let fileIdx = 3;
-        let cellIdx = 4;
-        
-        const firstRow = rows[0].map(c => c.trim().toLowerCase());
-        if (firstRow.includes('নাম') || firstRow.includes('name') || firstRow.includes('পদবী') || firstRow.includes('designation') || firstRow.includes('পদবি')) {
-          hasHeader = true;
-          nameIdx = firstRow.findIndex(h => h.includes('নাম') || h.includes('name'));
-          desigIdx = firstRow.findIndex(h => h.includes('পদবী') || h.includes('designation') || h.includes('পদবি'));
-          bankIdx = firstRow.findIndex(h => h.includes('ব্যাংক') || h.includes('bank') || h.includes('আইডি') || h.includes('id'));
-          fileIdx = firstRow.findIndex(h => h.includes('নথি') || h.includes('file'));
-          cellIdx = firstRow.findIndex(h => h.includes('সেল') || h.includes('cell'));
-        }
-        
-        const startRowIdx = hasHeader ? 1 : 0;
-        
-        const mapDesignation = (rawDesig: string): string => {
-          const clean = (rawDesig || '').toLowerCase();
-          if (clean.includes('এসপিও') || clean.includes('সিনিয়র প্রিন্সিপাল') || clean.includes('spo')) {
-            return STRICT_DESIGNATIONS[0];
-          }
-          if (clean.includes('পিও') || clean.includes('প্রিন্সিপাল') || clean.includes('po')) {
-            return STRICT_DESIGNATIONS[1];
-          }
-          if (clean.includes('এসো') || clean.includes('এসও') || clean.includes('so') || clean.includes('সিনিয়র অফিসার') || clean.includes('so-it') || clean.includes('অফিসার-আইটি (এসও-আইটি)')) {
-            return STRICT_DESIGNATIONS[2];
-          }
-          return STRICT_DESIGNATIONS[3]; // default: Officer-IT
-        };
-        
-        for (let idx = startRowIdx; idx < rows.length; idx++) {
-          const row = rows[idx];
-          if (row.length === 0 || (row.length === 1 && row[0] === '')) continue;
-          
-          const name = nameIdx !== -1 && row[nameIdx] ? row[nameIdx].trim() : '';
-          if (!name) continue;
-          
-          const rawDesig = desigIdx !== -1 && row[desigIdx] ? row[desigIdx].trim() : '';
-          const bankId = bankIdx !== -1 && row[bankIdx] ? row[bankIdx].trim() : '';
-          const fileNo = fileIdx !== -1 && row[fileIdx] ? row[fileIdx].trim() : '';
-          const cellName = cellIdx !== -1 && row[cellIdx] ? row[cellIdx].trim() : '';
-          
-          parsed.push({
-            name,
-            designation: mapDesignation(rawDesig),
-            bankId,
-            fileNo,
-            cellName
-          });
-        }
-      } catch (err: any) {
-        setBulkError('CSV ফাইল পার্সিং ত্রুটি: ' + err.message);
-        return;
-      }
-    }
-    
-    // Fallback parsing (line-by-line format)
-    if (parsed.length === 0) {
-      if (!bulkEmpCellId) {
-        setBulkError('অনুগ্রহ করে সেল সিলেক্ট করুন।');
-        return;
-      }
-      
-      const lines = bulkEmpText.split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
-        
-      const mapDesignation = (rawDesig: string): string => {
-        const clean = rawDesig.toLowerCase();
-        if (clean.includes('এসপিও') || clean.includes('সিনিয়র প্রিন্সিপাল') || clean.includes('spo')) {
-          return STRICT_DESIGNATIONS[0];
-        }
-        if (clean.includes('পিও') || clean.includes('প্রিন্সিপাল') || clean.includes('po')) {
-          return STRICT_DESIGNATIONS[1];
-        }
-        if (clean.includes('এসো') || clean.includes('এসও') || clean.includes('so') || clean.includes('সিনিয়র অফিসার') || clean.includes('so-it') || clean.includes('অফিসার-আইটি (এসও-আইটি)')) {
-          return STRICT_DESIGNATIONS[2];
-        }
-        return STRICT_DESIGNATIONS[3]; // default: Officer-IT
-      };
-      
-      lines.forEach(line => {
-        let name = '';
-        let designation = '';
-        let matched = false;
-        
-        const primarySeps = ['\t', ' | ', '|', ' , ', ','];
-        for (const sep of primarySeps) {
-          if (line.includes(sep)) {
-            const parts = line.split(sep);
-            if (parts.length >= 2) {
-              name = parts[0].trim();
-              designation = parts.slice(1).join(sep).trim();
-              matched = true;
-              break;
-            }
-          }
-        }
-        
-        if (!matched && line.includes(' - ')) {
-          const parts = line.split(' - ');
-          if (parts.length >= 2) {
-            name = parts[0].trim();
-            designation = parts.slice(1).join(' - ').trim();
-            matched = true;
-          }
-        }
-        
-        if (!matched && line.includes('-')) {
-          let splitIndex = -1;
-          let currentPos = 0;
-          while (true) {
-            const idx = line.indexOf('-', currentPos);
-            if (idx === -1) break;
-            const leftContext = line.substring(0, idx).trim();
-            const rightContext = line.substring(idx + 1).trim();
-            const isInternalHyphen = 
-              leftContext.endsWith('উপ') || 
-              leftContext.endsWith('সহকারী') || 
-              leftContext.endsWith('অফিসার') || 
-              leftContext.endsWith('এসো') ||
-              leftContext.endsWith('এসও') ||
-              leftContext.endsWith('এজিএম') ||
-              leftContext.endsWith('ডিজিএম') ||
-              leftContext.endsWith('জিএম') ||
-              rightContext.startsWith('মহাব্যবস্থাপক') ||
-              rightContext.startsWith('আইটি');
-            if (!isInternalHyphen) {
-              splitIndex = idx;
-              break;
-            }
-            currentPos = idx + 1;
-          }
-          if (splitIndex !== -1) {
-            name = line.substring(0, splitIndex).trim();
-            designation = line.substring(splitIndex + 1).trim();
-            matched = true;
-          }
-        }
-        
-        if (!matched) {
-          name = line;
-          designation = '';
-        }
-        
-        parsed.push({
-          name,
-          designation: mapDesignation(designation),
-          cellId: parseInt(bulkEmpCellId, 10),
-          bankId: '',
-          fileNo: ''
-        });
-      });
-    }
-      
-    if (parsed.length === 0) {
-      setBulkError('কোনো কর্মকর্তা তথ্য পাওয়া যায়নি। সঠিক ফরম্যাটে লিখুন।');
+    const lines = bulkEmpText.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    if (lines.length === 0) {
+      setBulkError('কোনো কর্মকর্তা তথ্য পাওয়া যায়নি।');
       return;
     }
-    
+
+    const parseRow = (line: string): string[] => {
+      let row: string[] = [];
+      let col = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            col += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if ((char === ',' || char === '\t' || char === '|' || char === ';') && !inQuotes) {
+          row.push(col.trim());
+          col = '';
+        } else {
+          col += char;
+        }
+      }
+      row.push(col.trim());
+      return row;
+    };
+
+    const mapDesignation = (rawDesig: string): string => {
+      const clean = (rawDesig || '').toLowerCase();
+      if (clean.includes('এসপিও') || clean.includes('সিনিয়র প্রিন্সিপাল') || clean.includes('spo')) {
+        return STRICT_DESIGNATIONS[0];
+      }
+      if (clean.includes('পিও') || clean.includes('প্রিন্সিপাল') || clean.includes('po')) {
+        return STRICT_DESIGNATIONS[1];
+      }
+      if (clean.includes('এসো') || clean.includes('এসও') || clean.includes('so') || clean.includes('সিনিয়র অফিসার') || clean.includes('so-it') || clean.includes('অফিসার-আইটি (এসও-আইটি)')) {
+        return STRICT_DESIGNATIONS[2];
+      }
+      return STRICT_DESIGNATIONS[3]; // default: Officer-IT
+    };
+
+    let hasHeader = false;
+    let nameIdx = 0;
+    let desigIdx = 1;
+    let bankIdx = 2;
+    let fileIdx = 3;
+    let mobileIdx = 4;
+    let cellIdx = 5;
+
+    // Detect if first line is a header
+    const firstRow = parseRow(lines[0]).map(c => c.trim().toLowerCase());
+    const headerMatches = firstRow.some(h => 
+      h.includes('নাম') || h.includes('name') || 
+      h.includes('পদব') || h.includes('designation') || 
+      h.includes('ব্যাংক') || h.includes('bank') || 
+      h.includes('নথি') || h.includes('file') || 
+      h.includes('মোবাইল') || h.includes('mobile') || 
+      h.includes('সেল') || h.includes('cell')
+    );
+
+    if (headerMatches) {
+      hasHeader = true;
+      nameIdx = firstRow.findIndex(h => h.includes('নাম') || h.includes('name'));
+      desigIdx = firstRow.findIndex(h => h.includes('পদব') || h.includes('designation'));
+      bankIdx = firstRow.findIndex(h => h.includes('ব্যাংক') || h.includes('bank') || h.includes('আইডি') || h.includes('id'));
+      fileIdx = firstRow.findIndex(h => h.includes('নথি') || h.includes('file'));
+      mobileIdx = firstRow.findIndex(h => h.includes('মোবাইল') || h.includes('mobile') || h.includes('ফোন') || h.includes('phone'));
+      cellIdx = firstRow.findIndex(h => h.includes('সেল') || h.includes('cell'));
+    }
+
+    const startRowIdx = hasHeader ? 1 : 0;
+    let parsed: any[] = [];
+
+    for (let idx = startRowIdx; idx < lines.length; idx++) {
+      const line = lines[idx];
+      if (!line) continue;
+
+      let name = '';
+      let designation = '';
+      let bankId = '';
+      let fileNo = '';
+      let mobile = '';
+      let cellName = '';
+
+      const row = parseRow(line);
+      if (row.length === 1 && line.includes(' - ')) {
+        const parts = line.split(' - ');
+        name = parts[0].trim();
+        designation = parts.slice(1).join(' - ').trim();
+      } else if (hasHeader) {
+        name = nameIdx !== -1 && row[nameIdx] ? row[nameIdx].replace(/^["']|["']$/g, '').trim() : '';
+        designation = desigIdx !== -1 && row[desigIdx] ? row[desigIdx].replace(/^["']|["']$/g, '').trim() : '';
+        bankId = bankIdx !== -1 && row[bankIdx] ? row[bankIdx].replace(/^["']|["']$/g, '').trim() : '';
+        fileNo = fileIdx !== -1 && row[fileIdx] ? row[fileIdx].replace(/^["']|["']$/g, '').trim() : '';
+        mobile = mobileIdx !== -1 && row[mobileIdx] ? row[mobileIdx].replace(/^["']|["']$/g, '').trim() : '';
+        cellName = cellIdx !== -1 && row[cellIdx] ? row[cellIdx].replace(/^["']|["']$/g, '').trim() : '';
+      } else {
+        name = row[0] ? row[0].replace(/^["']|["']$/g, '').trim() : '';
+        designation = row[1] ? row[1].replace(/^["']|["']$/g, '').trim() : '';
+        bankId = row[2] ? row[2].replace(/^["']|["']$/g, '').trim() : '';
+        fileNo = row[3] ? row[3].replace(/^["']|["']$/g, '').trim() : '';
+        mobile = row[4] ? row[4].replace(/^["']|["']$/g, '').trim() : '';
+        cellName = row[5] ? row[5].replace(/^["']|["']$/g, '').trim() : '';
+      }
+
+      if (!name) continue;
+
+      parsed.push({
+        name,
+        designation: mapDesignation(designation),
+        bankId: bankId || null,
+        fileNo: fileNo || null,
+        mobile: mobile || null,
+        cellName
+      });
+    }
+
+    if (parsed.length === 0) {
+      setBulkError('কোনো সঠিক কর্মকর্তা তথ্য পাওয়া যায়নি।');
+      return;
+    }
+
     setBulkImporting(true);
     try {
-      // SEQUENTIAL INSERTS to prevent Neon Postgres pool timeout
+      let currentCells = [...cells];
+
       for (const emp of parsed) {
+        let cellId: number | null = null;
+
+        // 1. Resolve cell by name
+        if (emp.cellName) {
+          let matchedCell = currentCells.find(c => c.name.trim().toLowerCase() === emp.cellName.trim().toLowerCase());
+          if (matchedCell) {
+            cellId = matchedCell.id;
+          } else if (currentUser?.role === 'ADMIN') {
+            const cellRes = await fetch('/api/cells', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: emp.cellName.trim(), description: '' })
+            });
+            if (cellRes.ok) {
+              const newCell = await cellRes.json();
+              currentCells.push(newCell);
+              setCells(prev => [...prev, newCell]);
+              cellId = newCell.id;
+            } else {
+              const err = await cellRes.json();
+              if (err.error === 'cell_exists') {
+                // Try fetching cells again or look it up (race condition safety)
+                const cellsRes = await fetch('/api/cells');
+                const updatedCells = await cellsRes.json();
+                if (Array.isArray(updatedCells)) {
+                  setCells(updatedCells);
+                  currentCells = updatedCells;
+                  const retryMatch = updatedCells.find(c => c.name.trim().toLowerCase() === emp.cellName.trim().toLowerCase());
+                  if (retryMatch) cellId = retryMatch.id;
+                }
+              }
+            }
+          }
+        }
+
+        // 2. Fallback to dropdown cell
+        if (!cellId && bulkEmpCellId) {
+          cellId = parseInt(bulkEmpCellId, 10);
+        }
+
+        // 3. Fallback to own cell
+        if (!cellId) {
+          cellId = ownCellId;
+        }
+
+        if (!cellId) {
+          throw new Error(`"${emp.name}" কর্মকর্তার জন্য কোনো সেল পাওয়া যায়নি বা নির্বাচন করা হয়নি।`);
+        }
+
         const res = await fetch('/api/employees', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(emp)
+          body: JSON.stringify({
+            name: emp.name,
+            designation: emp.designation,
+            bankId: emp.bankId,
+            fileNo: emp.fileNo,
+            mobile: emp.mobile,
+            cellId
+          })
         });
+
         if (!res.ok) {
           const err = await res.json();
-          throw new Error(err.message || err.error || 'Failed to save bulk');
+          throw new Error(err.message || err.error || `"${emp.name}" কর্মকর্তাকে সংরক্ষণ করতে ব্যর্থ হয়েছে।`);
         }
       }
-      
+
       setIsBulkEmpModalOpen(false);
       setBulkEmpText('');
       setBulkError('');
       loadData();
     } catch (err: any) {
-      setBulkError(err.message || 'আমদানিতে কিছু সমস্যা হয়েছে। অনুগ্রহ করে ডেটা চেক করে পুনরায় চেষ্টা করুন।');
+      setBulkError(err.message || 'আমদানিতে ত্রুটি হয়েছে। অনুগ্রহ করে ডেটা চেক করে পুনরায় চেষ্টা করুন।');
     } finally {
       setBulkImporting(false);
+    }
+  };
+
+  const handleBulkCellSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBulkCellError("");
+    
+    if (!bulkCellText.trim()) {
+      setBulkCellError("অনুগ্রহ করে সেলের নামগুলো পেস্ট করুন।");
+      return;
+    }
+    
+    const lines = bulkCellText.split("\n")
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+      
+    if (lines.length === 0) {
+      setBulkCellError("কোনো সেলের নাম পাওয়া যায়নি।");
+      return;
+    }
+    
+    setBulkCellImporting(true);
+    try {
+      for (const name of lines) {
+        const exists = cells.some(c => c.name.trim().toLowerCase() === name.toLowerCase());
+        if (exists) continue;
+
+        const res = await fetch("/api/cells", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, description: "" })
+        });
+        
+        if (!res.ok) {
+          const err = await res.json();
+          if (err.error !== "cell_exists") {
+            throw new Error(err.message || err.error || `"${name}" সেলটি সংরক্ষণ করতে ব্যর্থ হয়েছে।`);
+          }
+        }
+      }
+      
+      setIsBulkCellModalOpen(false);
+      setBulkCellText("");
+      setBulkCellError("");
+      loadData();
+    } catch (err: any) {
+      setBulkCellError(err.message || "সেল আমদানি করতে সমস্যা হয়েছে।");
+    } finally {
+      setBulkCellImporting(false);
     }
   };
 
@@ -824,10 +899,14 @@ export default function EmployeesPage() {
                           (emp.bankId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (emp.fileNo || '').toLowerCase().includes(searchQuery.toLowerCase());
     let matchesCell = false;
-    if (!currentUser || currentUser.role === 'ADMIN') {
-      matchesCell = cellFilter === 'all' || emp.cellId.toString() === cellFilter;
+    if (cellFilter === 'select') {
+      matchesCell = ownCellId ? emp.cellId === ownCellId : (currentUser?.role === 'ADMIN');
+    } else if (cellFilter === 'all') {
+      matchesCell = true;
+    } else if (cellFilter === 'executives') {
+      matchesCell = false;
     } else {
-      matchesCell = emp.cellId === ownCellId && (cellFilter === 'all' || emp.cellId.toString() === cellFilter);
+      matchesCell = emp.cellId.toString() === cellFilter;
     }
     return matchesSearch && matchesCell;
   });
@@ -912,28 +991,28 @@ export default function EmployeesPage() {
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
-              
               {/* Cell Selector Filter */}
               <select
                 value={cellFilter}
                 onChange={(e) => setCellFilter(e.target.value)}
                 className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-indigo-500 font-bold"
               >
+                <option value="select">সিলেক্ট করুন (Select Cell)</option>
                 {isAdminOrAdminCell ? (
                   <>
-                    <option value="all">সকল সেল ও নির্বাহী (All Cells & Executives)</option>
+                    <option value="all">সকল সেলের কর্মকর্তা (All Cells & Executives)</option>
                     <option value="executives">নির্বাহী কর্মকর্তা (Executive Officers)</option>
                   </>
                 ) : (
-                  <option value="all">সকল সেল (All Cells)</option>
+                  <option value="all">সকল সেলের কর্মকর্তা (All Cells)</option>
                 )}
-                {selectableCells.map(c => (
+                {cells.map(c => (
                   <option key={c.id} value={c.id.toString()}>{c.name}</option>
                 ))}
               </select>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto md:justify-end">
               <button
                 onClick={exportEmployeesToCSV}
                 className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
@@ -1201,7 +1280,7 @@ export default function EmployeesPage() {
           {/* Headline Controls */}
           <div className="flex items-center justify-between glass-card p-4 rounded-2xl">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">সেল তালিকা ও কর্মকর্তা ভলিউম</span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto md:justify-end">
               <button
                 onClick={exportCellsToCSV}
                 className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5"
@@ -1209,19 +1288,32 @@ export default function EmployeesPage() {
                 <Download size={16} />
                 সেলসমূহ এক্সপোর্ট
               </button>
-              {currentUser?.role === 'ADMIN' && (
-                <button
-                  onClick={() => {
-                    setEditingCell(null);
-                    setCellForm({ name: '', description: '' });
-                    setErrorMessage('');
-                    setIsCellModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
-                >
-                  <Plus size={16} />
-                  নতুন সেল (Cell) যোগ করুন
-                </button>
+              {currentUser?.role === "ADMIN" && (
+                <>
+                  <button
+                    onClick={() => {
+                      setBulkCellText("");
+                      setBulkCellError("");
+                      setIsBulkCellModalOpen(true);
+                    }}
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750 cursor-pointer"
+                  >
+                    <Plus size={16} />
+                    বাল্ক সেল আপলোড
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingCell(null);
+                      setCellForm({ name: "", description: "" });
+                      setErrorMessage("");
+                      setIsCellModalOpen(true);
+                    }}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                  >
+                    <Plus size={16} />
+                    নতুন সেল (Cell) যোগ করুন
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -1266,7 +1358,7 @@ export default function EmployeesPage() {
       ---------------------------------------------------- */}
       {isEmpModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
                 {editingEmp ? 'কর্মকর্তার তথ্য সম্পাদনা' : 'নতুন কর্মকর্তা যোগ করুন'}
@@ -1384,7 +1476,7 @@ export default function EmployeesPage() {
       ---------------------------------------------------- */}
       {isCellModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
                 {editingCell ? 'সেল তথ্য সম্পাদনা' : 'নতুন সেল (Cell) যোগ করুন'}
@@ -1435,11 +1527,67 @@ export default function EmployeesPage() {
       )}
 
       {/* ----------------------------------------------------
+          BULK CELL IMPORT MODAL
+      ---------------------------------------------------- */}
+      {isBulkCellModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl text-slate-800 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
+                সেল বাল্ক টেক্সট আপলোড (Bulk Import Cells)
+              </h3>
+              <button onClick={() => setIsBulkCellModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-sans text-xl">×</button>
+            </div>
+            
+            <form onSubmit={handleBulkCellSubmit} className="p-6 space-y-4">
+              {bulkCellError && (
+                <div className="p-3 bg-red-50 dark:bg-red-955/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-955/30 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle size={14} />
+                  {bulkCellError}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  সেলের নামসমূহ (প্রতি লাইনে একটি) *
+                </label>
+                <textarea
+                  required
+                  rows={8}
+                  placeholder="যেমন:\nR9\nR22\nJBNS\nCBS Integrated Development Cell"
+                  value={bulkCellText}
+                  onChange={(e) => setBulkCellText(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-xs font-mono focus:outline-none focus:border-indigo-500 leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setIsBulkCellModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  disabled={bulkCellImporting}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400"
+                >
+                  {bulkCellImporting ? "আমদানি হচ্ছে..." : "ইম্পোর্ট করুন"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------------------------------------------
           BULK EMPLOYEE IMPORT MODAL
       ---------------------------------------------------- */}
       {isBulkEmpModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl text-slate-800 dark:text-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl text-slate-800 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
                 কর্মকর্তা বাল্ক টেক্সট আপলোড (Bulk Import)
@@ -1464,15 +1612,14 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. সেল সিলেক্ট করুন *</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. সেল সিলেক্ট করুন (ঐচ্ছিক)</label>
                 <select
-                  required
                   value={bulkEmpCellId}
                   onChange={(e) => setBulkEmpCellId(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
                 >
-                  <option value="">সেল নির্বাচন করুন</option>
-                  {selectableCells.map((c) => (
+                  <option value="">সেল নির্বাচন করুন (Select Cell)</option>
+                  {cells.map((c) => (
                     <option key={c.id} value={c.id.toString()}>{c.name}</option>
                   ))}
                 </select>
@@ -1678,3 +1825,5 @@ export default function EmployeesPage() {
     </div>
   );
 }
+
+
