@@ -368,6 +368,194 @@ npm run start
 
 ---
 
+## 🔴 Build and Deploy in RedHat Linux Server (RHEL / Rocky / AlmaLinux)
+
+This guide outlines a production-grade deployment of the LHN Portal on a **RedHat Enterprise Linux (RHEL 8/9)** server, including setting up a local production **PostgreSQL database**, Node.js runtime, reverse proxy with **Nginx**, **SELinux** adjustments, and process management using **PM2**.
+
+### 📋 Prerequisites & OS Update
+Log in to your RHEL server as `root` or a user with `sudo` privileges. Update the package list:
+```bash
+sudo dnf update -y
+```
+
+### 🗄️ Step 1: PostgreSQL Database Installation & Configuration
+
+1. **Enable PostgreSQL Repository & Install:**
+   For RHEL 8/9, enable the PostgreSQL AppStream module or install from official repos:
+   ```bash
+   sudo dnf module enable postgresql:15 -y
+   sudo dnf install postgresql-server postgresql-contrib -y
+   ```
+2. **Initialize the Database:**
+   ```bash
+   sudo postgresql-setup --initdb
+   ```
+3. **Enable & Start PostgreSQL Service:**
+   ```bash
+   sudo systemctl enable postgresql --now
+   ```
+4. **Configure Authentication Method:**
+   RHEL PostgreSQL by default uses `ident` auth. Modify the Host-based Authentication rules (`pg_hba.conf`) to allow password-based login (`scram-sha-256` or `md5`):
+   ```bash
+   sudo sed -i 's/ident/scram-sha-256/g' /var/lib/pgsql/data/pg_hba.conf
+   sudo sed -i 's/peer/scram-sha-256/g' /var/lib/pgsql/data/pg_hba.conf
+   ```
+   Restart PostgreSQL to apply changes:
+   ```bash
+   sudo systemctl restart postgresql
+   ```
+5. **Create Database and Database User:**
+   Log in as `postgres` system user and run the database commands:
+   ```bash
+   sudo -u postgres psql
+   ```
+   Run the following SQL commands inside the PostgreSQL prompt:
+   ```sql
+   CREATE USER lhn_admin WITH PASSWORD 'SecurePassword123!';
+   CREATE DATABASE lhn_prod OWNER lhn_admin;
+   \q
+   ```
+
+### 🟢 Step 2: Install Node.js & Git
+
+1. **Enable official Node.js module (LTS release v20):**
+   ```bash
+   sudo dnf module enable nodejs:20 -y
+   sudo dnf install nodejs git -y
+   ```
+2. **Verify Installation:**
+   ```bash
+   node -v
+   npm -v
+   ```
+
+### 📂 Step 3: Clone Code & Configure Environment
+
+1. **Clone the repository:**
+   We recommend deploying to `/var/www/lhn-portal`:
+   ```bash
+   sudo mkdir -p /var/www
+   sudo chown -R $USER:$USER /var/www
+   cd /var/www
+   git clone https://github.com/SyedArifulIslamEmon/Late-Sitting-Holiday-Night-Duty.git lhn-portal
+   cd lhn-portal
+   ```
+2. **Install Project Dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Create Production Environment File (`.env`):**
+   Create a `.env` file in the project root:
+   ```bash
+   nano .env
+   ```
+   Add the following line (make sure to match the PostgreSQL connection details set in Step 1):
+   ```env
+   DATABASE_URL="postgresql://lhn_admin:SecurePassword123!@localhost:5432/lhn_prod?schema=public"
+   ```
+
+### 🏗️ Step 4: Build & Database Initialization
+
+1. **Push Prisma Schema to PostgreSQL Database:**
+   Initialize the database tables and relations directly from our Prisma schema:
+   ```bash
+   npx prisma db push
+   npx prisma generate
+   ```
+2. **Build the Next.js Production Bundle:**
+   Generate the optimized production static and dynamic builds:
+   ```bash
+   npm run build
+   ```
+
+### 🔄 Step 5: Process Management using PM2
+
+PM2 ensures the server runs in the background and automatically restarts on system boots.
+
+1. **Install PM2 globally:**
+   ```bash
+   sudo npm install -g pm2
+   ```
+2. **Start Next.js with PM2:**
+   ```bash
+   pm2 start npm --name "lhn-portal" -- run start -- -p 3000
+   ```
+3. **Configure PM2 Startup Script:**
+   Generate startup scripts to survive system reboots:
+   ```bash
+   pm2 startup systemd
+   ```
+   *(Run the systemd command outputted on your screen by PM2, e.g., `sudo env PATH=$PATH:/usr/bin...`)*
+   
+   Save current PM2 list:
+   ```bash
+   pm2 save
+   ```
+
+### 🛡️ Step 6: Nginx Reverse Proxy Setup & SELinux
+
+1. **Install Nginx:**
+   ```bash
+   sudo dnf install nginx -y
+   sudo systemctl enable nginx --now
+   ```
+2. **Configure Nginx Server block:**
+   Create an Nginx configuration file for LHN Portal:
+   ```bash
+   sudo nano /etc/nginx/conf.d/lhn-portal.conf
+   ```
+   Add the reverse proxy server block mapping port `80` to PM2 port `3000`:
+   ```nginx
+   server {
+       listen 80;
+       server_name lhn.local; # Or server's IP address
+
+       location / {
+           proxy_pass http://127.0.0.1:3000;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+       }
+   }
+   ```
+   Test and restart Nginx:
+   ```bash
+   sudo nginx -t
+   sudo systemctl restart nginx
+   ```
+3. **Configure SELinux (CRITICAL FOR REDHAT):**
+   SELinux by default blocks Nginx from forwarding connections to local upstream ports (like port 3000). Run the following commands to authorize the reverse proxy:
+   ```bash
+   sudo setsebool -P httpd_can_network_connect 1
+   ```
+
+### 🧱 Step 7: Firewalld Configuration
+
+RHEL restricts network access using `firewalld`. Allow incoming HTTP (port 80) and HTTPS (port 443) traffic:
+```bash
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --reload
+```
+
+### 🧹 Step 8: Production Verification
+
+Open your web browser and navigate to the server's IP address or domain name. Log in using the default credentials:
+- **Username:** `admin`
+- **Password:** `123456`
+
+To monitor running logs and PM2 processes:
+```bash
+pm2 logs lhn-portal
+pm2 status
+```
+
+---
+
 ## 🔒 ডেটা সেফটি ও মাইগ্রেশন পলিসি (Database Safety Guarantee)
 
 আমরা কোড ডেভেলপ করার সময় সর্বদা ডেটা সেফটি মাথায় রেখেছি:
