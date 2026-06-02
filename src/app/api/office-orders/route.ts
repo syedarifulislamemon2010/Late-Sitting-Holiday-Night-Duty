@@ -96,11 +96,25 @@ export async function POST(request: Request) {
     }
     const currentUserId = parseInt(sessionVal, 10);
     const currentUser = !isNaN(currentUserId)
-      ? await prisma.user.findUnique({ where: { id: currentUserId } })
+      ? await prisma.user.findUnique({ 
+          where: { id: currentUserId },
+          include: { cells: true }
+        })
       : null;
 
-    if (!currentUser || currentUser.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন অফিস আদেশ বা বিল মেমো তৈরি ও সংশোধন করতে পারবেন।' }, { status: 403 });
+    if (!currentUser) {
+      return NextResponse.json({ error: 'unauthorized', message: 'ব্যবহারকারী পাওয়া যায়নি।' }, { status: 403 });
+    }
+
+    const isAdministrationCell = currentUser.cells?.some((c: any) => 
+      c.name.includes('প্রশাসন') || 
+      c.name.toLowerCase().includes('admin') || 
+      c.name.toLowerCase().includes('administration')
+    );
+    const isAdminOrAdminCell = currentUser.role === 'ADMIN' || isAdministrationCell;
+
+    if (!isAdminOrAdminCell) {
+      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন বা প্রশাসনিক সেলের ব্যবহারকারী অফিস আদেশ বা বিল মেমো তৈরি ও সংশোধন করতে পারবেন।' }, { status: 403 });
     }
 
     const payload = await request.json();
