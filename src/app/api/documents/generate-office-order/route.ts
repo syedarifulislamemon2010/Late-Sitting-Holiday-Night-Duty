@@ -23,7 +23,7 @@ function getBnDate(dateStr: string | null | undefined): string {
 export async function POST(request: Request) {
   try {
     const payload = await request.json();
-    const { orderRef, orderDate, orderText, duties, signingOfficer, signingDesignation, copies } = payload;
+    const { orderRef, orderDate, orderText, duties, signingOfficer, signingDesignation, copies, headerMode = 'with_header' } = payload;
 
     if (!orderRef || !orderDate) {
       return NextResponse.json({ error: 'missing_required_fields' }, { status: 400 });
@@ -196,6 +196,7 @@ export async function POST(request: Request) {
 </style>
 </head>
 <body>
+  ${headerMode === 'with_header' ? `
   <table class="header-table">
     <tr>
       <td class="header-left" style="width: 60%;">
@@ -224,6 +225,9 @@ export async function POST(request: Request) {
       </td>
     </tr>
   </table>
+  ` : `
+  <div style="height: 85px; border-bottom: 2px solid transparent; padding-bottom: 5px; margin-bottom: 5px;"></div>
+  `}
   
   <table class="ref-date-table">
     <tr>
