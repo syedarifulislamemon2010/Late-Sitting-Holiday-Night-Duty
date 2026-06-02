@@ -464,7 +464,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Premium International Footer */}
-        <footer className="text-center space-y-1 text-blue-900/60 font-semibold tracking-wide select-none">
+        <footer className="no-print print:hidden text-center space-y-1 text-blue-900/60 font-semibold tracking-wide select-none">
 
             <p className="text-[10px] sm:text-[11px]">
               Designed & Developed by <span className="font-extrabold text-[#0D47A1] hover:underline cursor-pointer">CBS Integrated Development Cell</span>

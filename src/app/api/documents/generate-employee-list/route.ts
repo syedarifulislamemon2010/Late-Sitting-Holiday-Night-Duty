@@ -54,17 +54,16 @@ export async function POST(request: Request) {
 
     let cellIds: number[] = [];
     if (!isAdminOrAdminCell) {
-      // Normal user is restricted to their own cells
-      const userCellIds = currentUser.cells.map((c: any) => c.id);
-      if (cellFilter && cellFilter !== 'all') {
-        const filterId = parseInt(cellFilter, 10);
-        if (userCellIds.includes(filterId)) {
-          cellIds = [filterId];
-        } else {
-          cellIds = [];
-        }
+      // Normal user is restricted to their own primary cell
+      const ownEmployee = await prisma.employee.findFirst({
+        where: { bankId: currentUser.username }
+      });
+      const ownCellId = ownEmployee ? ownEmployee.cellId : (currentUser.cells[0]?.id || null);
+      
+      if (ownCellId) {
+        cellIds = [ownCellId];
       } else {
-        cellIds = userCellIds;
+        cellIds = [];
       }
     } else {
       if (cellFilter && cellFilter !== 'all' && cellFilter !== 'executives') {

@@ -141,7 +141,7 @@ body {
     max-height: none !important;
   }
   
-  .no-print {
+  .no-print, footer {
     display: none !important;
   }
   

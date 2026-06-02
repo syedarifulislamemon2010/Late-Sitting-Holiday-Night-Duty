@@ -258,6 +258,26 @@ export async function POST(request: Request) {
           }
         }
       }
+
+      // 3. Department-wide general notification from Admin / Administration Cell
+      const allUsersList = await prisma.user.findMany();
+      const otherUsersList = allUsersList.filter(u => u.id !== currentUser.id);
+      const categoryMap: any = {
+        'LATE_SITTING': 'লেট সিটিং',
+        'HOLIDAY': 'হলিডে',
+        'NIGHT_SHIFT': 'নাইট শিফট'
+      };
+      const categoryBn = categoryMap[category] || (category.startsWith('BILL_') ? 'বিল জেনারেশন' : category);
+      
+      await prisma.notification.createMany({
+        data: otherUsersList.map(u => ({
+          userId: u.id,
+          title: 'প্রশাসন সেল হতে আপডেট',
+          message: `প্রশাসন সেল কর্তৃক একটি নতুন ${categoryBn === 'বিল জেনারেশন' ? 'বিল মেমো প্রস্তুত' : 'অফিস আদেশ জারি'} করা হয়েছে (স্মারক: ${orderRef})।`,
+          link: category.startsWith('BILL_') ? '/billing' : '/roster',
+          isRead: false
+        }))
+      });
     } catch (notifErr) {
       console.error('Error generating office order notifications:', notifErr);
     }

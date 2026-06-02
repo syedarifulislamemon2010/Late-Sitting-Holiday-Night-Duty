@@ -1515,7 +1515,7 @@ export default function LeaveGeneratorPage() {
           }
 
           /* Hide all non-printable components */
-          .no-print, header, nav, aside, [role="navigation"], .sidebar-wrapper, .mobile-nav-top, .sidebar-footer {
+          .no-print, footer, header, nav, aside, [role="navigation"], .sidebar-wrapper, .mobile-nav-top, .sidebar-footer {
             display: none !important;
           }
 

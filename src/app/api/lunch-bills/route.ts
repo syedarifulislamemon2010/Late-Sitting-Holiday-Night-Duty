@@ -256,6 +256,20 @@ export async function POST(request: Request) {
           });
         });
         await Promise.all(notifyPromises);
+
+        // 2. Department-wide general notification from Admin / Administration Cell
+        const allUsersList = await prisma.user.findMany();
+        const otherUsersList = allUsersList.filter(u => u.id !== currentUser.id);
+        
+        await prisma.notification.createMany({
+          data: otherUsersList.map(u => ({
+            userId: u.id,
+            title: 'প্রশাসন সেল হতে আপডেট',
+            message: `প্রশাসন সেল কর্তৃক "${banglaMonthStr}" মাসের লাঞ্চ ভাতার সমন্বয় বিল চূড়ান্ত করা হয়েছে।`,
+            link: '/lunch-bill',
+            isRead: false
+          }))
+        });
       }
     } catch (notifErr) {
       console.error('Error creating cell lunch notifications:', notifErr);

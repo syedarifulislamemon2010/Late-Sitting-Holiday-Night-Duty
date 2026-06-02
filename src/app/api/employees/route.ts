@@ -81,28 +81,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
     }
 
-    // 1. Enforce Cell verification for USER role
+    // Enforce ADMIN role for creating new employee records
     if (currentUser.role !== 'ADMIN') {
-      const userCellIds = currentUser.cells.map((c: any) => c.id);
-      if (!userCellIds.includes(parsedCellId)) {
-        return NextResponse.json({
-          error: 'forbidden',
-          message: 'এই সেলে কর্মকর্তা যোগ করার অনুমতি আপনার নেই।'
-        }, { status: 403 });
-      }
-
-      // 2. Enforce duplicate bankId restriction for officers already in another cell
-      if (bankId && bankId.trim() !== '') {
-        const existing = await prisma.employee.findFirst({
-          where: { bankId: bankId.trim() }
-        });
-        if (existing && existing.cellId !== parsedCellId) {
-          return NextResponse.json({
-            error: 'forbidden',
-            message: 'এই কর্মকর্তা অন্য সেলে কর্মরত আছেন। শুধুমাত্র সিস্টেম এডমিন এটি পরিবর্তন করতে পারবেন।'
-          }, { status: 403 });
-        }
-      }
+      return NextResponse.json({
+        error: 'forbidden',
+        message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন কর্মকর্তা যোগ করতে পারবেন।'
+      }, { status: 403 });
     }
 
     const employee = await prisma.employee.create({
@@ -131,6 +115,23 @@ export async function POST(request: Request) {
         userAgent,
         details: `${currentUser.name} (@${currentUser.username}) নতুন কর্মকর্তা "${employee.name}" (${employee.designation}) কে ${employee.cell.name} সেলে যোগ করেছেন।`
       });
+
+      // Notify all other users about this admin update
+      try {
+        const allUsers = await prisma.user.findMany();
+        const otherUsers = allUsers.filter(u => u.id !== currentUser.id);
+        await prisma.notification.createMany({
+          data: otherUsers.map(u => ({
+            userId: u.id,
+            title: 'নতুন কর্মকর্তা নোটিশ',
+            message: `প্রশাসন সেল কর্তৃক নতুন কর্মকর্তা জনাব ${employee.name} (${employee.designation}) কে ${employee.cell.name} সেলে যোগ করা হয়েছে।`,
+            link: '/employees',
+            isRead: false
+          }))
+        });
+      } catch (notifErr) {
+        console.error('Error generating employee add notification:', notifErr);
+      }
     }
     
     return NextResponse.json(employee, { status: 201 });

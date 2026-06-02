@@ -58,53 +58,35 @@ export async function PUT(
       return NextResponse.json({ error: 'employee_not_found', message: 'কর্মকর্তা পাওয়া যায়নি।' }, { status: 404 });
     }
 
-    // 1. Enforce Cell verification for USER role
+    let updatedData: any = {
+      name: name.trim(),
+      mobile: mobile?.trim() || null,
+    };
+
     if (currentUser.role !== 'ADMIN') {
-      const userCellIds = currentUser.cells.map((c: any) => c.id);
-
-      // Verify user has access to existing employee's cell
-      if (!userCellIds.includes(existingEmployee.cellId)) {
+      const isOwnRecord = existingEmployee.bankId && currentUser.username && existingEmployee.bankId.trim() === currentUser.username.trim();
+      if (!isOwnRecord) {
         return NextResponse.json({
           error: 'forbidden',
-          message: 'এই কর্মকর্তার তথ্য সংশোধন করার অনুমতি আপনার নেই।'
+          message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন কর্মকর্তা সংশোধন করতে পারবেন।'
         }, { status: 403 });
       }
 
-      // Verify user has access to target cell
-      if (!userCellIds.includes(parsedCellId)) {
-        return NextResponse.json({
-          error: 'forbidden',
-          message: 'এই সেলে কর্মকর্তা স্থানান্তর করার অনুমতি আপনার নেই।'
-        }, { status: 403 });
-      }
-
-      // Verify duplicate bankId restriction for officers already in another cell
-      if (bankId && bankId.trim() !== '') {
-        const existingConflict = await prisma.employee.findFirst({
-          where: {
-            bankId: bankId.trim(),
-            id: { not: employeeId }
-          }
-        });
-        if (existingConflict && existingConflict.cellId !== parsedCellId) {
-          return NextResponse.json({
-            error: 'forbidden',
-            message: 'এই কর্মকর্তা অন্য সেলে কর্মরত আছেন। শুধুমাত্র সিস্টেম এডমিন এটি পরিবর্তন করতে পারবেন।'
-          }, { status: 403 });
-        }
-      }
+      // Restrict modification of core fields for non-admin self-editing
+      updatedData.designation = existingEmployee.designation;
+      updatedData.bankId = existingEmployee.bankId;
+      updatedData.fileNo = existingEmployee.fileNo;
+      updatedData.cellId = existingEmployee.cellId;
+    } else {
+      updatedData.designation = designation.trim();
+      updatedData.bankId = bankId?.trim() || null;
+      updatedData.fileNo = fileNo?.trim() || null;
+      updatedData.cellId = parsedCellId;
     }
     
     const employee = await prisma.employee.update({
       where: { id: employeeId },
-      data: {
-        name: name.trim(),
-        designation: designation.trim(),
-        bankId: bankId?.trim() || null,
-        fileNo: fileNo?.trim() || null,
-        mobile: mobile?.trim() || null,
-        cellId: parsedCellId
-      },
+      data: updatedData,
       include: {
         cell: true
       }
@@ -170,15 +152,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
     }
 
-    // Enforce Cell verification for USER role on delete
+    // Enforce ADMIN role for deleting employees
     if (currentUser.role !== 'ADMIN') {
-      const userCellIds = currentUser.cells.map((c: any) => c.id);
-      if (!userCellIds.includes(employee.cellId)) {
-        return NextResponse.json({
-          error: 'forbidden',
-          message: 'এই কর্মকর্তা মুছে ফেলার অনুমতি আপনার নেই।'
-        }, { status: 403 });
-      }
+      return NextResponse.json({
+        error: 'forbidden',
+        message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন কর্মকর্তা মুছে ফেলতে পারবেন।'
+      }, { status: 403 });
     }
 
     deletedBy = currentUser.username;

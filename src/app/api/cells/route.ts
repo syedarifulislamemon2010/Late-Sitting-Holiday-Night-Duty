@@ -47,6 +47,22 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { name, description } = body;
+
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    let currentUser: any = null;
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        currentUser = await prisma.user.findUnique({
+          where: { id: userId }
+        });
+      }
+    }
+
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'forbidden', message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন নতুন সেল যোগ করতে পারবেন।' }, { status: 403 });
+    }
     
     if (!name || name.trim() === '') {
       return NextResponse.json({ error: 'name_required' }, { status: 400 });

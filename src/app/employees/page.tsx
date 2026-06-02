@@ -155,6 +155,8 @@ export default function EmployeesPage() {
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
   const [editingCell, setEditingCell] = useState<Cell | null>(null);
   const [profileEmp, setProfileEmp] = useState<Employee | null>(null);
+  
+  const isSelfEditingOnly = !!(editingEmp && currentUser?.role !== 'ADMIN' && editingEmp.bankId?.trim() === currentUser?.username?.trim());
 
   // Helper for premium HSL color palettes
   const getPalette = (cellId: number) => {
@@ -258,23 +260,18 @@ export default function EmployeesPage() {
   });
   const [showKeyInput, setShowKeyInput] = useState(false);
 
-  const selectableCells = isAdminOrAdminCell
+  const ownEmployee = employees.find(emp => emp.bankId?.trim() === currentUser?.username?.trim());
+  const ownCellId = ownEmployee ? ownEmployee.cellId : (currentUser?.cells?.[0]?.id || null);
+
+  const selectableCells = (!currentUser || currentUser.role === 'ADMIN')
     ? cells
-    : cells.filter(cell => currentUser?.cells?.some((c: any) => c.id === cell.id));
+    : cells.filter(cell => cell.id === ownCellId);
 
   const formSelectableCells = (() => {
-    if (isAdminOrAdminCell) {
+    if (!currentUser || currentUser.role === 'ADMIN') {
       return cells;
     }
-    if (editingEmp) {
-      const isEmon = editingEmp.name.includes('ইমন') || editingEmp.name.includes('Emon');
-      if (isEmon) {
-        return cells.filter(cell => currentUser?.cells?.some((c: any) => c.id === cell.id));
-      } else {
-        return cells.filter(cell => cell.id === editingEmp.cellId);
-      }
-    }
-    return cells.filter(cell => currentUser?.cells?.some((c: any) => c.id === cell.id));
+    return cells.filter(cell => cell.id === ownCellId);
   })();
 
   useEffect(() => {
@@ -826,7 +823,12 @@ export default function EmployeesPage() {
                           emp.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (emp.bankId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (emp.fileNo || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCell = cellFilter === 'all' || emp.cellId.toString() === cellFilter;
+    let matchesCell = false;
+    if (!currentUser || currentUser.role === 'ADMIN') {
+      matchesCell = cellFilter === 'all' || emp.cellId.toString() === cellFilter;
+    } else {
+      matchesCell = emp.cellId === ownCellId && (cellFilter === 'all' || emp.cellId.toString() === cellFilter);
+    }
     return matchesSearch && matchesCell;
   });
 
@@ -866,24 +868,22 @@ export default function EmployeesPage() {
         </div>
         
         {/* TAB CONTROLLERS */}
-        {isAdminOrAdminCell && (
-          <div className="flex bg-slate-200/60 dark:bg-slate-800/60 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/80 self-start md:self-auto shadow-inner">
-            <button
-              onClick={() => setActiveTab('employees')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'employees' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
-            >
-              <Users size={14} />
-              কর্মকর্তাবৃন্দ
-            </button>
-            <button
-              onClick={() => setActiveTab('cells')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'cells' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
-            >
-              <Building2 size={14} />
-              সেলসমূহ
-            </button>
-          </div>
-        )}
+        <div className="flex bg-slate-200/60 dark:bg-slate-800/60 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/80 self-start md:self-auto shadow-inner">
+          <button
+            onClick={() => setActiveTab('employees')}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'employees' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
+          >
+            <Users size={14} />
+            কর্মকর্তাবৃন্দ
+          </button>
+          <button
+            onClick={() => setActiveTab('cells')}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'cells' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
+          >
+            <Building2 size={14} />
+            সেলসমূহ
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -959,7 +959,7 @@ export default function EmployeesPage() {
                 {generating ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
                 ডাউনলোড পিডিএফ
               </button>
-              {selectableCells.length > 0 && (
+              {currentUser?.role === 'ADMIN' && selectableCells.length > 0 && (
                 <>
                   <button
                     onClick={() => {
@@ -1151,8 +1151,7 @@ export default function EmployeesPage() {
                                 </div>
                               </div>
 
-                              {(isAdminOrAdminCell || 
-                                (currentUser?.cells && currentUser.cells.some((c: any) => c.id === emp.cellId))) && (
+                              {(currentUser?.role === 'ADMIN' || (emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim())) && (
                                 <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80 font-sans">
                                   <button
                                     onClick={(e) => {
@@ -1164,16 +1163,18 @@ export default function EmployeesPage() {
                                   >
                                     <Edit2 size={13} />
                                   </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      deleteEmployee(emp.id);
-                                    }}
-                                    className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-650 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
-                                    title="মুছে ফেলুন"
-                                  >
-                                    <Trash2 size={13} />
-                                  </button>
+                                  {currentUser?.role === 'ADMIN' && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteEmployee(emp.id);
+                                      }}
+                                      className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-650 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
+                                      title="মুছে ফেলুন"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -1208,24 +1209,26 @@ export default function EmployeesPage() {
                 <Download size={16} />
                 সেলসমূহ এক্সপোর্ট
               </button>
-              <button
-                onClick={() => {
-                  setEditingCell(null);
-                  setCellForm({ name: '', description: '' });
-                  setErrorMessage('');
-                  setIsCellModalOpen(true);
-                }}
-                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors"
-              >
-                <Plus size={16} />
-                নতুন সেল (Cell) যোগ করুন
-              </button>
+              {currentUser?.role === 'ADMIN' && (
+                <button
+                  onClick={() => {
+                    setEditingCell(null);
+                    setCellForm({ name: '', description: '' });
+                    setErrorMessage('');
+                    setIsCellModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  <Plus size={16} />
+                  নতুন সেল (Cell) যোগ করুন
+                </button>
+              )}
             </div>
           </div>
 
           {/* Cells List Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cells.map((cell) => (
+            {selectableCells.map((cell) => (
               <div key={cell.id} className="glass-card p-6 rounded-2xl flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
                 <div className="space-y-3">
                   <div className="flex justify-between items-start">
@@ -1236,20 +1239,22 @@ export default function EmployeesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                  <button
-                    onClick={() => startEditCell(cell)}
-                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 transition-colors"
-                  >
-                    <Edit2 size={13} />
-                  </button>
-                  <button
-                    onClick={() => deleteCell(cell)}
-                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+                {currentUser?.role === 'ADMIN' && (
+                  <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                    <button
+                      onClick={() => startEditCell(cell)}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                    >
+                      <Edit2 size={13} />
+                    </button>
+                    <button
+                      onClick={() => deleteCell(cell)}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -1293,8 +1298,9 @@ export default function EmployeesPage() {
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">পদবী *</label>
                 <select
                   value={empForm.designation}
+                  disabled={isSelfEditingOnly}
                   onChange={(e) => setEmpForm({ ...empForm, designation: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
                 >
                   {STRICT_DESIGNATIONS.map((desig) => (
                     <option key={desig} value={desig}>{desig}</option>
@@ -1307,10 +1313,11 @@ export default function EmployeesPage() {
                 <input
                   type="text"
                   required
+                  disabled={isSelfEditingOnly}
                   placeholder="যেমন: 026799"
                   value={empForm.bankId}
                   onChange={(e) => setEmpForm({ ...empForm, bankId: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
                 />
               </div>
 
@@ -1319,10 +1326,11 @@ export default function EmployeesPage() {
                 <input
                   type="text"
                   required
+                  disabled={isSelfEditingOnly}
                   placeholder="যেমন: SO(Com)-026799"
                   value={empForm.fileNo}
                   onChange={(e) => setEmpForm({ ...empForm, fileNo: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
                 />
               </div>
 
@@ -1341,8 +1349,9 @@ export default function EmployeesPage() {
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেল সিলেক্ট করুন *</label>
                 <select
                   value={empForm.cellId}
+                  disabled={isSelfEditingOnly}
                   onChange={(e) => setEmpForm({ ...empForm, cellId: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
+                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
                 >
                   {formSelectableCells.map((c) => (
                     <option key={c.id} value={c.id.toString()}>{c.name}</option>
@@ -1596,8 +1605,7 @@ export default function EmployeesPage() {
                 >
                   বন্ধ করুন
                 </button>
-                {(isAdminOrAdminCell || 
-                  (currentUser?.cells && currentUser.cells.some((c: any) => c.id === profileEmp.cellId))) && (
+                {(currentUser?.role === 'ADMIN' || (profileEmp.bankId && currentUser?.username && profileEmp.bankId.trim() === currentUser.username.trim())) && (
                   <button
                     onClick={() => {
                       const emp = profileEmp;

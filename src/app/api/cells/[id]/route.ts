@@ -16,6 +16,22 @@ export async function PUT(
     
     const body = await request.json();
     const { name, description } = body;
+
+    const cookieStore = await cookies();
+    const sessionVal = cookieStore.get('session')?.value;
+    let currentUser: any = null;
+    if (sessionVal) {
+      const userId = parseInt(sessionVal, 10);
+      if (!isNaN(userId)) {
+        currentUser = await prisma.user.findUnique({
+          where: { id: userId }
+        });
+      }
+    }
+
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'forbidden', message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন সেল সংশোধন করতে পারবেন।' }, { status: 403 });
+    }
     
     if (!name || name.trim() === '') {
       return NextResponse.json({ error: 'name_required' }, { status: 400 });
@@ -79,16 +95,19 @@ export async function DELETE(
     // Save to Trash
     const cookieStore = await cookies();
     const sessionVal = cookieStore.get('session')?.value;
-    let deletedBy: string | null = null;
+    let currentUser: any = null;
     if (sessionVal) {
       const userId = parseInt(sessionVal, 10);
       if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (user) {
-          deletedBy = user.username;
-        }
+        currentUser = await prisma.user.findUnique({ where: { id: userId } });
       }
     }
+
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'forbidden', message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন সেল মুছে ফেলতে পারবেন।' }, { status: 403 });
+    }
+
+    const deletedBy = currentUser.username;
 
     await prisma.trash.create({
       data: {
