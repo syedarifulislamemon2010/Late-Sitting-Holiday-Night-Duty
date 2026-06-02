@@ -52,6 +52,10 @@ export async function POST(request: Request) {
     const payload = await request.json();
     const { cellFilter } = payload; // 'all', 'select', 'executives', or string representing cellId
 
+    if (cellFilter === 'select') {
+      return NextResponse.json({ error: 'invalid_filter', message: 'অনুগ্রহ করে কোনো সেল নির্বাচন করুন।' }, { status: 400 });
+    }
+
     let cellIds: number[] = [];
     if (!isAdminOrAdminCell) {
       // Normal user is restricted to their own primary cell

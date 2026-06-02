@@ -168,11 +168,23 @@ export default function Navbar() {
     return () => window.removeEventListener('storage', loadUser);
   }, []);
 
-  // Theme Syncing
+  // Theme Syncing - Strictly blue theme
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark') || 
       localStorage.getItem('theme') === 'dark';
     setDarkMode(isDark);
+    
+    // Explicitly clean and set variables to the requested light blue theme on initial load
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add('dark');
+      root.style.setProperty('--primary', '#38bdf8');
+      root.style.setProperty('--primary-hover', '#0ea5e9');
+    } else {
+      root.classList.remove('dark');
+      root.style.setProperty('--primary', '#0b5e9e');
+      root.style.setProperty('--primary-hover', '#094d82');
+    }
   }, []);
 
   const toggleDarkMode = (e: React.MouseEvent) => {
@@ -183,28 +195,13 @@ export default function Navbar() {
     if (nextDark) {
       root.classList.add('dark');
       localStorage.setItem('theme', 'dark');
+      root.style.setProperty('--primary', '#38bdf8');
+      root.style.setProperty('--primary-hover', '#0ea5e9');
     } else {
       root.classList.remove('dark');
       localStorage.setItem('theme', 'light');
-    }
-    
-    // Trigger window storage event or dynamic style reload
-    const activeColor = localStorage.getItem('themeColor') || 'blue';
-    const themes = [
-      { key: 'blue', primary: '#0b5e9e', hover: '#094d82', darkPrimary: '#38bdf8', darkHover: '#0ea5e9' },
-      { key: 'indigo', primary: '#4f46e5', hover: '#4338ca', darkPrimary: '#818cf8', darkHover: '#6366f1' },
-      { key: 'emerald', primary: '#10b981', hover: '#059669', darkPrimary: '#34d399', darkHover: '#059669' },
-      { key: 'violet', primary: '#7c3aed', hover: '#6d28d9', darkPrimary: '#a78bfa', darkHover: '#7c3aed' },
-      { key: 'rose', primary: '#e11d48', hover: '#be123c', darkPrimary: '#fb7185', darkHover: '#e11d48' },
-      { key: 'amber', primary: '#d97706', hover: '#b45309', darkPrimary: '#fbbf24', darkHover: '#d97706' }
-    ];
-    const theme = themes.find(t => t.key === activeColor) || themes[0];
-    if (nextDark) {
-      root.style.setProperty('--primary', theme.darkPrimary);
-      root.style.setProperty('--primary-hover', theme.darkHover);
-    } else {
-      root.style.setProperty('--primary', theme.primary);
-      root.style.setProperty('--primary-hover', theme.hover);
+      root.style.setProperty('--primary', '#0b5e9e');
+      root.style.setProperty('--primary-hover', '#094d82');
     }
   };
 
@@ -391,23 +388,20 @@ export default function Navbar() {
 
               {/* Options */}
               <div className="space-y-1">
-                {/* Dark Mode toggle */}
-                <button 
-                  onClick={toggleDarkMode}
-                  className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left"
+                {/* Settings link */}
+                <Link 
+                  href="/users"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 transition-colors text-left font-sans cursor-pointer"
                 >
-                  <div className="flex items-center gap-3">
-                    {darkMode ? <Sun size={16} className="text-amber-500" /> : <Moon size={16} />}
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                      {darkMode ? 'হালকা মোড (Light Mode)' : 'ডার্ক মোড (Dark Mode)'}
-                    </span>
-                  </div>
-                </button>
+                  <Settings size={16} />
+                  <span className="text-xs font-bold">সেটিংস (Settings)</span>
+                </Link>
 
                 {/* Log out */}
                 <button 
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 transition-colors text-left cursor-pointer"
                 >
                   <LogOut size={16} />
                   <span className="text-xs font-bold">লগ আউট (Log Out)</span>

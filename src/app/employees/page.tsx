@@ -269,7 +269,7 @@ export default function EmployeesPage() {
 
   const selectableCells = (() => {
     if (cellFilter === 'select') {
-      return cells.filter(cell => cell.id === ownCellId);
+      return [];
     }
     if (cellFilter === 'all') {
       return cells;
@@ -896,7 +896,7 @@ export default function EmployeesPage() {
                           (emp.fileNo || '').toLowerCase().includes(searchQuery.toLowerCase());
     let matchesCell = false;
     if (cellFilter === 'select') {
-      matchesCell = ownCellId ? emp.cellId === ownCellId : (currentUser?.role === 'ADMIN');
+      matchesCell = false;
     } else if (cellFilter === 'all') {
       matchesCell = true;
     } else if (cellFilter === 'executives') {
@@ -1011,7 +1011,8 @@ export default function EmployeesPage() {
             <div className="flex flex-wrap gap-2 w-full md:w-auto md:justify-end">
               <button
                 onClick={exportEmployeesToCSV}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+                disabled={cellFilter === 'select'}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
                 <Download size={16} />
                 এক্সপোর্ট করুন
@@ -1019,8 +1020,8 @@ export default function EmployeesPage() {
               
               <button
                 onClick={handlePrintPreview}
-                disabled={generating}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750 cursor-pointer disabled:opacity-50"
+                disabled={generating || cellFilter === 'select'}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {generating ? <Loader2 className="animate-spin" size={16} /> : <Eye size={16} />}
                 প্রিন্ট প্রিভিউ
@@ -1028,8 +1029,8 @@ export default function EmployeesPage() {
               
               <button
                 onClick={handleDirectPrint}
-                disabled={generating}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors cursor-pointer disabled:opacity-50"
+                disabled={generating || cellFilter === 'select'}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {generating ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
                 ডাউনলোড পিডিএফ
@@ -1263,8 +1264,14 @@ export default function EmployeesPage() {
           ) : (
             <div className="glass-card p-12 text-center rounded-2xl max-w-md mx-auto space-y-3">
               <Users className="mx-auto text-slate-300" size={32} />
-              <h4 className="font-bold text-slate-800 dark:text-slate-100">কোনো কর্মকর্তা পাওয়া যায়নি</h4>
-              <p className="text-xs text-slate-400">খুঁজে পাওয়া ডাটা খালি। অনুগ্রহ করে অন্য নাম লিখুন বা নতুন কর্মকর্তা যোগ করুন।</p>
+              <h4 className="font-bold text-slate-800 dark:text-slate-100">
+                {cellFilter === 'select' ? 'সেল নির্বাচন করুন' : 'কোনো কর্মকর্তা পাওয়া যায়নি'}
+              </h4>
+              <p className="text-xs text-slate-400">
+                {cellFilter === 'select' 
+                  ? 'অনুগ্রহ করে ড্রপডাউন মেনু থেকে কোনো সেল বা অপশন নির্বাচন করুন।' 
+                  : 'খুঁজে পাওয়া ডাটা খালি। অনুগ্রহ করে অন্য নাম লিখুন বা নতুন কর্মকর্তা যোগ করুন।'}
+              </p>
             </div>
           )}
         </div>

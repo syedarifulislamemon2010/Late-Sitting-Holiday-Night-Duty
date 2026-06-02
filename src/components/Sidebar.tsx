@@ -185,32 +185,7 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Sidebar Footer Controls */}
-        <div className="p-4 border-t border-slate-100 space-y-3 bg-slate-50/30">
-          {currentUser && (
-            <div className="flex items-center gap-3 px-2 py-1.5 border-b border-slate-100 pb-3 mb-1 font-sans">
-              <div className="w-10 h-10 rounded-full bg-indigo-600 text-white font-extrabold flex items-center justify-center text-sm shrink-0 shadow-sm uppercase">
-                {currentUser.name ? currentUser.name.trim().charAt(0) : (currentUser.username ? currentUser.username.trim().charAt(0) : 'U')}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-extrabold text-slate-800 truncate leading-snug">{currentUser.name}</span>
-                <span className="text-[10px] font-bold text-slate-400 truncate -mt-0.5">{currentUser.username}</span>
-                <div className="mt-1 flex">
-                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold border leading-none ${currentUser.role === 'ADMIN' ? 'bg-indigo-50 text-indigo-700 border-indigo-150/40' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                    {currentUser.role === 'ADMIN' ? 'অ্যাডমিন' : 'সাধারণ ইউজার'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50/80 dark:bg-red-950/20 text-red-650 hover:text-white dark:text-red-400 hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-600 hover:scale-[1.03] active:scale-[0.98] border border-red-200/60 dark:border-red-900/30 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm hover:shadow-[0_0_15px_rgba(239,68,68,0.35)] cursor-pointer group"
-          >
-            <LogOut size={13} className="transition-transform duration-300 group-hover:-translate-x-0.5" />
-            লগআউট করুন
-          </button>
-        </div>
+
       </aside>
     </>
   );
