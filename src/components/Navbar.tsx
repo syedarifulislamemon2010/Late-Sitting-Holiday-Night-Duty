@@ -283,11 +283,15 @@ export default function Navbar() {
         
         {/* Mock Notification Icons like Facebook */}
         <div className="hidden sm:flex items-center gap-2">
-          {/* Messenger mock */}
-          <button className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors relative" title="মেসেঞ্জার">
+          {/* Messenger link */}
+          <Link 
+            href="/chat"
+            className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors relative cursor-pointer" 
+            title="মেসেঞ্জার (চ্যাট)"
+          >
             <MessageCircle size={16} />
             <span className="absolute -top-1.5 -right-1 bg-rose-500 text-white font-sans text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">৩</span>
-          </button>
+          </Link>
           
           {/* Notifications dynamic */}
           <div className="relative" ref={notifRef}>
@@ -369,99 +373,46 @@ export default function Navbar() {
             <span className="hidden md:inline text-xs font-bold text-slate-700 dark:text-slate-200 max-w-[120px] truncate">{userDisplayName}</span>
           </button>
 
-          {/* Facebook Dropdown Menu - PERFECT visual replica of Image 4 */}
+          {/* Simplified Premium Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-4 text-slate-800 dark:text-slate-100 animate-in fade-in slide-in-from-top-4 duration-200 z-50">
-              
+            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-4 text-slate-800 dark:text-slate-100 animate-in fade-in slide-in-from-top-4 duration-200 z-50">
               {/* Dropdown Profile Header */}
-              <div className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors cursor-pointer">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary to-primary flex items-center justify-center text-white font-bold text-sm overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800 mb-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary flex items-center justify-center text-white font-bold text-sm overflow-hidden shrink-0 border border-slate-100 dark:border-slate-800">
                   {avatarText || 'EM'}
                 </div>
-                <div className="leading-tight flex-1">
-                  <h4 className="font-extrabold text-slate-900 dark:text-slate-50 text-base">{userDisplayName}</h4>
-                  <p className="text-xs text-slate-400 font-medium font-sans mt-0.5">{currentUser?.role === 'ADMIN' ? 'সিস্টেম অ্যাডমিনিস্ট্রেটর' : 'ডিপার্টমেন্টাল ইউজার'}</p>
+                <div className="leading-tight flex-1 min-w-0">
+                  <h4 className="font-extrabold text-slate-900 dark:text-slate-50 text-sm truncate">{userDisplayName}</h4>
+                  <p className="text-[10px] text-slate-400 font-semibold truncate mt-0.5">
+                    {currentUser?.role === 'ADMIN' ? 'সিস্টেম অ্যাডমিনিস্ট্রেটর' : 'ডিপার্টমেন্টাল ইউজার'}
+                  </p>
                 </div>
               </div>
 
-              {/* See all profiles button */}
-              <div className="mt-2.5 mb-1.5 px-2">
-                <button className="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm">
-                  <Grid size={16} />
-                  See all profiles
-                </button>
-              </div>
-
-              <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-2" />
-
-              {/* List of Facebook Standard Options */}
+              {/* Options */}
               <div className="space-y-1">
-                {/* Settings & privacy */}
-                <button className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200">
-                      <Settings size={18} className="stroke-[2px]" />
-                    </div>
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Settings & privacy</span>
-                  </div>
-                  <ChevronRight size={16} className="text-slate-400" />
-                </button>
-
-                {/* Help & support */}
-                <button className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200">
-                      <HelpCircle size={18} className="stroke-[2px]" />
-                    </div>
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Help & support</span>
-                  </div>
-                  <ChevronRight size={16} className="text-slate-400" />
-                </button>
-
-                {/* Display & accessibility (Dark mode toggle on click) */}
+                {/* Dark Mode toggle */}
                 <button 
                   onClick={toggleDarkMode}
-                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                  className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left"
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200">
-                      {darkMode ? <Sun size={18} className="text-amber-500" /> : <Moon size={18} />}
-                    </div>
-                    <div className="text-left leading-none">
-                      <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Display & accessibility</p>
-                      <p className="text-[10px] text-slate-400 mt-1">{darkMode ? 'হালকা মোড চালু করুন' : 'ডার্ক মোড চালু করুন'}</p>
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="text-slate-400" />
-                </button>
-
-                {/* Give feedback */}
-                <button className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200">
-                      <MessageSquare size={18} className="stroke-[2px]" />
-                    </div>
-                    <div className="text-left leading-tight">
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-200 block">Give feedback</span>
-                      <span className="text-[10px] text-slate-400">CTRL B</span>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    {darkMode ? <Sun size={16} className="text-amber-500" /> : <Moon size={16} />}
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                      {darkMode ? 'হালকা মোড (Light Mode)' : 'ডার্ক মোড (Dark Mode)'}
+                    </span>
                   </div>
                 </button>
 
                 {/* Log out */}
                 <button 
                   onClick={handleLogout}
-                  className="w-full flex items-center p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-rose-600 dark:text-rose-400 transition-colors"
+                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 transition-colors text-left"
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-rose-500 dark:text-rose-400">
-                      <LogOut size={18} className="stroke-[2px]" />
-                    </div>
-                    <span className="text-sm font-bold">Log out</span>
-                  </div>
+                  <LogOut size={16} />
+                  <span className="text-xs font-bold">লগ আউট (Log Out)</span>
                 </button>
               </div>
-
             </div>
           )}
         </div>

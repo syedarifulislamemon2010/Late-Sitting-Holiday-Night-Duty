@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     });
 
     let executives: any[] = [];
-    if (isAdminOrAdminCell && (cellFilter === 'all' || cellFilter === 'executives')) {
+    if (isAdminOrAdminCell && cellFilter === 'executives') {
       const execList = await prisma.executive.findMany();
       // Filter out GMs strictly, leaving only DGMs and AGMs
       executives = execList.filter(e => {
@@ -195,8 +195,13 @@ export async function POST(request: Request) {
 
     const reportDate = new Date().toISOString().split('T')[0];
     const isExecReport = cellFilter === 'executives';
-    const cellTitle = isExecReport ? 'নির্বাহী ডিরেক্টরি রিপোর্ট' : 'নির্বাহী ও কর্মকর্তা ডিরেক্টরি রিপোর্ট';
-    const reportTitle = isExecReport ? 'নির্বাহীদের তালিকা' : 'নির্বাহী ও কর্মকর্তাদের সেল-ভিত্তিক তালিকা';
+    const isAllReport = cellFilter === 'all';
+    const cellTitle = isExecReport 
+      ? 'নির্বাহী ডিরেক্টরি রিপোর্ট' 
+      : (isAllReport ? 'কর্মকর্তা ডিরেক্টরি রিপোর্ট' : 'কর্মকর্তা সেল ডিরেক্টরি রিপোর্ট');
+    const reportTitle = isExecReport 
+      ? 'নির্বাহীদের তালিকা' 
+      : 'কর্মকর্তাদের সেল-ভিত্তিক তালিকা';
 
     let tablesHtml = '';
     

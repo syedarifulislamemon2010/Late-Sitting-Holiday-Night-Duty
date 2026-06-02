@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
@@ -287,11 +287,7 @@ export default function EmployeesPage() {
     return cells.filter(cell => cell.id === ownCellId);
   })();
 
-  useEffect(() => {
-    if (cells.length > 0 && !bulkEmpCellId) {
-      setBulkEmpCellId(cells[0].id.toString());
-    }
-  }, [cells, bulkEmpCellId]);
+
 
   const generateEmployeeList = async (): Promise<string | null> => {
     setGenerating(true);
@@ -1000,11 +996,11 @@ export default function EmployeesPage() {
                 <option value="select">সিলেক্ট করুন (Select Cell)</option>
                 {isAdminOrAdminCell ? (
                   <>
-                    <option value="all">সকল সেলের কর্মকর্তা (All Cells & Executives)</option>
+                    <option value="all">সকল সেলের কর্মকর্তা (All Cells Employees)</option>
                     <option value="executives">নির্বাহী কর্মকর্তা (Executive Officers)</option>
                   </>
                 ) : (
-                  <option value="all">সকল সেলের কর্মকর্তা (All Cells)</option>
+                  <option value="all">সকল সেলের কর্মকর্তা (All Cells Employees)</option>
                 )}
                 {cells.map(c => (
                   <option key={c.id} value={c.id.toString()}>{c.name}</option>
@@ -1069,11 +1065,11 @@ export default function EmployeesPage() {
           </div>
 
           {/* Grouped Officers List by Cell */}
-          {(filteredEmployees.length > 0 || (isAdminOrAdminCell && (cellFilter === 'executives' || cellFilter === 'all') && sortedFilteredExecutives.length > 0)) ? (
+          {(filteredEmployees.length > 0 || (isAdminOrAdminCell && cellFilter === 'executives' && sortedFilteredExecutives.length > 0)) ? (
             <div className="space-y-10">
               
               {/* 1. Executive Panel (DGM & AGM) */}
-              {isAdminOrAdminCell && (cellFilter === 'all' || cellFilter === 'executives') && sortedFilteredExecutives.length > 0 && (
+              {isAdminOrAdminCell && cellFilter === 'executives' && sortedFilteredExecutives.length > 0 && (
                 <div className="space-y-4 animate-fade-in">
                   {/* Executive Header Badge */}
                   <div className="flex items-center justify-between p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-955/5 shadow-xs" style={{ borderLeft: '4px solid #db2777' }}>
@@ -1661,15 +1657,15 @@ export default function EmployeesPage() {
                 <textarea
                   required
                   rows={8}
-                  placeholder={`যেমন:\nজনাব মোঃ আশরাফুল ইসলাম - সিনিয়র অফিসার-আইটি (এসও-আইটি)\nজনাব সামিউল হক - অফিসার-আইটি (ও-আইটি)\n\n(অথবা কর্মকর্তাদের তালিকার কোনো ছবি এখানে সরাসরি Ctrl+V দিয়ে পেস্ট করুন)`}
+                  placeholder={`যেমন (হেডার সহ অথবা ছাড়া):\nনাম,পদবী,ব্যাংক আইডি,নথি নং,মোবাইল নম্বর,সেল\nজনাব মোঃ আশরাফুল ইসলাম,সিনিয়র অফিসার,026799,SO(Com)-026799,01712345678,CBS Integrated Development Cell\nজনাব সামিউল হক,অফিসার-আইটি,026800,O(Com)-026800,01712345679,R9`}
                   value={bulkEmpText}
                   onChange={(e) => setBulkEmpText(e.target.value)}
                   onPaste={handleTextareaPaste}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-xs font-mono focus:outline-none focus:border-indigo-500 leading-relaxed"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-xs font-mono focus:outline-none focus:border-indigo-500 leading-relaxed"
                   disabled={isImageImportLoading}
                 />
                 <p className="text-[10px] text-slate-400">
-                  প্যাটার্ন: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">নাম - পদবী</code> (যেমন: নাম ও পদবীর মাঝে হাইফেন <strong>-</strong> বা কমা <strong>,</strong> ব্যবহার করুন)। পদবী না দিলে স্বয়ংক্রিয়ভাবে "অফিসার-আইটি" ধরা হবে।
+                  প্যাটার্ন: কমা (,) বা ট্যাব বা সেমিকোলন দিয়ে আলাদা করে কলামগুলো দিন: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">নাম,পদবী,ব্যাংক আইডি,নথি নং,মোবাইল নম্বর,সেল</code>। সেল নির্বাচন করা না থাকলে নিজ নিজ সেল অনুযায়ী স্বয়ংক্রিয়ভাবে অ্যাসাইন হবে।
                 </p>
               </div>
 
