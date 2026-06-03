@@ -41,16 +41,51 @@ export async function GET() {
       }
     }
 
-    const whereClause = isUserRestricted ? { cellId: { in: cellIds } } : {};
-
     const employees = await prisma.employee.findMany({
-      where: whereClause,
       include: {
         cell: true
       }
     });
 
-    const sortedEmployees = sortEmployeesBySeniority(employees);
+    const users = await prisma.user.findMany({
+      include: {
+        cells: true
+      }
+    });
+
+    const userCellsMap = new Map<string, any[]>();
+    users.forEach(u => {
+      if (u.username) {
+        userCellsMap.set(u.username.trim().toLowerCase(), u.cells);
+      }
+    });
+
+    const expandedEmployees: any[] = [];
+    for (const emp of employees) {
+      expandedEmployees.push(emp);
+      
+      if (emp.bankId) {
+        const assignedCells = userCellsMap.get(emp.bankId.trim().toLowerCase());
+        if (assignedCells) {
+          for (const cell of assignedCells) {
+            if (cell.id !== emp.cellId) {
+              expandedEmployees.push({
+                ...emp,
+                cellId: cell.id,
+                cell: cell
+              });
+            }
+          }
+        }
+      }
+    }
+
+    let finalEmployees = expandedEmployees;
+    if (isUserRestricted) {
+      finalEmployees = expandedEmployees.filter(emp => cellIds.includes(emp.cellId));
+    }
+
+    const sortedEmployees = sortEmployeesBySeniority(finalEmployees);
 
     return NextResponse.json(sortedEmployees);
   } catch (error: any) {

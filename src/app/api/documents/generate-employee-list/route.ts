@@ -89,7 +89,7 @@ export async function POST(request: Request) {
     const cellWhere = cellFilter === 'executives' ? { id: -1 } : (cellIds.length > 0 ? { id: { in: cellIds } } : {});
     
     // Fetch cells and their employees
-    const cells = await prisma.cell.findMany({
+    let cells = await prisma.cell.findMany({
       where: {
         ...cellWhere,
         name: { not: 'Combined Departmental Sheet' }
@@ -99,6 +99,45 @@ export async function POST(request: Request) {
         employees: true
       }
     });
+
+    // Expand cells to include virtual employees assigned to them via many-to-many UserCells
+    const usersForExpansion = await prisma.user.findMany({
+      include: {
+        cells: true
+      }
+    });
+
+    const userCellsMap = new Map<string, any[]>();
+    usersForExpansion.forEach(u => {
+      if (u.username) {
+        userCellsMap.set(u.username.trim().toLowerCase(), u.cells);
+      }
+    });
+
+    const allEmployeesForExpansion = await prisma.employee.findMany();
+
+    cells = cells.map(cell => {
+      const cellEmps = [...cell.employees];
+      
+      for (const emp of allEmployeesForExpansion) {
+        if (emp.cellId === cell.id) continue;
+        
+        if (emp.bankId) {
+          const assignedCells = userCellsMap.get(emp.bankId.trim().toLowerCase());
+          if (assignedCells && assignedCells.some(c => c.id === cell.id)) {
+            // Avoid adding duplicate records if already present
+            if (!cellEmps.some(e => e.id === emp.id)) {
+              cellEmps.push(emp);
+            }
+          }
+        }
+      }
+      
+      return {
+        ...cell,
+        employees: cellEmps
+      };
+    }) as any;
 
     let executives: any[] = [];
     if (isAdminOrAdminCell && cellFilter === 'executives') {
