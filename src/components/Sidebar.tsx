@@ -91,12 +91,9 @@ export default function Sidebar() {
     { name: 'লাঞ্চ বিল শিট', href: '/lunch-bill', icon: Utensils },
     ...(showClosingBill ? [{ name: 'ক্লোজিং বিল শিট', href: '/closing-bill', icon: CalendarCheck }] : []),
     { name: 'ছুটি আবেদন', href: '/leave', icon: CalendarCheck },
-    { name: 'ফিডব্যাক ও সহায়তা', href: '/feedback', icon: MessageSquare },
     { name: 'মেসেঞ্জার চ্যাট', href: '/chat', icon: MessagesSquare },
     { name: 'আর্কাইভ', href: '/documents', icon: FileText },
     { name: 'রিসাইকেল বিন', href: '/trash', icon: Trash2 },
-    { name: 'অডিট লগ', href: '/logs', icon: Shield },
-    { name: 'সেটিংস', href: '/users', icon: Settings },
   ];
 
   return (
