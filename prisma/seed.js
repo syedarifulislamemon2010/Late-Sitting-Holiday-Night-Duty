@@ -332,6 +332,22 @@ async function main() {
       const emp = await prisma.employee.create({ data });
       employees[data.name] = emp;
       console.log(`Seeded employee: ${emp.name} (${emp.designation})`);
+
+      // Create corresponding User record so they can log in out-of-the-box
+      if (emp.bankId) {
+        await prisma.user.create({
+          data: {
+            username: emp.bankId.trim(),
+            password: '123456', // default password
+            name: emp.name.trim(),
+            role: 'USER',
+            cells: {
+              connect: { id: emp.cellId }
+            }
+          }
+        });
+        console.log(`Seeded user account for employee bank ID: ${emp.bankId}`);
+      }
     }
 
     // 4. Seed Executives

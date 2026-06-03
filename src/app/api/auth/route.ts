@@ -21,9 +21,41 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'bad_request', message: 'ইউজারনেম ও পাসওয়ার্ড আবশ্যক!' }, { status: 400 });
       }
 
-      const user = await prisma.user.findUnique({
-        where: { username: username.trim() }
+      let user = await prisma.user.findFirst({
+        where: {
+          username: {
+            equals: username.trim(),
+            mode: 'insensitive'
+          }
+        }
       });
+
+      // If user doesn't exist, check if there's an employee with this bankId to auto-provision user
+      if (!user) {
+        const employee = await prisma.employee.findFirst({
+          where: {
+            bankId: {
+              equals: username.trim(),
+              mode: 'insensitive'
+            }
+          }
+        });
+
+        if (employee && employee.bankId) {
+          user = await prisma.user.create({
+            data: {
+              username: employee.bankId.trim(),
+              password: '123456', // default password
+              name: employee.name.trim(),
+              role: 'USER',
+              cells: {
+                connect: { id: employee.cellId }
+              }
+            }
+          });
+          console.log(`Auto-provisioned User record for Employee: ${employee.name} (${employee.bankId})`);
+        }
+      }
 
       if (user && user.password === password) {
         const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
