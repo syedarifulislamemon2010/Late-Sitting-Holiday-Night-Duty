@@ -21,6 +21,7 @@ export default function RootLayout({
     <html lang="bn" className="h-full" suppressHydrationWarning={true}>
       <head>
         <script
+          suppressHydrationWarning={true}
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
