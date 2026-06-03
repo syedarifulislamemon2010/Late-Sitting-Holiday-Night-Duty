@@ -59,6 +59,7 @@ interface ClosingRecord {
 
 export default function ClosingBillPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [activeCellId, setActiveCellId] = useState<number | null>(null);
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [executives, setExecutives] = useState<Executive[]>([]);
@@ -111,6 +112,9 @@ export default function ClosingBillPage() {
         const data = await res.json();
         if (res.ok && data.authenticated) {
           setCurrentUser(data.user);
+          if (data.user.cells && data.user.cells.length > 0) {
+            setActiveCellId(data.user.cells[0].id);
+          }
         }
       } catch (err) {
         console.error('Error loading auth profile:', err);
@@ -317,14 +321,14 @@ export default function ClosingBillPage() {
   };
 
   // Filter records by cell/executives for standard users
-  const getFilteredRecordsForUser = () => {
+  const getFilteredRecordsForUser = (primaryCellId: number | undefined) => {
     if (isAdminOrAdminCell) return records;
     // Standard user gets only officers belonging to their specific cell (primary cell only)
-    const primaryCellId = currentUser?.cells?.[0]?.id;
     return records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
   };
 
-  const activeRecords = getFilteredRecordsForUser();
+  const primaryCellId = activeCellId || currentUser?.cells?.[0]?.id;
+  const activeRecords = getFilteredRecordsForUser(primaryCellId);
 
   const totalEmployeesCount = activeRecords.length;
   const totalClaimAll = activeRecords.reduce((sum, r) => sum + r.totalBill, 0);
@@ -366,7 +370,7 @@ export default function ClosingBillPage() {
   };
 
   const getPrintPayload = () => {
-    const primaryCellId = currentUser?.cells?.[0]?.id;
+    const primaryCellId = activeCellId || currentUser?.cells?.[0]?.id;
 
     // Filter records and cells according to user role/assigned primary cell
     const allowedRecords = isAdminOrAdminCell 
@@ -495,17 +499,35 @@ export default function ClosingBillPage() {
 
         {/* Filter Configuration Panel */}
         <div className="glass-card p-6 rounded-2xl space-y-5 max-w-xl">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ক্লোজিং মাস নির্বাচন করুন</label>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
-            >
-              {closingMonthOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ক্লোজিং মাস নির্বাচন করুন</label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold font-sans"
+              >
+                {closingMonthOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Cell Selection for Users with Multiple Cells */}
+            {!isAdminOrAdminCell && currentUser?.cells?.length > 1 && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেল নির্বাচন করুন</label>
+                <select
+                  value={activeCellId || ''}
+                  onChange={(e) => setActiveCellId(parseInt(e.target.value, 10))}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
+                >
+                  {currentUser.cells.map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
@@ -548,7 +570,7 @@ export default function ClosingBillPage() {
             <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">
-                  ক্লোজিং বিল শিট - {getBanglaMonthLabel(selectedMonth)}
+                  ক্লোজিং বিল শিট - {cells.find(c => c.id === primaryCellId)?.name || ''} - {getBanglaMonthLabel(selectedMonth)}
                 </h3>
                 <p className="text-[10px] mt-0.5 font-sans">
                   {savedBill ? (

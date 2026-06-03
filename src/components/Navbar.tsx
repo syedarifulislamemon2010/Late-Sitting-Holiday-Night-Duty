@@ -262,16 +262,6 @@ export default function Navbar() {
             <p className="text-[8px] font-bold text-primary uppercase tracking-widest mt-0.5">Janata Bank PLC.</p>
           </div>
         </Link>
-        
-        {/* Facebook search bar mockup */}
-        <div className="hidden md:flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-full ml-2 w-48 border border-transparent focus-within:border-slate-200 dark:focus-within:border-slate-700 transition-all">
-          <Search size={14} className="text-slate-400 shrink-0" />
-          <input 
-            type="text" 
-            placeholder="পোর্টাল খুঁজুন..." 
-            className="bg-transparent border-none text-xs focus:outline-none w-full text-slate-700 dark:text-slate-200"
-          />
-        </div>
       </div>
 
 

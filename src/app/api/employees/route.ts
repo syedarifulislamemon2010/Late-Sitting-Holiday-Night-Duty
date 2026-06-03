@@ -21,7 +21,22 @@ export async function GET() {
         });
         if (user && user.role === 'USER') {
           isUserRestricted = true;
-          cellIds = user.cells.map((c: any) => c.id);
+          // Find corresponding employee record by bankId to get their primary cell
+          const emp = await prisma.employee.findFirst({
+            where: {
+              bankId: {
+                equals: user.username,
+                mode: 'insensitive'
+              }
+            }
+          });
+          if (emp) {
+            cellIds = [emp.cellId];
+          } else if (user.cells && user.cells.length > 0) {
+            cellIds = [user.cells[0].id];
+          } else {
+            cellIds = [];
+          }
         }
       }
     }

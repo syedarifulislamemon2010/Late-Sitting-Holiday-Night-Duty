@@ -393,6 +393,12 @@ export default function EmployeesPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (!isAdminOrAdminCell && ownCellId) {
+      setCellFilter(ownCellId.toString());
+    }
+  }, [isAdminOrAdminCell, ownCellId]);
+
   // Handle Officer Form Submit
   const handleEmpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -943,22 +949,24 @@ export default function EmployeesPage() {
         </div>
         
         {/* TAB CONTROLLERS */}
-        <div className="flex bg-slate-200/60 dark:bg-slate-800/60 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/80 self-start md:self-auto shadow-inner">
-          <button
-            onClick={() => setActiveTab('employees')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'employees' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
-          >
-            <Users size={14} />
-            কর্মকর্তাবৃন্দ
-          </button>
-          <button
-            onClick={() => setActiveTab('cells')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'cells' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
-          >
-            <Building2 size={14} />
-            সেলসমূহ
-          </button>
-        </div>
+        {isAdminOrAdminCell && (
+          <div className="flex bg-slate-200/60 dark:bg-slate-800/60 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/80 self-start md:self-auto shadow-inner">
+            <button
+              onClick={() => setActiveTab('employees')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'employees' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
+            >
+              <Users size={14} />
+              কর্মকর্তাবৃন্দ
+            </button>
+            <button
+              onClick={() => setActiveTab('cells')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'cells' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
+            >
+              <Building2 size={14} />
+              সেলসমূহ
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -988,17 +996,19 @@ export default function EmployeesPage() {
                 />
               </div>
               {/* Cell Selector Filter */}
-              <select
-                value={cellFilter}
-                onChange={(e) => setCellFilter(e.target.value)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-indigo-500 font-bold"
-              >
-                <option value="select">সিলেক্ট করুন (Select Cell)</option>
-                <option value="all">সকল সেলের কর্মকর্তা (All Cells Employees)</option>
-                {cells.map(c => (
-                  <option key={c.id} value={c.id.toString()}>{c.name}</option>
-                ))}
-              </select>
+              {isAdminOrAdminCell && (
+                <select
+                  value={cellFilter}
+                  onChange={(e) => setCellFilter(e.target.value)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-indigo-500 font-bold"
+                >
+                  <option value="select">সিলেক্ট করুন (Select Cell)</option>
+                  <option value="all">সকল সেলের কর্মকর্তা (All Cells Employees)</option>
+                  {cells.map(c => (
+                    <option key={c.id} value={c.id.toString()}>{c.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="flex flex-wrap gap-2 w-full md:w-auto md:justify-end">
