@@ -19,6 +19,43 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="bn" className="h-full" suppressHydrationWarning={true}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const removeBisSkinChecked = (el) => {
+                  if (el.hasAttribute && el.hasAttribute('bis_skin_checked')) {
+                    el.removeAttribute('bis_skin_checked');
+                  }
+                  for (let i = 0; i < el.children.length; i++) {
+                    removeBisSkinChecked(el.children[i]);
+                  }
+                };
+                const observer = new MutationObserver((mutations) => {
+                  mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'bis_skin_checked') {
+                      mutation.target.removeAttribute('bis_skin_checked');
+                    } else if (mutation.addedNodes) {
+                      mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                          removeBisSkinChecked(node);
+                        }
+                      });
+                    }
+                  });
+                });
+                observer.observe(document.documentElement, { 
+                  attributes: true, 
+                  subtree: true, 
+                  childList: true,
+                  attributeFilter: ['bis_skin_checked'] 
+                });
+              })();
+            `
+          }}
+        />
+      </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300" suppressHydrationWarning={true}>
         <AuthGuard>
           <div className="flex-1 flex flex-col lg:flex-row min-h-0" suppressHydrationWarning={true}>
