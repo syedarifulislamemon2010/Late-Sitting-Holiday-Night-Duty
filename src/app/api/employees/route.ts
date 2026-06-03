@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const cookieStore = await cookies();
     const sessionVal = cookieStore.get('session')?.value;
@@ -41,48 +41,57 @@ export async function GET() {
       }
     }
 
+    const { searchParams } = new URL(request.url);
+    const isDirectory = searchParams.get('directory') === 'true';
+
+    const whereClause = isUserRestricted && !isDirectory ? { cellId: { in: cellIds } } : {};
+
     const employees = await prisma.employee.findMany({
+      where: whereClause,
       include: {
         cell: true
       }
     });
 
-    const users = await prisma.user.findMany({
-      include: {
-        cells: true
-      }
-    });
+    let finalEmployees = employees;
+    if (isDirectory) {
+      const users = await prisma.user.findMany({
+        include: {
+          cells: true
+        }
+      });
 
-    const userCellsMap = new Map<string, any[]>();
-    users.forEach(u => {
-      if (u.username) {
-        userCellsMap.set(u.username.trim().toLowerCase(), u.cells);
-      }
-    });
+      const userCellsMap = new Map<string, any[]>();
+      users.forEach(u => {
+        if (u.username) {
+          userCellsMap.set(u.username.trim().toLowerCase(), u.cells);
+        }
+      });
 
-    const expandedEmployees: any[] = [];
-    for (const emp of employees) {
-      expandedEmployees.push(emp);
-      
-      if (emp.bankId) {
-        const assignedCells = userCellsMap.get(emp.bankId.trim().toLowerCase());
-        if (assignedCells) {
-          for (const cell of assignedCells) {
-            if (cell.id !== emp.cellId) {
-              expandedEmployees.push({
-                ...emp,
-                cellId: cell.id,
-                cell: cell
-              });
+      const expandedEmployees: any[] = [];
+      for (const emp of employees) {
+        expandedEmployees.push(emp);
+        
+        if (emp.bankId) {
+          const assignedCells = userCellsMap.get(emp.bankId.trim().toLowerCase());
+          if (assignedCells) {
+            for (const cell of assignedCells) {
+              if (cell.id !== emp.cellId) {
+                expandedEmployees.push({
+                  ...emp,
+                  cellId: cell.id,
+                  cell: cell
+                });
+              }
             }
           }
         }
       }
-    }
+      finalEmployees = expandedEmployees;
 
-    let finalEmployees = expandedEmployees;
-    if (isUserRestricted) {
-      finalEmployees = expandedEmployees.filter(emp => cellIds.includes(emp.cellId));
+      if (isUserRestricted) {
+        finalEmployees = finalEmployees.filter(emp => cellIds.includes(emp.cellId));
+      }
     }
 
     const sortedEmployees = sortEmployeesBySeniority(finalEmployees);

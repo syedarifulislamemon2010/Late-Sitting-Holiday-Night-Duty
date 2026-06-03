@@ -341,7 +341,7 @@ export default function EmployeesPage() {
     setLoading(true);
     try {
       const [empRes, cellRes, execRes] = await Promise.all([
-        fetch('/api/employees'),
+        fetch('/api/employees?directory=true'),
         fetch('/api/cells'),
         fetch('/api/executives')
       ]);
