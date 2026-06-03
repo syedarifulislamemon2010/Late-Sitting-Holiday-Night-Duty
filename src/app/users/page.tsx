@@ -667,7 +667,7 @@ export default function UserManagement() {
               </div>
             </div>
 
-            {currentUser.role === 'USER' && (
+            {((currentUser.cells && currentUser.cells.length > 0) || currentUser.role === 'USER') && (
               <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/60 rounded-xl space-y-2">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">আমার প্রবেশাধিকার প্রাপ্ত সেলসমূহ:</span>
                 <div className="flex flex-wrap gap-1.5">
@@ -790,7 +790,7 @@ export default function UserManagement() {
 
               {/* Cell Groups */}
               {cells.map(cell => {
-                const cellUsers = users.filter(u => u.role === 'USER' && u.cells.some(c => c.id === cell.id));
+                const cellUsers = users.filter(u => u.cells.some(c => c.id === cell.id));
                 if (cellUsers.length === 0) return null;
                 const sortedCellUsers = sortUsersByBankId(cellUsers);
                 const cellPal = getPalette(cell.id);
@@ -1049,12 +1049,12 @@ export default function UserManagement() {
                 </select>
               </div>
 
-              {/* 5. Cell Assignments (Only if Role is USER) */}
-              {role === 'USER' && (
+              {/* 5. Cell Assignments (For all users/roles) */}
+              {(role === 'USER' || role === 'ADMIN') && (
                 <div className="space-y-2 pt-2 border-t border-dashed border-slate-100 dark:border-slate-800">
                   <div className="flex justify-between items-center">
                     <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">
-                      দায়িত্বপ্রাপ্ত সেলসমূহ নির্বাচন করুন *
+                      {name ? `${name} সেল সিলেক্ট করুন *` : 'দায়িত্বপ্রাপ্ত সেলসমূহ নির্বাচন করুন *'}
                     </label>
                     <button
                       type="button"
