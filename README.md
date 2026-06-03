@@ -368,147 +368,214 @@ npm run start
 
 ---
 
-## 🔴 Build and Deploy in RedHat Linux Server (RHEL / Rocky / AlmaLinux)
+## 🔴 RedHat Linux সার্ভারে বিল্ড ও ডিপ্লয়মেন্ট নির্দেশিকা (RHEL Deployment Guide)
 
-This guide outlines a production-grade deployment of the LHN Portal on a **RedHat Enterprise Linux (RHEL 8/9)** server, including setting up a local production **PostgreSQL database**, Node.js runtime, reverse proxy with **Nginx**, **SELinux** adjustments, and process management using **PM2**.
+এই নির্দেশিকাটি একটি **RedHat Enterprise Linux (RHEL 8/9)**, Rocky Linux অথবা AlmaLinux সার্ভারে LHN পোর্টালের প্রোডাকশন-গ্রেড ডিপ্লয়মেন্ট প্রক্রিয়া ধাপে ধাপে বর্ণনা করে। এর মধ্যে রয়েছে লোকাল প্রোডাকশন **PostgreSQL ডাটাবেজ** সেটআপ, Node.js রানটাইম ইনস্টলেশন, **PM2** প্রসেস ম্যানেজার, **Nginx** রিভার্স প্রক্সি কনফিগারেশন, **SELinux** সিকিউরিটি এডজাস্টমেন্ট এবং **Firewalld** সেটিংস।
 
-### 📋 Prerequisites & OS Update
-Log in to your RHEL server as `root` or a user with `sudo` privileges. Update the package list:
+---
+
+### 📋 পূর্বশর্ত ও সিস্টেম আপডেট (Prerequisites & OS Update)
+
+প্রথমে আপনার RHEL সার্ভারে `root` ইউজার হিসেবে অথবা `sudo` প্রিভিলেজসহ সাধারণ ইউজার হিসেবে SSH-এর মাধ্যমে লগইন করুন। এরপর সার্ভারের প্যাকেজ লিস্ট আপডেট করে নিন:
 ```bash
 sudo dnf update -y
 ```
 
-### 🗄️ Step 1: PostgreSQL Database Installation & Configuration
+---
 
-1. **Enable PostgreSQL Repository & Install:**
-   For RHEL 8/9, enable the PostgreSQL AppStream module or install from official repos:
+### 🗄️ ধাপ ১: PostgreSQL ডাটাবেজ ইনস্টলেশন ও কনফিগারেশন
+
+পোস্টগ্রে-এসকিউএল ডাটাবেজ লোকাল সার্ভারে রান করার জন্য নিচের ধাপগুলো অনুসরণ করুন:
+
+1. **PostgreSQL মডিউল এনাবল এবং ইনস্টল করুন:**
+   RHEL-এর অফিসিয়াল অ্যাপস্ট্রিম থেকে PostgreSQL ১৫ (বা তার বেশি) মডিউলটি এনাবল করে ইনস্টল করুন:
    ```bash
    sudo dnf module enable postgresql:15 -y
    sudo dnf install postgresql-server postgresql-contrib -y
    ```
-2. **Initialize the Database:**
+
+2. **ডাটাবেজ ইনিশিয়ালাইজ করুন:**
    ```bash
    sudo postgresql-setup --initdb
    ```
-3. **Enable & Start PostgreSQL Service:**
+
+3. **PostgreSQL সার্ভিস চালু ও স্বয়ংক্রিয় স্টার্টআপ এনাবল করুন:**
    ```bash
    sudo systemctl enable postgresql --now
    ```
-4. **Configure Authentication Method:**
-   RHEL PostgreSQL by default uses `ident` auth. Modify the Host-based Authentication rules (`pg_hba.conf`) to allow password-based login (`scram-sha-256` or `md5`):
+
+4. **অথেনটিকেশন মেথড পরিবর্তন (গুরুত্বপূর্ণ):**
+   RHEL-এ ডিফল্টভাবে PostgreSQL স্থানীয় সংযোগের জন্য `ident` অথেনটিকেশন ব্যবহার করে, যা পাসওয়ার্ডের মাধ্যমে কানেক্ট হতে বাধা দেয়। এটি পরিবর্তন করতে `pg_hba.conf` ফাইলটি কনফিগার করতে হবে:
    ```bash
+   # কনফিগারেশন ফাইলে peer এবং ident পরিবর্তন করে scram-sha-256 বা md5 সেট করুন
    sudo sed -i 's/ident/scram-sha-256/g' /var/lib/pgsql/data/pg_hba.conf
    sudo sed -i 's/peer/scram-sha-256/g' /var/lib/pgsql/data/pg_hba.conf
    ```
-   Restart PostgreSQL to apply changes:
+   কনফিগারেশন পরিবর্তন সফল করতে PostgreSQL সার্ভিসটি রিস্টার্ট করুন:
    ```bash
    sudo systemctl restart postgresql
    ```
-5. **Create Database and Database User:**
-   Log in as `postgres` system user and run the database commands:
+
+5. **ডাটাবেজ ও ইউজার তৈরি করুন:**
+   PostgreSQL-এর অ্যাডমিন প্রম্পটে প্রবেশ করুন:
    ```bash
    sudo -u postgres psql
    ```
-   Run the following SQL commands inside the PostgreSQL prompt:
+   নিচের SQL কমান্ডগুলোর মাধ্যমে LHN পোর্টালের জন্য ডেডিকেটেড ইউজার এবং ডাটাবেজ তৈরি করুন:
    ```sql
+   -- একটি নতুন সিকিউরড ইউজার তৈরি করুন (পাসওয়ার্ডটি আপনার সুবিধামত পরিবর্তন করুন)
    CREATE USER lhn_admin WITH PASSWORD 'SecurePassword123!';
+
+   -- প্রোডাকশন ডাটাবেজ তৈরি করুন এবং এর মালিকানা নতুন ইউজারকে দিন
    CREATE DATABASE lhn_prod OWNER lhn_admin;
+
+   -- SQL প্রম্পট থেকে বের হয়ে যান
    \q
    ```
 
-### 🟢 Step 2: Install Node.js & Git
+---
 
-1. **Enable official Node.js module (LTS release v20):**
+### 🟢 ধাপ ২: Node.js ও Git ইনস্টলেশন
+
+Next.js অ্যাপ্লিকেশনটি সফলভাবে রান করতে Node.js (LTS v20) রানটাইম ও Git প্রয়োজন।
+
+1. **Node.js ২০ মডিউল এনাবল করে ইনস্টল করুন:**
    ```bash
    sudo dnf module enable nodejs:20 -y
    sudo dnf install nodejs git -y
    ```
-2. **Verify Installation:**
+
+2. **ইনস্টলেশন সফল হয়েছে কিনা তা যাচাই করুন:**
    ```bash
    node -v
    npm -v
+   git --version
    ```
 
-### 📂 Step 3: Clone Code & Configure Environment
+---
 
-1. **Clone the repository:**
-   We recommend deploying to `/var/www/lhn-portal`:
+### 📂 ধাপ ৩: সোর্স কোড ক্লোন ও এনভায়রনমেন্ট ফাইল কনফিগারেশন
+
+আমরা রেকমেন্ড করি সোর্স কোডটি `/var/www/lhn-portal` ডিরেক্টরিতে হোস্ট করার জন্য।
+
+1. **ডিরেক্টরি তৈরি ও পারমিশন সেট করুন:**
    ```bash
    sudo mkdir -p /var/www
    sudo chown -R $USER:$USER /var/www
    cd /var/www
+   ```
+
+2. **গিটহাব থেকে কোড ক্লোন করুন:**
+   ```bash
    git clone https://github.com/SyedArifulIslamEmon/Late-Sitting-Holiday-Night-Duty.git lhn-portal
    cd lhn-portal
    ```
-2. **Install Project Dependencies:**
+
+3. **প্রজেক্টের ডিপেন্ডেন্সি ইনস্টল করুন:**
    ```bash
    npm install
    ```
-3. **Create Production Environment File (`.env`):**
-   Create a `.env` file in the project root:
+
+4. **প্রোডাকশন এনভায়রনমেন্ট ফাইল (`.env`) তৈরি করুন:**
+   প্রজেক্টের রুট ডিরেক্টরিতে `.env` ফাইল তৈরি করুন:
    ```bash
    nano .env
    ```
-   Add the following line (make sure to match the PostgreSQL connection details set in Step 1):
+   ফাইলটির ভেতর নিচের এনভায়রনমেন্ট ভেরিয়েবলগুলো আপনার ডাটাবেজ ক্রেডেনশিয়াল অনুযায়ী সেট করুন:
    ```env
+   # PostgreSQL কানেকশন স্ট্রিং (ধাপ ১ এ কনফিগার করা তথ্যের সাথে মিল রাখুন)
    DATABASE_URL="postgresql://lhn_admin:SecurePassword123!@localhost:5432/lhn_prod?schema=public"
+
+   # সেশন ও ক্রিপ্টোগ্রাফি সিকিউরিটির জন্য সল্ট বা সিক্রেট কি (ঐচ্ছিক কিন্তু প্রোডাকশনে নিরাপদ করুন)
+   NEXT_PUBLIC_APP_URL="http://your-server-ip"
    ```
+   *(ফাইলটি সংরক্ষণ করতে `Ctrl+O` চাপুন, এন্টার দিন এবং বের হতে `Ctrl+X` চাপুন)*
 
-### 🏗️ Step 4: Build & Database Initialization
+---
 
-1. **Push Prisma Schema to PostgreSQL Database:**
-   Initialize the database tables and relations directly from our Prisma schema:
+### 🏗️ ধাপ ৪: ডাটাবেজ স্কিমা মাইগ্রেশন ও ডাটা সিডিং (Database Setup & Seeding)
+
+Next.js এবং প্রিজমা (Prisma) ডাটাবেজ মডেলগুলোকে পোস্টগ্রে ডাটাবেজে রূপান্তর ও ডামি ডাটা দিয়ে সিড করার জন্য নিচের কমান্ডগুলো রান করুন:
+
+1. **ডাটাবেজ টেবিল এবং রিলেশন তৈরি করুন (Prisma Schema Push):**
    ```bash
    npx prisma db push
    npx prisma generate
    ```
-2. **Build the Next.js Production Bundle:**
-   Generate the optimized production static and dynamic builds:
+
+2. **ডাটাবেজ সিডিং করুন (Database Seed - অতি গুরুত্বপূর্ণ):**
+   সিস্টেমের ডিফল্ট সেল (R9, R22, JBNS), অ্যাডমিন ইউজার (`admin`/`123456`), কর্মকর্তাদের ডিরেক্টরি, ছুটির দিন এবং প্রাথমিক ডামি ডিউটি রেকর্ডস তৈরি করতে প্রিজমা সিড কমান্ডটি রান করুন:
    ```bash
-   npm run build
+   npx prisma db seed
    ```
+   > **এই সিড স্ক্রিপ্টটি স্বয়ংক্রিয়ভাবে যা করবে:**
+   > * ডাটাবেজের কনস্ট্রেইন্ট অনুযায়ী সকল পূর্বের টেবিল ক্লিন করবে।
+   > * ৩টি সেল, ৩জন ইউজার (অ্যাডমিন সহ), ৬জন কর্মকর্তা, ৪জন এক্সিকিউটিভ ও ছুটির তালিকা সিড করবে।
+   > * কর্মকর্তাদের জন্য বেশ কিছু ডামি ডিউটি এন্ট্রি তৈরি করবে যা ড্যাশবোর্ড অ্যানালিটিক্স গ্রাফ লোড করতে সাহায্য করবে।
+   > * **PostgreSQL Sequence Reset:** ম্যানুয়াল আইডি সিডিংয়ের কারণে যাতে পরবর্তীতে আইডি ডুপ্লিকেশন ইরর না হয়, সে জন্য PostgreSQL-এর অটো-ইনক্রিমেন্ট সিকোয়েন্স অটো-রিসেট করবে।
 
-### 🔄 Step 5: Process Management using PM2
+---
 
-PM2 ensures the server runs in the background and automatically restarts on system boots.
+### 🏗️ ধাপ ৫: Next.js প্রোডাকশন বিল্ড তৈরি করা
 
-1. **Install PM2 globally:**
+Next.js এর অপ্টিমাইজড প্রোডাকশন ফাইল তৈরি করতে নিচের কমান্ডটি রান করুন:
+```bash
+npm run build
+```
+বিল্ড সফল হলে স্ক্রিনে কম্পাইল করা পেজগুলোর সামারি দেখতে পাবেন।
+
+---
+
+### 🔄 ধাপ ৬: PM2 প্রসেস ম্যানেজারের মাধ্যমে সার্ভার চালানো
+
+সার্ভার বন্ধ হলে বা রিবুট হলে অ্যাপ্লিকেশনটি যেন ব্যাকগ্রাউন্ডে স্বয়ংক্রিয়ভাবে চলতে পারে, সেজন্য **PM2** ব্যবহার করতে হবে।
+
+1. **PM2 গ্লোবালি ইনস্টল করুন:**
    ```bash
    sudo npm install -g pm2
    ```
-2. **Start Next.js with PM2:**
+
+2. **PM2 এর মাধ্যমে Next.js অ্যাপ্লিকেশনটি চালু করুন:**
    ```bash
    pm2 start npm --name "lhn-portal" -- run start -- -p 3000
    ```
-3. **Configure PM2 Startup Script:**
-   Generate startup scripts to survive system reboots:
+
+3. **সার্ভার রিবুট সার্ভিসে PM2 যুক্ত করুন:**
+   সিস্টেম রিস্টার্ট হলেও অ্যাপ্লিকেশন যেন অটো-স্টার্ট হয় তা নিশ্চিত করতে নিচের কমান্ডটি দিন:
    ```bash
    pm2 startup systemd
    ```
-   *(Run the systemd command outputted on your screen by PM2, e.g., `sudo env PATH=$PATH:/usr/bin...`)*
-   
-   Save current PM2 list:
+   *(এই কমান্ডটি দেওয়ার পর স্ক্রিনে একটি `sudo env PATH=$PATH...` যুক্ত কমান্ড দেখতে পাবেন, সেটি কপি করে হুবহু সার্ভার টার্মিনালে রান করুন)*
+
+   এরপর PM2-এর বর্তমান প্রসেস লিস্ট সেভ করে রাখুন:
    ```bash
    pm2 save
    ```
 
-### 🛡️ Step 6: Nginx Reverse Proxy Setup & SELinux
+---
 
-1. **Install Nginx:**
+### 🛡️ ধাপ ৭: Nginx রিভার্স প্রক্সি ও SELinux কনফিগারেশন
+
+Nginx-কে রিভার্স প্রক্সি হিসেবে সেটআপ করে পোর্ট `80` থেকে ইন্টারনাল পোর্ট `3000` এ রিকোয়েস্ট ফরোয়ার্ড করা হবে।
+
+1. **Nginx ইনস্টল ও সার্ভিস চালু করুন:**
    ```bash
    sudo dnf install nginx -y
    sudo systemctl enable nginx --now
    ```
-2. **Configure Nginx Server block:**
-   Create an Nginx configuration file for LHN Portal:
+
+2. **LHN পোর্টালের জন্য Nginx কনফিগারেশন ফাইল তৈরি করুন:**
    ```bash
    sudo nano /etc/nginx/conf.d/lhn-portal.conf
    ```
-   Add the reverse proxy server block mapping port `80` to PM2 port `3000`:
+   ফাইলটিতে নিচের কনফিগারেশন ব্লকটি পেস্ট করুন (প্রয়োজনে `server_name` এর জায়গায় আপনার সার্ভার আইপি বা ডোমেন নাম দিন):
    ```nginx
    server {
        listen 80;
-       server_name lhn.local; # Or server's IP address
+       server_name localhost; # অথবা আপনার সার্ভারের আইপি / ডোমেন নাম
+
+       # চ্যাট ফাইল আপলোড বা বাল্ক ডাটা আপলোডের জন্য সর্বোচ্চ সীমা
+       client_max_body_size 50M;
 
        location / {
            proxy_pass http://127.0.0.1:3000;
@@ -519,40 +586,104 @@ PM2 ensures the server runs in the background and automatically restarts on syst
            proxy_cache_bypass $http_upgrade;
            proxy_set_header X-Real-IP $remote_addr;
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
        }
    }
    ```
-   Test and restart Nginx:
+   Nginx কনফিগারেশন ফাইলটি সেভ করে নিচের কমান্ড দিয়ে পরীক্ষা ও রিস্টার্ট করুন:
    ```bash
    sudo nginx -t
    sudo systemctl restart nginx
    ```
-3. **Configure SELinux (CRITICAL FOR REDHAT):**
-   SELinux by default blocks Nginx from forwarding connections to local upstream ports (like port 3000). Run the following commands to authorize the reverse proxy:
+
+3. **SELinux কনফিগারেশন (রেডহ্যাটের জন্য অত্যন্ত গুরুত্বপূর্ণ):**
+   RHEL সার্ভারে ডিফল্টভাবে SELinux প্রক্সি রিকোয়েস্ট লোকাল পোর্টে ফরোয়ার্ড করতে বাধা দেয়, যার কারণে ব্রাউজারে `502 Bad Gateway` দেখতে পাওয়া যায়। এটি সমাধান করতে নিচের কমান্ডটি রান করুন:
    ```bash
    sudo setsebool -P httpd_can_network_connect 1
    ```
 
-### 🧱 Step 7: Firewalld Configuration
+---
 
-RHEL restricts network access using `firewalld`. Allow incoming HTTP (port 80) and HTTPS (port 443) traffic:
+### 🧱 ধাপ ৮: ফায়ারওয়াল (Firewalld) কনফিগারেশন
+
+RHEL-এর সিকিউরিটি ফায়ারওয়ালে পোর্ট ৮০ (HTTP) এবং পোর্ট ৪৪৩ (HTTPS) সংযোগের অনুমতি দিতে নিচের কমান্ডগুলো রান করুন:
 ```bash
 sudo firewall-cmd --permanent --add-service=http
 sudo firewall-cmd --permanent --add-service=https
 sudo firewall-cmd --reload
 ```
 
-### 🧹 Step 8: Production Verification
+---
 
-Open your web browser and navigate to the server's IP address or domain name. Log in using the default credentials:
-- **Username:** `admin`
-- **Password:** `123456`
+### 🧹 ডিপ্লয়মেন্ট পরবর্তী রক্ষণাবেক্ষণ ও দরকারি কমান্ডসমূহ (Post-Deployment Commands)
 
-To monitor running logs and PM2 processes:
-```bash
-pm2 logs lhn-portal
-pm2 status
-```
+অ্যাপ্লিকেশনটি বিল্ড এবং ডিপ্লয় করার পর যখনই সার্ভারে রক্ষণাবেক্ষণ বা পরিবর্তন করার প্রয়োজন হবে, তখন নিচের কমান্ডগুলো অত্যন্ত গুরুত্বপূর্ণ ভূমিকা পালন করবে:
+
+1. **সার্ভার লগ দেখা (Monitoring Logs):**
+   অ্যাপ্লিকেশনে কোনো এরর বা ইউজার অ্যাকশন মনিটর করতে PM2 রিয়েল-টাইম লগ দেখুন:
+   ```bash
+   pm2 logs lhn-portal
+   ```
+   Nginx সার্ভার এরর লগ চেক করতে:
+   ```bash
+   sudo tail -f /var/log/nginx/error.log
+   ```
+
+2. **সার্ভার প্রসেস স্ট্যাটাস দেখা:**
+   ```bash
+   pm2 status
+   pm2 show lhn-portal
+   ```
+
+3. **কোড আপডেট করার পর রি-বিল্ড ও রিস্টার্ট করা (Updating Deployments):**
+   গিট থেকে নতুন কোড সার্ভারে টানার পর নিচের কমান্ডগুলো পর্যায়ক্রমে রান করতে হবে:
+   ```bash
+   # ১. সর্বশেষ কোড ডাউনলোড করুন
+   git pull origin main
+
+   # ২. নতুন কোনো প্যাকেজ থাকলে তা ইনস্টল করুন
+   npm install
+
+   # ৩. প্রিজমা স্কিমা আপডেট ও মাইগ্রেশন করুন (যদি ডাটাবেজে পরিবর্তন থাকে)
+   npx prisma db push
+   npx prisma generate
+
+   # ৪. নতুন প্রোডাকশন বিল্ড তৈরি করুন
+   npm run build
+
+   # ৫. PM2 প্রসেস রিস্টার্ট করুন (কোনো ডাউনটাইম ছাড়াই রিস্টার্ট হবে)
+   pm2 restart lhn-portal
+   ```
+
+4. **ডাটাবেজ সিডিং এবং ডাম্প ফাইল প্রসেসিং:**
+   * **ডাটাবেজের ডাটা ডাম্প (ব্যাকআপ) করা:**
+     বিদ্যমান পোস্টগ্রে ডাটাবেজের সকল ডাটা ফাইল আকারে ব্যাকআপ করে রাখতে নিচের স্ক্রিপ্টটি রান করুন:
+     ```bash
+     node dump_data.js
+     ```
+     এটি রুট ডিরেক্টরিতে `postgres_dump.json` ফাইল তৈরি করবে।
+   * **ডাটাবেজে ব্যাকআপ ফাইল রিস্টোর (সিড) করা:**
+     সার্ভারে ফ্রেশ ডাটা রিস্টোর বা সিডিং করতে নিচের কমান্ডটি রান করুন:
+     ```bash
+     npx prisma db seed
+     ```
+     *(রুট ফোল্ডারে `postgres_dump.json` থাকলে এটি সম্পূর্ণ অরিজিনাল ডাটা রিস্টোর করবে, অন্যথায় এটি মার্জিত লোকাল ডামি ডাটা দিয়ে ডাটাবেজ পূর্ণ করবে)*
+
+5. **PM2 এর সার্ভিস কন্ট্রোল করা:**
+   * **অ্যাপ্লিকেশন স্টপ করতে:** `pm2 stop lhn-portal`
+   * **অ্যাপ্লিকেশন ডিলিট করতে:** `pm2 delete lhn-portal`
+   * **সার্ভার রিস্টার্ট করতে:** `pm2 restart lhn-portal`
+
+---
+
+### 🛡️ ডিপ্লয়মেন্ট ভেরিফিকেশন (Verification)
+
+আপনার ব্রাউজারে সার্ভারের আইপি অ্যাড্রেস অথবা ডোমেন নামে প্রবেশ করে লগইন করুন। ডিফল্ট ক্রেডেনশিয়াল:
+* **ব্যবহারকারী (Username):** `admin`
+* **পাসওয়ার্ড (Password):** `123456`
+* **রোল:** `ADMIN` (লগইন করার পর ড্যাশবোর্ডে ডাইনামিক গ্রাফ এবং সকল মেনু দেখতে পাবেন)
+
+---
 
 ## 🚀 ইউনিভার্সাল সিডিং ইঞ্জিন ও ক্লোন সামঞ্জস্য (Universal Seeding Engine & Data Consistency)
 
