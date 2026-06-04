@@ -61,3 +61,6 @@ next-env.d.ts
 
 # uploads
 public/uploads/
+
+# scratch directory for reference code
+scratch/

@@ -81,15 +81,7 @@ export async function PUT(
     );
 
     if (otherDuties.length > 0) {
-      if (type === 'LATE_SITTING') {
-        return NextResponse.json({ error: 'duplicate_duty_on_date' }, { status: 400 });
-      } else {
-        // HOLIDAY or NIGHT_SHIFT
-        const hasLateSitting = otherDuties.some((d: any) => d.type === 'LATE_SITTING');
-        if (hasLateSitting) {
-          return NextResponse.json({ error: 'duplicate_duty_on_date' }, { status: 400 });
-        }
-      }
+      return NextResponse.json({ error: 'duplicate_duty_on_date' }, { status: 400 });
     }
 
     const { allowance1, allowance2, totalBill } = calculateAllowances(type);

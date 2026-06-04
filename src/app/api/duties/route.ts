@@ -56,8 +56,6 @@ export async function GET(request: Request) {
 
     if (orderRef) {
       conditions.push(eq(duties.orderRef, orderRef));
-    } else if (!includeArchived) {
-      conditions.push(isNull(duties.orderRef));
     }
     
     const dutiesList = await db
@@ -210,16 +208,8 @@ export async function POST(request: Request) {
         d.employeeId === parseInt(employeeId, 10) && d.date === date
       );
       
-      if (type === 'LATE_SITTING') {
-        if (existingDuties.length > 0) {
-          throw new Error('duplicate_duty_on_date');
-        }
-      } else {
-        // HOLIDAY or NIGHT_SHIFT
-        const hasLateSitting = existingDuties.some((d: any) => d.type === 'LATE_SITTING');
-        if (hasLateSitting) {
-          throw new Error('duplicate_duty_on_date');
-        }
+      if (existingDuties.length > 0) {
+        throw new Error('duplicate_duty_on_date');
       }
       
       const createdList = await db.insert(duties).values({

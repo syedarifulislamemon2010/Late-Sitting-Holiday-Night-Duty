@@ -43,6 +43,7 @@ interface Duty {
   allowance1: number;
   allowance2: number;
   totalBill: number;
+  orderRef?: string | null;
 }
 
 const toBanglaDigits = (num: number | string) => {
@@ -459,6 +460,20 @@ export default function RosterPage() {
     const catBangla = printCategory === 'LATE_SITTING' ? 'লেট-সিটিং' : printCategory === 'HOLIDAY' ? 'অফ-ডে' : 'নাইট';
     const bnYear = toBanglaDigits('2026');
     
+    // Check if there are any duties in the print table that already have an orderRef
+    const tableGroups = getGroupedDuties();
+    const tableDates = tableGroups.flatMap(g => g.dates);
+    const activeDuties = duties.filter(d => {
+      const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
+      const matchesCategory = d.type === printCategory;
+      return matchesCell && matchesCategory && tableDates.includes(d.date);
+    });
+    const firstArchivedDuty = activeDuties.find(d => d.orderRef);
+    if (firstArchivedDuty && firstArchivedDuty.orderRef) {
+      setOrderRef(firstArchivedDuty.orderRef);
+      return;
+    }
+    
     if (isEditingArchive) {
       // If editing, use the preserved archiveSerial, or fall back to parsing current orderRef
       let currentSerial = archiveSerial;
@@ -531,6 +546,9 @@ export default function RosterPage() {
 
       if (res.ok) {
         console.log('Office order archived successfully!');
+        
+        // Call updateAssociatedBill to keep the bill memo updated in sync with office order!
+        await updateAssociatedBill(orderRef);
         
         // Trigger PDF generation endpoint in backend unconditionally
         const pdfPayload = {
@@ -622,6 +640,148 @@ export default function RosterPage() {
         return toBanglaDigits(`${day}-${month}-${year}`);
       })
       .join(', ');
+  };
+
+  const updateAssociatedBill = async (baseOrderRef: string) => {
+    try {
+      const billRef = baseOrderRef + '/বিল';
+      const ordersRes = await fetch('/api/office-orders');
+      if (!ordersRes.ok) return;
+      const orders = await ordersRes.json();
+      const existingBill = orders.find((o: any) => o.orderRef === billRef);
+      if (!existingBill) {
+        console.log("No existing bill found for this office order. Skipping bill update.");
+        return;
+      }
+      
+      const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
+      const transportRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 400 : 200;
+      
+      // Group the duties by employee matching the print category
+      const summaries: Record<number, { name: string; designation: string; bankId: string; days: number; dates: string[] }> = {};
+      const activeDuties = duties.filter(d => d.type === printCategory);
+      activeDuties.forEach(d => {
+        const empId = d.employeeId;
+        if (!summaries[empId]) {
+          summaries[empId] = {
+            name: d.employee.name,
+            designation: d.employee.designation,
+            bankId: d.employee.bankId || '',
+            days: 0,
+            dates: []
+          };
+        }
+        summaries[empId].days += 1;
+        if (!summaries[empId].dates.includes(d.date)) {
+          summaries[empId].dates.push(d.date);
+        }
+      });
+      
+      const summariesPayload = Object.values(summaries).map(s => {
+        const totalTransport = s.days * transportRate;
+        const totalApyaon = s.days * apyaonRate;
+        const empTotal = totalTransport + totalApyaon;
+        return {
+          name: s.name,
+          designation: s.designation,
+          bankId: s.bankId,
+          days: s.days,
+          apyaonRate: apyaonRate,
+          totalApyaon: totalApyaon,
+          totalTransport: totalTransport,
+          grandTotal: empTotal,
+          datesFormatted: s.dates.sort().map(d => toBanglaDigits(d.split('-').reverse().join('-'))).join(', ')
+        };
+      });
+      
+      const totalDaysAll = summariesPayload.reduce((sum, s) => sum + s.days, 0);
+      const totalApyaonAll = summariesPayload.reduce((sum, s) => sum + s.totalApyaon, 0);
+      const totalTransportAll = summariesPayload.reduce((sum, s) => sum + s.totalTransport, 0);
+      const grandTotalPrintAll = totalApyaonAll + totalTransportAll;
+      
+      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
+      const payeeName = emp ? emp.name : 'Unknown';
+      
+      const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
+      const cellName = matchedCellObj ? matchedCellObj.name : 'IT Department';
+      
+      const billPayload = {
+        orderRef: billRef,
+        orderDate: orderDate,
+        category: "BILL_" + printCategory,
+        employeeName: payeeName,
+        cellName: cellName,
+        duties: summariesPayload.map(s => ({
+          employeeId: s.bankId,
+          employeeName: s.name,
+          designation: s.designation,
+          days: s.days,
+          apyaonRate: s.apyaonRate,
+          totalApyaon: s.totalApyaon,
+          totalTransport: s.totalTransport,
+          grandTotal: s.grandTotal
+        })),
+        dutyIds: [],
+        content: {
+          openingParagraph: `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে অত্র ডিপার্টমেন্টের কর্মকর্তাদের নামের পাশে বর্ণিত তারিখে অতিরিক্ত কাজ সম্পন্ন করায় বিধি মোতাবেক আপ্যায়ন ও যাতায়াত ভাতা প্রদানের বিল মঞ্জুর করা হলো।`,
+          totalDays: totalDaysAll,
+          totalApyaon: totalApyaonAll,
+          totalTransport: totalTransportAll,
+          grandTotal: grandTotalPrintAll,
+          grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          subjectText: `অতিরিক্ত কাজের আপ্যায়ন ও যাতায়াত ভাতার মঞ্জুরীপত্র ও বিল প্রস্তুত প্রসঙ্গে।`
+        }
+      };
+      
+      // Update bill record in database
+      await fetch('/api/office-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(billPayload)
+      });
+      
+      // Automatically regenerate bill PDF in the background
+      const formatMonthName = (monthStr: string) => {
+        const [year, month] = monthStr.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const monthName = date.toLocaleString('en-US', { month: 'long' });
+        return `${monthName}-${year}`;
+      };
+      
+      const pdfPayload = {
+        billingMonth: formatMonthName(selectedMonth),
+        openingParagraph: billPayload.content.openingParagraph,
+        summaries: summariesPayload,
+        totalDays: totalDaysAll,
+        totalApyaon: totalApyaonAll,
+        totalTransport: totalTransportAll,
+        grandTotal: grandTotalPrintAll,
+        grandTotalInWords: billPayload.content.grandTotalInWords,
+        signingOfficer: signingOfficer,
+        signingDesignation: signingDesignation,
+        representativeName: payeeName,
+        representativeDesignation: emp ? emp.designation : 'Unknown',
+        subjectText: billPayload.content.subjectText,
+        billDate: orderDate,
+        transportRate: transportRate,
+        apyaonRate: apyaonRate,
+        totalTransportInWords: getBanglaNumberWords(totalTransportAll),
+        totalApyaonInWords: getBanglaNumberWords(totalApyaonAll),
+        billRef: billRef
+      };
+      
+      await fetch('/api/documents/generate-bill-memo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pdfPayload)
+      });
+      
+      console.log("Associated bill and PDF updated successfully!");
+    } catch (err) {
+      console.error("Failed to update associated bill:", err);
+    }
   };
 
   const getGroupedDuties = () => {
@@ -974,146 +1134,7 @@ export default function RosterPage() {
     }
   }, [opt1Assignments, isEditingArchive, printCategory, employees]);
 
-  const updateAssociatedBill = async (baseOrderRef: string) => {
-    try {
-      const billRef = baseOrderRef + '/বিল';
-      const ordersRes = await fetch('/api/office-orders');
-      if (!ordersRes.ok) return;
-      const orders = await ordersRes.json();
-      const existingBill = orders.find((o: any) => o.orderRef === billRef);
-      if (!existingBill) {
-        console.log("No existing bill found for this office order. Skipping bill update.");
-        return;
-      }
-      
-      const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
-      const transportRate = 100;
-      
-      // Group the duties by employee
-      const summaries: Record<number, { name: string; designation: string; bankId: string; days: number; dates: string[] }> = {};
-      duties.forEach(d => {
-        const empId = d.employeeId;
-        if (!summaries[empId]) {
-          summaries[empId] = {
-            name: d.employee.name,
-            designation: d.employee.designation,
-            bankId: d.employee.bankId || '',
-            days: 0,
-            dates: []
-          };
-        }
-        summaries[empId].days += 1;
-        if (!summaries[empId].dates.includes(d.date)) {
-          summaries[empId].dates.push(d.date);
-        }
-      });
-      
-      const summariesPayload = Object.values(summaries).map(s => {
-        const totalTransport = s.days * transportRate;
-        const totalApyaon = s.days * apyaonRate;
-        const empTotal = totalTransport + totalApyaon;
-        return {
-          name: s.name,
-          designation: s.designation,
-          bankId: s.bankId,
-          days: s.days,
-          apyaonRate: apyaonRate,
-          totalApyaon: totalApyaon,
-          totalTransport: totalTransport,
-          grandTotal: empTotal,
-          datesFormatted: s.dates.sort().map(d => toBanglaDigits(d.split('-').reverse().join('-'))).join(', ')
-        };
-      });
-      
-      const totalDaysAll = summariesPayload.reduce((sum, s) => sum + s.days, 0);
-      const totalApyaonAll = summariesPayload.reduce((sum, s) => sum + s.totalApyaon, 0);
-      const totalTransportAll = summariesPayload.reduce((sum, s) => sum + s.totalTransport, 0);
-      const grandTotalPrintAll = totalApyaonAll + totalTransportAll;
-      
-      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
-      const payeeName = emp ? emp.name : 'Unknown';
-      
-      const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
-      const cellName = matchedCellObj ? matchedCellObj.name : 'IT Department';
-      
-      const billPayload = {
-        orderRef: billRef,
-        orderDate: orderDate,
-        category: "BILL_" + printCategory,
-        employeeName: payeeName,
-        cellName: cellName,
-        duties: summariesPayload.map(s => ({
-          employeeId: s.bankId,
-          employeeName: s.name,
-          designation: s.designation,
-          days: s.days,
-          apyaonRate: s.apyaonRate,
-          totalApyaon: s.totalApyaon,
-          totalTransport: s.totalTransport,
-          grandTotal: s.grandTotal
-        })),
-        dutyIds: [],
-        content: {
-          openingParagraph: `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে অত্র ডিপার্টমেন্টের কর্মকর্তাদের নামের পাশে বর্ণিত তারিখে অতিরিক্ত কাজ সম্পন্ন করায় বিধি মোতাবেক আপ্যায়ন ও যাতায়াত ভাতা প্রদানের বিল মঞ্জুর করা হলো।`,
-          totalDays: totalDaysAll,
-          totalApyaon: totalApyaonAll,
-          totalTransport: totalTransportAll,
-          grandTotal: grandTotalPrintAll,
-          grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
-          signingOfficer: signingOfficer,
-          signingDesignation: signingDesignation,
-          subjectText: `অতিরিক্ত কাজের আপ্যায়ন ও যাতায়াত ভাতার মঞ্জুরীপত্র ও বিল প্রস্তুত প্রসঙ্গে।`
-        }
-      };
-      
-      // Update bill record in database
-      await fetch('/api/office-orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(billPayload)
-      });
-      
-      // Automatically regenerate bill PDF in the background
-      const formatMonthName = (monthStr: string) => {
-        const [year, month] = monthStr.split('-');
-        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-        const monthName = date.toLocaleString('en-US', { month: 'long' });
-        return `${monthName}-${year}`;
-      };
-      
-      const pdfPayload = {
-        billingMonth: formatMonthName(selectedMonth),
-        openingParagraph: billPayload.content.openingParagraph,
-        summaries: summariesPayload,
-        totalDays: totalDaysAll,
-        totalApyaon: totalApyaonAll,
-        totalTransport: totalTransportAll,
-        grandTotal: grandTotalPrintAll,
-        grandTotalInWords: billPayload.content.grandTotalInWords,
-        signingOfficer: signingOfficer,
-        signingDesignation: signingDesignation,
-        representativeName: payeeName,
-        representativeDesignation: emp ? emp.designation : 'Unknown',
-        subjectText: billPayload.content.subjectText,
-        billDate: orderDate,
-        transportRate: transportRate,
-        apyaonRate: apyaonRate,
-        totalTransportInWords: getBanglaNumberWords(totalTransportAll),
-        totalApyaonInWords: getBanglaNumberWords(totalApyaonAll),
-        billRef: billRef
-      };
-      
-      await fetch('/api/documents/generate-bill-memo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pdfPayload)
-      });
-      
-      console.log("Associated bill and PDF updated successfully!");
-    } catch (err) {
-      console.error("Failed to update associated bill:", err);
-    }
-  };
+
 
   const handleAssignmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1310,7 +1331,8 @@ export default function RosterPage() {
     } catch (err: any) {
       console.error('Error assigning roster:', err);
       if (err.message === 'duplicate_duty_on_date') {
-        setErrorMessage('এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।');
+        setErrorMessage('এই অর্ডার করা হয়েছে');
+        alert('এই অর্ডার করা হয়েছে');
       } else if (err.message === 'late_sitting_on_holiday') {
         setErrorMessage('ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।');
       } else if (err.message === 'holiday_duty_on_working_day') {
@@ -1997,6 +2019,11 @@ export default function RosterPage() {
                                       <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold ${getDutyBadgeStyles(group.type)}`}>
                                         {group.type === 'LATE_SITTING' ? 'Late Sitting (লেট সিটিং)' : group.type === 'HOLIDAY' ? 'Holiday Duty (সরকারি ছুটি)' : 'Night Shift (রাত্রীকালীন ডিউটি)'}
                                       </span>
+                                      {group.duties.some(d => d.orderRef) && (
+                                        <div className="mt-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold font-mono flex items-center gap-1">
+                                          <span>স্মারকঃ {group.duties.find(d => d.orderRef)?.orderRef}</span>
+                                        </div>
+                                      )}
                                     </td>
                                     <td className="px-5 py-3.5 font-bold text-indigo-600 dark:text-indigo-400 font-sans">
                                       ৳{group.totalBill.toLocaleString('bn-BD')}
