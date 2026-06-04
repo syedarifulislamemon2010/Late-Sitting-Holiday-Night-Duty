@@ -99,33 +99,43 @@ graph TD
 
 ```text
 Late-Sitting-Holiday-Night-Duty/
-├── prisma/
-│   ├── schema.prisma           # ডেটাবেজ টেবিল স্কিমা ও মডেল রিলেশন
-│   └── migrations/             # ডাটাবেজ টেবিল মাইগ্রেশন ট্র্যাকিং কোড
-├── public/
-│   └── uploads/                # ডাইনামিকলি জেনারেটেড HTML/PDF ফাইল ও চ্যাট মিডিয়া
 ├── src/
-│   ├── app/                    # Next.js App Router পেইজ ও API এপিআই রাউটস
+│   ├── db/                     # Prisma-র বদলে Drizzle ORM (১০০% ফ্রি ও ফাস্ট)
+│   │   ├── schema.ts           # ডেটাবেজ টেবিল স্কিমা ও রিলেশন (Employees, Duties, Bills)
+│   │   └── migrations/         # ডাটাবেজ মাইগ্রেশন ফাইলসমূহ
+│   ├── app/                    # Next.js App Router (পেইজ ও API রাউটস)
 │   │   ├── api/                # ব্যাকএন্ড এপিআই রাউটস (/api/*)
-│   │   │   ├── documents/      # US-Legal PDF/HTML মেমোর্যান্ডাম এপিআই (Lunch, Closing, Office Order)
-│   │   │   ├── auth/           # ইউজার অথেনটিকেশন এপিআই
+│   │   │   ├── auth/[...nextauth]/ # Auth.js (NextAuth) অথেনটিকেশন এপিআই রাউট
+│   │   │   ├── documents/      # US-Legal PDF/HTML মেমোর্যান্ডাম এপিআই
 │   │   │   ├── duties/         # ডিউটি এন্ট্রি ও বাল্ক ইনসার্ট এপিআই
 │   │   │   ├── employees/      # কর্মকর্তা ডিরেক্টরি ও OCR ইমেজ পার্সিং এপিআই
 │   │   │   ├── lunch-bills/    # লাঞ্চ ও ক্লোজিং বিলের এন্ট্রি সংরক্ষণ এপিআই
 │   │   │   └── trash/          # রিসাইকেল বিন ও রিস্টোর এপিআই
 │   │   ├── billing/            # রোস্টার ডিউটি ভিত্তিক অ্যাপ্যায়ন ও কনভেয়েন্স বিল মডিউল
-│   │   ├── chat/               # এনক্রিপ্টেড ইনস্ট্যান্ট মেসেঞ্জার ইন্টারফেস
+│   │   ├── chat/               # এনক্রিপ্টেড ইনস্ট্যান্ট মেসেঞ্জার ইন্টারফেস (Real-time)
 │   │   ├── closing-bill/       # জুন ও ডিসেম্বর ক্লোজিং ভাতা বিলিং প্যানেল
 │   │   ├── employees/          # কর্মকর্তা প্রোফাইল আপডেট ও মোবাইল আপডেট মডিউল
 │   │   ├── leave/              # ছুটির আবেদনপত্র প্রস্তুতকারক প্যানেল
 │   │   ├── logs/               # প্রজেক্ট অডিট লগ ট্র্যাকার ভিউয়ার
 │   │   ├── roster/             # রোস্টার ও ডিউটি অফিস আদেশ অ্যাসাইন প্যানেল
 │   │   ├── trash/              # রিসাইকেল বিন ভিউ
-│   │   └── page.tsx            # ড্যাশবোর্ড হোমপেইজ ও ক্যালেন্ডার পরিসংখ্যান
-│   ├── components/             # গ্লোবাল রিঅ্যাক্ট কম্পোনেন্টস (AuthGuard, Sidebar, Navbar)
-│   └── lib/                    # কোর ইউটিলিটি ক্লাস (Prisma, Encryption, Seniority Sorting, Audit)
+│   │   ├── layout.tsx          # গ্লোবাল লেআউট (Sidebar, Navbar)
+│   │   └── page.tsx            # ড্যাশবোর্ড হোমপেইজ ও ক্যালেন্ডার পরিসংখ্যান (Shadcn Charts)
+│   ├── components/             # গ্লোবাল রিঅ্যাক্ট কম্পোনেন্টস
+│   │   ├── ui/                 # Shadcn UI কম্পোনেন্টস (Buttons, Dialogs, Charts)
+│   │   ├── AuthGuard.tsx       # ক্লায়েন্ট সাইড রুট প্রটেকশন মিডেলওয়্যার
+│   │   ├── Sidebar.tsx         # মেইন নেভিগেশন প্যানেল
+│   │   └── Navbar.tsx          # টপ বার (ইউজার প্রোফাইল ও নোটিফিকেশন)
+│   ├── lib/                    # কোর ইউটিলিটি ক্লাস
+│   │   ├── db.ts               # Drizzle Database ক্লায়েন্ট কানেকশন
+│   │   ├── crypto.ts           # Web Cryptography API (AES-256 এনক্রিপশন ইউটিলিটি)
+│   │   ├── sorting.ts          # সরকারি জ্যেষ্ঠতা নীতি অনুযায়ী Seniority Sorting লজিক
+│   │   └── audit.ts            # অডিট লগ জেনারেশন ইউটিলিটি
+│   ├── hooks/                  # কাস্টম হুক্স
+│   │   └── useRealtime.ts      # Supabase Realtime ডাটা লিসেনার হুক (চ্যাট ও ড্যাশবোর্ডের জন্য)
+├── public/                     # শুধুমাত্র স্ট্যাটিক ফাইল (Logos, Icons, Fonts)
 ├── tsconfig.json               # টাইপস্ক্রিপ্ট কম্পাইলার সেটিংস
-└── package.json                # ডিপেনডেন্সি ফাইল
+└── package.json                # ডিপেনডেন্সি ফাইল (Tailwind 4.0, Auth.js, Drizzle)
 ```
 
 ---
