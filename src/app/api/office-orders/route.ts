@@ -113,65 +113,63 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'missing_required_fields' }, { status: 400 });
     }
 
-    const result = await db.transaction(async (tx) => {
-      // 0. If we are editing and the reference has changed, delete the old order and unlink its duties first!
-      if (originalOrderRef && originalOrderRef !== orderRef) {
-        await tx.update(dutiesTable)
-          .set({ orderRef: null })
-          .where(eq(dutiesTable.orderRef, originalOrderRef));
-        await tx.delete(officeOrders)
-          .where(eq(officeOrders.orderRef, originalOrderRef));
-      }
+    // 0. If we are editing and the reference has changed, delete the old order and unlink its duties first!
+    if (originalOrderRef && originalOrderRef !== orderRef) {
+      await db.update(dutiesTable)
+        .set({ orderRef: null })
+        .where(eq(dutiesTable.orderRef, originalOrderRef));
+      await db.delete(officeOrders)
+        .where(eq(officeOrders.orderRef, originalOrderRef));
+    }
 
-      // 1. Reset any existing duties linked to this reference in PostgreSQL
-      await tx.update(dutiesTable)
-          .set({ orderRef: null })
-          .where(eq(dutiesTable.orderRef, orderRef));
+    // 1. Reset any existing duties linked to this reference in PostgreSQL
+    await db.update(dutiesTable)
+        .set({ orderRef: null })
+        .where(eq(dutiesTable.orderRef, orderRef));
 
-      // 2. Find or create/update the OfficeOrder in PostgreSQL
-      const existing = await tx.select().from(officeOrders)
-        .where(eq(officeOrders.orderRef, orderRef))
-        .limit(1);
-      
-      let orderRecord = existing[0] || null;
-      const existed = !!orderRecord;
+    // 2. Find or create/update the OfficeOrder in PostgreSQL
+    const existing = await db.select().from(officeOrders)
+      .where(eq(officeOrders.orderRef, orderRef))
+      .limit(1);
+    
+    let orderRecord = existing[0] || null;
+    const existed = !!orderRecord;
 
-      if (!orderRecord) {
-        const [inserted] = await tx.insert(officeOrders).values({
-          orderRef,
+    if (!orderRecord) {
+      const [inserted] = await db.insert(officeOrders).values({
+        orderRef,
+        orderDate,
+        category,
+        employeeName,
+        cellName: cellName || null,
+        dutiesJson: JSON.stringify(duties),
+        contentJson: content ? JSON.stringify(content) : null,
+        status: 'Printed'
+      }).returning();
+      orderRecord = inserted;
+    } else {
+      const [updated] = await db.update(officeOrders)
+        .set({
           orderDate,
-          category,
           employeeName,
           cellName: cellName || null,
           dutiesJson: JSON.stringify(duties),
           contentJson: content ? JSON.stringify(content) : null,
           status: 'Printed'
-        }).returning();
-        orderRecord = inserted;
-      } else {
-        const [updated] = await tx.update(officeOrders)
-          .set({
-            orderDate,
-            employeeName,
-            cellName: cellName || null,
-            dutiesJson: JSON.stringify(duties),
-            contentJson: content ? JSON.stringify(content) : null,
-            status: 'Printed'
-          })
-          .where(eq(officeOrders.orderRef, orderRef))
-          .returning();
-        orderRecord = updated;
-      }
+        })
+        .where(eq(officeOrders.orderRef, orderRef))
+        .returning();
+      orderRecord = updated;
+    }
 
-      // 3. Link newly submitted duties in PostgreSQL
-      if (dutyIds && Array.isArray(dutyIds) && dutyIds.length > 0) {
-        await tx.update(dutiesTable)
-          .set({ orderRef: orderRef })
-          .where(inArray(dutiesTable.id, dutyIds.map((id: any) => Number(id))));
-      }
+    // 3. Link newly submitted duties in PostgreSQL
+    if (dutyIds && Array.isArray(dutyIds) && dutyIds.length > 0) {
+      await db.update(dutiesTable)
+        .set({ orderRef: orderRef })
+        .where(inArray(dutiesTable.id, dutyIds.map((id: any) => Number(id))));
+    }
 
-      return { order: orderRecord, existed };
-    });
+    const result = { order: orderRecord, existed };
 
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || 'Unknown';

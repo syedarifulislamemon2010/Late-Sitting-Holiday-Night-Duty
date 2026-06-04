@@ -151,91 +151,89 @@ export async function POST(request: Request) {
     
     const createdDuties: any[] = [];
     
-    await db.transaction(async (tx) => {
-      if (originalOrderRef) {
-        // Delete existing duties linked to the originalOrderRef first
-        await tx.delete(duties).where(eq(duties.orderRef, originalOrderRef));
+    if (originalOrderRef) {
+      // Delete existing duties linked to the originalOrderRef first
+      await db.delete(duties).where(eq(duties.orderRef, originalOrderRef));
+    }
+    if (orderRef && orderRef !== originalOrderRef) {
+      // Delete existing duties linked to the new orderRef
+      await db.delete(duties).where(eq(duties.orderRef, orderRef));
+    }
+
+    // Pre-fetch all holiday overrides for the unique assignment dates
+    const uniqueDates = Array.from(new Set(assignments.map((a: any) => a.date)));
+    const holidayOverrides = await db.select().from(holidaysTable).where(inArray(holidaysTable.date, uniqueDates));
+    const holidayOverrideMap = new Map(holidayOverrides.map((h: any) => [h.date, h.isWorkingDay]));
+
+    const checkIsHolidayLocal = (dateStr: string): boolean => {
+      const dateObj = new Date(dateStr);
+      const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
+      const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+      const isWorkingDay = holidayOverrideMap.get(dateStr);
+      if (isWorkingDay !== undefined) {
+        return !isWorkingDay;
       }
-      if (orderRef && orderRef !== originalOrderRef) {
-        // Delete existing duties linked to the new orderRef
-        await tx.delete(duties).where(eq(duties.orderRef, orderRef));
+      return isWeekend;
+    };
+
+    // Pre-fetch all existing duties for the employeeIds and dates
+    const uniqueEmployeeIds = Array.from(new Set(assignments.map((a: any) => parseInt(a.employeeId, 10))));
+    const allExistingDuties = await db.select().from(duties).where(
+      and(
+        inArray(duties.employeeId, uniqueEmployeeIds),
+        inArray(duties.date, uniqueDates)
+      )
+    );
+
+    for (const assignment of assignments) {
+      const { employeeId, type, date, description } = assignment;
+      
+      if (!employeeId || !type || !date) {
+        throw new Error('missing_fields');
       }
 
-      // Pre-fetch all holiday overrides for the unique assignment dates
-      const uniqueDates = Array.from(new Set(assignments.map((a: any) => a.date)));
-      const holidayOverrides = await tx.select().from(holidaysTable).where(inArray(holidaysTable.date, uniqueDates));
-      const holidayOverrideMap = new Map(holidayOverrides.map((h: any) => [h.date, h.isWorkingDay]));
+      // Validate Holiday Rules locally using the pre-fetched map
+      const isHoliday = checkIsHolidayLocal(date);
 
-      const checkIsHolidayLocal = (dateStr: string): boolean => {
-        const dateObj = new Date(dateStr);
-        const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
-        const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
-        const isWorkingDay = holidayOverrideMap.get(dateStr);
-        if (isWorkingDay !== undefined) {
-          return !isWorkingDay;
-        }
-        return isWeekend;
-      };
+      if (type === 'LATE_SITTING' && isHoliday) {
+        throw new Error('late_sitting_on_holiday');
+      }
 
-      // Pre-fetch all existing duties for the employeeIds and dates
-      const uniqueEmployeeIds = Array.from(new Set(assignments.map((a: any) => parseInt(a.employeeId, 10))));
-      const allExistingDuties = await tx.select().from(duties).where(
-        and(
-          inArray(duties.employeeId, uniqueEmployeeIds),
-          inArray(duties.date, uniqueDates)
-        )
+      if (type === 'HOLIDAY' && !isHoliday) {
+        throw new Error('holiday_duty_on_working_day');
+      }
+      
+      const { allowance1, allowance2, totalBill } = calculateAllowances(type);
+      
+      // Filter existing duties locally from the pre-fetched list
+      const existingDuties = allExistingDuties.filter((d: any) => 
+        d.employeeId === parseInt(employeeId, 10) && d.date === date
       );
-
-      for (const assignment of assignments) {
-        const { employeeId, type, date, description } = assignment;
-        
-        if (!employeeId || !type || !date) {
-          throw new Error('missing_fields');
+      
+      if (type === 'LATE_SITTING') {
+        if (existingDuties.length > 0) {
+          throw new Error('duplicate_duty_on_date');
         }
-
-        // Validate Holiday Rules locally using the pre-fetched map
-        const isHoliday = checkIsHolidayLocal(date);
-
-        if (type === 'LATE_SITTING' && isHoliday) {
-          throw new Error('late_sitting_on_holiday');
+      } else {
+        // HOLIDAY or NIGHT_SHIFT
+        const hasLateSitting = existingDuties.some((d: any) => d.type === 'LATE_SITTING');
+        if (hasLateSitting) {
+          throw new Error('duplicate_duty_on_date');
         }
-
-        if (type === 'HOLIDAY' && !isHoliday) {
-          throw new Error('holiday_duty_on_working_day');
-        }
-        
-        const { allowance1, allowance2, totalBill } = calculateAllowances(type);
-        
-        // Filter existing duties locally from the pre-fetched list
-        const existingDuties = allExistingDuties.filter((d: any) => 
-          d.employeeId === parseInt(employeeId, 10) && d.date === date
-        );
-        
-        if (type === 'LATE_SITTING') {
-          if (existingDuties.length > 0) {
-            throw new Error('duplicate_duty_on_date');
-          }
-        } else {
-          // HOLIDAY or NIGHT_SHIFT
-          const hasLateSitting = existingDuties.some((d: any) => d.type === 'LATE_SITTING');
-          if (hasLateSitting) {
-            throw new Error('duplicate_duty_on_date');
-          }
-        }
-        
-        const createdList = await tx.insert(duties).values({
-          employeeId: parseInt(employeeId, 10),
-          type,
-          date,
-          description: description || null,
-          allowance1,
-          allowance2,
-          totalBill,
-          orderRef: orderRef || null
-        }).returning();
-        createdDuties.push(createdList[0]);
       }
-    });
+      
+      const createdList = await db.insert(duties).values({
+        employeeId: parseInt(employeeId, 10),
+        type,
+        date,
+        description: description || null,
+        allowance1,
+        allowance2,
+        totalBill,
+        orderRef: orderRef || null
+      }).returning();
+      createdDuties.push(createdList[0]);
+    }
 
     const user = await getCurrentUser();
     if (user) {

@@ -39,26 +39,24 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       }
     }
 
-    const result = await db.transaction(async (tx) => {
-      // Update linked duties references too if the সূত্র changes in PostgreSQL
-      if (orderRef !== existingOrder.orderRef) {
-        await tx.update(dutiesTable)
-          .set({ orderRef: orderRef })
-          .where(eq(dutiesTable.orderRef, existingOrder.orderRef));
-      }
+    // Update linked duties references too if the সূত্র changes in PostgreSQL
+    if (orderRef !== existingOrder.orderRef) {
+      await db.update(dutiesTable)
+        .set({ orderRef: orderRef })
+        .where(eq(dutiesTable.orderRef, existingOrder.orderRef));
+    }
 
-      const [updated] = await tx.update(officeOrders)
-        .set({
-          orderRef,
-          orderDate,
-          employeeName,
-          cellName: cellName || null,
-          status: status || existingOrder.status
-        })
-        .where(eq(officeOrders.id, id))
-        .returning();
-      return updated;
-    });
+    const [updated] = await db.update(officeOrders)
+      .set({
+        orderRef,
+        orderDate,
+        employeeName,
+        cellName: cellName || null,
+        status: status || existingOrder.status
+      })
+      .where(eq(officeOrders.id, id))
+      .returning();
+    const result = updated;
 
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || 'Unknown';
@@ -108,39 +106,37 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     let deletedBy: string | null = user ? user.username : null;
 
-    await db.transaction(async (tx) => {
-      // 1. Permanently delete associated duties completely from the database
-      await tx.delete(dutiesTable)
-        .where(
-          or(
-            eq(dutiesTable.orderRef, baseRef),
-            eq(dutiesTable.orderRef, order.orderRef)
-          )
-        );
+    // 1. Permanently delete associated duties completely from the database
+    await db.delete(dutiesTable)
+      .where(
+        or(
+          eq(dutiesTable.orderRef, baseRef),
+          eq(dutiesTable.orderRef, order.orderRef)
+        )
+      );
 
-      // 2. Save to Trash
-      await tx.insert(trash).values({
-        entityType: 'DOCUMENT',
-        entityId: order.id,
-        name: `অফিস আদেশ সূত্র: ${order.orderRef}`,
-        data: JSON.stringify({
-          id: order.id,
-          orderRef: order.orderRef,
-          orderDate: order.orderDate,
-          category: order.category,
-          employeeName: order.employeeName,
-          cellName: order.cellName,
-          dutiesJson: order.dutiesJson,
-          contentJson: order.contentJson,
-          status: order.status
-        }),
-        deletedBy
-      });
-
-      // 3. Delete office order record
-      await tx.delete(officeOrders)
-        .where(eq(officeOrders.id, id));
+    // 2. Save to Trash
+    await db.insert(trash).values({
+      entityType: 'DOCUMENT',
+      entityId: order.id,
+      name: `অফিস আদেশ সূত্র: ${order.orderRef}`,
+      data: JSON.stringify({
+        id: order.id,
+        orderRef: order.orderRef,
+        orderDate: order.orderDate,
+        category: order.category,
+        employeeName: order.employeeName,
+        cellName: order.cellName,
+        dutiesJson: order.dutiesJson,
+        contentJson: order.contentJson,
+        status: order.status
+      }),
+      deletedBy
     });
+
+    // 3. Delete office order record
+    await db.delete(officeOrders)
+      .where(eq(officeOrders.id, id));
 
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || 'Unknown';

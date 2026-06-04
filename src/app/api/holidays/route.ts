@@ -24,35 +24,33 @@ export async function POST(request: Request) {
 
     const savedHolidays: any[] = [];
 
-    await db.transaction(async (tx) => {
-      for (const h of holidays) {
-        if (!h.date || !h.name) continue;
-        
-        // Upsert by date
-        const existingList = await tx.select().from(holidaysTable).where(eq(holidaysTable.date, h.date));
-        const existing = existingList[0];
+    for (const h of holidays) {
+      if (!h.date || !h.name) continue;
+      
+      // Upsert by date
+      const existingList = await db.select().from(holidaysTable).where(eq(holidaysTable.date, h.date));
+      const existing = existingList[0];
 
-        if (existing) {
-          const updatedList = await tx.update(holidaysTable)
-            .set({
-              name: h.name,
-              isWorkingDay: h.isWorkingDay ?? false
-            })
-            .where(eq(holidaysTable.id, existing.id))
-            .returning();
-          savedHolidays.push(updatedList[0]);
-        } else {
-          const createdList = await tx.insert(holidaysTable)
-            .values({
-              date: h.date,
-              name: h.name,
-              isWorkingDay: h.isWorkingDay ?? false
-            })
-            .returning();
-          savedHolidays.push(createdList[0]);
-        }
+      if (existing) {
+        const updatedList = await db.update(holidaysTable)
+          .set({
+            name: h.name,
+            isWorkingDay: h.isWorkingDay ?? false
+          })
+          .where(eq(holidaysTable.id, existing.id))
+          .returning();
+        savedHolidays.push(updatedList[0]);
+      } else {
+        const createdList = await db.insert(holidaysTable)
+          .values({
+            date: h.date,
+            name: h.name,
+            isWorkingDay: h.isWorkingDay ?? false
+          })
+          .returning();
+        savedHolidays.push(createdList[0]);
       }
-    });
+    }
 
     return NextResponse.json({ success: true, count: savedHolidays.length, data: savedHolidays });
   } catch (error: any) {
