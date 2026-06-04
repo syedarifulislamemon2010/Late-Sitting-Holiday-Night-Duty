@@ -6,7 +6,9 @@
     "dev": "set NODE_OPTIONS=--no-deprecation && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "npx tsx --env-file=.env src/db/seed.ts",
+    "db:dump": "npx tsx --env-file=.env src/db/dump.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

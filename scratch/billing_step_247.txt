@@ -1,1 +1,0 @@
-I will create the base Bills API endpoint to handle GET (fetching all saved bills with nested office orders and duties) and POST (creating a new bill for a finalized office order).
