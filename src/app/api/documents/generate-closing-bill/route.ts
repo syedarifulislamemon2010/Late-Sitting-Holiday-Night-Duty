@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { documents } from '@/db/schema';
 import fs from 'fs';
 import path from 'path';
 
@@ -28,7 +29,7 @@ function abbreviateDesignation(desig: string | null | undefined): string {
   if (lower.includes('উপ-মহাব্যবস্থাপক') || lower.includes('ডিজিএম') || lower.includes('dgm')) {
     return 'ডিজিএম';
   }
-  if (lower.includes('सहकारी महाव्यबस्थापक') || lower.includes('এজিএম') || lower.includes('agm')) {
+  if (lower.includes('সহকারী মহাব্যবস্থাপক') || lower.includes('এজিএম') || lower.includes('agm')) {
     return 'এজিএম';
   }
   if (lower.includes('মহাব্যবস্থাপক') || lower.includes('জিএম') || lower.includes('gm')) {
@@ -81,7 +82,53 @@ export async function POST(request: Request) {
       </thead>
     `;
 
-    // 1. Render cell groupings
+    // 1. Render DGM & AGM Executives
+    if (executivesData && executivesData.records && executivesData.records.length > 0) {
+      let execClaim = 0;
+      let execStamp = 0;
+      let execGrand = 0;
+      let execRows = '';
+
+      executivesData.records.forEach((r: any) => {
+        execClaim += 2000;
+        execStamp += 15;
+        execGrand += 1985;
+
+        execRows += `
+          <tr style="background-color: #fffdfd;">
+            <td style="width: 5%;">${toBnDigits(globalIndex++)}</td>
+            <td class="text-left font-bold" style="color: #c2185b; width: 25%;">${r.employeeName}</td>
+            <td style="color: #c2185b; font-weight: bold; width: 15%;">${abbreviateDesignation(r.designation)}</td>
+            <td style="color: #c2185b; font-family: sans-serif; font-size: 8.5px; width: 15%;">${r.bankId || '-'}</td>
+            <td style="width: 13%;">${toBnDigits(2000)}/-</td>
+            <td style="width: 13%;">${toBnDigits(15)}/-</td>
+            <td class="font-bold" style="width: 14%;">${toBnDigits(1985)}/-</td>
+          </tr>
+        `;
+      });
+
+      tablesHtml += `
+        <div style="margin-bottom: 12px; page-break-inside: avoid;">
+          <div style="background-color: #fdf2f8; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 9px; border: 1px solid #000; border-bottom: none; color: #db2777;">
+            ● নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
+          </div>
+          <table style="margin-top: 0; margin-bottom: 0;">
+            ${tableHeaders}
+            <tbody>
+              ${execRows}
+              <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 10px;">
+                <td colspan="4" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777; width: 60%;">সর্বমোট (নির্বাহী প্যানেল) =</td>
+                <td class="font-bold" style="color: #db2777; width: 13%;">৳${toBnDigits(execClaim)}/-</td>
+                <td style="color: #b45309; font-weight: bold; width: 13%;">৳${toBnDigits(execStamp)}/-</td>
+                <td style="color: #db2777; font-weight: 900; width: 14%;">৳${toBnDigits(execGrand)}/-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // 2. Render cell groupings
     if (groupedData && Array.isArray(groupedData)) {
       groupedData.forEach((cellGroup: any) => {
         if (!cellGroup.records || cellGroup.records.length === 0) return;
@@ -131,52 +178,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // 2. Render DGM & AGM Executives
-    if (executivesData && executivesData.records && executivesData.records.length > 0) {
-      let execClaim = 0;
-      let execStamp = 0;
-      let execGrand = 0;
-      let execRows = '';
-
-      executivesData.records.forEach((r: any) => {
-        execClaim += 2000;
-        execStamp += 15;
-        execGrand += 1985;
-
-        execRows += `
-          <tr style="background-color: #fffdfd;">
-            <td style="width: 5%;">${toBnDigits(globalIndex++)}</td>
-            <td class="text-left font-bold" style="color: #c2185b; width: 25%;">${r.employeeName}</td>
-            <td style="color: #c2185b; font-weight: bold; width: 15%;">${abbreviateDesignation(r.designation)}</td>
-            <td style="color: #c2185b; font-family: sans-serif; font-size: 8.5px; width: 15%;">${r.bankId || '-'}</td>
-            <td style="width: 13%;">${toBnDigits(2000)}/-</td>
-            <td style="width: 13%;">${toBnDigits(15)}/-</td>
-            <td class="font-bold" style="width: 14%;">${toBnDigits(1985)}/-</td>
-          </tr>
-        `;
-      });
-
-      tablesHtml += `
-        <div style="margin-bottom: 12px; page-break-inside: avoid;">
-          <div style="background-color: #fdf2f8; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 9px; border: 1px solid #000; border-bottom: none; color: #db2777;">
-            ● নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
-          </div>
-          <table style="margin-top: 0; margin-bottom: 0;">
-            ${tableHeaders}
-            <tbody>
-              ${execRows}
-              <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 10px;">
-                <td colspan="4" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777; width: 60%;">সর্বমোট (নির্বাহী প্যানেল) =</td>
-                <td class="font-bold" style="color: #db2777; width: 13%;">৳${toBnDigits(execClaim)}/-</td>
-                <td style="color: #b45309; font-weight: bold; width: 13%;">৳${toBnDigits(execStamp)}/-</td>
-                <td style="color: #db2777; font-weight: 900; width: 14%;">৳${toBnDigits(execGrand)}/-</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      `;
-    }
-
     // 3. Render Grand Departmental Total Summary at the bottom
     tablesHtml += `
       <div style="margin-top: 15px; margin-bottom: 12px; page-break-inside: avoid; border: 1.5px solid #000; padding: 10px 14px; background-color: #cbd5e1; text-align: center;">
@@ -193,7 +194,7 @@ export async function POST(request: Request) {
 <html>
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
 <style>
   * {
     margin: 0;
@@ -208,7 +209,7 @@ export async function POST(request: Request) {
     margin-right: 0.5in;
   }
   body {
-    font-family: "Noto Sans Bengali", "Kalpurush", sans-serif;
+    font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', Arial, sans-serif;
     font-size: 10px;
     line-height: 1.25;
     color: #000;
@@ -332,8 +333,18 @@ export async function POST(request: Request) {
   </div>
   
   <script>
-    window.onload = function() {
-      window.print();
+    if (document.fonts) {
+      document.fonts.ready.then(function() {
+        setTimeout(function() {
+          window.print();
+        }, 250);
+      });
+    } else {
+      window.onload = function() {
+        setTimeout(function() {
+          window.print();
+        }, 500);
+      }
     }
   </script>
 </body>
@@ -345,7 +356,6 @@ export async function POST(request: Request) {
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
-
     const filename = `closing_bill_combined_${monthName.replace(/\s+/g, '_')}_${Math.floor(Date.now() / 1000)}.html`;
     const filePathDisk = path.join(uploadsDir, filename);
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');
@@ -354,20 +364,17 @@ export async function POST(request: Request) {
     const fileSize = fs.statSync(filePathDisk).size;
 
     // Save under the Document archive
-    const doc = await prisma.document.create({
-      data: {
-        name: `সমন্বিত ক্লোজিং বিল: ${monthName}`,
-        filePath: relativePath,
-        fileSize: fileSize
-      }
-    });
+    const [doc] = await db.insert(documents).values({
+      name: `সমন্বিত ক্লোজিং বিল: ${monthName}`,
+      filePath: relativePath,
+      fileSize: fileSize
+    }).returning();
 
     return NextResponse.json({
       success: true,
       filePath: relativePath,
       document: doc
     });
-
   } catch (error: any) {
     console.error('Error generating closing bill document:', error);
     return NextResponse.json({ error: 'failed_to_generate_closing_bill', message: error.message }, { status: 500 });

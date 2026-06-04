@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { holidays as holidaysTable } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET() {
   try {
-    const holidays = await prisma.holiday.findMany({
-      orderBy: { date: 'asc' }
-    });
-    return NextResponse.json(holidays);
+    const holidayList = await db.select().from(holidaysTable).orderBy(holidaysTable.date);
+    return NextResponse.json(holidayList);
   } catch (error: any) {
     console.error('Error fetching holidays:', error);
     return NextResponse.json({ error: 'failed_to_fetch_holidays' }, { status: 500 });
@@ -24,33 +24,32 @@ export async function POST(request: Request) {
 
     const savedHolidays: any[] = [];
 
-    await prisma.$transaction(async (tx: any) => {
+    await db.transaction(async (tx) => {
       for (const h of holidays) {
         if (!h.date || !h.name) continue;
         
         // Upsert by date
-        const existing = await tx.holiday.findUnique({
-          where: { date: h.date }
-        });
+        const existingList = await tx.select().from(holidaysTable).where(eq(holidaysTable.date, h.date));
+        const existing = existingList[0];
 
         if (existing) {
-          const updated = await tx.holiday.update({
-            where: { id: existing.id },
-            data: {
+          const updatedList = await tx.update(holidaysTable)
+            .set({
               name: h.name,
               isWorkingDay: h.isWorkingDay ?? false
-            }
-          });
-          savedHolidays.push(updated);
+            })
+            .where(eq(holidaysTable.id, existing.id))
+            .returning();
+          savedHolidays.push(updatedList[0]);
         } else {
-          const created = await tx.holiday.create({
-            data: {
+          const createdList = await tx.insert(holidaysTable)
+            .values({
               date: h.date,
               name: h.name,
               isWorkingDay: h.isWorkingDay ?? false
-            }
-          });
-          savedHolidays.push(created);
+            })
+            .returning();
+          savedHolidays.push(createdList[0]);
         }
       }
     });
@@ -71,9 +70,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'date_required' }, { status: 400 });
     }
 
-    await prisma.holiday.delete({
-      where: { date }
-    });
+    await db.delete(holidaysTable).where(eq(holidaysTable.date, date));
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { users, userCells, cells } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 
 export async function PUT(
@@ -8,16 +10,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
-    }
-
-    const currentUserId = parseInt(sessionVal, 10);
-    const currentUser = !isNaN(currentUserId)
-      ? await prisma.user.findUnique({ where: { id: currentUserId }, include: { cells: true } })
-      : null;
+    const currentUser = await getCurrentUser();
 
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'ইউজার সেশন পাওয়া যায়নি।' }, { status: 403 });
@@ -41,10 +34,8 @@ export async function PUT(
       return NextResponse.json({ error: 'name_required', message: 'নাম পূরণ করা আবশ্যক।' }, { status: 400 });
     }
 
-    const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { cells: true }
-    });
+    const targetUserList = await db.select().from(users).where(eq(users.id, userId));
+    const targetUser = targetUserList[0];
 
     if (!targetUser) {
       return NextResponse.json({ error: 'not_found', message: 'টার্গেট ইউজার পাওয়া যায়নি।' }, { status: 404 });
@@ -55,39 +46,53 @@ export async function PUT(
     
     // Clear and connect cells ONLY if ADMIN. Standard users cannot change their cell assignments
     if (currentUser.role === 'ADMIN') {
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          cells: {
-            set: []
-          }
-        }
-      });
+      await db.delete(userCells).where(eq(userCells.B, userId));
+      if (Array.isArray(cellIds) && cellIds.length > 0) {
+        await db.insert(userCells).values(
+          cellIds.map((cid: any) => ({
+            A: parseInt(cid, 10),
+            B: userId
+          }))
+        );
+      }
     }
 
-    const cellConnection = currentUser.role === 'ADMIN' && Array.isArray(cellIds)
-      ? cellIds.map((cid: any) => ({ id: parseInt(cid, 10) }))
-      : undefined;
+    let updatedFields: any = {
+      name: name.trim(),
+      role: finalRole,
+    };
+    if (mobile !== undefined) {
+      updatedFields.mobile = mobile ? mobile.trim() : null;
+    }
+    if (password && password.trim()) {
+      updatedFields.password = password.trim();
+    }
 
     // Perform update
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        name: name.trim(),
-        role: finalRole,
-        mobile: mobile !== undefined ? (mobile ? mobile.trim() : null) : undefined,
-        ...(password && password.trim() ? { password: password.trim() } : {}),
-        ...(cellConnection ? { cells: { connect: cellConnection } } : {})
-      },
-      include: {
-        cells: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
-    });
+    const updatedUserList = await db.update(users)
+      .set(updatedFields)
+      .where(eq(users.id, userId))
+      .returning();
+    const updatedUser = updatedUserList[0];
+
+    const assignedCells = await db
+      .select({
+        id: cells.id,
+        name: cells.name,
+      })
+      .from(userCells)
+      .innerJoin(cells, eq(userCells.A, cells.id))
+      .where(eq(userCells.B, userId));
+
+    const result = {
+      id: updatedUser.id,
+      username: updatedUser.username,
+      name: updatedUser.name,
+      role: updatedUser.role,
+      mobile: updatedUser.mobile,
+      createdAt: updatedUser.createdAt,
+      cells: assignedCells,
+    };
 
     // Logging the update activity
     const isPasswordChange = !!(password && password.trim());
@@ -103,10 +108,10 @@ export async function PUT(
       userAgent,
       details: currentUser.id === userId
         ? `${currentUser.name} (@${currentUser.username}) নিজের তথ্য আপডেট করেছেন ${isPasswordChange ? '(পাসওয়ার্ড পরিবর্তনসহ)' : ''}।`
-        : `${currentUser.name} (@${currentUser.username}) ইউজার @${updated.username} এর তথ্য আপডেট করেছেন ${isPasswordChange ? '(নতুন পাসওয়ার্ড সেটসহ)' : ''}।`
+        : `${currentUser.name} (@${currentUser.username}) ইউজার @${result.username} এর তথ্য আপডেট করেছেন ${isPasswordChange ? '(নতুন পাসওয়ার্ড সেটসহ)' : ''}।`
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error updating user:', error);
     return NextResponse.json({ error: 'failed_to_update_user', message: error.message }, { status: 500 });
@@ -118,16 +123,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
-    }
-
-    const currentUserId = parseInt(sessionVal, 10);
-    const currentUser = !isNaN(currentUserId)
-      ? await prisma.user.findUnique({ where: { id: currentUserId } })
-      : null;
+    const currentUser = await getCurrentUser();
 
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন ইউজার মুছে ফেলতে পারবেন।' }, { status: 403 });
@@ -139,9 +135,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
     }
 
-    const userToDelete = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    const userToDeleteList = await db.select().from(users).where(eq(users.id, userId));
+    const userToDelete = userToDeleteList[0];
 
     if (!userToDelete) {
       return NextResponse.json({ error: 'not_found', message: 'ইউজার পাওয়া যায়নি।' }, { status: 404 });
@@ -156,9 +151,7 @@ export async function DELETE(
     }
 
     // Delete user
-    await prisma.user.delete({
-      where: { id: userId }
-    });
+    await db.delete(users).where(eq(users.id, userId));
 
     // Logging the delete activity
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';

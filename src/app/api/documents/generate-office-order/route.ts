@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { documents } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 
@@ -60,14 +62,14 @@ export async function POST(request: Request) {
 <html>
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
 <style>
   @page {
     size: A4;
     margin: 1.0in;
   }
   body {
-    font-family: 'Noto Sans Bengali', 'Kalpurush', Arial, sans-serif;
+    font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', Arial, sans-serif;
     font-size: 10px;
     line-height: 1.6;
     color: #000;
@@ -267,8 +269,18 @@ export async function POST(request: Request) {
   ${copiesHtml}
   
   <script>
-    window.onload = function() {
-      window.print();
+    if (document.fonts) {
+      document.fonts.ready.then(function() {
+        setTimeout(function() {
+          window.print();
+        }, 250);
+      });
+    } else {
+      window.onload = function() {
+        setTimeout(function() {
+          window.print();
+        }, 500);
+      }
     }
   </script>
 </body>
@@ -291,26 +303,27 @@ export async function POST(request: Request) {
     const fileSize = fs.statSync(filePathDisk).size;
 
     // Check if a document with this file path already exists
-    let doc = await prisma.document.findFirst({
-      where: { filePath: relativePath }
-    });
+    const docResult = await db.select().from(documents)
+      .where(eq(documents.filePath, relativePath))
+      .limit(1);
+    let doc = docResult[0] || null;
 
     if (doc) {
-      doc = await prisma.document.update({
-        where: { id: doc.id },
-        data: {
+      const [updated] = await db.update(documents)
+        .set({
           fileSize: fileSize,
           uploadedAt: new Date()
-        }
-      });
+        })
+        .where(eq(documents.id, doc.id))
+        .returning();
+      doc = updated;
     } else {
-      doc = await prisma.document.create({
-        data: {
-          name: `অফিস আদেশ: ${orderRef}`,
-          filePath: relativePath,
-          fileSize: fileSize
-        }
-      });
+      const [inserted] = await db.insert(documents).values({
+        name: `অফিস আদেশ: ${orderRef}`,
+        filePath: relativePath,
+        fileSize: fileSize
+      }).returning();
+      doc = inserted;
     }
 
     return NextResponse.json({

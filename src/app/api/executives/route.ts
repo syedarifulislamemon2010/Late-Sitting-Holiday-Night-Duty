@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { executives } from '@/db/schema';
 
 export async function GET() {
   try {
-    const executives = await prisma.executive.findMany({
-      orderBy: { createdAt: 'asc' }
-    });
-    return NextResponse.json(executives);
+    const execs = await db.select().from(executives).orderBy(executives.createdAt);
+    return NextResponse.json(execs);
   } catch (error: any) {
     console.error('Error fetching executives:', error);
     return NextResponse.json({ error: 'failed_to_fetch_executives' }, { status: 500 });
@@ -16,16 +15,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
-    }
-
-    const currentUserId = parseInt(sessionVal, 10);
-    const currentUser = !isNaN(currentUserId)
-      ? await prisma.user.findUnique({ where: { id: currentUserId } })
-      : null;
+    const currentUser = await getCurrentUser();
 
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
@@ -38,16 +28,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'name_and_designation_required' }, { status: 400 });
     }
 
-    const created = await prisma.executive.create({
-      data: {
-        name: name.trim(),
-        designation: designation.trim(),
-        phone: phone?.trim() || null,
-        email: email?.trim() || null,
-        bankId: bankId?.trim() || null,
-        fileNo: fileNo?.trim() || null
-      }
-    });
+    const createdList = await db.insert(executives).values({
+      name: name.trim(),
+      designation: designation.trim(),
+      phone: phone?.trim() || null,
+      email: email?.trim() || null,
+      bankId: bankId?.trim() || null,
+      fileNo: fileNo?.trim() || null
+    }).returning();
+    const created = createdList[0];
 
     return NextResponse.json(created);
   } catch (error: any) {

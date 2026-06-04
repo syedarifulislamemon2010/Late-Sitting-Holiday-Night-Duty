@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { duties, employees, cells, holidays as holidaysTable } from '@/db/schema';
+import { and, eq, gte, lte, isNull, inArray, desc, asc } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 
 export async function GET(request: Request) {
@@ -12,79 +14,113 @@ export async function GET(request: Request) {
     const includeArchived = searchParams.get('includeArchived') === 'true';
     const orderRef = searchParams.get('orderRef');
     
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
+    const user = await getCurrentUser();
     
     let userCellIds: number[] = [];
     let isUserRestricted = false;
 
-    if (sessionVal) {
-      const userId = parseInt(sessionVal, 10);
-      if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          include: { cells: true }
-        });
-        if (user && user.role === 'USER') {
-          isUserRestricted = true;
-          userCellIds = user.cells.map((c: any) => c.id);
-        }
-      }
+    if (user && user.role === 'USER') {
+      isUserRestricted = true;
+      userCellIds = user.cells.map((c: any) => c.id);
     }
 
-    let whereClause: any = {};
+    const conditions = [];
     
     if (isUserRestricted) {
       if (cellId && cellId !== 'all') {
         const targetId = parseInt(cellId, 10);
         if (userCellIds.includes(targetId)) {
-          whereClause.employee = { cellId: targetId };
+          conditions.push(eq(employees.cellId, targetId));
         } else {
-          whereClause.employee = { cellId: -1 }; // block access
+          conditions.push(eq(employees.cellId, -1)); // block access
         }
       } else {
-        whereClause.employee = { cellId: { in: userCellIds } };
+        if (userCellIds.length > 0) {
+          conditions.push(inArray(employees.cellId, userCellIds));
+        } else {
+          return NextResponse.json([]); // block access
+        }
       }
     } else {
       if (cellId && cellId !== 'all') {
-        whereClause.employee = {
-          cellId: parseInt(cellId, 10)
-        };
+        conditions.push(eq(employees.cellId, parseInt(cellId, 10)));
       }
     }
     
-    if (startDate || endDate) {
-      whereClause.date = {};
-      if (startDate) {
-        whereClause.date.gte = startDate;
-      }
-      if (endDate) {
-        whereClause.date.lte = endDate;
-      }
+    if (startDate) {
+      conditions.push(gte(duties.date, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(duties.date, endDate));
     }
 
     if (orderRef) {
-      whereClause.orderRef = orderRef;
+      conditions.push(eq(duties.orderRef, orderRef));
     } else if (!includeArchived) {
-      whereClause.orderRef = null;
+      conditions.push(isNull(duties.orderRef));
     }
     
-    const duties = await prisma.duty.findMany({
-      where: whereClause,
-      include: {
-        employee: {
-          include: {
-            cell: true
-          }
+    const dutiesList = await db
+      .select({
+        id: duties.id,
+        employeeId: duties.employeeId,
+        type: duties.type,
+        date: duties.date,
+        description: duties.description,
+        allowance1: duties.allowance1,
+        allowance2: duties.allowance2,
+        totalBill: duties.totalBill,
+        orderRef: duties.orderRef,
+        createdAt: duties.createdAt,
+        empId: employees.id,
+        empName: employees.name,
+        empDesignation: employees.designation,
+        empBankId: employees.bankId,
+        empFileNo: employees.fileNo,
+        empMobile: employees.mobile,
+        empCellId: employees.cellId,
+        empCreatedAt: employees.createdAt,
+        cellId: cells.id,
+        cellName: cells.name,
+        cellDescription: cells.description,
+        cellCreatedAt: cells.createdAt
+      })
+      .from(duties)
+      .innerJoin(employees, eq(duties.employeeId, employees.id))
+      .innerJoin(cells, eq(employees.cellId, cells.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(duties.date), asc(employees.name));
+
+    const formattedDuties = dutiesList.map(d => ({
+      id: d.id,
+      employeeId: d.employeeId,
+      type: d.type,
+      date: d.date,
+      description: d.description,
+      allowance1: d.allowance1,
+      allowance2: d.allowance2,
+      totalBill: d.totalBill,
+      orderRef: d.orderRef,
+      createdAt: d.createdAt,
+      employee: {
+        id: d.empId,
+        name: d.empName,
+        designation: d.empDesignation,
+        bankId: d.empBankId,
+        fileNo: d.empFileNo,
+        mobile: d.empMobile,
+        cellId: d.empCellId,
+        createdAt: d.empCreatedAt,
+        cell: {
+          id: d.cellId,
+          name: d.cellName,
+          description: d.cellDescription,
+          createdAt: d.cellCreatedAt
         }
-      },
-      orderBy: [
-        { date: 'desc' },
-        { employee: { name: 'asc' } }
-      ]
-    });
+      }
+    }));
     
-    return NextResponse.json(duties);
+    return NextResponse.json(formattedDuties);
   } catch (error: any) {
     console.error('Error fetching duties:', error);
     return NextResponse.json({ error: 'failed_to_fetch_duties' }, { status: 500 });
@@ -104,22 +140,6 @@ function calculateAllowances(type: string) {
   }
 }
 
-async function checkIsHoliday(tx: any, dateStr: string): Promise<boolean> {
-  const dateObj = new Date(dateStr);
-  const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
-  const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
-
-  const override = await tx.holiday.findUnique({
-    where: { date: dateStr }
-  });
-
-  if (override) {
-    return !override.isWorkingDay;
-  }
-
-  return isWeekend;
-}
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -131,25 +151,19 @@ export async function POST(request: Request) {
     
     const createdDuties: any[] = [];
     
-    await prisma.$transaction(async (tx: any) => {
+    await db.transaction(async (tx) => {
       if (originalOrderRef) {
         // Delete existing duties linked to the originalOrderRef first
-        await tx.duty.deleteMany({
-          where: { orderRef: originalOrderRef }
-        });
+        await tx.delete(duties).where(eq(duties.orderRef, originalOrderRef));
       }
       if (orderRef && orderRef !== originalOrderRef) {
         // Delete existing duties linked to the new orderRef
-        await tx.duty.deleteMany({
-          where: { orderRef: orderRef }
-        });
+        await tx.delete(duties).where(eq(duties.orderRef, orderRef));
       }
 
       // Pre-fetch all holiday overrides for the unique assignment dates
       const uniqueDates = Array.from(new Set(assignments.map((a: any) => a.date)));
-      const holidayOverrides = await tx.holiday.findMany({
-        where: { date: { in: uniqueDates } }
-      });
+      const holidayOverrides = await tx.select().from(holidaysTable).where(inArray(holidaysTable.date, uniqueDates));
       const holidayOverrideMap = new Map(holidayOverrides.map((h: any) => [h.date, h.isWorkingDay]));
 
       const checkIsHolidayLocal = (dateStr: string): boolean => {
@@ -165,12 +179,12 @@ export async function POST(request: Request) {
 
       // Pre-fetch all existing duties for the employeeIds and dates
       const uniqueEmployeeIds = Array.from(new Set(assignments.map((a: any) => parseInt(a.employeeId, 10))));
-      const allExistingDuties = await tx.duty.findMany({
-        where: {
-          employeeId: { in: uniqueEmployeeIds },
-          date: { in: uniqueDates }
-        }
-      });
+      const allExistingDuties = await tx.select().from(duties).where(
+        and(
+          inArray(duties.employeeId, uniqueEmployeeIds),
+          inArray(duties.date, uniqueDates)
+        )
+      );
 
       for (const assignment of assignments) {
         const { employeeId, type, date, description } = assignment;
@@ -209,44 +223,33 @@ export async function POST(request: Request) {
           }
         }
         
-        const created = await tx.duty.create({
-          data: {
-            employeeId: parseInt(employeeId, 10),
-            type,
-            date,
-            description: description || null,
-            allowance1,
-            allowance2,
-            totalBill,
-            orderRef: orderRef || null
-          }
-        });
-        createdDuties.push(created);
+        const createdList = await tx.insert(duties).values({
+          employeeId: parseInt(employeeId, 10),
+          type,
+          date,
+          description: description || null,
+          allowance1,
+          allowance2,
+          totalBill,
+          orderRef: orderRef || null
+        }).returning();
+        createdDuties.push(createdList[0]);
       }
-    }, {
-      timeout: 30000 // 30 seconds
     });
 
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (sessionVal) {
-      const userId = parseInt(sessionVal, 10);
-      if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (user) {
-          const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
-          const userAgent = request.headers.get('user-agent') || 'Unknown';
-          await logActivity({
-            username: user.username,
-            action: 'CREATE',
-            entityType: 'DUTY',
-            entityId: orderRef || undefined,
-            ipAddress,
-            userAgent,
-            details: `${user.name} (@${user.username}) কর্মকর্তা${assignments.length > 1 ? 'বৃন্দের' : 'র'} জন্য ${assignments.length}টি ডিউটি অ্যাসাইনমেন্ট সফলভাবে এন্ট্রি করেছেন ${orderRef ? `(অফিস আদেশ সূত্র: ${orderRef})` : ''}।`
-          });
-        }
-      }
+    const user = await getCurrentUser();
+    if (user) {
+      const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+      const userAgent = request.headers.get('user-agent') || 'Unknown';
+      await logActivity({
+        username: user.username,
+        action: 'CREATE',
+        entityType: 'DUTY',
+        entityId: orderRef || undefined,
+        ipAddress,
+        userAgent,
+        details: `${user.name} (@${user.username}) কর্মকর্তা${assignments.length > 1 ? 'বৃন্দের' : 'র'} জন্য ${assignments.length}টি ডিউটি অ্যাসাইনমেন্ট সফলভাবে এন্ট্রি করেছেন ${orderRef ? `(অফিস আদেশ সূত্র: ${orderRef})` : ''}।`
+      });
     }
     
     return NextResponse.json({ success: true, count: createdDuties.length });

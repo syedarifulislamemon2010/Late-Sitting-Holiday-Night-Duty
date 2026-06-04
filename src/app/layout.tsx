@@ -69,11 +69,11 @@ export default function RootLayout({
                 </div>
                 
                 {/* Premium Dashboard Footer */}
-                <footer className="no-print print:hidden mt-12 pt-6 border-t border-slate-200/60 dark:border-slate-800/80 text-center space-y-1 text-slate-400 dark:text-slate-500 font-semibold tracking-wide select-none">
-                  <p className="text-[11px] sm:text-xs">
-                    Designed & Developed by <span className="font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer">CBS Integrated Development Cell</span>
+                <footer className="no-print print:hidden py-6 mt-auto text-slate-400 text-xs font-medium text-center">
+                  <p>
+                    Designed & Developed by <span className="font-semibold text-blue-600">CBS Integrated Development Cell</span>
                   </p>
-                  <p className="text-[10px] sm:text-[11px] opacity-80">
+                  <p className="mt-1">
                     Online Banking Department | © 2026 Janata Bank PLC. All Rights Reserved.
                   </p>
                 </footer>

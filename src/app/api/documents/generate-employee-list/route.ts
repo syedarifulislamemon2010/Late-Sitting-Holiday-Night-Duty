@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { cells, employees, users, executives as executivesTable, documents } from '@/db/schema';
+import { eq, and, ne, inArray, asc } from 'drizzle-orm';
+import { getCurrentUser } from '@/lib/auth-wrapper';
 import fs from 'fs';
 import path from 'path';
-import { cookies } from 'next/headers';
 
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
@@ -23,21 +25,7 @@ function getBnDate(dateStr: string | null | undefined): string {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
-    }
-    const userId = parseInt(sessionVal, 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: 'unauthorized', message: 'সেশন অবৈধ।' }, { status: 403 });
-    }
-
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { cells: true }
-    });
-
+    const currentUser = await getCurrentUser();
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'ব্যবহারকারী খুঁজে পাওয়া যায়নি।' }, { status: 403 });
     }
@@ -50,7 +38,7 @@ export async function POST(request: Request) {
     const isAdminOrAdminCell = currentUser.role === 'ADMIN' || isAdministrationCell;
 
     const payload = await request.json();
-    const { cellFilter } = payload; // 'all', 'select', 'executives', or string representing cellId
+    const { cellFilter } = payload; 
 
     if (cellFilter === 'select') {
       return NextResponse.json({ error: 'invalid_filter', message: 'অনুগ্রহ করে কোনো সেল নির্বাচন করুন।' }, { status: 400 });
@@ -58,10 +46,10 @@ export async function POST(request: Request) {
 
     let cellIds: number[] = [];
     if (!isAdminOrAdminCell) {
-      // Normal user is restricted to their own primary cell
-      const ownEmployee = await prisma.employee.findFirst({
-        where: { bankId: currentUser.username }
-      });
+      const ownEmployeeResult = await db.select().from(employees)
+        .where(eq(employees.bankId, currentUser.username))
+        .limit(1);
+      const ownEmployee = ownEmployeeResult[0] || null;
       const ownCellId = ownEmployee ? ownEmployee.cellId : (currentUser.cells[0]?.id || null);
       
       if (ownCellId) {
@@ -71,9 +59,10 @@ export async function POST(request: Request) {
       }
     } else {
       if (cellFilter === 'select') {
-        const ownEmployee = await prisma.employee.findFirst({
-          where: { bankId: currentUser.username }
-        });
+        const ownEmployeeResult = await db.select().from(employees)
+          .where(eq(employees.bankId, currentUser.username))
+          .limit(1);
+        const ownEmployee = ownEmployeeResult[0] || null;
         const ownCellId = ownEmployee ? ownEmployee.cellId : (currentUser.cells[0]?.id || null);
         if (ownCellId) {
           cellIds = [ownCellId];
@@ -85,38 +74,44 @@ export async function POST(request: Request) {
       }
     }
 
-    // Define where condition
-    const cellWhere = cellFilter === 'executives' ? { id: -1 } : (cellIds.length > 0 ? { id: { in: cellIds } } : {});
+    let cond = ne(cells.name, 'Combined Departmental Sheet');
+    if (cellFilter === 'executives') {
+      cond = eq(cells.id, -1);
+    } else if (cellIds.length > 0) {
+      cond = and(cond, inArray(cells.id, cellIds)) as any;
+    }
     
-    // Fetch cells and their employees
-    let cells = await prisma.cell.findMany({
-      where: {
-        ...cellWhere,
-        name: { not: 'Combined Departmental Sheet' }
-      },
-      orderBy: { name: 'asc' },
-      include: {
+    let cellsList = await db.query.cells.findMany({
+      where: cond,
+      orderBy: [asc(cells.name)],
+      with: {
         employees: true
       }
     });
 
-    // Expand cells to include virtual employees assigned to them via many-to-many UserCells
-    const usersForExpansion = await prisma.user.findMany({
-      include: {
-        cells: true
+    const usersForExpansion = await db.query.users.findMany({
+      with: {
+        userCells: {
+          with: {
+            cell: true
+          }
+        }
       }
     });
 
     const userCellsMap = new Map<string, any[]>();
     usersForExpansion.forEach(u => {
       if (u.username) {
-        userCellsMap.set(u.username.trim().toLowerCase(), u.cells);
+        userCellsMap.set(
+          u.username.trim().toLowerCase(),
+          u.userCells.map(uc => ({ id: uc.cell.id, name: uc.cell.name }))
+        );
       }
     });
 
-    const allEmployeesForExpansion = await prisma.employee.findMany();
+    const allEmployeesForExpansion = await db.select().from(employees);
 
-    cells = cells.map(cell => {
+    cellsList = cellsList.map(cell => {
       const cellEmps = [...cell.employees];
       
       for (const emp of allEmployeesForExpansion) {
@@ -125,7 +120,6 @@ export async function POST(request: Request) {
         if (emp.bankId) {
           const assignedCells = userCellsMap.get(emp.bankId.trim().toLowerCase());
           if (assignedCells && assignedCells.some(c => c.id === cell.id)) {
-            // Avoid adding duplicate records if already present
             if (!cellEmps.some(e => e.id === emp.id)) {
               cellEmps.push(emp);
             }
@@ -141,8 +135,7 @@ export async function POST(request: Request) {
 
     let executives: any[] = [];
     if (isAdminOrAdminCell && cellFilter === 'executives') {
-      const execList = await prisma.executive.findMany();
-      // Filter out GMs strictly, leaving only DGMs and AGMs
+      const execList = await db.select().from(executivesTable);
       executives = execList.filter(e => {
         const d = e.designation.trim();
         return (
@@ -248,7 +241,7 @@ export async function POST(request: Request) {
 
     let tablesHtml = '';
     
-    cells.forEach((cell) => {
+    cellsList.forEach((cell) => {
       if (cell.employees.length === 0) return;
 
       const sortedEmployees = [...cell.employees].sort((a, b) => {
@@ -327,6 +320,7 @@ export async function POST(request: Request) {
 <head>
   <meta charset="utf-8">
   <title>কর্মকর্তা তালিকা</title>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -341,7 +335,7 @@ export async function POST(request: Request) {
       margin-right: 0.5in;
     }
     body {
-      font-family: "Noto Sans Bengali", "Kalpurush", sans-serif;
+      font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', Arial, sans-serif;
       font-size: 10px;
       line-height: 1.3;
       color: #000;
@@ -433,8 +427,18 @@ export async function POST(request: Request) {
   ${tablesHtml}
 
   <script>
-    window.onload = function() {
-      window.print();
+    if (document.fonts) {
+      document.fonts.ready.then(function() {
+        setTimeout(function() {
+          window.print();
+        }, 250);
+      });
+    } else {
+      window.onload = function() {
+        setTimeout(function() {
+          window.print();
+        }, 500);
+      }
     }
   </script>
 </body>
@@ -454,13 +458,11 @@ export async function POST(request: Request) {
     const relativePath = `/uploads/${filename}`;
     const fileSize = fs.statSync(filePathDisk).size;
 
-    const doc = await prisma.document.create({
-      data: {
-        name: `${cellTitle} (${getBnDate(reportDate)})`,
-        filePath: relativePath,
-        fileSize: fileSize
-      }
-    });
+    const [doc] = await db.insert(documents).values({
+      name: `${cellTitle} (${getBnDate(reportDate)})`,
+      filePath: relativePath,
+      fileSize: fileSize
+    }).returning();
 
     return NextResponse.json({
       success: true,

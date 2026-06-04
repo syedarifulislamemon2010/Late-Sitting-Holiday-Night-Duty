@@ -17,7 +17,8 @@ import {
   ArrowUpDown,
   Printer,
   X,
-  FileSignature
+  FileSignature,
+  Receipt
 } from 'lucide-react';
 
 interface DocumentFile {
@@ -921,6 +922,15 @@ export default function DocumentsPage() {
                           >
                             <Eye size={12} />
                             <span>ভিউ</span>
+                          </button>
+
+                          <button 
+                            onClick={() => window.location.href = `/billing?orderRef=${encodeURIComponent(order.orderRef)}`}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-extrabold transition-all"
+                            title="বিল জেনারেট করুন"
+                          >
+                            <Receipt size={12} />
+                            <span>বিল জেনারেট</span>
                           </button>
                           
                           {currentUser?.role !== 'USER' && (

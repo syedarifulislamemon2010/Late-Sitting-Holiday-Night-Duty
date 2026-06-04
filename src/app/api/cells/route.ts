@@ -1,42 +1,54 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { cells, employees } from '@/db/schema';
+import { and, eq, ne, inArray, sql } from 'drizzle-orm';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    
+    const user = await getCurrentUser();
     let cellIds: number[] = [];
     let isUserRestricted = false;
 
-    if (sessionVal) {
-      const userId = parseInt(sessionVal, 10);
-      if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          include: { cells: true }
-        });
-        if (user && user.role === 'USER') {
-          isUserRestricted = true;
-          cellIds = user.cells.map((c: any) => c.id);
-        }
+    if (user && user.role === 'USER') {
+      isUserRestricted = true;
+      cellIds = user.cells.map((c: any) => c.id);
+    }
+
+    const conditions = [ne(cells.name, 'Combined Departmental Sheet')];
+    if (isUserRestricted) {
+      if (cellIds.length > 0) {
+        conditions.push(inArray(cells.id, cellIds));
+      } else {
+        return NextResponse.json([]);
       }
     }
 
-    const whereClause: any = isUserRestricted ? { id: { in: cellIds } } : {};
-    whereClause.name = { not: 'Combined Departmental Sheet' };
+    const cellsList = await db
+      .select({
+        id: cells.id,
+        name: cells.name,
+        description: cells.description,
+        createdAt: cells.createdAt,
+        employeeCount: sql<number>`count(${employees.id})::int`
+      })
+      .from(cells)
+      .leftJoin(employees, eq(cells.id, employees.cellId))
+      .where(and(...conditions))
+      .groupBy(cells.id)
+      .orderBy(cells.name);
 
-    const cells = await prisma.cell.findMany({
-      where: whereClause,
-      orderBy: { name: 'asc' },
-      include: {
-        _count: {
-          select: { employees: true }
-        }
+    const formattedCells = cellsList.map(c => ({
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      createdAt: c.createdAt,
+      _count: {
+        employees: c.employeeCount
       }
-    });
-    return NextResponse.json(cells);
+    }));
+
+    return NextResponse.json(formattedCells);
   } catch (error: any) {
     console.error('Error fetching cells:', error);
     return NextResponse.json({ error: 'failed_to_fetch_cells' }, { status: 500 });
@@ -48,17 +60,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, description } = body;
 
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    let currentUser: any = null;
-    if (sessionVal) {
-      const userId = parseInt(sessionVal, 10);
-      if (!isNaN(userId)) {
-        currentUser = await prisma.user.findUnique({
-          where: { id: userId }
-        });
-      }
-    }
+    const currentUser = await getCurrentUser();
 
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'forbidden', message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন নতুন সেল যোগ করতে পারবেন।' }, { status: 403 });
@@ -68,20 +70,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'name_required' }, { status: 400 });
     }
     
-    const existing = await prisma.cell.findUnique({
-      where: { name: name.trim() }
-    });
+    const existingList = await db.select().from(cells).where(eq(cells.name, name.trim()));
+    const existing = existingList[0];
     
     if (existing) {
       return NextResponse.json({ error: 'cell_exists' }, { status: 400 });
     }
     
-    const cell = await prisma.cell.create({
-      data: {
-        name: name.trim(),
-        description: description?.trim() || null
-      }
-    });
+    const newCellList = await db.insert(cells).values({
+      name: name.trim(),
+      description: description?.trim() || null
+    }).returning();
+    const cell = newCellList[0];
     
     return NextResponse.json(cell, { status: 201 });
   } catch (error: any) {

@@ -1517,7 +1517,7 @@ export default function RosterPage() {
     printSigSpacing = 'pt-4';
     printLogoSize = 'w-11 h-11';
   }  return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen bg-slate-50/50 -m-4 lg:-m-8 p-4 lg:p-8">
       {/* ----------------------------------------------------
           NORMAL VIEW MODE
       ---------------------------------------------------- */}
@@ -1526,14 +1526,18 @@ export default function RosterPage() {
           {/* Header Dashboard Banner */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">ডিউটি রোস্টার ও অফিস আদেশ</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">কর্মকর্তাদের রোস্টার তৈরি করুন এবং সরকারি প্রটোকলে অফিস আদেশ (জিও) জেনারেট করুন।</p>
+              <h1 className="text-2xl font-bold text-slate-950 font-sans tracking-wide">ডিউটি রোস্টার ও অফিস আদেশ</h1>
+              <p className="text-sm text-slate-500 mt-1">কর্মকর্তাদের রোস্টার তৈরি করুন এবং সরকারি প্রটোকলে অফিস আদেশ (জিও) জেনারেট করুন।</p>
             </div>
             
             <button
               onClick={() => setIsPrintMode(true)}
               disabled={duties.length === 0}
-              className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md ${duties.length > 0 ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-95' : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed'}`}
+              className={`flex items-center justify-center gap-2 text-sm transition-all cursor-pointer ${
+                duties.length > 0 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-semibold px-4 py-2 rounded-xl' 
+                  : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed px-4 py-2 rounded-xl'
+              }`}
             >
               <Printer size={16} />
               অফিস আদেশ (A4 সাইজ) দেখুন ও প্রিন্ট করুন
@@ -1571,41 +1575,51 @@ export default function RosterPage() {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
             {/* LEFT COLUMN: Assign New Duty Form */}
-            <div className="glass-card p-6 rounded-2xl space-y-6 w-full border border-slate-200 dark:border-slate-800 xl:col-span-1">
-              <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-6 w-full xl:col-span-1">
+              <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                   <Calendar size={18} />
                 </div>
-                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">ডিউটি অ্যাসাইনমেন্ট প্যানেল</h3>
+                <h3 className="font-bold text-slate-900 text-base">ডিউটি অ্যাসাইনমেন্ট প্যানেল</h3>
               </div>
 
               {/* Entry Option Toggle */}
-              <div className="flex bg-slate-100 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/80 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEntryMode('EMPLOYEE_WISE');
-                    setErrorMessage('');
-                  }}
-                  className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${entryMode === 'EMPLOYEE_WISE' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-slate-100 shadow-sm border border-slate-200/50 dark:border-slate-700/50' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  অপশন ১: সেল ও এমপ্লয়ী ভিত্তিক (মাল্টিপল ডেট)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEntryMode('DATE_WISE');
-                    setErrorMessage('');
-                  }}
-                  className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${entryMode === 'DATE_WISE' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-slate-100 shadow-sm border border-slate-200/50 dark:border-slate-700/50' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  অপশন ২: তারিখ ভিত্তিক (এমপ্লয়ী সিলেক্ট)
-                </button>
+              <div className="w-full">
+                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner w-full">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEntryMode('EMPLOYEE_WISE');
+                      setErrorMessage('');
+                    }}
+                    className={`flex-1 py-2.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
+                      entryMode === 'EMPLOYEE_WISE' 
+                        ? 'bg-white text-blue-600 shadow-sm border border-slate-200/50' 
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/50'
+                    }`}
+                  >
+                    অপশন ১: সেল ও এমপ্লয়ী ভিত্তিক (মাল্টিপল ডেট)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEntryMode('DATE_WISE');
+                      setErrorMessage('');
+                    }}
+                    className={`flex-1 py-2.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
+                      entryMode === 'DATE_WISE' 
+                        ? 'bg-white text-blue-600 shadow-sm border border-slate-200/50' 
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/50'
+                    }`}
+                  >
+                    অপশন ২: তারিখ ভিত্তিক (এমপ্লয়ী সিলেক্ট)
+                  </button>
+                </div>
               </div>
 
               <form onSubmit={handleAssignmentSubmit} className="space-y-4">
                 {errorMessage && (
-                  <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-950/30 rounded-xl text-xs flex items-center gap-2 animate-pulse">
+                  <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-xl text-xs flex items-center gap-2 animate-pulse">
                     <AlertCircle size={14} />
                     {errorMessage}
                   </div>
@@ -1613,11 +1627,11 @@ export default function RosterPage() {
 
                 {/* Common Field 1: Duty Type Selection */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
                   <select
                     value={assignmentForm.type}
                     onChange={(e) => setAssignmentForm({ ...assignmentForm, type: e.target.value as any })}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
                     <option value="HOLIDAY">Holiday Duty (সরকারি ছুটি)</option>
@@ -1630,16 +1644,16 @@ export default function RosterPage() {
                   /* ========================================================
                      OPTION 1: Cell & Employee wise (Multi-date picker)
                      ======================================================== */
-                  <div className="space-y-3 border-t border-slate-100 dark:border-slate-800/80 pt-4">
+                  <div className="space-y-3 border-t border-slate-100 pt-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">৩. সেল সিলেক্ট করুন</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">৩. সেল সিলেক্ট করুন</label>
                       <select
                         value={opt1CellId}
                         onChange={(e) => {
                           setOpt1CellId(e.target.value);
                           setOpt1Assignments({}); // Reset assignments when cell changes to keep it clean
                         }}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                        className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         {cells.map(c => (
                           <option key={c.id} value={c.id.toString()}>{c.name}</option>
@@ -1648,11 +1662,11 @@ export default function RosterPage() {
                     </div>
 
                     <div className="space-y-2 pt-2">
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                         ৪. কর্মকর্তা ও তারিখসমূহ নির্বাচন করুন
                       </label>
                       
-                      <div className="max-h-80 overflow-y-auto border border-slate-100 dark:border-slate-800/80 rounded-xl p-2 bg-slate-50/20 dark:bg-slate-950/10 space-y-2">
+                      <div className="max-h-80 overflow-y-auto border border-slate-100 rounded-xl p-2 bg-white space-y-1">
                         {employees.filter(emp => emp.cellId.toString() === opt1CellId).length > 0 ? (
                           employees
                             .filter(emp => emp.cellId.toString() === opt1CellId)
@@ -1689,16 +1703,16 @@ export default function RosterPage() {
                   /* ========================================================
                      OPTION 2: Date wise (Multi-employee checkboxes)
                      ======================================================== */
-                  <div className="space-y-3 border-t border-slate-100 dark:border-slate-800/80 pt-4">
+                  <div className="space-y-3 border-t border-slate-100 pt-4">
                     {/* Duty Date Selection */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">৩. ডিউটির তারিখ</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">৩. ডিউটির তারিখ</label>
                       <input
                         type="date"
                         required
                         value={assignmentForm.date}
                         onChange={(e) => setAssignmentForm({ ...assignmentForm, date: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
+                        className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans cursor-pointer"
                       />
                       {assignmentForm.date && (() => {
                         const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
@@ -1707,7 +1721,7 @@ export default function RosterPage() {
                         
                         if (isLateSitting && !isWorking) {
                           return (
-                            <p className="text-[11px] font-bold text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 dark:bg-red-950/20 p-2 rounded-lg border border-red-100/50 dark:border-red-900/10">
+                            <p className="text-[11px] font-bold text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 p-2 rounded-lg border border-red-100/50">
                               <AlertCircle size={12} />
                               উক্ত তারিখটি ছুটির দিন/সাপ্তাহিক ছুটি হওয়ায় লেট সিটিং ডিউটি এন্ট্রি করা যাবে না!
                             </p>
@@ -1715,7 +1729,7 @@ export default function RosterPage() {
                         }
                         if (isHoliday && isWorking) {
                           return (
-                            <p className="text-[11px] font-bold text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 dark:bg-red-950/20 p-2 rounded-lg border border-red-100/50 dark:border-red-900/10">
+                            <p className="text-[11px] font-bold text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 p-2 rounded-lg border border-red-100/50">
                               <AlertCircle size={12} />
                               উক্ত তারিখটি কর্মদিবস হওয়ায় সরকারি ছুটির ডিউটি এন্ট্রি করা যাবে না!
                             </p>
@@ -1726,7 +1740,7 @@ export default function RosterPage() {
                         const isWeekend = !isWorking && !matchedHoliday;
                         if (matchedHoliday) {
                           return (
-                            <p className="text-[11px] font-bold text-amber-600 mt-1.5 flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/20 p-2 rounded-lg border border-amber-100/50 dark:border-amber-900/10">
+                            <p className="text-[11px] font-bold text-amber-600 mt-1.5 flex items-center gap-1.5 bg-amber-50 p-2 rounded-lg border border-amber-100/50">
                               <AlertCircle size={12} />
                               সরকারি ছুটি: {matchedHoliday.name}
                             </p>
@@ -1734,7 +1748,7 @@ export default function RosterPage() {
                         }
                         if (isWeekend) {
                           return (
-                            <p className="text-[11px] font-bold text-red-550 mt-1.5 flex items-center gap-1.5 bg-red-50/40 dark:bg-red-950/10 p-2 rounded-lg border border-red-100/20 dark:border-red-900/10">
+                            <p className="text-[11px] font-bold text-red-550 mt-1.5 flex items-center gap-1.5 bg-red-50/40 p-2 rounded-lg border border-red-100/20">
                               <AlertCircle size={12} />
                               সাপ্তাহিক ছুটি
                             </p>
@@ -1747,7 +1761,7 @@ export default function RosterPage() {
                     {/* Officer Selector Multi-select checkboxes */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                           ৪. কর্মকর্তা নির্বাচন করুন ({assignmentForm.selectedEmployeeIds.length} জন সিলেক্টেড)
                         </label>
                       </div>
@@ -1759,12 +1773,12 @@ export default function RosterPage() {
                           placeholder="খুঁজুন..."
                           value={formSearchQuery}
                           onChange={(e) => setFormSearchQuery(e.target.value)}
-                          className="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs focus:outline-none"
+                          className="flex-1 h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <select
                           value={formCellFilter}
                           onChange={(e) => setFormCellFilter(e.target.value)}
-                          className="px-2 py-1.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs focus:outline-none"
+                          className="h-9 px-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                         >
                           <option value="all">সকল সেল</option>
                           {cells.map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)}
@@ -1776,21 +1790,21 @@ export default function RosterPage() {
                         <button
                           type="button"
                           onClick={() => selectAllFilteredEmployees(filteredFormEmployees)}
-                          className="flex-1 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-400 py-1 rounded transition-colors"
+                          className="flex-1 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-1.5 rounded-lg transition-colors cursor-pointer"
                         >
                           সব সিলেক্ট করুন
                         </button>
                         <button
                           type="button"
                           onClick={deselectAllFilteredEmployees}
-                          className="flex-1 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-400 py-1 rounded transition-colors"
+                          className="flex-1 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-1.5 rounded-lg transition-colors cursor-pointer"
                         >
                           সব বাদ দিন
                         </button>
                       </div>
 
                       {/* Officers Checkboxes scrollbox */}
-                      <div className="max-h-48 overflow-y-auto border border-slate-100 dark:border-slate-800/80 rounded-xl p-2 bg-slate-50/20 dark:bg-slate-950/10 space-y-1.5">
+                      <div className="max-h-48 overflow-y-auto border border-slate-100 rounded-xl p-2 bg-white space-y-1">
                         {(() => {
                           const isWorking = assignmentForm.date ? checkIsWorkingDay(assignmentForm.date, holidays) : true;
                           const isLateSitting = assignmentForm.type === 'LATE_SITTING';
@@ -1799,7 +1813,7 @@ export default function RosterPage() {
                           
                           if (isBlocked) {
                             return (
-                              <div className="p-8 text-center text-red-500/80 dark:text-red-400/80 font-bold italic text-xs">
+                              <div className="p-8 text-center text-red-500/80 font-bold italic text-xs">
                                 নির্বাচিত তারিখটি এই ডিউটি ক্যাটাগরির জন্য উপযুক্ত নয়। উপযুক্ত তারিখ বেছে নিন।
                               </div>
                             );
@@ -1807,7 +1821,7 @@ export default function RosterPage() {
                           
                           if (!assignmentForm.date) {
                             return (
-                              <div className="p-8 text-center text-slate-400 dark:text-slate-500 italic text-xs">
+                              <div className="p-8 text-center text-slate-400 italic text-xs">
                                 অনুগ্রহ করে প্রথমে উপরে তারিখ সিলেক্ট করুন।
                               </div>
                             );
@@ -1820,18 +1834,18 @@ export default function RosterPage() {
                                  <div 
                                   key={emp.id}
                                   onClick={() => handleEmployeeToggle(emp.id)}
-                                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border ${isChecked ? 'bg-indigo-50/40 border-indigo-200/50 dark:bg-indigo-950/20 dark:border-indigo-800/30' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
+                                  className="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-slate-50 transition-all"
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-white'}`}>
                                       {isChecked && <Check size={10} strokeWidth={3} />}
                                     </div>
                                     <div>
-                                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">{emp.name}</p>
-                                      <p className="text-[10px] text-slate-400 mt-0.5">{emp.designation}</p>
+                                      <p className="text-sm font-semibold text-slate-900 leading-tight">{emp.name}</p>
+                                      <p className="text-xs text-slate-400 font-medium mt-0.5">{emp.designation}</p>
                                     </div>
                                   </div>
-                                  <span className="text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded uppercase font-sans">{emp.cell.name}</span>
+                                  <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg uppercase font-sans">{emp.cell.name}</span>
                                 </div>
                               );
                             })
@@ -1872,7 +1886,7 @@ export default function RosterPage() {
                     }
                     return false;
                   })()}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-600 text-white text-sm font-semibold transition-all shadow-md mt-4 cursor-pointer disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-semibold transition-all shadow-md mt-4 cursor-pointer disabled:cursor-not-allowed"
                 >
                   {isEditingArchive ? (submitting ? 'সম্পাদনা ও আপডেট হচ্ছে...' : 'অফিস আদেশ সম্পাদন ও আপডেট করুন') : (submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন')}
                 </button>
@@ -1880,7 +1894,7 @@ export default function RosterPage() {
             </div>
 
             {/* RIGHT COLUMN: Roster Monthly List Grid */}
-            <div className="glass-card p-6 rounded-2xl w-full space-y-6 border border-slate-200 dark:border-slate-800 xl:col-span-2">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 w-full space-y-6 xl:col-span-2">
               {/* Controls Menu */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div>
@@ -2014,12 +2028,12 @@ export default function RosterPage() {
                   ))}
                 </div>
               ) : (
-                <div className="p-12 text-center space-y-3 max-w-sm mx-auto">
-                  <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 mx-auto">
-                    <Calendar size={22} />
+                <div className="py-16 text-center flex flex-col items-center justify-center max-w-md mx-auto">
+                  <div className="p-4 bg-slate-50 text-slate-400 rounded-full mb-4 border border-slate-100">
+                    <Calendar size={32} />
                   </div>
-                  <h4 className="font-bold text-slate-700 dark:text-slate-300">কোনো ডিউটি রেকর্ড নেই</h4>
-                  <p className="text-[11px] text-slate-400">ফিল্টারকৃত মাস বা সেলে কোনো কর্মকর্তার ডিউটি বরাদ্দ করা নেই। নতুন ডিউটি যোগ করুন।</p>
+                  <h4 className="text-base font-semibold text-slate-800 mb-1">কোনো ডিউটি রেকর্ড নেই</h4>
+                  <p className="text-sm text-slate-400">অনুগ্রহ করে বাম পাশের প্যানেল থেকে নতুন ডিউটি বরাদ্দ করুন।</p>
                 </div>
               )}
             </div>

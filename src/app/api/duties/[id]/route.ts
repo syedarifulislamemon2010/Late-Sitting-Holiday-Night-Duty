@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { duties, employees, cells, holidays as holidaysTable, trash } from '@/db/schema';
+import { and, eq, ne } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 
 function calculateAllowances(type: string) {
@@ -21,9 +23,8 @@ async function checkIsHoliday(dateStr: string): Promise<boolean> {
   const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
   const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
-  const override = await prisma.holiday.findUnique({
-    where: { date: dateStr }
-  });
+  const overrideList = await db.select().from(holidaysTable).where(eq(holidaysTable.date, dateStr));
+  const override = overrideList[0];
 
   if (override) {
     return !override.isWorkingDay;
@@ -52,9 +53,8 @@ export async function PUT(
     }
 
     // Fetch existing duty to get employee ID
-    const currentDuty = await prisma.duty.findUnique({
-      where: { id: dutyId }
-    });
+    const currentDutyList = await db.select().from(duties).where(eq(duties.id, dutyId));
+    const currentDuty = currentDutyList[0];
 
     if (!currentDuty) {
       return NextResponse.json({ error: 'duty_not_found' }, { status: 444 });
@@ -72,13 +72,13 @@ export async function PUT(
     }
 
     // Check for duplicate duty on this date for the same employee
-    const otherDuties = await prisma.duty.findMany({
-      where: {
-        employeeId: currentDuty.employeeId,
-        date: date,
-        NOT: { id: dutyId }
-      }
-    });
+    const otherDuties = await db.select().from(duties).where(
+      and(
+        eq(duties.employeeId, currentDuty.employeeId),
+        eq(duties.date, date),
+        ne(duties.id, dutyId)
+      )
+    );
 
     if (otherDuties.length > 0) {
       if (type === 'LATE_SITTING') {
@@ -94,50 +94,50 @@ export async function PUT(
 
     const { allowance1, allowance2, totalBill } = calculateAllowances(type);
 
-    const updated = await prisma.duty.update({
-      where: { id: dutyId },
-      data: {
+    const updatedList = await db.update(duties)
+      .set({
         type,
         date,
         description: description || null,
         allowance1,
         allowance2,
         totalBill
-      },
-      include: {
-        employee: {
-          include: {
-            cell: true
-          }
-        }
-      }
-    });
+      })
+      .where(eq(duties.id, dutyId))
+      .returning();
+    const updatedDuty = updatedList[0];
 
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (sessionVal) {
-      const userId = parseInt(sessionVal, 10);
-      if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (user) {
-          const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
-          const userAgent = request.headers.get('user-agent') || 'Unknown';
-          const typeMapBangla: Record<string, string> = {
-            'LATE_SITTING': 'লেট সিটিং',
-            'HOLIDAY': 'ছুটির দিন',
-            'NIGHT_SHIFT': 'নাইট শিফট'
-          };
-          await logActivity({
-            username: user.username,
-            action: 'UPDATE',
-            entityType: 'DUTY',
-            entityId: String(updated.id),
-            ipAddress,
-            userAgent,
-            details: `${user.name} (@${user.username}) কর্মকর্তা "${updated.employee.name}" এর ডিউটি অ্যাসাইনমেন্ট সংশোধন করেছেন (${updated.date}, টাইপ: ${typeMapBangla[updated.type] || updated.type})।`
-          });
-        }
+    const empList = await db.select().from(employees).where(eq(employees.id, updatedDuty.employeeId));
+    const emp = empList[0];
+    const cellList = await db.select().from(cells).where(eq(cells.id, emp.cellId));
+    const cell = cellList[0];
+
+    const updated = {
+      ...updatedDuty,
+      employee: {
+        ...emp,
+        cell
       }
+    };
+
+    const user = await getCurrentUser();
+    if (user) {
+      const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+      const userAgent = request.headers.get('user-agent') || 'Unknown';
+      const typeMapBangla: Record<string, string> = {
+        'LATE_SITTING': 'লেট সিটিং',
+        'HOLIDAY': 'ছুটির দিন',
+        'NIGHT_SHIFT': 'নাইট শিফট'
+      };
+      await logActivity({
+        username: user.username,
+        action: 'UPDATE',
+        entityType: 'DUTY',
+        entityId: String(updated.id),
+        ipAddress,
+        userAgent,
+        details: `${user.name} (@${user.username}) কর্মকর্তা "${updated.employee.name}" এর ডিউটি অ্যাসাইনমেন্ট সংশোধন করেছেন (${updated.date}, টাইপ: ${typeMapBangla[updated.type] || updated.type})।`
+      });
     }
 
     return NextResponse.json(updated);
@@ -162,14 +162,20 @@ export async function DELETE(
       return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
     }
     
-    const duty = await prisma.duty.findUnique({
-      where: { id: dutyId },
-      include: { employee: true }
-    });
+    const dutyList = await db.select().from(duties).where(eq(duties.id, dutyId));
+    const dutyRecord = dutyList[0];
     
-    if (!duty) {
+    if (!dutyRecord) {
       return NextResponse.json({ error: 'duty_not_found' }, { status: 404 });
     }
+
+    const empList = await db.select().from(employees).where(eq(employees.id, dutyRecord.employeeId));
+    const emp = empList[0];
+
+    const duty = {
+      ...dutyRecord,
+      employee: emp
+    };
     
     const typeMapBangla: Record<string, string> = {
       'LATE_SITTING': 'লেট সিটিং',
@@ -177,33 +183,18 @@ export async function DELETE(
       'NIGHT_SHIFT': 'নাইট শিফট'
     };
     
-    // Save to Trash
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    let deletedBy: string | null = null;
-    if (sessionVal) {
-      const userId = parseInt(sessionVal, 10);
-      if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (user) {
-          deletedBy = user.username;
-        }
-      }
-    }
+    const user = await getCurrentUser();
+    const deletedBy = user ? user.username : null;
 
-    await prisma.trash.create({
-      data: {
-        entityType: 'DUTY',
-        entityId: dutyId,
-        name: `${duty.employee.name} - ${typeMapBangla[duty.type] || duty.type} (${duty.date})`,
-        data: JSON.stringify(duty),
-        deletedBy
-      }
+    await db.insert(trash).values({
+      entityType: 'DUTY',
+      entityId: dutyId,
+      name: `${duty.employee.name} - ${typeMapBangla[duty.type] || duty.type} (${duty.date})`,
+      data: JSON.stringify(duty),
+      deletedBy
     });
     
-    await prisma.duty.delete({
-      where: { id: dutyId }
-    });
+    await db.delete(duties).where(eq(duties.id, dutyId));
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

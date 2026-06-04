@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { lunchBills, cells, users, userCells } from '@/db/schema';
+import { and, eq, inArray } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 
 async function getOrCreateCombinedCell() {
-  let combinedCell = await prisma.cell.findUnique({
-    where: { name: 'Combined Departmental Sheet' }
-  });
+  const combinedCellList = await db.select().from(cells).where(eq(cells.name, 'Combined Departmental Sheet'));
+  let combinedCell = combinedCellList[0];
   if (!combinedCell) {
-    combinedCell = await prisma.cell.create({
-      data: {
-        name: 'Combined Departmental Sheet',
-        description: 'System Combined Sheet Cell Reference'
-      }
-    });
+    const newCellList = await db.insert(cells).values({
+      name: 'Combined Departmental Sheet',
+      description: 'System Combined Sheet Cell Reference'
+    }).returning();
+    combinedCell = newCellList[0];
   }
   return combinedCell;
 }
@@ -28,24 +28,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'month_required', message: 'মাস নির্বাচন করা আবশ্যক।' }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
-    }
-
-    const userId = parseInt(sessionVal, 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: 'unauthorized', message: 'সেশন অবৈধ।' }, { status: 401 });
-    }
-
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { cells: true }
-    });
-
+    const currentUser = await getCurrentUser();
     if (!currentUser) {
-      return NextResponse.json({ error: 'unauthorized', message: 'ব্যবহারকারী পাওয়া যায়নি।' }, { status: 401 });
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
 
     const isAdminOrAdminCell = 
@@ -81,14 +66,13 @@ export async function GET(request: Request) {
     }
 
     // Load the combined LunchBill record (cellId = combinedCellId)
-    const combinedBill = await prisma.lunchBill.findUnique({
-      where: {
-        month_cellId: {
-          month,
-          cellId: combinedCellId
-        }
-      }
-    });
+    const combinedBillList = await db.select().from(lunchBills).where(
+      and(
+        eq(lunchBills.month, month),
+        eq(lunchBills.cellId, combinedCellId)
+      )
+    );
+    const combinedBill = combinedBillList[0];
 
     if (!combinedBill) {
       return NextResponse.json(null);
@@ -135,24 +119,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'invalid_values', message: 'অবৈধ কার্যদিবস।' }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
-    }
-
-    const userId = parseInt(sessionVal, 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: 'unauthorized', message: 'সেশন অবৈধ।' }, { status: 401 });
-    }
-
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { cells: true }
-    });
-
+    const currentUser = await getCurrentUser();
     if (!currentUser) {
-      return NextResponse.json({ error: 'unauthorized', message: 'ব্যবহারকারী পাওয়া যায়নি।' }, { status: 401 });
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
 
     const isAdminOrAdminCell = 
@@ -176,26 +145,25 @@ export async function POST(request: Request) {
     const recordsJson = JSON.stringify(records);
 
     // Save the combined sheet under cellId = combinedCellId (System Combined Cell)
-    const lunchBill = await prisma.lunchBill.upsert({
-      where: {
-        month_cellId: {
-          month,
-          cellId: combinedCellId
-        }
-      },
-      update: {
-        workingDays: parsedWorkingDays,
-        recordsJson,
-        generatedBy: currentUser.name
-      },
-      create: {
+    const lunchBillList = await db.insert(lunchBills)
+      .values({
         month,
         cellId: combinedCellId,
         workingDays: parsedWorkingDays,
         recordsJson,
         generatedBy: currentUser.name
-      }
-    });
+      })
+      .onConflictDoUpdate({
+        target: [lunchBills.month, lunchBills.cellId],
+        set: {
+          workingDays: parsedWorkingDays,
+          recordsJson,
+          generatedBy: currentUser.name,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+    const lunchBill = lunchBillList[0];
 
     // Logging audit activity
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
@@ -210,70 +178,7 @@ export async function POST(request: Request) {
       details: `${currentUser.name} (@${currentUser.username}) সকল সেলের জন্য ${month} মাসের সমন্বিত লাঞ্চ বিলের হিসাব সংরক্ষণ করেছেন (মোট কার্যদিবস: ${workingDays})।`
     });
 
-    // Trigger cell-wide notifications
-    try {
-      // Find all unique cell IDs present in the saved records (excluding executives)
-      const uniqueCellIds = Array.from(new Set(
-        records
-          .filter((r: any) => !r.isExecutive && r.cellId)
-          .map((r: any) => r.cellId)
-      )) as number[];
-
-      if (uniqueCellIds.length > 0) {
-        // Fetch all users belonging to these cells
-        const cellUsers = await prisma.user.findMany({
-          where: {
-            cells: {
-              some: {
-                id: { in: uniqueCellIds }
-              }
-            }
-          },
-          include: { cells: true }
-        });
-
-        const monthNames = [
-          'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
-          'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
-        ];
-        const [year, mStr] = month.split('-');
-        const mIdx = parseInt(mStr, 10) - 1;
-        const toBnDigits = (nStr: string) => nStr.replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
-        const banglaMonthStr = `${monthNames[mIdx]} ${toBnDigits(year)}`;
-
-        const notifyPromises = cellUsers.map(u => {
-          if (u.id === currentUser.id) return Promise.resolve();
-          // Find which cell of theirs is notified
-          const matchedCell = u.cells.find(c => uniqueCellIds.includes(c.id));
-          const cellName = matchedCell ? matchedCell.name : 'ডিপার্টমেন্ট';
-          return prisma.notification.create({
-            data: {
-              userId: u.id,
-              title: 'লাঞ্চ ভাতা চূড়ান্তকরণ',
-              message: `আপনার সেল "${cellName}" এর "${banglaMonthStr}" মাসের লাঞ্চ ভাতা বিল প্রশাসন সেল কর্তৃক চূড়ান্ত করা হয়েছে।`,
-              link: '/lunch-bill'
-            }
-          });
-        });
-        await Promise.all(notifyPromises);
-
-        // 2. Department-wide general notification from Admin / Administration Cell
-        const allUsersList = await prisma.user.findMany();
-        const otherUsersList = allUsersList.filter(u => u.id !== currentUser.id);
-        
-        await prisma.notification.createMany({
-          data: otherUsersList.map(u => ({
-            userId: u.id,
-            title: 'প্রশাসন সেল হতে আপডেট',
-            message: `প্রশাসন সেল কর্তৃক "${banglaMonthStr}" মাসের লাঞ্চ ভাতার সমন্বয় বিল চূড়ান্ত করা হয়েছে।`,
-            link: '/lunch-bill',
-            isRead: false
-          }))
-        });
-      }
-    } catch (notifErr) {
-      console.error('Error creating cell lunch notifications:', notifErr);
-    }
+    
 
     return NextResponse.json({ success: true, lunchBill });
 

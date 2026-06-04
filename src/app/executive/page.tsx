@@ -299,102 +299,192 @@ export default function ExecutivesPage() {
     }
     
     // Parse lines
-    const parsed = bulkText.split('\n')
+    const rawLines = bulkText.split('\n')
       .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(line => {
-        let name = '';
-        let designation = '';
-        let matched = false;
+      .filter(line => line.length > 0);
 
-        // 1. Try splitting by tab, pipe, comma first as they are highly unambiguous
+    if (rawLines.length === 0) {
+      setBulkError('কোনো কর্মকর্তা তথ্য পাওয়া যায়নি। সঠিক ফরম্যাটে লিখুন।');
+      return;
+    }
+
+    // Detect if first line is a header
+    const testLine = rawLines[0];
+    const testParts: string[] = [];
+    let currentField = '';
+    let inQuotes = false;
+    for (let i = 0; i < testLine.length; i++) {
+      const char = testLine[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        testParts.push(currentField.trim());
+        currentField = '';
+      } else {
+        currentField += char;
+      }
+    }
+    testParts.push(currentField.trim());
+
+    const cleanedFirstRow = testParts.map(p => {
+      let s = p;
+      if (s.startsWith('"') && s.endsWith('"')) s = s.substring(1, s.length - 1);
+      if (s.startsWith("'") && s.endsWith("'")) s = s.substring(1, s.length - 1);
+      return s.trim().toLowerCase();
+    });
+
+    const isHeader = cleanedFirstRow.some(h => 
+      h.includes('নাম') || h.includes('name') || 
+      h.includes('পদব') || h.includes('designation') || 
+      h.includes('ব্যাংক') || h.includes('bank') || 
+      h.includes('নথি') || h.includes('file')
+    );
+
+    const dataLines = isHeader ? rawLines.slice(1) : rawLines;
+
+    const parsed = dataLines.map(line => {
+      let name = '';
+      let designation = '';
+      let bankId = '';
+      let fileNo = '';
+      let matched = false;
+
+      // Helper function to clean quotes from start and end
+      const cleanQuotes = (str: string): string => {
+        let clean = str.trim();
+        while ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+          clean = clean.substring(1, clean.length - 1).trim();
+        }
+        if (clean.startsWith('"')) clean = clean.substring(1).trim();
+        if (clean.endsWith('"')) clean = clean.substring(0, clean.length - 1).trim();
+        if (clean.startsWith("'")) clean = clean.substring(1).trim();
+        if (clean.endsWith("'")) clean = clean.substring(0, clean.length - 1).trim();
+        return clean;
+      };
+
+      // 1. Try parsing as CSV first (automatically strips surrounding double quotes)
+      const csvParts: string[] = [];
+      let currentCsvField = '';
+      let inCsvQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inCsvQuotes = !inCsvQuotes;
+        } else if (char === ',' && !inCsvQuotes) {
+          csvParts.push(currentCsvField.trim());
+          currentCsvField = '';
+        } else {
+          currentCsvField += char;
+        }
+      }
+      csvParts.push(currentCsvField.trim());
+
+      if (csvParts.length >= 2 && line.includes(',')) {
+        name = cleanQuotes(csvParts[0]);
+        designation = cleanQuotes(csvParts[1]);
+        bankId = cleanQuotes(csvParts[2] || '');
+        fileNo = cleanQuotes(csvParts[3] || '');
+        matched = true;
+      }
+
+      // 2. Try splitting by tab, pipe, comma first as they are highly unambiguous
+      if (!matched) {
         const primarySeps = ['\t', ' | ', '|', ' , ', ','];
         for (const sep of primarySeps) {
           if (line.includes(sep)) {
             const parts = line.split(sep);
             if (parts.length >= 2) {
-              name = parts[0].trim();
-              designation = parts.slice(1).join(sep).trim();
+              name = cleanQuotes(parts[0]);
+              designation = cleanQuotes(parts.slice(1).join(sep));
+              if (parts.length >= 4) {
+                bankId = cleanQuotes(parts[2] || '');
+                fileNo = cleanQuotes(parts[3] || '');
+              } else if (parts.length === 3) {
+                bankId = cleanQuotes(parts[2] || '');
+              }
               matched = true;
               break;
             }
           }
         }
+      }
 
-        // 2. Check for space-wrapped hyphens ' - '
-        if (!matched && line.includes(' - ')) {
-          const parts = line.split(' - ');
-          if (parts.length >= 2) {
-            name = parts[0].trim();
-            designation = parts.slice(1).join(' - ').trim();
-            matched = true;
+      // 3. Check for space-wrapped hyphens ' - '
+      if (!matched && line.includes(' - ')) {
+        const parts = line.split(' - ');
+        if (parts.length >= 2) {
+          name = cleanQuotes(parts[0]);
+          designation = cleanQuotes(parts.slice(1).join(' - '));
+          matched = true;
+        }
+      }
+
+      // 4. Check for bare hyphen '-' (respecting compound words like DGM)
+      if (!matched && line.includes('-')) {
+        let splitIndex = -1;
+        let currentPos = 0;
+        while (true) {
+          const idx = line.indexOf('-', currentPos);
+          if (idx === -1) break;
+
+          const leftContext = line.substring(0, idx).trim();
+          const rightContext = line.substring(idx + 1).trim();
+
+          const isInternalHyphen = 
+            leftContext.endsWith('উপ') || 
+            leftContext.endsWith('সহকারী') || 
+            leftContext.endsWith('অফিসার') || 
+            leftContext.endsWith('এসো') ||
+            leftContext.endsWith('এসো-আইটি') ||
+            leftContext.endsWith('এসও') ||
+            leftContext.endsWith('এজিএম') ||
+            leftContext.endsWith('ডিজিএম') ||
+            leftContext.endsWith('জিএম') ||
+            rightContext.startsWith('মহাব্যবস্থাপক') ||
+            rightContext.startsWith('আইটি');
+
+          if (!isInternalHyphen) {
+            splitIndex = idx;
+            break;
           }
+          currentPos = idx + 1;
         }
 
-        // 3. Check for bare hyphen '-' (respecting compound words like DGM)
-        if (!matched && line.includes('-')) {
-          let splitIndex = -1;
-          let currentPos = 0;
-          while (true) {
-            const idx = line.indexOf('-', currentPos);
-            if (idx === -1) break;
-
-            const leftContext = line.substring(0, idx).trim();
-            const rightContext = line.substring(idx + 1).trim();
-
-            const isInternalHyphen = 
-              leftContext.endsWith('উপ') || 
-              leftContext.endsWith('সহকারী') || 
-              leftContext.endsWith('অফিসার') || 
-              leftContext.endsWith('এসো') ||
-              leftContext.endsWith('এসো-আইটি') ||
-              leftContext.endsWith('এসও') ||
-              leftContext.endsWith('এজিএম') ||
-              leftContext.endsWith('ডিজিএম') ||
-              leftContext.endsWith('জিএম') ||
-              rightContext.startsWith('মহাব্যবস্থাপক') ||
-              rightContext.startsWith('আইটি');
-
-            if (!isInternalHyphen) {
-              splitIndex = idx;
-              break;
-            }
-            currentPos = idx + 1;
-          }
-
-          if (splitIndex !== -1) {
-            name = line.substring(0, splitIndex).trim();
-            designation = line.substring(splitIndex + 1).trim();
-            matched = true;
-          }
+        if (splitIndex !== -1) {
+          name = cleanQuotes(line.substring(0, splitIndex));
+          designation = cleanQuotes(line.substring(splitIndex + 1));
+          matched = true;
         }
+      }
 
-        if (!matched) {
-          name = line;
-          designation = ''; // default fallback
+      if (!matched) {
+        name = cleanQuotes(line);
+        designation = ''; // default fallback
+      }
+      
+      const mapDesignation = (rawDesig: string): string => {
+        const clean = rawDesig.toLowerCase();
+        if (clean.includes('উপ') || clean.includes('dgm') || clean.includes('ডিজিএম')) {
+          return STRICT_DESIGNATIONS[1]; // DGM
         }
-        
-        const mapDesignation = (rawDesig: string): string => {
-          const clean = rawDesig.toLowerCase();
-          if (clean.includes('উপ') || clean.includes('dgm') || clean.includes('ডিজিএম')) {
-            return STRICT_DESIGNATIONS[0]; // DGM
-          }
-          if (clean.includes('সহকারী') || clean.includes('agm') || clean.includes('এজিএম')) {
-            return STRICT_DESIGNATIONS[2]; // AGM
-          }
-          if (clean.includes('মহাব্যবস্থাপক') || clean.includes('gm') || clean.includes('জিএম')) {
-            return STRICT_DESIGNATIONS[1]; // GM
-          }
-          return STRICT_DESIGNATIONS[0]; // fallback: DGM
-        };
-        
-        return {
-          name,
-          designation: mapDesignation(designation),
-          phone: '',
-          email: ''
-        };
-      });
+        if (clean.includes('সহকারী') || clean.includes('agm') || clean.includes('এজিএম')) {
+          return STRICT_DESIGNATIONS[2]; // AGM
+        }
+        if (clean.includes('মহাব্যবস্থাপক') || clean.includes('gm') || clean.includes('জিএম')) {
+          return STRICT_DESIGNATIONS[0]; // GM
+        }
+        return STRICT_DESIGNATIONS[1]; // fallback: DGM
+      };
+      
+      return {
+        name: name,
+        designation: mapDesignation(designation),
+        phone: '',
+        email: '',
+        bankId: bankId ? bankId : null,
+        fileNo: fileNo ? fileNo : null
+      };
+    });
       
     if (parsed.length === 0) {
       setBulkError('কোনো কর্মকর্তা তথ্য পাওয়া যায়নি। সঠিক ফরম্যাটে লিখুন।');
@@ -865,6 +955,27 @@ export default function ExecutivesPage() {
                 <p className="text-slate-600 dark:text-slate-400 leading-normal">
                   নির্বাহী কর্মকর্তাদের নামের তালিকা সম্বলিত কোনো ইমেজ বা স্ক্রিনশট কপি করা থাকলে সরাসরি এই টেক্সটবক্সে পেস্ট (<kbd className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded shadow-sm text-[10px] font-sans font-bold">Ctrl + V</kbd>) করুন! কৃত্রিম বুদ্ধিমত্তা ছবি থেকে সকল নাম ও পদবী স্বয়ংক্রিয়ভাবে টেক্সট হিসেবে রূপান্তর করে দেবে।
                 </p>
+              </div>
+
+              <div className="space-y-1.5 font-sans">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  অথবা CSV / Text ফাইল আপলোড করুন
+                </label>
+                <input
+                  type="file"
+                  accept=".csv,.txt"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      const text = event.target?.result as string;
+                      setBulkText(text);
+                    };
+                    reader.readAsText(file);
+                  }}
+                  className="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 dark:file:bg-indigo-950/40 dark:file:text-indigo-400 hover:file:bg-indigo-100 transition-all cursor-pointer border border-dashed border-slate-300 dark:border-slate-800 p-2 rounded-xl bg-slate-50/20"
+                />
               </div>
 
               <div className="space-y-1.5 font-sans">

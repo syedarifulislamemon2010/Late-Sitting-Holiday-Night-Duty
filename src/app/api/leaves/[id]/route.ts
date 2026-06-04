@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { leaveApplications } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 
 export async function PUT(
@@ -14,29 +16,14 @@ export async function PUT(
       return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
+    const currentUser = await getCurrentUser();
     
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-    }
-
-    const userId = parseInt(sessionVal, 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-    }
-
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-
     if (!currentUser) {
-      return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
 
-    const existingLeave = await prisma.leaveApplication.findUnique({
-      where: { id: leaveId }
-    });
+    const existingLeaveList = await db.select().from(leaveApplications).where(eq(leaveApplications.id, leaveId));
+    const existingLeave = existingLeaveList[0];
 
     if (!existingLeave) {
       return NextResponse.json({ error: 'leave_not_found' }, { status: 404 });
@@ -75,9 +62,8 @@ export async function PUT(
       return NextResponse.json({ error: 'missing_required_fields' }, { status: 400 });
     }
 
-    const updatedLeave = await prisma.leaveApplication.update({
-      where: { id: leaveId },
-      data: {
+    const updatedLeaveList = await db.update(leaveApplications)
+      .set({
         leaveType,
         startDate,
         endDate,
@@ -97,8 +83,10 @@ export async function PUT(
         ordinaryUsed: parseInt(ordinaryUsed, 10) || 0,
         specialTotal: parseInt(specialTotal, 10) || 0,
         specialUsed: parseInt(specialUsed, 10) || 0
-      }
-    });
+      })
+      .where(eq(leaveApplications.id, leaveId))
+      .returning();
+    const updatedLeave = updatedLeaveList[0];
 
     // Log Activity
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
@@ -131,29 +119,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
+    const currentUser = await getCurrentUser();
     
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-    }
-
-    const userId = parseInt(sessionVal, 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-    }
-
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-
     if (!currentUser) {
-      return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
 
-    const existingLeave = await prisma.leaveApplication.findUnique({
-      where: { id: leaveId }
-    });
+    const existingLeaveList = await db.select().from(leaveApplications).where(eq(leaveApplications.id, leaveId));
+    const existingLeave = existingLeaveList[0];
 
     if (!existingLeave) {
       return NextResponse.json({ error: 'leave_not_found' }, { status: 404 });
@@ -164,9 +137,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
-    await prisma.leaveApplication.delete({
-      where: { id: leaveId }
-    });
+    await db.delete(leaveApplications).where(eq(leaveApplications.id, leaveId));
 
     // Log Activity
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import prisma from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { users, employees, userCells, cells } from '@/db/schema';
+import { eq, sql } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 
 export async function POST(request: Request) {
@@ -21,38 +23,30 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'bad_request', message: 'ইউজারনেম ও পাসওয়ার্ড আবশ্যক!' }, { status: 400 });
       }
 
-      let user = await prisma.user.findFirst({
-        where: {
-          username: {
-            equals: username.trim(),
-            mode: 'insensitive'
-          }
-        }
-      });
+      const trimmedUsername = username.trim();
+      let userList = await db.select().from(users).where(eq(sql`LOWER(${users.username})`, trimmedUsername.toLowerCase()));
+      let user = userList[0];
 
       // If user doesn't exist, check if there's an employee with this bankId to auto-provision user
       if (!user) {
-        const employee = await prisma.employee.findFirst({
-          where: {
-            bankId: {
-              equals: username.trim(),
-              mode: 'insensitive'
-            }
-          }
-        });
+        const empList = await db.select().from(employees).where(eq(sql`LOWER(${employees.bankId})`, trimmedUsername.toLowerCase()));
+        const employee = empList[0];
 
         if (employee && employee.bankId) {
-          user = await prisma.user.create({
-            data: {
-              username: employee.bankId.trim(),
-              password: '123456', // default password
-              name: employee.name.trim(),
-              role: 'USER',
-              cells: {
-                connect: { id: employee.cellId }
-              }
-            }
+          const newUserList = await db.insert(users).values({
+            username: employee.bankId.trim(),
+            password: '123456', // default password
+            name: employee.name.trim(),
+            role: 'USER',
+          }).returning();
+          user = newUserList[0];
+
+          // Connect user to the employee's cell (A = cellId, B = userId)
+          await db.insert(userCells).values({
+            A: employee.cellId,
+            B: user.id,
           });
+
           console.log(`Auto-provisioned User record for Employee: ${employee.name} (${employee.bankId})`);
         }
       }
@@ -116,28 +110,33 @@ export async function GET() {
       return NextResponse.json({ authenticated: false, user: null });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        role: true,
-        mobile: true,
-        cells: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
-    });
+    const userList = await db.select().from(users).where(eq(users.id, userId));
+    const user = userList[0];
 
     if (!user) {
       return NextResponse.json({ authenticated: false, user: null });
     }
 
-    return NextResponse.json({ authenticated: true, user });
+    const assignedCells = await db
+      .select({
+        id: cells.id,
+        name: cells.name,
+      })
+      .from(userCells)
+      .innerJoin(cells, eq(userCells.A, cells.id))
+      .where(eq(userCells.B, user.id));
+
+    return NextResponse.json({
+      authenticated: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        mobile: user.mobile,
+        cells: assignedCells,
+      },
+    });
   } catch (error: any) {
     console.error('Auth GET Error:', error);
     return NextResponse.json({ authenticated: false, user: null });

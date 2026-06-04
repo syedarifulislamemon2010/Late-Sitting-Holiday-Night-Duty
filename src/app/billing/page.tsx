@@ -229,6 +229,55 @@ export default function BillingPage() {
     }
   }, []);
 
+  // Load archived order details if orderRef query param is present
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const orderRefParam = params.get('orderRef');
+    if (orderRefParam) {
+      const targetRef = orderRefParam;
+      async function loadTargetOrder() {
+        try {
+          const res = await fetch('/api/office-orders');
+          if (res.ok) {
+            const orders = await res.json();
+            const matchedOrder = orders.find((o: any) => o.orderRef === targetRef);
+            if (matchedOrder) {
+              setSelectedOrderRef(targetRef);
+              setPrintCategory(matchedOrder.category as any);
+              setIsPrintMode(true);
+              
+              // Extract month from dutiesJson
+              let dutiesList: any[] = [];
+              try {
+                dutiesList = JSON.parse(matchedOrder.dutiesJson || '[]');
+              } catch (e) {
+                console.error('Failed to parse dutiesJson:', e);
+              }
+              
+              let yearMonth = '';
+              if (dutiesList.length > 0 && dutiesList[0].date) {
+                const parts = dutiesList[0].date.split('-');
+                if (parts.length >= 2) yearMonth = `${parts[0]}-${parts[1]}`;
+              }
+              if (!yearMonth && matchedOrder.orderDate) {
+                const parts = matchedOrder.orderDate.split('-');
+                if (parts.length >= 2) yearMonth = `${parts[0]}-${parts[1]}`;
+              }
+              
+              if (yearMonth) {
+                setSelectedMonth(yearMonth);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error loading targeted order for billing:', err);
+        }
+      }
+      loadTargetOrder();
+    }
+  }, []);
+
   // Fetch duties based on selected month & filters
   // Fetch duties based on selected month & filters
   async function fetchDutiesForBilling() {

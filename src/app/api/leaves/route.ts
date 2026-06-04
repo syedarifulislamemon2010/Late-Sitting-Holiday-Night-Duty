@@ -1,59 +1,42 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { leaveApplications } from '@/db/schema';
+import { and, eq, desc } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 
 export async function GET(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
+    const currentUser = await getCurrentUser();
     
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-    }
-
-    const userId = parseInt(sessionVal, 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-    }
-
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-
     if (!currentUser) {
-      return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const latest = searchParams.get('latest') === 'true';
     const filterBankId = searchParams.get('bankId');
 
-    let whereClause: any = {};
+    const conditions = [];
     if (currentUser.role === 'ADMIN') {
       if (filterBankId) {
-        whereClause = { bankId: filterBankId };
+        conditions.push(eq(leaveApplications.bankId, filterBankId));
       }
     } else {
-      whereClause = { userId: currentUser.id };
+      conditions.push(eq(leaveApplications.userId, currentUser.id));
     }
 
     if (latest) {
-      const latestLeave = await prisma.leaveApplication.findFirst({
-        where: whereClause,
-        orderBy: {
-          createdAt: 'desc'
-        }
-      });
-      return NextResponse.json(latestLeave);
+      const latestLeaveList = await db.select().from(leaveApplications)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(leaveApplications.createdAt))
+        .limit(1);
+      return NextResponse.json(latestLeaveList[0] || null);
     }
 
-    const leaves = await prisma.leaveApplication.findMany({
-      where: whereClause,
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+    const leaves = await db.select().from(leaveApplications)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(leaveApplications.createdAt));
 
     return NextResponse.json(leaves);
   } catch (error: any) {
@@ -64,24 +47,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
+    const currentUser = await getCurrentUser();
     
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-    }
-
-    const userId = parseInt(sessionVal, 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-    }
-
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-
     if (!currentUser) {
-      return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -112,30 +81,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'missing_required_fields' }, { status: 400 });
     }
 
-    const newLeave = await prisma.leaveApplication.create({
-      data: {
-        leaveType,
-        startDate,
-        endDate,
-        applicationDate,
-        applicantName,
-        designation,
-        bankId,
-        fileNo: fileNo || null,
-        cellName,
-        leaveLocation,
-        mobileNo,
-        selectedDistrict: selectedDistrict || null,
-        delegateId: delegateId || null,
-        casualTotal: parseInt(casualTotal, 10) || 0,
-        casualUsed: parseInt(casualUsed, 10) || 0,
-        ordinaryTotal: parseInt(ordinaryTotal, 10) || 0,
-        ordinaryUsed: parseInt(ordinaryUsed, 10) || 0,
-        specialTotal: parseInt(specialTotal, 10) || 0,
-        specialUsed: parseInt(specialUsed, 10) || 0,
-        userId: currentUser.id
-      }
-    });
+    const newLeaveList = await db.insert(leaveApplications).values({
+      leaveType,
+      startDate,
+      endDate,
+      applicationDate,
+      applicantName,
+      designation,
+      bankId,
+      fileNo: fileNo || null,
+      cellName,
+      leaveLocation,
+      mobileNo,
+      selectedDistrict: selectedDistrict || null,
+      delegateId: delegateId || null,
+      casualTotal: parseInt(casualTotal, 10) || 0,
+      casualUsed: parseInt(casualUsed, 10) || 0,
+      ordinaryTotal: parseInt(ordinaryTotal, 10) || 0,
+      ordinaryUsed: parseInt(ordinaryUsed, 10) || 0,
+      specialTotal: parseInt(specialTotal, 10) || 0,
+      specialUsed: parseInt(specialUsed, 10) || 0,
+      userId: currentUser.id
+    }).returning();
+    const newLeave = newLeaveList[0];
 
     // Log Activity
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';

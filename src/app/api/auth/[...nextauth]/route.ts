@@ -1,0 +1,105 @@
+import NextAuth, { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { db } from '@/lib/db';
+import { users, employees, userCells } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials, req) {
+        if (!credentials?.username || !credentials?.password) {
+          return null;
+        }
+
+        const username = credentials.username.trim();
+        const password = credentials.password;
+
+        // Query user using Drizzle
+        let userList = await db.select().from(users).where(eq(users.username, username));
+        let user = userList[0];
+
+        // Case-insensitive fallback if exact match fails
+        if (!user) {
+          const allUsers = await db.select().from(users);
+          user = allUsers.find((u: any) => u.username.toLowerCase() === username.toLowerCase())!;
+        }
+
+        // Auto-provision user if missing, but employee with this bankId exists
+        if (!user) {
+          let empList = await db.select().from(employees).where(eq(employees.bankId, username));
+          let employee = empList[0];
+
+          if (!employee) {
+            const allEmps = await db.select().from(employees);
+            employee = allEmps.find((e: any) => e.bankId?.toLowerCase() === username.toLowerCase())!;
+          }
+
+          if (employee && employee.bankId) {
+            // Create user in the database
+            const newUsers = await db.insert(users).values({
+              username: employee.bankId.trim(),
+              password: '123456', // default password
+              name: employee.name.trim(),
+              role: 'USER',
+            }).returning();
+            
+            user = newUsers[0];
+
+            // Connect user to the employee's cell (A = cellId, B = userId)
+            await db.insert(userCells).values({
+              A: employee.cellId,
+              B: user.id,
+            });
+
+            console.log(`Auto-provisioned User record for Employee: ${employee.name} (${employee.bankId})`);
+          }
+        }
+
+        if (user && user.password === password) {
+          return {
+            id: String(user.id),
+            name: user.name,
+            email: user.username, // using email slot for username
+            role: user.role,
+          };
+        }
+
+        return null;
+      }
+    })
+  ],
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = (user as any).role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).id = parseInt(token.id as string, 10);
+        (session.user as any).role = token.role;
+        (session.user as any).username = session.user.email;
+      }
+      return session;
+    }
+  },
+  pages: {
+    signIn: '/',
+  },
+  secret: process.env.NEXTAUTH_SECRET || 'NextAuthSecretSecretKey2026',
+};
+
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };

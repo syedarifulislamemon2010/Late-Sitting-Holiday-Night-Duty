@@ -1,23 +1,14 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { trash as trashTable, cells, employees, duties, executives, documents } from '@/db/schema';
+import { and, eq, lt, ne, desc } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
-import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
-    }
-    const userId = parseInt(sessionVal, 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
-    }
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    const currentUser = await getCurrentUser();
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }
@@ -26,12 +17,12 @@ export async function GET() {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // 1. Find all expired documents so we can delete their physical files
-    const expiredDocs = await prisma.trash.findMany({
-      where: {
-        entityType: 'DOCUMENT',
-        deletedAt: { lt: thirtyDaysAgo }
-      }
-    });
+    const expiredDocs = await db.select().from(trashTable).where(
+      and(
+        eq(trashTable.entityType, 'DOCUMENT'),
+        lt(trashTable.deletedAt, thirtyDaysAgo)
+      )
+    );
 
     for (const dTrash of expiredDocs) {
       try {
@@ -48,21 +39,17 @@ export async function GET() {
     }
 
     // 2. Delete all trash items older than 30 days
-    await prisma.trash.deleteMany({
-      where: {
-        deletedAt: { lt: thirtyDaysAgo }
-      }
-    });
+    await db.delete(trashTable).where(lt(trashTable.deletedAt, thirtyDaysAgo));
 
     // 3. Return active trash items (role-restricted)
-    const whereClause = currentUser.role === 'ADMIN'
-      ? {}
-      : { deletedBy: currentUser.username };
+    const conditions = [];
+    if (currentUser.role !== 'ADMIN') {
+      conditions.push(eq(trashTable.deletedBy, currentUser.username));
+    }
 
-    const activeTrash = await prisma.trash.findMany({
-      where: whereClause,
-      orderBy: { deletedAt: 'desc' }
-    });
+    const activeTrash = await db.select().from(trashTable)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(trashTable.deletedAt));
 
     return NextResponse.json(activeTrash);
   } catch (error: any) {
@@ -73,18 +60,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
-    }
-    const userId = parseInt(sessionVal, 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
-    }
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    const currentUser = await getCurrentUser();
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }
@@ -113,148 +89,139 @@ export async function POST(request: Request) {
 
     for (const currentId of idsToProcess) {
       try {
-        const trash = await prisma.trash.findUnique({
-          where: { id: currentId }
-        });
+        const trashRecordList = await db.select().from(trashTable).where(eq(trashTable.id, currentId));
+        const trashRecord = trashRecordList[0];
 
-        if (!trash) {
+        if (!trashRecord) {
           failCount++;
           lastErrorMessage = 'রেকর্ড রিসাইকেল বিনে পাওয়া যায়নি।';
           continue;
         }
 
         // Restrict normal users to their own deleted items
-        if (currentUser.role !== 'ADMIN' && trash.deletedBy !== currentUser.username) {
+        if (currentUser.role !== 'ADMIN' && trashRecord.deletedBy !== currentUser.username) {
           failCount++;
           lastErrorMessage = 'এই রেকর্ডটি পরিচালনা করার অনুমতি আপনার নেই।';
           continue;
         }
 
         if (action === 'restore') {
-          const parsed = JSON.parse(trash.data);
+          const parsed = JSON.parse(trashRecord.data);
 
-          switch (trash.entityType) {
+          switch (trashRecord.entityType) {
             case 'EMPLOYEE': {
-              const cellExists = await prisma.cell.findUnique({
-                where: { id: parsed.cellId }
-              });
+              const cellExistsList = await db.select().from(cells).where(eq(cells.id, parsed.cellId));
+              const cellExists = cellExistsList[0];
               if (!cellExists) {
                 failCount++;
-                lastErrorMessage = `"${trash.name}" পুনরুদ্ধার করা যায়নি কারণ সংশ্লিষ্ট সেলটি ডাটাবেজে সচল নেই। প্রথমে সেলটি রিস্টোর করুন।`;
+                lastErrorMessage = `"${trashRecord.name}" পুনরুদ্ধার করা যায়নি কারণ সংশ্লিষ্ট সেলটি ডাটাবেজে সচল নেই। প্রথমে সেলটি রিস্টোর করুন।`;
                 continue;
               }
 
-              const newEmp = await prisma.employee.create({
-                data: {
-                  name: parsed.name,
-                  designation: parsed.designation,
-                  bankId: parsed.bankId,
-                  fileNo: parsed.fileNo,
-                  cellId: parsed.cellId
-                }
-              });
+              const newEmpList = await db.insert(employees).values({
+                name: parsed.name,
+                designation: parsed.designation,
+                bankId: parsed.bankId,
+                fileNo: parsed.fileNo,
+                cellId: parsed.cellId
+              }).returning();
+              const newEmp = newEmpList[0];
 
               if (parsed.duties && parsed.duties.length > 0) {
-                await prisma.duty.createMany({
-                  data: parsed.duties.map((d: any) => ({
+                await db.insert(duties).values(
+                  parsed.duties.map((d: any) => ({
                     employeeId: newEmp.id,
                     type: d.type,
                     date: d.date,
                     description: d.description,
                     allowance1: d.allowance1,
                     allowance2: d.allowance2,
-                    totalBill: d.totalBill
+                    totalBill: d.totalBill,
+                    orderRef: d.orderRef || null
                   }))
-                });
+                );
               }
               break;
             }
 
             case 'CELL': {
-              const existing = await prisma.cell.findFirst({
-                where: { name: parsed.name }
-              });
+              const existingList = await db.select().from(cells).where(eq(cells.name, parsed.name));
+              const existing = existingList[0];
               if (existing) {
                 failCount++;
                 lastErrorMessage = `"${parsed.name}" নামের সেলটি ইতিমধ্যে ডাটাবেজে সচল রয়েছে।`;
                 continue;
               }
 
-              await prisma.cell.create({
-                data: {
-                  name: parsed.name,
-                  description: parsed.description
-                }
+              await db.insert(cells).values({
+                name: parsed.name,
+                description: parsed.description
               });
               break;
             }
 
             case 'DUTY': {
-              const empExists = await prisma.employee.findUnique({
-                where: { id: parsed.employeeId }
-              });
+              const empExistsList = await db.select().from(employees).where(eq(employees.id, parsed.employeeId));
+              const empExists = empExistsList[0];
               if (!empExists) {
                 failCount++;
-                lastErrorMessage = `"${trash.name}" ডিউটিটি রিস্টোর করা যায়নি কারণ কর্মকর্তা ডাটাবেজে নেই।`;
+                lastErrorMessage = `"${trashRecord.name}" ডিউটিটি রিস্টোর করা যায়নি কারণ কর্মকর্তা ডাটাবেজে নেই।`;
                 continue;
               }
 
-              const dutyExists = await prisma.duty.findFirst({
-                where: {
-                  employeeId: parsed.employeeId,
-                  date: parsed.date
-                }
-              });
+              const dutyExistsList = await db.select().from(duties).where(
+                and(
+                  eq(duties.employeeId, parsed.employeeId),
+                  eq(duties.date, parsed.date)
+                )
+              );
+              const dutyExists = dutyExistsList[0];
 
               if (dutyExists) {
                 failCount++;
-                lastErrorMessage = `"${trash.name}" রিস্টোর করা যায়নি কারণ এই তারিখে কর্মকর্তার ইতিমধ্যে একটি ডিউটি বরাদ্দ রয়েছে।`;
+                lastErrorMessage = `"${trashRecord.name}" রিস্টোর করা যায়নি কারণ এই তারিখে কর্মকর্তার ইতিমধ্যে একটি ডিউটি বরাদ্দ রয়েছে।`;
                 continue;
               }
 
-              await prisma.duty.create({
-                data: {
-                  employeeId: parsed.employeeId,
-                  type: parsed.type,
-                  date: parsed.date,
-                  description: parsed.description,
-                  allowance1: parsed.allowance1,
-                  allowance2: parsed.allowance2,
-                  totalBill: parsed.totalBill
-                }
+              await db.insert(duties).values({
+                employeeId: parsed.employeeId,
+                type: parsed.type,
+                date: parsed.date,
+                description: parsed.description,
+                allowance1: parsed.allowance1,
+                allowance2: parsed.allowance2,
+                totalBill: parsed.totalBill,
+                orderRef: parsed.orderRef || null
               });
               break;
             }
 
             case 'EXECUTIVE': {
-              await prisma.executive.create({
-                data: {
-                  name: parsed.name,
-                  designation: parsed.designation,
-                  phone: parsed.phone,
-                  email: parsed.email
-                }
+              await db.insert(executives).values({
+                name: parsed.name,
+                designation: parsed.designation,
+                phone: parsed.phone,
+                email: parsed.email,
+                bankId: parsed.bankId || null,
+                fileNo: parsed.fileNo || null
               });
               break;
             }
 
             case 'DOCUMENT': {
-              const docExists = await prisma.document.findFirst({
-                where: { filePath: parsed.filePath }
-              });
+              const docExistsList = await db.select().from(documents).where(eq(documents.filePath, parsed.filePath));
+              const docExists = docExistsList[0];
               if (docExists) {
                 failCount++;
                 lastErrorMessage = `"${parsed.name}" ফাইলটি ইতিমধ্যে আর্কাইভে সচল রয়েছে।`;
                 continue;
               }
 
-              await prisma.document.create({
-                data: {
-                  name: parsed.name,
-                  filePath: parsed.filePath,
-                  fileSize: parsed.fileSize,
-                  uploadedAt: new Date(parsed.uploadedAt)
-                }
+              await db.insert(documents).values({
+                name: parsed.name,
+                filePath: parsed.filePath,
+                fileSize: parsed.fileSize,
+                uploadedAt: new Date(parsed.uploadedAt)
               });
               break;
             }
@@ -266,14 +233,12 @@ export async function POST(request: Request) {
           }
 
           // Delete from Trash after successful restoration
-          await prisma.trash.delete({
-            where: { id: trash.id }
-          });
+          await db.delete(trashTable).where(eq(trashTable.id, trashRecord.id));
           successCount++;
         } else if (action === 'purge') {
-          if (trash.entityType === 'DOCUMENT') {
+          if (trashRecord.entityType === 'DOCUMENT') {
             try {
-              const parsed = JSON.parse(trash.data);
+              const parsed = JSON.parse(trashRecord.data);
               if (parsed.filePath) {
                 const absolutePath = path.join(process.cwd(), 'public', parsed.filePath);
                 if (fs.existsSync(absolutePath)) {
@@ -285,9 +250,7 @@ export async function POST(request: Request) {
             }
           }
 
-          await prisma.trash.delete({
-            where: { id: trash.id }
-          });
+          await db.delete(trashTable).where(eq(trashTable.id, trashRecord.id));
           successCount++;
         }
       } catch (innerErr: any) {

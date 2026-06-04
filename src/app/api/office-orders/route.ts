@@ -1,49 +1,61 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
+import { db } from '@/lib/db';
+import { officeOrders, duties as dutiesTable, users, employees, userCells, cells } from '@/db/schema';
+import { eq, and, inArray, desc, like, not } from 'drizzle-orm';
+import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    
+    const currentUser = await getCurrentUser();
     let userCellNames: string[] = [];
     let isUserRestricted = false;
 
-    if (sessionVal) {
-      const userId = parseInt(sessionVal, 10);
-      if (!isNaN(userId)) {
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          include: { cells: true }
-        });
-        if (user && user.role === 'USER') {
-          isUserRestricted = true;
-          userCellNames = user.cells.map((c: any) => c.name);
-        }
+    if (currentUser) {
+      if (currentUser.role === 'USER') {
+        isUserRestricted = true;
+        userCellNames = currentUser.cells.map((c: any) => c.name);
       }
     }
 
-    const whereClause = isUserRestricted ? { cellName: { in: userCellNames } } : {};
+    let ordersList: any[] = [];
+    if (isUserRestricted) {
+      if (userCellNames.length > 0) {
+        ordersList = await db.select().from(officeOrders)
+          .where(inArray(officeOrders.cellName, userCellNames))
+          .orderBy(desc(officeOrders.createdAt));
+      } else {
+        ordersList = [];
+      }
+    } else {
+      ordersList = await db.select().from(officeOrders)
+        .orderBy(desc(officeOrders.createdAt));
+    }
 
-    const orders = await prisma.officeOrder.findMany({
-      where: whereClause,
-      orderBy: { createdAt: 'desc' }
-    });
-
-    const orderRefs = orders.map((o: any) => o.orderRef);
-    const linkedDuties = await prisma.duty.findMany({
-      where: { orderRef: { in: orderRefs } },
-      include: { employee: true }
-    });
+    const orderRefs = ordersList.map((o: any) => o.orderRef);
+    let linkedDuties: any[] = [];
+    if (orderRefs.length > 0) {
+      linkedDuties = await db.select({
+        id: dutiesTable.id,
+        date: dutiesTable.date,
+        orderRef: dutiesTable.orderRef,
+        employee: {
+          id: employees.id,
+          name: employees.name,
+          bankId: employees.bankId
+        }
+      })
+      .from(dutiesTable)
+      .innerJoin(employees, eq(dutiesTable.employeeId, employees.id))
+      .where(inArray(dutiesTable.orderRef, orderRefs));
+    }
 
     const toBanglaDigits = (num: string | number): string => {
       const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
       return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit)]);
     };
 
-    const res = orders.map((order: any) => {
+    const res = ordersList.map((order: any) => {
       let parsedDuties = order.dutiesJson ? JSON.parse(order.dutiesJson) : [];
       
       // Reconstruct datesFormatted retroactively for existing bill memos if missing
@@ -89,19 +101,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
-    }
-    const currentUserId = parseInt(sessionVal, 10);
-    const currentUser = !isNaN(currentUserId)
-      ? await prisma.user.findUnique({ 
-          where: { id: currentUserId },
-          include: { cells: true }
-        })
-      : null;
-
+    const currentUser = await getCurrentUser();
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'ব্যবহারকারী পাওয়া যায়নি।' }, { status: 403 });
     }
@@ -113,66 +113,64 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'missing_required_fields' }, { status: 400 });
     }
 
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await db.transaction(async (tx) => {
       // 0. If we are editing and the reference has changed, delete the old order and unlink its duties first!
       if (originalOrderRef && originalOrderRef !== orderRef) {
-        await tx.duty.updateMany({
-          where: { orderRef: originalOrderRef },
-          data: { orderRef: null }
-        });
-        await tx.officeOrder.deleteMany({
-          where: { orderRef: originalOrderRef }
-        });
+        await tx.update(dutiesTable)
+          .set({ orderRef: null })
+          .where(eq(dutiesTable.orderRef, originalOrderRef));
+        await tx.delete(officeOrders)
+          .where(eq(officeOrders.orderRef, originalOrderRef));
       }
 
       // 1. Reset any existing duties linked to this reference in PostgreSQL
-      await tx.duty.updateMany({
-        where: { orderRef: orderRef },
-        data: { orderRef: null }
-      });
+      await tx.update(dutiesTable)
+          .set({ orderRef: null })
+          .where(eq(dutiesTable.orderRef, orderRef));
 
       // 2. Find or create/update the OfficeOrder in PostgreSQL
-      let order = await tx.officeOrder.findUnique({
-        where: { orderRef: orderRef }
-      });
-      const existed = !!order;
+      const existing = await tx.select().from(officeOrders)
+        .where(eq(officeOrders.orderRef, orderRef))
+        .limit(1);
+      
+      let orderRecord = existing[0] || null;
+      const existed = !!orderRecord;
 
-      if (!order) {
-        order = await tx.officeOrder.create({
-          data: {
-            orderRef,
-            orderDate,
-            category,
-            employeeName,
-            cellName: cellName || null,
-            dutiesJson: JSON.stringify(duties),
-            contentJson: content ? JSON.stringify(content) : null,
-            status: 'Printed'
-          }
-        });
+      if (!orderRecord) {
+        const [inserted] = await tx.insert(officeOrders).values({
+          orderRef,
+          orderDate,
+          category,
+          employeeName,
+          cellName: cellName || null,
+          dutiesJson: JSON.stringify(duties),
+          contentJson: content ? JSON.stringify(content) : null,
+          status: 'Printed'
+        }).returning();
+        orderRecord = inserted;
       } else {
-        order = await tx.officeOrder.update({
-          where: { orderRef: orderRef },
-          data: {
+        const [updated] = await tx.update(officeOrders)
+          .set({
             orderDate,
             employeeName,
             cellName: cellName || null,
             dutiesJson: JSON.stringify(duties),
             contentJson: content ? JSON.stringify(content) : null,
             status: 'Printed'
-          }
-        });
+          })
+          .where(eq(officeOrders.orderRef, orderRef))
+          .returning();
+        orderRecord = updated;
       }
 
       // 3. Link newly submitted duties in PostgreSQL
       if (dutyIds && Array.isArray(dutyIds) && dutyIds.length > 0) {
-        await tx.duty.updateMany({
-          where: { id: { in: dutyIds.map((id: any) => Number(id)) } },
-          data: { orderRef: orderRef }
-        });
+        await tx.update(dutiesTable)
+          .set({ orderRef: orderRef })
+          .where(inArray(dutiesTable.id, dutyIds.map((id: any) => Number(id))));
       }
 
-      return { order, existed };
+      return { order: orderRecord, existed };
     });
 
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
@@ -189,101 +187,7 @@ export async function POST(request: Request) {
       details: `${currentUser.name} (@${currentUser.username}) ${isEdit ? 'অফিস আদেশ বা বিল মেমো সংশোধন' : 'নতুন অফিস আদেশ বা বিল মেমো তৈরি'} করেছেন (সূত্র: ${orderRef})।`
     });
 
-    // Dynamic Notification triggers
-    try {
-      const dutiesList = await prisma.duty.findMany({
-        where: { orderRef: orderRef },
-        include: { employee: true }
-      });
-
-      const uniqueEmps = Array.from(new Map(dutiesList.map(d => [d.employee.id, d.employee])).values());
-      const toBnDigits = (nStr: string | number) => nStr.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
-
-      if (category.startsWith('BILL_')) {
-        // 1. Notify Representative Payee
-        const payeeUser = await prisma.user.findFirst({
-          where: { name: { contains: employeeName.trim() } }
-        });
-
-        const totalAmount = dutiesList.reduce((sum, d) => sum + d.totalBill, 0);
-
-        if (payeeUser) {
-          await prisma.notification.create({
-            data: {
-              userId: payeeUser.id,
-              title: 'অতিরিক্ত কাজের বিল মঞ্জুর',
-              message: `জনাব ${employeeName}, আপনার নামে "${cellName || 'অনলাইন ব্যাংকিং'}" সেলের অতিরিক্ত কাজের মোট ৳${toBnDigits(totalAmount)} টাকার বিল মঞ্জুর করা হয়েছে। অনুগ্রহ করে সংশ্লিষ্ট হিসাব থেকে অর্থ সংগ্রহ করে বণ্টন করুন।`,
-              link: '/billing'
-            }
-          });
-        }
-
-        // 2. Notify other employees in the list
-        const otherEmps = uniqueEmps.filter(emp => !emp.name.includes(employeeName));
-        for (const emp of otherEmps) {
-          const user = await prisma.user.findFirst({
-            where: { name: { contains: emp.name.trim() } }
-          });
-          if (user) {
-            const empAmount = dutiesList.filter(d => d.employeeId === emp.id).reduce((sum, d) => sum + d.totalBill, 0);
-            await prisma.notification.create({
-              data: {
-                userId: user.id,
-                title: 'বিল প্রস্তুত নোটিশ',
-                message: `জনাব ${emp.name}, আপনার অতিরিক্ত কাজের বিল প্রস্তুত করেছেন জনাব ${employeeName}। আপনার প্রাপ্য ৳${toBnDigits(empAmount)} টাকা ওনার কাছ থেকে সংগ্রহ করবেন।`,
-                link: '/billing'
-              }
-            });
-          }
-        }
-      } else {
-        // Standard Office Order
-        const categoryMap: any = {
-          'LATE_SITTING': 'লেট সিটিং',
-          'HOLIDAY': 'হলিডে',
-          'NIGHT_SHIFT': 'নাইট শিফট'
-        };
-        const categoryBn = categoryMap[category] || category;
-
-        for (const emp of uniqueEmps) {
-          const user = await prisma.user.findFirst({
-            where: { name: { contains: emp.name.trim() } }
-          });
-          if (user) {
-            await prisma.notification.create({
-              data: {
-                userId: user.id,
-                title: 'নতুন অফিস নির্দেশ জারি',
-                message: `আপনার নামে ${toBnDigits(orderDate)} তারিখে ${categoryBn} ডিউটির একটি নতুন অফিস নির্দেশ জারি করা হয়েছে (স্মারক: ${orderRef})।`,
-                link: '/documents'
-              }
-            });
-          }
-        }
-      }
-
-      // 3. Department-wide general notification from Admin / Administration Cell
-      const allUsersList = await prisma.user.findMany();
-      const otherUsersList = allUsersList.filter(u => u.id !== currentUser.id);
-      const categoryMap: any = {
-        'LATE_SITTING': 'লেট সিটিং',
-        'HOLIDAY': 'হলিডে',
-        'NIGHT_SHIFT': 'নাইট শিফট'
-      };
-      const categoryBn = categoryMap[category] || (category.startsWith('BILL_') ? 'বিল জেনারেশন' : category);
-      
-      await prisma.notification.createMany({
-        data: otherUsersList.map(u => ({
-          userId: u.id,
-          title: 'প্রশাসন সেল হতে আপডেট',
-          message: `প্রশাসন সেল কর্তৃক একটি নতুন ${categoryBn === 'বিল জেনারেশন' ? 'বিল মেমো প্রস্তুত' : 'অফিস আদেশ জারি'} করা হয়েছে (স্মারক: ${orderRef})।`,
-          link: category.startsWith('BILL_') ? '/billing' : '/roster',
-          isRead: false
-        }))
-      });
-    } catch (notifErr) {
-      console.error('Error generating office order notifications:', notifErr);
-    }
+    
 
     return NextResponse.json({ success: true, id: result.order.id, order: result.order });
   } catch (error: any) {

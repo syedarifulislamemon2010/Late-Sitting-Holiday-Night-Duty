@@ -1,28 +1,16 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
-
-async function checkAdmin() {
-  const cookieStore = await cookies();
-  const sessionVal = cookieStore.get('session')?.value;
-  if (!sessionVal) return null;
-
-  const userId = parseInt(sessionVal, 10);
-  if (isNaN(userId)) return null;
-
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || user.role !== 'ADMIN') return null;
-
-  return user;
-}
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { executives, trash } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await checkAdmin();
-    if (!admin) {
+    const admin = await getCurrentUser();
+    if (!admin || admin.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
     }
 
@@ -40,17 +28,18 @@ export async function PUT(
       return NextResponse.json({ error: 'name_and_designation_required' }, { status: 400 });
     }
 
-    const updated = await prisma.executive.update({
-      where: { id: execId },
-      data: {
+    const updatedList = await db.update(executives)
+      .set({
         name: name.trim(),
         designation: designation.trim(),
         phone: phone?.trim() || null,
         email: email?.trim() || null,
         bankId: bankId?.trim() || null,
         fileNo: fileNo?.trim() || null
-      }
-    });
+      })
+      .where(eq(executives.id, execId))
+      .returning();
+    const updated = updatedList[0];
 
     return NextResponse.json(updated);
   } catch (error: any) {
@@ -64,8 +53,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await checkAdmin();
-    if (!admin) {
+    const admin = await getCurrentUser();
+    if (!admin || admin.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
     }
 
@@ -76,28 +65,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
     }
 
-    const executive = await prisma.executive.findUnique({
-      where: { id: execId }
-    });
+    const execList = await db.select().from(executives).where(eq(executives.id, execId));
+    const executive = execList[0];
 
     if (!executive) {
       return NextResponse.json({ error: 'executive_not_found' }, { status: 404 });
     }
 
     // Save to Trash
-    await prisma.trash.create({
-      data: {
-        entityType: 'EXECUTIVE',
-        entityId: execId,
-        name: `নির্বাহী: ${executive.name} (${executive.designation})`,
-        data: JSON.stringify(executive),
-        deletedBy: admin.username
-      }
+    await db.insert(trash).values({
+      entityType: 'EXECUTIVE',
+      entityId: execId,
+      name: `নির্বাহী: ${executive.name} (${executive.designation})`,
+      data: JSON.stringify(executive),
+      deletedBy: admin.username
     });
 
-    await prisma.executive.delete({
-      where: { id: execId }
-    });
+    await db.delete(executives).where(eq(executives.id, execId));
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

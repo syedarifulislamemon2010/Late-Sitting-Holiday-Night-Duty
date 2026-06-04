@@ -1,80 +1,81 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { cookies } from 'next/headers';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { users, employees, userCells, cells } from '@/db/schema';
+import { eq, isNotNull, sql } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
-    }
-
-    const currentUserId = parseInt(sessionVal, 10);
-    const currentUser = !isNaN(currentUserId)
-      ? await prisma.user.findUnique({ where: { id: currentUserId } })
-      : null;
-
+    const currentUser = await getCurrentUser();
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন এই ইউজার তালিকা দেখতে পারবেন।' }, { status: 403 });
     }
+
     // 1. Fetch all employees with a bank ID
-    const employees = await prisma.employee.findMany({
-      where: {
-        bankId: {
-          not: null
-        }
-      }
-    });
+    const emps = await db.select().from(employees).where(isNotNull(employees.bankId));
 
     // 2. Fetch all existing users' usernames
-    const existingUsers = await prisma.user.findMany({
-      select: { username: true }
-    });
+    const existingUsers = await db.select({ username: users.username }).from(users);
     const existingUsernames = new Set(existingUsers.map((u: any) => u.username.trim().toLowerCase()));
 
     // 3. Sync missing users
-    for (const emp of employees) {
+    for (const emp of emps) {
       if (emp.bankId && emp.bankId.trim() !== '') {
         const username = emp.bankId.trim().toLowerCase();
         // Skip if username is 'admin' or already exists
         if (username !== 'admin' && !existingUsernames.has(username)) {
-          await prisma.user.create({
-            data: {
-              username: emp.bankId.trim(),
-              password: '123456',
-              name: emp.name.trim(),
-              role: 'USER',
-              cells: {
-                connect: { id: emp.cellId }
-              }
-            }
+          const newUsers = await db.insert(users).values({
+            username: emp.bankId.trim(),
+            password: '123456',
+            name: emp.name.trim(),
+            role: 'USER',
+          }).returning();
+          const newUser = newUsers[0];
+
+          await db.insert(userCells).values({
+            A: emp.cellId,
+            B: newUser.id,
           });
+
           existingUsernames.add(username);
         }
       }
     }
 
     // 4. Fetch the users list as normal
-    const users = await prisma.user.findMany({
-      orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        role: true,
-        mobile: true,
-        createdAt: true,
-        cells: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
+    const allUsersList = await db.select().from(users).orderBy(users.name);
+    
+    // Fetch cell mappings
+    const allUserCells = await db
+      .select({
+        userId: userCells.B,
+        cellId: cells.id,
+        cellName: cells.name
+      })
+      .from(userCells)
+      .innerJoin(cells, eq(userCells.A, cells.id));
+
+    const usersWithCells = allUsersList.map((u: any) => {
+      const assigned = allUserCells
+        .filter((uc: any) => uc.userId === u.id)
+        .map((uc: any) => ({
+          id: uc.cellId,
+          name: uc.cellName
+        }));
+
+      return {
+        id: u.id,
+        username: u.username,
+        name: u.name,
+        role: u.role,
+        mobile: u.mobile,
+        createdAt: u.createdAt,
+        cells: assigned
+      };
     });
-    return NextResponse.json(users);
+
+    return NextResponse.json(usersWithCells);
   } catch (error: any) {
     console.error('Error fetching users and syncing:', error);
     return NextResponse.json({ error: 'failed_to_fetch_users' }, { status: 500 });
@@ -83,17 +84,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
-    }
-
-    const currentUserId = parseInt(sessionVal, 10);
-    const currentUser = !isNaN(currentUserId)
-      ? await prisma.user.findUnique({ where: { id: currentUserId } })
-      : null;
-
+    const currentUser = await getCurrentUser();
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন নতুন ইউজার তৈরি করতে পারবেন।' }, { status: 403 });
     }
@@ -105,53 +96,64 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'fields_required', message: 'সবগুলো আবশ্যক ফিল্ড পূরণ করুন।' }, { status: 400 });
     }
 
-    const existing = await prisma.user.findUnique({
-      where: { username: username.trim() }
-    });
+    const existingList = await db.select().from(users).where(eq(users.username, username.trim()));
+    const existing = existingList[0];
 
     if (existing) {
       return NextResponse.json({ error: 'user_exists', message: 'এই ইউজারনেমটি ইতিমধ্যেই ব্যবহৃত হচ্ছে!' }, { status: 400 });
     }
 
-    const cellConnection = Array.isArray(cellIds) 
-      ? cellIds.map((id: any) => ({ id: parseInt(id, 10) }))
-      : [];
+    const newUsers = await db.insert(users).values({
+      username: username.trim(),
+      password: password.trim(),
+      name: name.trim(),
+      role: role || 'USER',
+      mobile: mobile ? mobile.trim() : null,
+    }).returning();
+    const user = newUsers[0];
 
-    const user = await prisma.user.create({
-      data: {
-        username: username.trim(),
-        password: password.trim(),
-        name: name.trim(),
-        role: role || 'USER',
-        mobile: mobile ? mobile.trim() : null,
-        cells: {
-          connect: cellConnection
-        }
-      },
-      include: {
-        cells: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
-    });
+    if (Array.isArray(cellIds) && cellIds.length > 0) {
+      await db.insert(userCells).values(
+        cellIds.map((cid: any) => ({
+          A: parseInt(cid, 10),
+          B: user.id
+        }))
+      );
+    }
+
+    const assignedCells = await db
+      .select({
+        id: cells.id,
+        name: cells.name,
+      })
+      .from(userCells)
+      .innerJoin(cells, eq(userCells.A, cells.id))
+      .where(eq(userCells.B, user.id));
+
+    const userWithCells = {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      mobile: user.mobile,
+      createdAt: user.createdAt,
+      cells: assignedCells,
+    };
 
     // Logging the user creation activity
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || 'Unknown';
     await logActivity({
-      username: currentUser!.username,
+      username: currentUser.username,
       action: 'CREATE',
       entityType: 'USER',
       entityId: String(user.id),
       ipAddress,
       userAgent,
-      details: `${currentUser!.name} (@${currentUser!.username}) নতুন ইউজার "${user.name}" (@${user.username}) তৈরি করেছেন।`
+      details: `${currentUser.name} (@${currentUser.username}) নতুন ইউজার "${user.name}" (@${user.username}) তৈরি করেছেন।`
     });
 
-    return NextResponse.json(user, { status: 201 });
+    return NextResponse.json(userWithCells, { status: 201 });
   } catch (error: any) {
     console.error('Error creating user:', error);
     return NextResponse.json({ error: 'failed_to_create_user', message: error.message }, { status: 500 });

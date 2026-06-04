@@ -1,19 +1,14 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { documents } from '@/db/schema';
 import fs from 'fs';
 import path from 'path';
-import { cookies } from 'next/headers';
 import { logActivity } from '@/lib/audit';
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionVal = cookieStore.get('session')?.value;
-    if (!sessionVal) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অনুমতি নেই।' }, { status: 403 });
-    }
-    const userId = parseInt(sessionVal, 10);
-    const user = !isNaN(userId) ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+    const user = await getCurrentUser();
     if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইল আপলোড করতে পারবেন।' }, { status: 403 });
     }
@@ -48,13 +43,12 @@ export async function POST(request: Request) {
     const relativePath = `/uploads/${uniqueFilename}`;
 
     // Save to database
-    const doc = await prisma.document.create({
-      data: {
-        name: name || file.name.replace('.pdf', ''),
-        filePath: relativePath,
-        fileSize: file.size,
-      },
-    });
+    const docList = await db.insert(documents).values({
+      name: name || file.name.replace('.pdf', ''),
+      filePath: relativePath,
+      fileSize: file.size,
+    }).returning();
+    const doc = docList[0];
 
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || 'Unknown';

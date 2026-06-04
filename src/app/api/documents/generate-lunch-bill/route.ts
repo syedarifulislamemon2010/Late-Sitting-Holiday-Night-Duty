@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { documents } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 
@@ -90,7 +92,71 @@ export async function POST(request: Request) {
       </thead>
     `;
 
-    // 1. Render cell groupings
+    // 1. Render DGM & AGM Executives
+    if (executivesData && executivesData.records && executivesData.records.length > 0) {
+      let execStamp = 0;
+      let execExtra = 0;
+      let execClaim = 0;
+      let execGrand = 0;
+      let execRows = '';
+
+      // Executive Rows
+      executivesData.records.forEach((r: any) => {
+        totalEmployeesCount++;
+        const stamp = 15;
+        const additional = r.additionalDeduction ?? 0;
+        execStamp += stamp;
+        execExtra += additional;
+        execClaim += r.totalBill;
+        execGrand += r.netPayable;
+
+        totalStampAll += stamp;
+        totalExtraAll += additional;
+
+        const totalDed = stamp + additional;
+
+        execRows += `
+          <tr style="background-color: #fffdfd;">
+            <td style="width: 4%;">${toBnDigits(globalIndex++)}</td>
+            <td class="text-left font-bold" style="color: #c2185b; width: 18%;">${r.employeeName}</td>
+            <td style="color: #c2185b; font-weight: bold; width: 10%;">${abbreviateDesignation(r.designation)}</td>
+            <td style="color: #c2185b; font-family: sans-serif; font-size: 8.5px; width: 10%;">${r.bankId || '-'}</td>
+            <td style="width: 8%;">${toBnDigits(400)}/-</td>
+            <td style="width: 8%;">${toBnDigits(r.presentDays)}</td>
+            <td style="width: 8%;">${toBnDigits(r.absenceDays)}</td>
+            <td class="font-bold" style="width: 9%;">${toBnDigits(r.totalBill)}/-</td>
+            <td style="width: 8%;">${toBnDigits(stamp)}/-</td>
+            <td style="width: 8%;">${toBnDigits(additional)}/-</td>
+            <td class="font-bold" style="width: 8%;">${toBnDigits(totalDed)}/-</td>
+            <td class="font-bold" style="width: 9%;">${toBnDigits(r.netPayable)}/-</td>
+          </tr>
+        `;
+      });
+
+      tablesHtml += `
+        <div style="margin-bottom: 12px; page-break-inside: avoid;">
+          <div style="background-color: #fdf2f8; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 9px; border: 1px solid #000; border-bottom: none; color: #db2777;">
+            ● নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
+          </div>
+          <table style="margin-top: 0; margin-bottom: 0;">
+            ${tableHeaders}
+            <tbody>
+              ${execRows}
+              <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 10px;">
+                <td colspan="7" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777; width: 66%;">সর্বমোট (নির্বাহী প্যানেল) =</td>
+                <td class="font-bold" style="color: #db2777; width: 9%;">৳${toBnDigits(execClaim)}/-</td>
+                <td style="color: #b45309; font-weight: bold; width: 8%;">৳${toBnDigits(execStamp)}/-</td>
+                <td style="color: #b45309; font-weight: bold; width: 8%;">৳${toBnDigits(execExtra)}/-</td>
+                <td style="color: #b91c1c; font-weight: 900; width: 8%;">৳${toBnDigits(execStamp + execExtra)}/-</td>
+                <td style="color: #db2777; font-weight: 900; width: 9%;">৳${toBnDigits(execGrand)}/-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // 2. Render cell groupings
     if (groupedData && Array.isArray(groupedData)) {
       groupedData.forEach((cellGroup: any) => {
         if (!cellGroup.records || cellGroup.records.length === 0) return;
@@ -159,70 +225,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // 2. Render DGM & AGM Executives
-    if (executivesData && executivesData.records && executivesData.records.length > 0) {
-      let execStamp = 0;
-      let execExtra = 0;
-      let execClaim = 0;
-      let execGrand = 0;
-      let execRows = '';
-
-      // Executive Rows
-      executivesData.records.forEach((r: any) => {
-        totalEmployeesCount++;
-        const stamp = 15;
-        const additional = r.additionalDeduction ?? 0;
-        execStamp += stamp;
-        execExtra += additional;
-        execClaim += r.totalBill;
-        execGrand += r.netPayable;
-
-        totalStampAll += stamp;
-        totalExtraAll += additional;
-
-        const totalDed = stamp + additional;
-
-        execRows += `
-          <tr style="background-color: #fffdfd;">
-            <td style="width: 4%;">${toBnDigits(globalIndex++)}</td>
-            <td class="text-left font-bold" style="color: #c2185b; width: 18%;">${r.employeeName}</td>
-            <td style="color: #c2185b; font-weight: bold; width: 10%;">${abbreviateDesignation(r.designation)}</td>
-            <td style="color: #c2185b; font-family: sans-serif; font-size: 8.5px; width: 10%;">${r.bankId || '-'}</td>
-            <td style="width: 8%;">${toBnDigits(400)}/-</td>
-            <td style="width: 8%;">${toBnDigits(r.presentDays)}</td>
-            <td style="width: 8%;">${toBnDigits(r.absenceDays)}</td>
-            <td class="font-bold" style="width: 9%;">${toBnDigits(r.totalBill)}/-</td>
-            <td style="width: 8%;">${toBnDigits(stamp)}/-</td>
-            <td style="width: 8%;">${toBnDigits(additional)}/-</td>
-            <td class="font-bold" style="width: 8%;">${toBnDigits(totalDed)}/-</td>
-            <td class="font-bold" style="width: 9%;">${toBnDigits(r.netPayable)}/-</td>
-          </tr>
-        `;
-      });
-
-      tablesHtml += `
-        <div style="margin-bottom: 12px; page-break-inside: avoid;">
-          <div style="background-color: #fdf2f8; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 9px; border: 1px solid #000; border-bottom: none; color: #db2777;">
-            ● নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
-          </div>
-          <table style="margin-top: 0; margin-bottom: 0;">
-            ${tableHeaders}
-            <tbody>
-              ${execRows}
-              <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 10px;">
-                <td colspan="7" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777; width: 66%;">সর্বমোট (নির্বাহী প্যানেল) =</td>
-                <td class="font-bold" style="color: #db2777; width: 9%;">৳${toBnDigits(execClaim)}/-</td>
-                <td style="color: #b45309; font-weight: bold; width: 8%;">৳${toBnDigits(execStamp)}/-</td>
-                <td style="color: #b45309; font-weight: bold; width: 8%;">৳${toBnDigits(execExtra)}/-</td>
-                <td style="color: #b91c1c; font-weight: 900; width: 8%;">৳${toBnDigits(execStamp + execExtra)}/-</td>
-                <td style="color: #db2777; font-weight: 900; width: 9%;">৳${toBnDigits(execGrand)}/-</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      `;
-    }
-
     const finalTotalDeduction = totalStampAll + totalExtraAll;
 
     // 3. Render Grand Departmental Total Summary at the bottom
@@ -243,7 +245,7 @@ export async function POST(request: Request) {
 <html>
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
 <style>
   * {
     margin: 0;
@@ -258,7 +260,7 @@ export async function POST(request: Request) {
     margin-right: 0.5in;
   }
   body {
-    font-family: "Noto Sans Bengali", "Kalpurush", sans-serif;
+    font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', Arial, sans-serif;
     font-size: 10px;
     line-height: 1.25;
     color: #000;
@@ -409,8 +411,18 @@ export async function POST(request: Request) {
   </div>
   
   <script>
-    window.onload = function() {
-      window.print();
+    if (document.fonts) {
+      document.fonts.ready.then(function() {
+        setTimeout(function() {
+          window.print();
+        }, 250);
+      });
+    } else {
+      window.onload = function() {
+        setTimeout(function() {
+          window.print();
+        }, 500);
+      }
     }
   </script>
 </body>
@@ -431,26 +443,27 @@ export async function POST(request: Request) {
     const fileSize = fs.statSync(filePathDisk).size;
 
     // Check if a document with this file path already exists
-    let doc = await prisma.document.findFirst({
-      where: { filePath: relativePath }
-    });
+    const docResult = await db.select().from(documents)
+      .where(eq(documents.filePath, relativePath))
+      .limit(1);
+    let doc = docResult[0] || null;
 
     if (doc) {
-      doc = await prisma.document.update({
-        where: { id: doc.id },
-        data: {
+      const [updated] = await db.update(documents)
+        .set({
           fileSize: fileSize,
           uploadedAt: new Date()
-        }
-      });
+        })
+        .where(eq(documents.id, doc.id))
+        .returning();
+      doc = updated;
     } else {
-      doc = await prisma.document.create({
-        data: {
-          name: `সমন্বিত লাঞ্চ বিল: ${monthName}`,
-          filePath: relativePath,
-          fileSize: fileSize
-        }
-      });
+      const [inserted] = await db.insert(documents).values({
+        name: `সমন্বিত লাঞ্চ বিল: ${monthName}`,
+        filePath: relativePath,
+        fileSize: fileSize
+      }).returning();
+      doc = inserted;
     }
 
     return NextResponse.json({

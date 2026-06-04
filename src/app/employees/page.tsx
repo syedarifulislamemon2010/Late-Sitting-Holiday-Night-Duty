@@ -1433,7 +1433,7 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মোবাইল নম্বর (ঐচ্ছিক)</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মোবাইল নম্বর</label>
                 <input
                   type="text"
                   placeholder="যেমন: 017XXXXXXXX"
@@ -1555,6 +1555,27 @@ export default function EmployeesPage() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  অথবা CSV / Text ফাইল আপলোড করুন
+                </label>
+                <input
+                  type="file"
+                  accept=".csv,.txt"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      const text = event.target?.result as string;
+                      setBulkCellText(text);
+                    };
+                    reader.readAsText(file);
+                  }}
+                  className="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 dark:file:bg-indigo-950/40 dark:file:text-indigo-400 hover:file:bg-indigo-100 transition-all cursor-pointer border border-dashed border-slate-300 dark:border-slate-800 p-2 rounded-xl bg-slate-50/20"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   সেলের নামসমূহ (প্রতি লাইনে একটি) *
                 </label>
                 <textarea
@@ -1633,11 +1654,11 @@ export default function EmployeesPage() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  অথবা CSV ফাইল আপলোড করুন
+                  অথবা CSV / Text ফাইল আপলোড করুন
                 </label>
                 <input
                   type="file"
-                  accept=".csv"
+                  accept=".csv,.txt"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
