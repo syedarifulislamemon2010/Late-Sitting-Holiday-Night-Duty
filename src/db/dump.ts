@@ -31,6 +31,7 @@ async function main() {
   const holidays = await db.select().from(schema.holidays);
   const executives = await db.select().from(schema.executives);
   const trash = await db.select().from(schema.trash);
+  const officeOrders = await db.select().from(schema.officeOrders);
 
   // Map userCellLinks to the format expected by dump
   const userCellLinks = userCellLinksRaw.map(link => ({
@@ -47,7 +48,8 @@ async function main() {
     documents,
     holidays,
     executives,
-    trash
+    trash,
+    officeOrders
   };
 
   fs.writeFileSync('postgres_dump.json', JSON.stringify(dump, null, 2));

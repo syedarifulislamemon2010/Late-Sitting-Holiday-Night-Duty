@@ -43,6 +43,7 @@ async function main() {
   await db.delete(schema.userCells);
   await db.delete(schema.users);
   await db.delete(schema.cells);
+  await db.delete(schema.officeOrders);
   console.log('Cleared all existing table records.');
 
   // 2. Seed Cells
@@ -172,9 +173,28 @@ async function main() {
     }
   }
 
+  // 10b. Seed Office Orders
+  if (dump.officeOrders) {
+    console.log(`Seeding ${dump.officeOrders.length} Office Orders...`);
+    for (const oo of dump.officeOrders) {
+      await db.insert(schema.officeOrders).values({
+        id: oo.id,
+        orderRef: oo.orderRef,
+        orderDate: oo.orderDate,
+        category: oo.category,
+        employeeName: oo.employeeName,
+        cellName: oo.cellName,
+        dutiesJson: oo.dutiesJson,
+        contentJson: oo.contentJson,
+        status: oo.status,
+        createdAt: oo.createdAt ? new Date(oo.createdAt) : undefined
+      });
+    }
+  }
+
   // 11. Reset PostgreSQL Serial Key sequences to prevent clashes
   console.log('Resetting PostgreSQL database serial sequences...');
-  const tables = ['Cell', 'User', 'Employee', 'Duty', 'Document', 'Holiday', 'Executive', 'Trash'];
+  const tables = ['Cell', 'User', 'Employee', 'Duty', 'Document', 'Holiday', 'Executive', 'Trash', 'OfficeOrder'];
   for (const table of tables) {
     try {
       await db.execute(sql`
