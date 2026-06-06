@@ -99,7 +99,7 @@ export default function Navbar() {
         body: JSON.stringify({ action: 'logout' }),
       });
       localStorage.removeItem('currentUser');
-      window.location.reload();
+      window.location.href = '/';
     } catch (err) {
       console.error('Logout error:', err);
     }
