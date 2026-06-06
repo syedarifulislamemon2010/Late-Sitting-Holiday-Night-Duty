@@ -416,8 +416,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
               {/* Username Input */}
               <div className="space-y-1.5 text-left">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">ইউজারনেম</label>
+                <label htmlFor="username-input" className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">ইউজারনেম</label>
                 <input 
+                  id="username-input"
                   type="text" 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -431,8 +432,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
               {/* Password Input */}
               <div className="space-y-1.5 text-left">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
+                <label htmlFor="password-input" className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
                 <input 
+                  id="password-input"
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
