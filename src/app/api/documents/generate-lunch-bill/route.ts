@@ -94,11 +94,39 @@ export async function POST(request: Request) {
 
     // 1. Render DGM & AGM Executives
     if (executivesData && executivesData.records && executivesData.records.length > 0) {
+      executivesData.records = [...executivesData.records].sort((a: any, b: any) => {
+        const priority = (desig: string | null | undefined) => {
+          if (!desig) return 3;
+          const d = desig.toLowerCase();
+          if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
+          if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
+          return 3;
+        };
+        const pA = priority(a.designation);
+        const pB = priority(b.designation);
+        if (pA !== pB) return pA - pB;
+        return (a.bankId || '').localeCompare(b.bankId || '', undefined, { numeric: true, sensitivity: 'base' });
+      });
+
       let execStamp = 0;
       let execExtra = 0;
       let execClaim = 0;
       let execGrand = 0;
       let execRows = '';
+
+      let dgmCount = 0;
+      let agmCount = 0;
+      executivesData.records.forEach((r: any) => {
+        const lowerDesig = (r.designation || '').toLowerCase();
+        if (lowerDesig.includes('ডিজিএম') || lowerDesig.includes('dgm') || lowerDesig.includes('উপ-মহাব্যবস্থাপক')) {
+          dgmCount++;
+        } else if (lowerDesig.includes('এজিএম') || lowerDesig.includes('agm') || lowerDesig.includes('সহকারী মহাব্যবস্থাপক')) {
+          agmCount++;
+        } else {
+          agmCount++;
+        }
+      });
+      const totalExec = dgmCount + agmCount;
 
       // Executive Rows
       executivesData.records.forEach((r: any) => {
@@ -136,7 +164,7 @@ export async function POST(request: Request) {
       tablesHtml += `
         <div style="margin-bottom: 12px; page-break-inside: avoid;">
           <div style="background-color: #fdf2f8; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 9px; border: 1px solid #000; border-bottom: none; color: #db2777;">
-            ● নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
+            ● নির্বাহী প্যানেল (ডিজিএম ${toBnDigits(dgmCount)} জন + এজিএম ${toBnDigits(agmCount)} জন = মোট ${toBnDigits(totalExec)} জন নির্বাহী)
           </div>
           <table style="margin-top: 0; margin-bottom: 0;">
             ${tableHeaders}
@@ -204,7 +232,7 @@ export async function POST(request: Request) {
         tablesHtml += `
           <div style="margin-bottom: 12px; page-break-inside: avoid;">
             <div style="background-color: #f1f5f9; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 9px; border: 1px solid #000; border-bottom: none;">
-              ● সেল: ${cellGroup.cellName}
+              ● সেল: ${cellGroup.cellName} (মোট কার্যদিবস: ${toBnDigits(workingDays)} দিন, ${toBnDigits(cellGroup.records.length)} জন কর্মকর্তা)
             </div>
             <table style="margin-top: 0; margin-bottom: 0;">
               ${tableHeaders}
@@ -260,7 +288,7 @@ export async function POST(request: Request) {
     margin-right: 0.5in;
   }
   body {
-    font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', Arial, sans-serif;
+    font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
     font-size: 10px;
     line-height: 1.25;
     color: #000;

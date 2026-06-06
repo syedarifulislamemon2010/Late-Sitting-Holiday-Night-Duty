@@ -335,7 +335,7 @@ export async function POST(request: Request) {
       margin-right: 0.5in;
     }
     body {
-      font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', Arial, sans-serif;
+      font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
       font-size: 10px;
       line-height: 1.3;
       color: #000;

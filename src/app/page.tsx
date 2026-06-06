@@ -245,7 +245,7 @@ export default function Dashboard() {
                   </span>
                   <span className="hidden sm:inline text-slate-300">|</span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-base sm:text-lg">
-                    ওয়ার্কিং ডে {toBanglaDigits(slots.filter(s => s.day !== null && !s.isWeekend && !s.isHoliday).length)} দিন
+                    মোট কার্যদিবস: {toBanglaDigits(slots.filter(s => s.day !== null && !s.isWeekend && !s.isHoliday).length)} দিন
                   </span>
                 </p>
               </div>

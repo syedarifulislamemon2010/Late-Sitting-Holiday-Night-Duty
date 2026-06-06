@@ -394,7 +394,20 @@ export default function ClosingBillPage() {
     }).filter(g => g.records.length > 0);
 
     // 2. Executives
-    const execRecs = isAdminOrAdminCell ? records.filter(r => r.isExecutive) : [];
+    const execRecsUnsorted = isAdminOrAdminCell ? records.filter(r => r.isExecutive) : [];
+    const execRecs = [...execRecsUnsorted].sort((a, b) => {
+      const priority = (desig: string | null | undefined) => {
+        if (!desig) return 3;
+        const d = desig.toLowerCase();
+        if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
+        if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
+        return 3;
+      };
+      const pA = priority(a.designation);
+      const pB = priority(b.designation);
+      if (pA !== pB) return pA - pB;
+      return (a.bankId || '').localeCompare(b.bankId || '', undefined, { numeric: true, sensitivity: 'base' });
+    });
     const execsData = {
       records: execRecs,
       totalClaim: execRecs.reduce((sum, r) => sum + r.totalBill, 0),
@@ -625,10 +638,32 @@ export default function ClosingBillPage() {
               
               {/* Group B: DGM & AGM Executives */}
               {activeRecords.some(r => r.isExecutive) && (() => {
-                const execRecs = activeRecords.filter(r => r.isExecutive);
+                const execRecs = activeRecords.filter(r => r.isExecutive).sort((a, b) => {
+                  const priority = (desig: string | null | undefined) => {
+                    if (!desig) return 3;
+                    const d = desig.toLowerCase();
+                    if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
+                    if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
+                    return 3;
+                  };
+                  const pA = priority(a.designation);
+                  const pB = priority(b.designation);
+                  if (pA !== pB) return pA - pB;
+                  return (a.bankId || '').localeCompare(b.bankId || '', undefined, { numeric: true, sensitivity: 'base' });
+                });
                 const execClaim = execRecs.length * 2000;
                 const execStamp = execRecs.length * 15;
                 const execGrand = execRecs.length * 1985;
+
+                const dgmCount = execRecs.filter(r => {
+                  const d = (r.designation || '').toLowerCase();
+                  return d.includes('ডিজিএম') || d.includes('dgm') || d.includes('উপ-মহাব্যবস্থাপক');
+                }).length;
+                const agmCount = execRecs.filter(r => {
+                  const d = (r.designation || '').toLowerCase();
+                  return d.includes('এজিএম') || d.includes('agm') || d.includes('সহকারী মহাব্যবস্থাপক');
+                }).length;
+                const totalExec = dgmCount + agmCount;
 
                 return (
                   <div className="border border-rose-150 dark:border-rose-900/40 rounded-xl overflow-hidden shadow-sm" style={{ borderLeft: '3px solid #db2777' }}>
@@ -636,7 +671,7 @@ export default function ClosingBillPage() {
                       <div className="flex items-center gap-2">
                         <Lock size={16} className="text-rose-500" />
                         <span className="font-extrabold text-xs text-rose-800 dark:text-rose-300 uppercase tracking-wide">
-                          নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
+                          নির্বাহী প্যানেল (ডিজিএম {toBanglaDigits(dgmCount)} জন + এজিএম {toBanglaDigits(agmCount)} জন = মোট {toBanglaDigits(totalExec)} জন নির্বাহী)
                         </span>
                       </div>
                       <span className="text-xs font-bold text-rose-600 dark:text-rose-350">

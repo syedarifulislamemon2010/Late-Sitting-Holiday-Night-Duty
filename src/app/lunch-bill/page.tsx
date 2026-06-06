@@ -586,7 +586,20 @@ export default function LunchBillPage() {
     }).filter(g => g.records.length > 0);
 
     // 2. Gather Executives
-    const execRecs = isAdminOrAdminCell ? records.filter(r => r.isExecutive) : [];
+    const execRecsUnsorted = isAdminOrAdminCell ? records.filter(r => r.isExecutive) : [];
+    const execRecs = [...execRecsUnsorted].sort((a, b) => {
+      const priority = (desig: string | null | undefined) => {
+        if (!desig) return 3;
+        const d = desig.toLowerCase();
+        if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
+        if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
+        return 3;
+      };
+      const pA = priority(a.designation);
+      const pB = priority(b.designation);
+      if (pA !== pB) return pA - pB;
+      return (a.bankId || '').localeCompare(b.bankId || '', undefined, { numeric: true, sensitivity: 'base' });
+    });
     const execsData = {
       records: execRecs,
       totalDays: execRecs.reduce((sum, r) => sum + execRecs.reduce((s, o) => s + o.presentDays, 0), 0),
@@ -924,11 +937,33 @@ export default function LunchBillPage() {
               
               {/* Group B: DGM & AGM Executives */}
               {activeRecords.some(r => r.isExecutive) && (() => {
-                const execRecs = activeRecords.filter(r => r.isExecutive);
+                const execRecs = activeRecords.filter(r => r.isExecutive).sort((a, b) => {
+                  const priority = (desig: string | null | undefined) => {
+                    if (!desig) return 3;
+                    const d = desig.toLowerCase();
+                    if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
+                    if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
+                    return 3;
+                  };
+                  const pA = priority(a.designation);
+                  const pB = priority(b.designation);
+                  if (pA !== pB) return pA - pB;
+                  return (a.bankId || '').localeCompare(b.bankId || '', undefined, { numeric: true, sensitivity: 'base' });
+                });
                 const execClaim = execRecs.reduce((sum, r) => sum + r.totalBill, 0);
                 const execStamp = execRecs.length * 15;
                 const execExtra = execRecs.reduce((sum, r) => sum + (r.additionalDeduction || 0), 0);
                 const execGrand = execRecs.reduce((sum, r) => sum + r.netPayable, 0);
+
+                const dgmCount = execRecs.filter(r => {
+                  const d = (r.designation || '').toLowerCase();
+                  return d.includes('ডিজিএম') || d.includes('dgm') || d.includes('উপ-মহাব্যবস্থাপক');
+                }).length;
+                const agmCount = execRecs.filter(r => {
+                  const d = (r.designation || '').toLowerCase();
+                  return d.includes('এজিএম') || d.includes('agm') || d.includes('সহকারী মহাব্যবস্থাপক');
+                }).length;
+                const totalExec = dgmCount + agmCount;
 
                 return (
                   <div className="border border-rose-150 dark:border-rose-900/40 rounded-xl overflow-hidden shadow-sm" style={{ borderLeft: '3px solid #db2777' }}>
@@ -936,7 +971,7 @@ export default function LunchBillPage() {
                       <div className="flex items-center gap-2">
                         <Lock size={16} className="text-rose-500" />
                         <span className="font-extrabold text-xs text-rose-800 dark:text-rose-300 uppercase tracking-wide">
-                          নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
+                          নির্বাহী প্যানেল (ডিজিএম {toBanglaDigits(dgmCount)} জন + এজিএম {toBanglaDigits(agmCount)} জন = মোট {toBanglaDigits(totalExec)} জন নির্বাহী)
                         </span>
                       </div>
                       <span className="text-xs font-bold text-rose-600 dark:text-rose-350">
@@ -1075,7 +1110,7 @@ export default function LunchBillPage() {
                       <div className="flex items-center gap-2">
                         <Users size={16} className="text-slate-400" />
                         <span className="font-extrabold text-xs text-slate-800 dark:text-slate-50 uppercase tracking-wide">
-                          সেল: {cell.name} ({cellRecs.length} জন কর্মকর্তা)
+                          সেল: {cell.name} (মোট কার্যদিবস: {toBanglaDigits(workingDays)} দিন, {cellRecs.length} জন কর্মকর্তা)
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
