@@ -117,7 +117,7 @@ export default function Navbar() {
     { name: 'সেটিংস', href: '/users', icon: Settings },
   ];
 
-  const userDisplayName = currentUser?.name || 'Syed Ariful Islam Emon';
+  const userDisplayName = currentUser?.name || '';
 
   return (
     <header className="no-print sticky top-0 z-40 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between px-4 h-14 font-sans select-none">
