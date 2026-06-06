@@ -502,23 +502,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
 
-                {/* Remember Me and Forgot Password Container */}
-                <div className="flex items-center justify-between text-xs font-sans px-1">
-                  <label htmlFor="remember-me-checkbox" className="flex items-center gap-2 text-slate-500 hover:text-slate-700 cursor-pointer select-none">
-                    <input 
-                      id="remember-me-checkbox"
-                      type="checkbox" 
-                      className="rounded border-slate-350 focus:ring-[#1565C0] h-4 w-4 text-[#1565C0] focus:ring-offset-0 cursor-pointer" 
-                    />
-                    <span>পাসওয়ার্ড মনে রাখুন</span>
-                  </label>
-                  <button
-                    type="button"
-                    className="text-[#1565C0] hover:underline focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-md font-bold cursor-pointer"
-                  >
-                    পাসওয়ার্ড ভুলে গেছেন?
-                  </button>
-                </div>
 
                 {/* Login Submit Button */}
                 <button 
@@ -552,7 +535,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         <footer className="w-full max-w-[420px] mx-auto text-center space-y-1 text-slate-500 select-none no-print print:hidden font-sans pb-4 z-10 px-4">
           <div className="flex flex-col gap-0.5 text-[10px] font-bold">
             <span>© ২০২৬ জনতা ব্যাংক পিএলসি। সর্বস্বত্ব সংরক্ষিত।</span>
-            <span>সংস্করণ ১.০.০ | বিল্ড: ২০২৬.০৫.৩০</span>
+            <span>সংস্করণ ১.০.০</span>
             <span>
               ডিজাইন ও ডেভেলপমেন্ট: <span className="text-[#1565C0]">সিবিএস ইন্টিগ্রেটেড ডেভেলপমেন্ট সেল</span>, অনলাইন ব্যাংকিং ডিপার্টমেন্ট
             </span>
