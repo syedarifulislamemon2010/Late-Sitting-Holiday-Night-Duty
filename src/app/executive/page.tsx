@@ -745,11 +745,11 @@ export default function ExecutivesPage() {
                 const dgmRank = dgmIndices.indexOf(exec.id) + 1;
                 const isDGM = dgmRank > 0;
                 
-                let accentColor = '#db2777'; // default pink for AGMs
-                let borderClass = 'border-rose-200 dark:border-rose-900/50';
-                let bgClass = 'bg-rose-50/10 dark:bg-rose-955/5 text-rose-850 dark:text-rose-300';
-                let textClass = 'text-rose-800 dark:text-rose-200 group-hover:text-rose-900';
-                let badgeClass = 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-450 border border-rose-100 dark:border-rose-900/30';
+                let accentColor = '#0ea5e9'; // default sky-blue for AGMs
+                let borderClass = 'border-sky-200 dark:border-sky-900/50';
+                let bgClass = 'bg-sky-50/10 dark:bg-sky-955/5 text-sky-850 dark:text-sky-300';
+                let textClass = 'text-sky-800 dark:text-sky-200 group-hover:text-sky-950';
+                let badgeClass = 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-455 border border-sky-100 dark:border-sky-900/30';
                 
                 if (isDGM) {
                   if (dgmRank === 1) {

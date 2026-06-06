@@ -1,0 +1,70 @@
+import { NextResponse } from 'next/server';
+import { ZodError } from 'zod';
+
+export class AppError extends Error {
+  constructor(
+    public override message: string,
+    public statusCode: number = 500,
+    public code: string = 'internal_server_error'
+  ) {
+    super(message);
+    this.name = this.constructor.name;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message: string = 'ইনপুট সঠিক নয়।', public details?: Record<string, string[]>) {
+    super(message, 400, 'validation_error');
+  }
+}
+
+export class AuthError extends AppError {
+  constructor(message: string = 'অনুমতি নেই।', statusCode: number = 403, code: string = 'forbidden') {
+    super(message, statusCode, code);
+  }
+}
+
+export class DatabaseError extends AppError {
+  constructor(message: string = 'ডাটাবেজ সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।') {
+    super(message, 500, 'database_error');
+  }
+}
+
+export function handleApiError(error: unknown) {
+  if (error instanceof AppError) {
+    return NextResponse.json(
+      { error: error.code, message: error.message },
+      { status: error.statusCode }
+    );
+  }
+
+  if (error instanceof ZodError) {
+    // Flatten Zod validation errors to key-value lists
+    const fieldErrors = error.flatten().fieldErrors as Record<string, string[] | undefined>;
+    const formattedErrors: Record<string, string> = {};
+    for (const key in fieldErrors) {
+      const errors = fieldErrors[key];
+      if (errors && errors[0]) {
+        formattedErrors[key] = errors[0];
+      }
+    }
+    return NextResponse.json(
+      {
+        error: 'validation_error',
+        message: 'ইনপুট সঠিক নয়।',
+        details: formattedErrors
+      },
+      { status: 400 }
+    );
+  }
+
+  console.error('Unhandled API Error:', error);
+  return NextResponse.json(
+    {
+      error: 'internal_server_error',
+      message: 'সার্ভার সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।'
+    },
+    { status: 500 }
+  );
+}
