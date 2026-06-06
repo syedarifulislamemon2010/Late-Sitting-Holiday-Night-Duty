@@ -31,6 +31,23 @@ interface DocumentFile {
 
 export default function DocumentsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const hasDeletePermission = (order: any) => {
+    if (currentUser?.role === 'ADMIN') return true;
+    if (currentUser?.role === 'USER') {
+      const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+      return order.cellName && userCellNames.includes(order.cellName);
+    }
+    return false;
+  };
+
+  const hasEditPermission = (order: any) => {
+    if (currentUser?.role === 'ADMIN') return true;
+    if (currentUser?.role === 'USER') {
+      const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+      return order.cellName && userCellNames.includes(order.cellName);
+    }
+    return false;
+  };
   const [activeTab, setActiveTab] = useState<'files' | 'orders' | 'bills'>('files');
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [officeOrders, setOfficeOrders] = useState<any[]>([]);
@@ -308,7 +325,20 @@ export default function DocumentsPage() {
 
   // Delete Office Order
   const handleDeleteOrder = async (id: number) => {
-    if (!confirm('আপনি কি নিশ্চিত যে এই স্মারক বিবরণীটি আর্কাইভ থেকে মুছে ফেলতে চান? এটি ডিলিট করলে এর সাথে যুক্ত কর্মকর্তাদের সকল ডিউটি ডাটাবেস থেকে সম্পূর্ণভাবে মুছে যাবে এবং তা আর ফিরে আসবে না।')) {
+    const order = officeOrders.find(o => o.id === id);
+    if (!order) return;
+
+    if (!hasDeletePermission(order)) {
+      alert('দুঃখিত, এই office order/বিল মুছে ফেলার জন্য আপনার পর্যাপ্ত পারমিশন বা অনুমতি নেই।');
+      return;
+    }
+
+    const isBill = order.category?.startsWith('BILL_');
+    const warningMsg = isBill 
+      ? `⚠️ সতর্কবার্তা!\n\nআপনি কি নিশ্চিত যে এই বিল স্মারক বিবরণীটি (${order.orderRef}) আর্কাইভ থেকে মুছে ফেলতে চান?\n\nএটি ডিলিট করলে বিলের রেকর্ডটি রিসাইকেল বিনে স্থানান্তরিত হবে। এটি স্থায়ীভাবে মুছে ফেলা হবে না এবং পরবর্তীতে পুনরুদ্ধার (Restore) করা সম্ভব।`
+      : `⚠️ সতর্কবার্তা!\n\nআপনি কি নিশ্চিত যে এই অফিস আদেশ স্মারক বিবরণীটি (${order.orderRef}) আর্কাইভ থেকে মুছে ফেলতে চান?\n\nএটি ডিলিট করলে এটি রিসাইকেল বিনে স্থানান্তরিত হবে এবং পুনরুদ্ধার করা সম্ভব। কিন্তু রিস্টোর করার পূর্ব পর্যন্ত এই আদেশের বিপরীতে বিল প্রসেস করা সম্ভব হবে না।`;
+
+    if (!confirm(warningMsg)) {
       return;
     }
 
@@ -318,10 +348,11 @@ export default function DocumentsPage() {
       });
 
       if (res.ok) {
-        setSuccessMsg('অফিস আদেশটি সফলভাবে মুছে ফেলা হয়েছে।');
+        setSuccessMsg(isBill ? 'বিল মেমোটি সফলভাবে মুছে ফেলা হয়েছে।' : 'অফিস আদেশটি সফলভাবে মুছে ফেলা হয়েছে।');
         fetchOfficeOrders();
       } else {
-        setError('অফিস আদেশটি মুছে ফেলা সম্ভব হয়নি।');
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.message || 'অফিস আদেশটি মুছে ফেলা সম্ভব হয়নি।');
       }
     } catch (err) {
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
@@ -333,12 +364,13 @@ export default function DocumentsPage() {
     const printContent = document.getElementById('printable-order-sheet');
     if (!printContent) return;
     
+    const isBill = viewingOrder?.category?.startsWith('BILL_');
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
         <html>
           <head>
-            <title>অফিস নির্দেশ - প্রিন্ট</title>
+            <title>${isBill ? 'আপ্যায়ন বিল বিবরণী' : 'অফিস নির্দেশ'} - প্রিন্ট</title>
             <style>
               body {
                 margin: 0;
@@ -350,13 +382,16 @@ export default function DocumentsPage() {
                 line-height: 1.6;
               }
               @page {
-                size: A4;
+                size: ${isBill ? 'legal portrait' : 'A4'};
                 margin: 0;
               }
               #printable-order-sheet {
-                width: 210mm !important;
-                height: 297mm !important;
-                padding: 1.0in !important;
+                width: ${isBill ? '8.5in' : '210mm'} !important;
+                height: ${isBill ? '14.0in' : '297mm'} !important;
+                padding-top: ${isBill ? '0.6in' : '1.0in'} !important;
+                padding-bottom: ${isBill ? '0.75in' : '1.0in'} !important;
+                padding-left: ${isBill ? '1.3in' : '1.0in'} !important;
+                padding-right: ${isBill ? '0.5in' : '1.0in'} !important;
                 box-sizing: border-box !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -469,14 +504,14 @@ export default function DocumentsPage() {
     });
 
   // Filtered Office Orders (Only categories NOT starting with BILL_)
-  const officeOrdersList = officeOrders.filter(order => !order.category?.startsWith('BILL_'));
+  const officeOrdersList = officeOrders.filter(order => !order.category?.startsWith('BILL_') && order.status !== 'Deleted');
   const filteredOfficeOrders = officeOrdersList.filter(order => 
     order.orderRef.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
     order.employeeName.toLowerCase().includes(orderSearchQuery.toLowerCase())
   );
 
   // Filtered Bill Memos (Only categories starting with BILL_)
-  const billMemosList = officeOrders.filter(order => order.category?.startsWith('BILL_'));
+  const billMemosList = officeOrders.filter(order => order.category?.startsWith('BILL_') && order.status !== 'Deleted');
   const filteredBillMemos = billMemosList.filter(order => 
     order.orderRef.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
     order.employeeName.toLowerCase().includes(orderSearchQuery.toLowerCase())
@@ -885,7 +920,7 @@ export default function DocumentsPage() {
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-500/20">
                             <CheckCircle size={10} className="text-emerald-500" />
-                            প্রিন্টেড
+                            {order.status === 'Generated & Printed' || order.status === 'Printed' ? 'জেনারেটেড এন্ড প্রিন্টেড' : order.status}
                           </span>
                           <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-bold uppercase">
                             {order.category === 'LATE_SITTING' ? 'লেট সিটিং' : order.category === 'HOLIDAY' ? 'সরকারি ছুটি' : 'রাত্রীকালীন'}
@@ -934,7 +969,7 @@ export default function DocumentsPage() {
                             <span>বিল জেনারেট</span>
                           </button>
                           
-                          {currentUser?.role !== 'USER' && (
+                          {hasEditPermission(order) && (
                             <button 
                               onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
@@ -946,7 +981,7 @@ export default function DocumentsPage() {
                           )}
                         </div>
 
-                        {currentUser?.role !== 'USER' && (
+                        {hasDeletePermission(order) && (
                           <button 
                             onClick={() => handleDeleteOrder(order.id)}
                             className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
@@ -1019,7 +1054,7 @@ export default function DocumentsPage() {
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-500/20">
                             <CheckCircle size={10} className="text-emerald-500" />
-                            প্রিন্টেড
+                            {order.status === 'Generated & Printed' || order.status === 'Printed' ? 'জেনারেটেড এন্ড প্রিন্টেড' : order.status}
                           </span>
                           <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-bold uppercase">
                             {order.category === 'BILL_LATE_SITTING' ? 'লেট সিটিং বিল' : order.category === 'BILL_HOLIDAY' ? 'সরকারি ছুটি বিল' : 'রাত্রীকালীন বিল'}
@@ -1061,7 +1096,7 @@ export default function DocumentsPage() {
                             <span>ভিউ</span>
                           </button>
 
-                          {currentUser?.role !== 'USER' && (
+                          {hasEditPermission(order) && (
                             <button 
                               onClick={() => window.location.href = `/billing?edit_ref=${encodeURIComponent(order.orderRef)}`}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
@@ -1073,7 +1108,7 @@ export default function DocumentsPage() {
                           )}
                         </div>
 
-                        {currentUser?.role !== 'USER' && (
+                        {hasDeletePermission(order) && (
                           <button 
                             onClick={() => handleDeleteOrder(order.id)}
                             className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
@@ -1111,7 +1146,7 @@ export default function DocumentsPage() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handlePrintModal}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-650 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-650/20"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20"
                   >
                     <Printer size={13} />
                     <span>প্রিন্ট করুন</span>
@@ -1232,7 +1267,9 @@ export default function DocumentsPage() {
                         <div className="w-full flex justify-end text-right" style={{ marginTop: '0.4in', marginBottom: '0.2in' }}>
                           <div className="text-right leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', paddingRight: '0.1in' }}>
                             <p className="font-extrabold text-[10px]">({viewingOrder.employeeName})</p>
-                            <p className="text-[10px] font-bold text-slate-800 mt-1">বিল সংগ্রহকারী কর্মকর্তা</p>
+                            <p className="text-[10px] font-bold text-slate-800 mt-1">
+                              {viewingOrder.content?.representativeDesignation || viewingOrder.duties?.find((d: any) => d.employeeName === viewingOrder.employeeName)?.designation || 'প্রিন্সিপাল অফিসার (পিও)'}
+                            </p>
                           </div>
                         </div>
 
@@ -1250,7 +1287,7 @@ export default function DocumentsPage() {
                           </div>
                           <div style={{ marginBottom: '0.85in' }}>
                             <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                              উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ {viewingOrder.content?.signingOfficer ? `(${viewingOrder.content?.signingOfficer})` : ''}
+                              উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
                           <div style={{ marginBottom: '0.85in' }}>

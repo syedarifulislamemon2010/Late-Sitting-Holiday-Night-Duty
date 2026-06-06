@@ -18,6 +18,7 @@ import {
   Printer,
   Eye,
   X,
+  Phone,
   Loader2
 } from 'lucide-react';
 
@@ -146,12 +147,8 @@ export default function EmployeesPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [iframeUrl, setIframeUrl] = useState('');
 
-  const isAdministrationCell = currentUser?.cells?.some((c: any) => 
-    c.name.includes('প্রশাসন') || 
-    c.name.toLowerCase().includes('admin') || 
-    c.name.toLowerCase().includes('administration')
-  );
-  const isAdminOrAdminCell = currentUser?.role === 'ADMIN' || isAdministrationCell;
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdminOrAdminCell = isAdmin;
 
   // Modals state
   const [isEmpModalOpen, setIsEmpModalOpen] = useState(false);
@@ -1226,6 +1223,10 @@ export default function EmployeesPage() {
                                   <div className="flex items-center gap-1">
                                     <CreditCard size={12} className="text-slate-400" />
                                     <span>নথি নং: <strong className="font-mono">{emp.fileNo}</strong></span>
+                                  </div>
+                                  <div className="flex items-center gap-1 col-span-2">
+                                    <Phone size={12} className="text-slate-400" />
+                                    <span>মোবাইল নম্বর: <strong className="font-sans">{emp.mobile || 'প্রদান করা হয়নি'}</strong></span>
                                   </div>
                                 </div>
                               </div>

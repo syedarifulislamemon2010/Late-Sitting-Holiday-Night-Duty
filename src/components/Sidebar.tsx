@@ -69,16 +69,10 @@ export default function Sidebar() {
     localStorage.setItem('sidebar-collapsed', String(nextState));
   };
 
-  const isAdministrationCell = currentUser?.cells?.some((c: any) => 
-    c.name.includes('প্রশাসন') || 
-    c.name.toLowerCase().includes('admin') || 
-    c.name.toLowerCase().includes('administration')
-  );
-  
-  const isAdminOrAdminCell = currentUser?.role === 'ADMIN' || isAdministrationCell;
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   const currentMonth = new Date().getMonth() + 1; // 1-12
-  const showClosingBill = isAdminOrAdminCell || currentMonth === 6 || currentMonth === 12;
+  const showClosingBill = isAdmin || currentMonth === 6 || currentMonth === 12;
 
   const sections = [
     {
@@ -90,7 +84,7 @@ export default function Sidebar() {
     {
       title: 'প্রশাসনিক কার্যক্রম',
       items: [
-        { name: 'নির্বাহী প্যানেল', href: '/executive', icon: Users },
+        ...(isAdmin ? [{ name: 'নির্বাহী প্যানেল', href: '/executive', icon: Users }] : []),
         { name: 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
         { name: 'অফিস অর্ডার', href: '/roster', icon: CalendarRange }
       ]

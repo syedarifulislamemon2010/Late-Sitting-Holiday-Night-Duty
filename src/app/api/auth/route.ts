@@ -38,6 +38,7 @@ export async function POST(request: Request) {
             password: '123456', // default password
             name: employee.name.trim(),
             role: 'USER',
+            mobile: employee.mobile ? employee.mobile.trim() : null,
           }).returning();
           user = newUserList[0];
 

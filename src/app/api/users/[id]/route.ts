@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { users, userCells, cells } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { users, userCells, cells, employees } from '@/db/schema';
+import { eq, sql } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 
 export async function PUT(
@@ -74,6 +74,13 @@ export async function PUT(
       .where(eq(users.id, userId))
       .returning();
     const updatedUser = updatedUserList[0];
+
+    // Synchronize the mobile number to the Employee table if username corresponds to an employee's bankId
+    if (mobile !== undefined) {
+      await db.update(employees)
+        .set({ mobile: mobile ? mobile.trim() : null })
+        .where(eq(sql`LOWER(TRIM(${employees.bankId}))`, targetUser.username.trim().toLowerCase()));
+    }
 
     const assignedCells = await db
       .select({

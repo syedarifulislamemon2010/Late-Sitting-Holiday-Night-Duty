@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { trash as trashTable, cells, employees, duties, executives, documents } from '@/db/schema';
+import { trash as trashTable, cells, employees, duties, executives, documents, officeOrders } from '@/db/schema';
 import { and, eq, lt, ne, desc } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
+import { logActivity } from '@/lib/audit';
 
 export async function GET() {
   try {
@@ -38,8 +39,13 @@ export async function GET() {
       }
     }
 
-    // 2. Delete all trash items older than 30 days
-    await db.delete(trashTable).where(lt(trashTable.deletedAt, thirtyDaysAgo));
+    // 2. Delete all trash items older than 30 days (excluding OFFICE_ORDER to prevent permanent deletion)
+    await db.delete(trashTable).where(
+      and(
+        lt(trashTable.deletedAt, thirtyDaysAgo),
+        ne(trashTable.entityType, 'OFFICE_ORDER')
+      )
+    );
 
     // 3. Return active trash items (role-restricted)
     const conditions = [];
@@ -226,6 +232,27 @@ export async function POST(request: Request) {
               break;
             }
 
+            case 'OFFICE_ORDER': {
+              const orderId = Number(parsed.id);
+              await db.update(officeOrders)
+                .set({ status: parsed.status || 'Generated & Printed' })
+                .where(eq(officeOrders.id, orderId));
+
+              const isBill = parsed.category?.startsWith('BILL_');
+              await logActivity({
+                username: currentUser.username,
+                action: isBill ? 'RESTORE_BILL' : 'RESTORE_OFFICE_ORDER',
+                entityType: 'OFFICE_ORDER',
+                entityId: String(parsed.id),
+                userId: currentUser.id,
+                bankId: currentUser.username,
+                ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
+                userAgent: request.headers.get('user-agent') || 'Unknown',
+                details: `${currentUser.name} (@${currentUser.username}) ${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} রিস্টোর করেছেন (সূত্র: ${parsed.orderRef})।`
+              });
+              break;
+            }
+
             default:
               failCount++;
               lastErrorMessage = 'অসমর্থিত এনটিটি টাইপ।';
@@ -236,6 +263,11 @@ export async function POST(request: Request) {
           await db.delete(trashTable).where(eq(trashTable.id, trashRecord.id));
           successCount++;
         } else if (action === 'purge') {
+          if (trashRecord.entityType === 'OFFICE_ORDER') {
+            failCount++;
+            lastErrorMessage = 'অফিস আদেশ বা বিল মেমো স্থায়ীভাবে মুছে ফেলা নিষিদ্ধ।';
+            continue;
+          }
           if (trashRecord.entityType === 'DOCUMENT') {
             try {
               const parsed = JSON.parse(trashRecord.data);

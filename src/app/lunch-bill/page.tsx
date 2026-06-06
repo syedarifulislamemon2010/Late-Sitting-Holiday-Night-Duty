@@ -203,13 +203,9 @@ export default function LunchBillPage() {
     loadData();
   }, []);
 
-  const isAdministrationCell = currentUser?.cells?.some((c: any) => 
-    c.name.includes('প্রশাসন') || 
-    c.name.toLowerCase().includes('admin') || 
-    c.name.toLowerCase().includes('administration')
-  );
-  
-  const isAdminOrAdminCell = currentUser?.role === 'ADMIN' || isAdministrationCell;
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const matchedEmp = employees.find(e => e.bankId && e.bankId.trim().toLowerCase() === currentUser?.username?.trim().toLowerCase());
+  const resolvedPrimaryCellId = matchedEmp ? matchedEmp.cellId : (currentUser?.cells?.[0]?.id || null);
 
   // Load saved combined sheet (cellId = 0 maps to system combined cell internally)
   useEffect(() => {
@@ -505,12 +501,12 @@ export default function LunchBillPage() {
 
   // Filter records by cell/executive for standard users
   const getFilteredRecordsForUser = (primaryCellId: number | undefined) => {
-    if (isAdminOrAdminCell) return records;
+    if (isAdmin) return records;
     // Standard user gets only officers belonging to their specific cell (primary cell only)
     return records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
   };
 
-  const primaryCellId = activeCellId || currentUser?.cells?.[0]?.id;
+  const primaryCellId = isAdmin ? (activeCellId || resolvedPrimaryCellId) : resolvedPrimaryCellId;
   const activeRecords = getFilteredRecordsForUser(primaryCellId);
 
   // Combined sums
@@ -526,7 +522,7 @@ export default function LunchBillPage() {
 
   // Save entire combined record
   const saveLunchBill = async (): Promise<any> => {
-    if (!isAdminOrAdminCell) return null;
+    if (!isAdmin) return null;
     setSaving(true);
     setSuccessMessage(null);
     setErrorMessage(null);
@@ -561,14 +557,14 @@ export default function LunchBillPage() {
 
   // Build Payload structures for HTML generator
   const getPrintPayload = () => {
-    const primaryCellId = activeCellId || currentUser?.cells?.[0]?.id;
+    const primaryCellId = isAdmin ? (activeCellId || resolvedPrimaryCellId) : resolvedPrimaryCellId;
 
     // Filter records and cells according to user role/assigned primary cell
-    const allowedRecords = isAdminOrAdminCell 
+    const allowedRecords = isAdmin 
       ? records 
       : records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
       
-    const allowedCells = isAdminOrAdminCell 
+    const allowedCells = isAdmin 
       ? cells 
       : cells.filter(c => c.id === primaryCellId);
 
@@ -586,7 +582,7 @@ export default function LunchBillPage() {
     }).filter(g => g.records.length > 0);
 
     // 2. Gather Executives
-    const execRecsUnsorted = isAdminOrAdminCell ? records.filter(r => r.isExecutive) : [];
+    const execRecsUnsorted = isAdmin ? records.filter(r => r.isExecutive) : [];
     const execRecs = [...execRecsUnsorted].sort((a, b) => {
       const priority = (desig: string | null | undefined) => {
         if (!desig) return 3;
@@ -628,7 +624,7 @@ export default function LunchBillPage() {
     setErrorMessage(null);
     try {
       // 1. Auto-save latest admin states first and immediately update frontend saved state!
-      if (isAdminOrAdminCell) {
+      if (isAdmin) {
         const savedRecord = await saveLunchBill();
         if (!savedRecord) {
           throw new Error('বিল জেনারেট করার আগে ডাটাবেজ আপডেট সংরক্ষণ ব্যর্থ হয়েছে।');
@@ -707,7 +703,7 @@ export default function LunchBillPage() {
           <div>
             <h1 className="app-page-title text-slate-800 dark:text-slate-100 font-sans tracking-wide">লাঞ্চ বিল জেনারেটর</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {isAdminOrAdminCell 
+              {isAdmin 
                 ? 'সকল সেল এবং ডিজিএম ও এজিএম নির্বাহীদের সমন্বিত লাঞ্চ বিলের হিসাব ও পেমেন্ট রেকর্ড শিট প্রস্তুতকারক প্যানেল।'
                 : 'আপনার সেলের চূড়ান্তকৃত লাঞ্চ বিল ও প্রিন্ট প্রিভিউ বিবরণী।'}
             </p>
@@ -734,39 +730,24 @@ export default function LunchBillPage() {
             <div className="space-y-2">
               <label htmlFor="workingDays" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 মোট কার্যদিবস
-                {!isAdminOrAdminCell && <span className="text-[10px] text-slate-400 normal-case ml-1.5">(লকড)</span>}
+                {!isAdmin && <span className="text-[10px] text-slate-400 normal-case ml-1.5">(লকড)</span>}
               </label>
               <input
                 id="workingDays"
                 type="number"
                 min="1"
                 max="31"
-                disabled={!isAdminOrAdminCell}
+                disabled={!isAdmin}
                 value={workingDays}
                 onChange={(e) => handleWorkingDaysChange(e.target.value)}
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold font-sans"
               />
             </div>
 
-            {/* Cell Selection for Users with Multiple Cells */}
-            {!isAdminOrAdminCell && currentUser?.cells?.length > 1 && (
-              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                <label htmlFor="activeCellId" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেল নির্বাচন করুন</label>
-                <select
-                  id="activeCellId"
-                  value={activeCellId || ''}
-                  onChange={(e) => setActiveCellId(parseInt(e.target.value, 10))}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
-                >
-                  {currentUser.cells.map((c: any) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+
 
             {/* Deduction Settings Mode Trigger */}
-            {isAdminOrAdminCell && (
+            {isAdmin && (
               <div className="space-y-2">
                 <label htmlFor="deductionMode" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                   <Sliders size={12} /> অতিরিক্ত কর্তন কনফিগারেশন
@@ -791,7 +772,7 @@ export default function LunchBillPage() {
           </div>
 
           {/* Dynamic configs dependent panel */}
-          {isAdminOrAdminCell && deductionMode === 'flat' && (
+          {isAdmin && deductionMode === 'flat' && (
             <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/80 rounded-xl flex items-center gap-4 animate-fade-in">
               <span className="text-xs font-bold text-slate-500 uppercase">ফ্ল্যাট অতিরিক্ত কর্তনের হার:</span>
               <input
@@ -805,7 +786,7 @@ export default function LunchBillPage() {
             </div>
           )}
 
-          {isAdminOrAdminCell && deductionMode === 'designation' && (
+          {isAdmin && deductionMode === 'designation' && (
             <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/80 rounded-xl grid grid-cols-2 sm:grid-cols-5 gap-4 animate-fade-in animate-scale-up">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">SPO / SSPO:</span>
@@ -883,7 +864,7 @@ export default function LunchBillPage() {
             <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">
-                  {isAdminOrAdminCell ? 'সমন্বিত লাঞ্চ বিল এন্ট্রি শিট' : `লাঞ্চ ভাতা বিল শিট - ${cells.find(c => c.id === primaryCellId)?.name || ''}`} - {getBanglaMonthName(selectedMonth)}
+                  {isAdmin ? 'সমন্বিত লাঞ্চ বিল এন্ট্রি শিট' : `লাঞ্চ ভাতা বিল শিট - ${cells.find(c => c.id === primaryCellId)?.name || ''}`} - {getBanglaMonthName(selectedMonth)}
                 </h3>
                 <p className="text-[10px] mt-0.5 font-sans">
                   {savedLunchBill ? (
@@ -900,7 +881,7 @@ export default function LunchBillPage() {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-3">
-                {isAdminOrAdminCell && (
+                {isAdmin && (
                   <button
                     onClick={saveLunchBill}
                     disabled={saving}
@@ -1024,7 +1005,7 @@ export default function LunchBillPage() {
                                     type="number"
                                     min="0"
                                     max={workingDays}
-                                    disabled={!isAdminOrAdminCell}
+                                    disabled={!isAdmin}
                                     value={r.absenceDays}
                                     onChange={(e) => handleAbsenceChange(r.employeeId, true, e.target.value)}
                                     className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
@@ -1041,7 +1022,7 @@ export default function LunchBillPage() {
                                   <input
                                     type="number"
                                     min="0"
-                                    disabled={!isAdminOrAdminCell}
+                                    disabled={!isAdmin}
                                     value={r.additionalDeduction}
                                     onChange={(e) => handleManualDeductionChange(r.employeeId, true, e.target.value)}
                                     className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
@@ -1165,7 +1146,7 @@ export default function LunchBillPage() {
                                       type="number"
                                       min="0"
                                       max={workingDays}
-                                      disabled={!isAdminOrAdminCell}
+                                      disabled={!isAdmin}
                                       value={r.absenceDays}
                                       onChange={(e) => handleAbsenceChange(r.employeeId, false, e.target.value)}
                                       className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
@@ -1182,7 +1163,7 @@ export default function LunchBillPage() {
                                     <input
                                       type="number"
                                       min="0"
-                                      disabled={!isAdminOrAdminCell}
+                                      disabled={!isAdmin}
                                       value={r.additionalDeduction}
                                       onChange={(e) => handleManualDeductionChange(r.employeeId, false, e.target.value)}
                                       className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
@@ -1271,7 +1252,7 @@ export default function LunchBillPage() {
             <div className="space-y-2">
               <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">লাঞ্চ বিল প্রস্তুত করা হয়নি</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-                {isAdminOrAdminCell 
+                {isAdmin 
                   ? 'এই সেলে এই মাসের কোনো সক্রিয় কর্মকর্তা ডেটাবেজে তালিকাভুক্ত নেই। অনুগ্রহ করে কর্মকর্তা তথ্য যুক্ত করুন।'
                   : 'প্রশাসন সেল কর্তৃক এই মাসের লাঞ্চ ভাতা বিল এখনও প্রস্তুত বা চূড়ান্ত করা হয়নি। অনুগ্রহ করে চূড়ান্ত হওয়ার পর চেক করুন।'}
               </p>

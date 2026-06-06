@@ -74,7 +74,13 @@ export class DutyService {
       conditions.push(lteDutiesDateHelper(filters.endDate));
     }
     if (filters.orderRef) {
-      conditions.push(eq(dutiesOrderRefHelper(), filters.orderRef));
+      let refs = [filters.orderRef];
+      if (filters.orderRef.endsWith('/বিল')) {
+        refs.push(filters.orderRef.slice(0, -5));
+      } else {
+        refs.push(filters.orderRef + '/বিল');
+      }
+      conditions.push(inArray(dutiesOrderRefHelper(), refs));
     }
 
     const dutiesList = await DutyRepository.listAllWithDetails(
@@ -117,6 +123,18 @@ export class DutyService {
     }
 
     const validated = dutiesBulkCreateSchema.parse(body);
+
+    if (currentUser.role !== 'ADMIN') {
+      const userCellIds = currentUser.cells.map((c: any) => c.id);
+      const uniqueEmployeeIds = Array.from(new Set(validated.assignments.map((a: any) => a.employeeId)));
+      const employeesToCheck = await db.select().from(employees)
+        .where(inArray(employees.id, uniqueEmployeeIds));
+      for (const emp of employeesToCheck) {
+        if (!userCellIds.includes(emp.cellId)) {
+          throw new AuthError('অন্য সেলের কর্মকর্তাকে ডিউটি দেয়ার অনুমতি নেই।', 403, 'forbidden');
+        }
+      }
+    }
 
     if (validated.originalOrderRef) {
       await DutyRepository.deleteDutiesByOrderRef(validated.originalOrderRef);
@@ -206,6 +224,14 @@ export class DutyService {
     const currentDuty = await DutyRepository.findById(id);
     if (!currentDuty) {
       throw new AppError('duty_not_found', 444, 'duty_not_found');
+    }
+
+    if (currentUser.role !== 'ADMIN') {
+      const userCellIds = currentUser.cells.map((c: any) => c.id);
+      const emp = await EmployeeRepository.findById(currentDuty.employeeId);
+      if (!emp || !userCellIds.includes(emp.cellId)) {
+        throw new AuthError('অন্য সেলের কর্মকর্তা আপডেট করার অনুমতি নেই।', 403, 'forbidden');
+      }
     }
 
     const targetType = (validated.type || currentDuty.type) as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';

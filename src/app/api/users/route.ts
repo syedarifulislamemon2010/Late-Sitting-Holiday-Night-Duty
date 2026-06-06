@@ -30,6 +30,7 @@ export async function GET() {
             password: '123456',
             name: emp.name.trim(),
             role: 'USER',
+            mobile: emp.mobile ? emp.mobile.trim() : null,
           }).returning();
           const newUser = newUsers[0];
 
@@ -111,6 +112,13 @@ export async function POST(request: Request) {
       mobile: mobile ? mobile.trim() : null,
     }).returning();
     const user = newUsers[0];
+
+    // Synchronize the mobile number to the Employee table if username corresponds to an employee's bankId
+    if (mobile !== undefined && mobile !== null) {
+      await db.update(employees)
+        .set({ mobile: mobile.trim() || null })
+        .where(eq(sql`LOWER(TRIM(${employees.bankId}))`, username.trim().toLowerCase()));
+    }
 
     if (Array.isArray(cellIds) && cellIds.length > 0) {
       await db.insert(userCells).values(

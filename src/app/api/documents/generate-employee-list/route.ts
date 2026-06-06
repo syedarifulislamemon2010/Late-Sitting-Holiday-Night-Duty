@@ -30,12 +30,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'unauthorized', message: 'ব্যবহারকারী খুঁজে পাওয়া যায়নি।' }, { status: 403 });
     }
 
-    const isAdministrationCell = currentUser.cells?.some((c: any) => 
-      c.name.includes('প্রশাসন') || 
-      c.name.toLowerCase().includes('admin') || 
-      c.name.toLowerCase().includes('administration')
-    );
-    const isAdminOrAdminCell = currentUser.role === 'ADMIN' || isAdministrationCell;
+    const isAdmin = currentUser.role === 'ADMIN';
 
     const payload = await request.json();
     const { cellFilter } = payload; 
@@ -45,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     let cellIds: number[] = [];
-    if (!isAdminOrAdminCell) {
+    if (!isAdmin) {
       const ownEmployeeResult = await db.select().from(employees)
         .where(eq(employees.bankId, currentUser.username))
         .limit(1);
@@ -134,7 +129,7 @@ export async function POST(request: Request) {
     }) as any;
 
     let executives: any[] = [];
-    if (isAdminOrAdminCell && cellFilter === 'executives') {
+    if (isAdmin && cellFilter === 'executives') {
       const execList = await db.select().from(executivesTable);
       executives = execList.filter(e => {
         const d = e.designation.trim();

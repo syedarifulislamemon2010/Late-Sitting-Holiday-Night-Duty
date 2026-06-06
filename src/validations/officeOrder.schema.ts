@@ -7,6 +7,7 @@ export const officeOrderCreateSchema = z.object({
   category: z.string({ message: 'missing_required_fields' }).min(1, { message: 'missing_required_fields' }),
   employeeName: z.string({ message: 'missing_required_fields' }).min(1, { message: 'missing_required_fields' }),
   cellName: z.string().nullable().optional(),
+  status: z.string().optional(),
   duties: z.array(z.any()).optional(),
   dutyIds: z.array(z.union([z.number(), z.string()])).optional(),
   content: z.record(z.string(), z.any()).nullable().optional()

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 
 import { 
@@ -14,7 +14,8 @@ import {
   ChevronLeft, 
   Check, 
   Users,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from 'lucide-react';
 
 interface Cell {
@@ -98,6 +99,10 @@ const getBanglaNumberWords = (num: number) => {
 };
 
 export default function RosterPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [orderGenerated, setOrderGenerated] = useState(false);
+  const isFirstLoadRef = useRef(true);
+  const isInitializingArchiveRef = useRef(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [duties, setDuties] = useState<Duty[]>([]);
@@ -439,6 +444,13 @@ export default function RosterPage() {
 
   // Sync templates and orderRef dynamically
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('edit_ref')) {
+        return;
+      }
+    }
+
     let template = LATE_SITTING_TEMPLATE;
     if (printCategory === 'NIGHT_SHIFT') template = NIGHT_SHIFT_TEMPLATE;
     if (printCategory === 'HOLIDAY') template = HOLIDAY_TEMPLATE;
@@ -495,7 +507,7 @@ export default function RosterPage() {
     setOrderRef(`৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${bnRand}`);
   }, [printCategory, payeeEmployeeId, employees, stableNumber, isEditingArchive, activePartIdx, archiveSerial]);
 
-  const archiveOrder = async (isPrintPreview: boolean) => {
+  const archiveOrder = async (action: 'generate' | 'print' | 'download') => {
     if (!payeeEmployeeId || !orderRef) return;
     
     try {
@@ -514,6 +526,7 @@ export default function RosterPage() {
         category: printCategory,
         employeeName: payeeName,
         cellName: cellName,
+        status: action === 'generate' ? 'Generated' : undefined,
         duties: printTableDuties.map(group => ({
           employeeId: group.employee.id,
           employeeName: group.employee.name,
@@ -538,19 +551,53 @@ export default function RosterPage() {
         }
       };
 
-      const res = await fetch('/api/office-orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      if (action === 'generate') {
+        const res = await fetch('/api/office-orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
 
-      if (res.ok) {
-        console.log('Office order archived successfully!');
-        
-        // Call updateAssociatedBill to keep the bill memo updated in sync with office order!
-        await updateAssociatedBill(orderRef);
-        
-        // Trigger PDF generation endpoint in backend unconditionally
+        if (res.ok) {
+          console.log('Office order generated successfully!');
+          
+          await updateAssociatedBill(orderRef);
+          
+          // Generate PDF
+          const pdfPayload = {
+            orderRef: orderRef,
+            orderDate: orderDate,
+            orderText: orderText,
+            duties: printTableDuties.map(group => ({
+              employee: {
+                name: group.employee.name,
+                designation: getShortDesignation(group.employee.designation),
+                bankId: group.employee.bankId || ''
+              },
+              datesFormatted: getFormattedDateList(group.dates),
+              description: group.description
+            })),
+            signingOfficer: signingOfficer,
+            signingDesignation: signingDesignation,
+            copies: copies,
+            headerMode: headerMode,
+            actionType: 'GENERATE_OFFICE_ORDER'
+          };
+
+          await fetch('/api/documents/generate-office-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pdfPayload)
+          });
+
+          setOrderGenerated(true);
+          alert('অফিস আদেশটি সফলভাবে তৈরি করা হয়েছে! এখন আপনি প্রিন্ট প্রিভিউ বা ডাউনলোড করতে পারেন।');
+          loadDuties();
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          alert(`অফিস আদেশ তৈরি করতে ব্যর্থ হয়েছে। সার্ভার মেসেজ: ${errData.message || errData.error || 'অজানা ত্রুটি'}`);
+        }
+      } else if (action === 'download') {
         const pdfPayload = {
           orderRef: orderRef,
           orderDate: orderDate,
@@ -567,7 +614,8 @@ export default function RosterPage() {
           signingOfficer: signingOfficer,
           signingDesignation: signingDesignation,
           copies: copies,
-          headerMode: headerMode
+          headerMode: headerMode,
+          actionType: 'DOWNLOAD_OFFICE_ORDER_PDF'
         };
 
         const pdfRes = await fetch('/api/documents/generate-office-order', {
@@ -578,41 +626,58 @@ export default function RosterPage() {
 
         if (pdfRes.ok) {
           const pdfData = await pdfRes.json();
-          // Only open PDF in a new tab if in download/A4 mode (not print preview mode)
-          if (!isPrintPreview && pdfData.filePath) {
+          if (pdfData.filePath) {
             window.open(pdfData.filePath, '_blank');
           }
-        } else {
-          console.error('Failed to generate office order PDF');
-        }
-
-        if (isPrintPreview) {
-          // Trigger browser print
-          setTimeout(() => {
-            window.print();
-            setIsPrintMode(false);
-            if (isEditingArchive) {
-              setIsEditingArchive(false);
-              window.history.pushState({}, '', '/roster');
-            }
-            loadDuties();
-          }, 300);
-        } else {
           setIsPrintMode(false);
           if (isEditingArchive) {
             setIsEditingArchive(false);
             window.history.pushState({}, '', '/roster');
           }
           loadDuties();
+        } else {
+          alert('পিডিএফ ডাউনলোড করতে ব্যর্থ হয়েছে।');
         }
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        console.error('Failed to archive office order:', res.status, errData);
-        alert(`অফিস আদেশ আর্কাইভে সংরক্ষণ করতে ব্যর্থ হয়েছে। সার্ভার মেসেজ: ${errData.message || errData.error || 'অজানা ত্রুটি (Status: ' + res.status + ')'}`);
+      } else if (action === 'print') {
+        const pdfPayload = {
+          orderRef: orderRef,
+          orderDate: orderDate,
+          orderText: orderText,
+          duties: printTableDuties.map(group => ({
+            employee: {
+              name: group.employee.name,
+              designation: getShortDesignation(group.employee.designation),
+              bankId: group.employee.bankId || ''
+            },
+            datesFormatted: getFormattedDateList(group.dates),
+            description: group.description
+          })),
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          copies: copies,
+          headerMode: headerMode,
+          actionType: 'PRINT_OFFICE_ORDER'
+        };
+
+        await fetch('/api/documents/generate-office-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pdfPayload)
+        });
+
+        setTimeout(() => {
+          window.print();
+          setIsPrintMode(false);
+          if (isEditingArchive) {
+            setIsEditingArchive(false);
+            window.history.pushState({}, '', '/roster');
+          }
+          loadDuties();
+        }, 300);
       }
     } catch (err) {
-      console.error('Error archiving office order:', err);
-      alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে। আপনার ইন্টারনেট কানেকশন বা সার্ভার সচল আছে কিনা চেক করুন।');
+      console.error('Error in archiveOrder:', err);
+      alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     }
   };
 
@@ -870,6 +935,29 @@ export default function RosterPage() {
     }
   }, [duties, selectedCell, printCategory, opt1Assignments, assignmentForm.date, entryMode, holidays, activePartIdx, isEditingArchive]);
 
+  // Reset orderGenerated to false if inputs change (excluding initial load)
+  useEffect(() => {
+    if (isFirstLoadRef.current) {
+      isFirstLoadRef.current = false;
+      return;
+    }
+    if (isInitializingArchiveRef.current) {
+      return;
+    }
+    console.log("Input changed, resetting orderGenerated to false");
+    setOrderGenerated(false);
+  }, [
+    printCategory,
+    payeeEmployeeId,
+    selectedExecutiveId,
+    orderRef,
+    orderDate,
+    orderText,
+    headerMode,
+    copies,
+    duties.length
+  ]);
+
   async function loadData() {
     try {
       setLoading(true);
@@ -890,18 +978,16 @@ export default function RosterPage() {
       setHolidays(Array.isArray(holidayData) ? holidayData : []);
       
       if (Array.isArray(execData)) {
-        // Exclude AGMs from signing executive list in Office Orders
-        const nonAgmExecs = execData.filter((ex: any) => {
+        // Filter to only DGMs based on designation query
+        const dgmExecs = execData.filter((ex: any) => {
           const d = ex.designation.trim().toLowerCase();
-          return !(d.includes('সহকারী') || d.includes('এজিএম') || d.includes('agm'));
+          return d.includes('dgm') || d.includes('ডিজিএম') || d.includes('উপ-মহাব্যবস্থাপক');
         });
 
         const desigPriority: Record<string, number> = {
-          'মহাব্যবস্থাপক': 1,
-          'উপ-মহাব্যবস্থাপক': 2,
-          'সহকারী মহাব্যবস্থাপক': 3
+          'উপ-মহাব্যবস্থাপক': 1
         };
-        const sortedExecs = [...nonAgmExecs].sort((a, b) => {
+        const sortedExecs = [...dgmExecs].sort((a, b) => {
           const prioA = desigPriority[a.designation] || 99;
           const prioB = desigPriority[b.designation] || 99;
           if (prioA !== prioB) return prioA - prioB;
@@ -973,8 +1059,38 @@ export default function RosterPage() {
   }
 
   useEffect(() => {
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/auth');
+        const data = await res.json();
+        if (res.ok && data.authenticated) {
+          setCurrentUser(data.user);
+        }
+      } catch (err) {
+        console.error('Error loading auth profile:', err);
+      }
+    }
+    loadProfile();
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('edit_ref')) {
+        return;
+      }
+    }
+    if (currentUser && currentUser.role !== 'ADMIN' && employees.length > 0) {
+      const matchedEmp = employees.find(e => e.bankId && e.bankId.trim().toLowerCase() === currentUser.username?.trim().toLowerCase());
+      const primaryCellId = matchedEmp ? matchedEmp.cellId : (currentUser.cells?.[0]?.id || null);
+      if (primaryCellId) {
+        const pIdStr = primaryCellId.toString();
+        setSelectedCell(pIdStr);
+        setOpt1CellId(pIdStr);
+      }
+    }
+  }, [currentUser, employees]);
 
   useEffect(() => {
     loadDuties();
@@ -1013,8 +1129,13 @@ export default function RosterPage() {
               
               setPrintCategory(category);
               
+              const cleanName = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+              
               // Find payee representative id
-              const matchedRep = localEmps.find((e: any) => e.name === matchingOrder.employeeName);
+              const matchedRep = localEmps.find((e: any) => 
+                cleanName(e.name) === cleanName(matchingOrder.employeeName) || 
+                (e.bankId && matchingOrder.employeeName.includes(e.bankId))
+              );
               if (matchedRep) {
                 setPayeeEmployeeId(matchedRep.id.toString());
               }
@@ -1062,23 +1183,36 @@ export default function RosterPage() {
               // Pre-populate opt1Assignments (left-side checked boxes)
               const assignments: Record<number, string[]> = {};
               orderDuties.forEach((group: any) => {
-                assignments[group.employeeId] = group.dates;
+                const matchedEmp = localEmps.find((e: any) => 
+                  e.id.toString() === group.employeeId?.toString() || 
+                  (e.bankId && group.employeeId && e.bankId.toString() === group.employeeId.toString()) || 
+                  cleanName(e.name) === cleanName(group.employeeName || '')
+                );
+                if (matchedEmp) {
+                  assignments[matchedEmp.id] = group.dates || [];
+                }
               });
               setOpt1Assignments(assignments);
               
               // Reconstruct duties state
               const reconstructedDuties: any[] = [];
               orderDuties.forEach((group: any) => {
-                const matchedEmp = localEmps.find((e: any) => e.id === group.employeeId);
-                group.dates.forEach((date: string) => {
+                const matchedEmp = localEmps.find((e: any) => 
+                  e.id.toString() === group.employeeId?.toString() || 
+                  (e.bankId && group.employeeId && e.bankId.toString() === group.employeeId.toString()) || 
+                  cleanName(e.name) === cleanName(group.employeeName || '')
+                );
+                const finalEmpId = matchedEmp ? matchedEmp.id : Number(group.employeeId) || 0;
+                const finalDates = group.dates || [];
+                finalDates.forEach((date: string) => {
                   reconstructedDuties.push({
                     id: Math.random(),
-                    employeeId: group.employeeId,
+                    employeeId: finalEmpId,
                     date: date,
                     type: category,
                     description: group.description,
                     employee: matchedEmp || {
-                      id: group.employeeId,
+                      id: finalEmpId,
                       name: group.employeeName,
                       designation: group.designation,
                       cellId: matchedRep ? matchedRep.cellId : 7
@@ -1087,12 +1221,21 @@ export default function RosterPage() {
                 });
               });
               setDuties(reconstructedDuties);
+              if (matchingOrder.status === 'Generated & Printed' || matchingOrder.status === 'Printed') {
+                setOrderGenerated(true);
+              } else {
+                setOrderGenerated(false);
+              }
             }
           } catch (e) {
             console.error("Failed to load archived duties for editing:", e);
+          } finally {
+            setTimeout(() => {
+              isInitializingArchiveRef.current = false;
+            }, 300);
           }
         };
-        
+        isInitializingArchiveRef.current = true;
         loadArchivedDuties();
       }
     }
@@ -1677,9 +1820,12 @@ export default function RosterPage() {
                         }}
                         className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        {cells.map(c => (
-                          <option key={c.id} value={c.id.toString()}>{c.name}</option>
-                        ))}
+                        {cells
+                          .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: any) => uc.id === c.id))
+                          .map(c => (
+                            <option key={c.id} value={c.id.toString()}>{c.name}</option>
+                          ))
+                        }
                       </select>
                     </div>
 
@@ -1931,8 +2077,13 @@ export default function RosterPage() {
                     onChange={(e) => setSelectedCell(e.target.value)}
                     className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"
                   >
-                    <option value="all">সকল সেল (All Cells)</option>
-                    {cells.map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)}
+                    {currentUser?.role === 'ADMIN' && (
+                      <option value="all">সকল সেল (All Cells)</option>
+                    )}
+                    {cells
+                      .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: any) => uc.id === c.id))
+                      .map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)
+                    }
                   </select>
 
                   {/* Select Month Picker */}
@@ -2123,20 +2274,32 @@ export default function RosterPage() {
             </button>
 
             <div className="flex gap-3">
-              <button
-                onClick={() => archiveOrder(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
-              >
-                <Printer size={14} />
-                প্রিন্ট প্রিভিউ (Print)
-              </button>
-              <button
-                onClick={() => archiveOrder(false)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
-              >
-                <Printer size={14} />
-                ডাউনলোড পিডিএফ (Download)
-              </button>
+              {!orderGenerated ? (
+                <button
+                  onClick={() => archiveOrder('generate')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
+                >
+                  <FileText size={14} />
+                  অফিস আদেশ তৈরি করুন (Generate Order)
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => archiveOrder('print')}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
+                  >
+                    <Printer size={14} />
+                    প্রিন্ট প্রিভিউ (Print)
+                  </button>
+                  <button
+                    onClick={() => archiveOrder('download')}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
+                  >
+                    <Printer size={14} />
+                    ডাউনলোড পিডিএফ (Download)
+                  </button>
+                </>
+              )}
             </div>
           </div>
 

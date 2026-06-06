@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { documents } from '@/db/schema';
+import { documents, officeOrders } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
+import { getCurrentUser } from '@/lib/auth-wrapper';
+import { logActivity } from '@/lib/audit';
 
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
@@ -300,36 +302,37 @@ export async function POST(request: Request) {
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');
 
     const relativePath = `/uploads/${filename}`;
-    const fileSize = fs.statSync(filePathDisk).size;
+    // Transition status to 'Generated & Printed' in OfficeOrder table only if print/download action is requested
+    const logAction = payload.actionType || 'PRINT_OFFICE_ORDER';
+    if (logAction === 'PRINT_OFFICE_ORDER' || logAction === 'DOWNLOAD_OFFICE_ORDER_PDF') {
+      await db.update(officeOrders)
+        .set({ status: 'Generated & Printed' })
+        .where(eq(officeOrders.orderRef, orderRef));
+    }
 
-    // Check if a document with this file path already exists
-    const docResult = await db.select().from(documents)
-      .where(eq(documents.filePath, relativePath))
-      .limit(1);
-    let doc = docResult[0] || null;
-
-    if (doc) {
-      const [updated] = await db.update(documents)
-        .set({
-          fileSize: fileSize,
-          uploadedAt: new Date()
-        })
-        .where(eq(documents.id, doc.id))
-        .returning();
-      doc = updated;
-    } else {
-      const [inserted] = await db.insert(documents).values({
-        name: `অফিস আদেশ: ${orderRef}`,
-        filePath: relativePath,
-        fileSize: fileSize
-      }).returning();
-      doc = inserted;
+    // Audit trail
+    const currentUser = await getCurrentUser();
+    if (currentUser) {
+      const orderRecordList = await db.select().from(officeOrders).where(eq(officeOrders.orderRef, orderRef)).limit(1);
+      const orderRecord = orderRecordList[0];
+      const ipAddress = request.headers.get('x-forwarded-for') || '127.0.0.1';
+      const userAgent = request.headers.get('user-agent') || 'Unknown';
+      await logActivity({
+        username: currentUser.username,
+        action: logAction,
+        entityType: 'OFFICE_ORDER',
+        entityId: orderRecord ? String(orderRecord.id) : 'Unknown',
+        userId: currentUser.id,
+        bankId: currentUser.username,
+        ipAddress: ipAddress,
+        userAgent: userAgent,
+        details: `${currentUser.name} (@${currentUser.username}) অফিস আদেশ প্রিন্ট/ডাউনলোড করেছেন (সূত্র: ${orderRef})।`
+      });
     }
 
     return NextResponse.json({
       success: true,
-      filePath: relativePath,
-      document: doc
+      filePath: relativePath
     });
 
   } catch (error: any) {

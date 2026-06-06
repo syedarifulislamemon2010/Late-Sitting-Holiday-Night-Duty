@@ -1,8 +1,8 @@
 import { EmployeeRepository } from '@/repositories/employee.repository';
 import { UserRepository } from '@/repositories/user.repository';
 import { db } from '@/lib/db';
-import { trash, cells } from '@/db/schema';
-import { eq, inArray, and } from 'drizzle-orm';
+import { trash, cells, users } from '@/db/schema';
+import { eq, inArray, and, sql } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 import { AppError, AuthError, ValidationError } from '@/lib/errors';
@@ -16,13 +16,15 @@ export class EmployeeService {
 
     if (currentUser && currentUser.role === 'USER') {
       isUserRestricted = true;
-      const emp = await EmployeeRepository.findByBankId(currentUser.username);
-      if (emp) {
-        cellIds = [emp.cellId];
-      } else if (currentUser.cells && currentUser.cells.length > 0) {
-        cellIds = [currentUser.cells[0].id];
+      if (currentUser.cells && currentUser.cells.length > 0) {
+        cellIds = currentUser.cells.map((c: any) => c.id);
       } else {
-        cellIds = [];
+        const emp = await EmployeeRepository.findByBankId(currentUser.username);
+        if (emp) {
+          cellIds = [emp.cellId];
+        } else {
+          cellIds = [];
+        }
       }
     }
 
@@ -128,6 +130,12 @@ export class EmployeeService {
       cellId: validated.cellId
     });
 
+    if (newEmp.bankId) {
+      await db.update(users)
+        .set({ mobile: newEmp.mobile })
+        .where(eq(sql`LOWER(TRIM(${users.username}))`, newEmp.bankId.trim().toLowerCase()));
+    }
+
     const cellList = await db.select().from(cells).where(eq(cells.id, validated.cellId));
     const cell = cellList[0];
 
@@ -183,6 +191,13 @@ export class EmployeeService {
     }
 
     const updatedEmp = await EmployeeRepository.update(id, updatedData);
+
+    // Synchronize the mobile number to the User table if employee bankId corresponds to a user's username
+    if (updatedEmp.bankId) {
+      await db.update(users)
+        .set({ mobile: updatedEmp.mobile })
+        .where(eq(sql`LOWER(TRIM(${users.username}))`, updatedEmp.bankId.trim().toLowerCase()));
+    }
 
     const cellList = await db.select().from(cells).where(eq(cells.id, updatedEmp.cellId));
     const cell = cellList[0];

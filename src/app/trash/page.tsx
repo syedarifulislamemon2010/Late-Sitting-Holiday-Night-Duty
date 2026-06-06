@@ -219,6 +219,7 @@ export default function TrashPage() {
       case 'DUTY': return 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30';
       case 'EXECUTIVE': return 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400 border border-purple-100 dark:border-purple-900/30';
       case 'DOCUMENT': return 'bg-pink-50 text-pink-600 dark:bg-pink-950/40 dark:text-pink-400 border border-pink-100 dark:border-pink-900/30';
+      case 'OFFICE_ORDER': return 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30';
       default: return 'bg-slate-50 text-slate-600 dark:bg-slate-950/40 dark:text-slate-400';
     }
   };
@@ -230,6 +231,7 @@ export default function TrashPage() {
       case 'DUTY': return 'ডিউটি';
       case 'EXECUTIVE': return 'নির্বাহী';
       case 'DOCUMENT': return 'ডকুমেন্ট';
+      case 'OFFICE_ORDER': return 'অফিস আদেশ/বিল';
       default: return type;
     }
   };
@@ -321,14 +323,25 @@ export default function TrashPage() {
                   <RotateCcw size={12} />
                   সব রিস্টোর করুন
                 </button>
-                <button
-                  onClick={handleBulkPurge}
-                  disabled={actionLoading !== null}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  <Trash2 size={12} />
-                  সব চিরতরে মুছুন
-                </button>
+                {selectedIds.some(id => trashItems.find(x => x.id === id)?.entityType === 'OFFICE_ORDER') ? (
+                  <button
+                    disabled={true}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-not-allowed"
+                    title="নির্বাচিত তালিকার মধ্যে অফিস আদেশ বা বিল রয়েছে যা স্থায়ীভাবে মুছে ফেলা নিষিদ্ধ।"
+                  >
+                    <Trash2 size={12} />
+                    চিরতরে মুছা নিষিদ্ধ
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleBulkPurge}
+                    disabled={actionLoading !== null}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 size={12} />
+                    সব চিরতরে মুছুন
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -433,15 +446,21 @@ export default function TrashPage() {
                               রিস্টোর
                             </button>
                             
-                            <button
-                              type="button"
-                              onClick={() => handlePurge(item)}
-                              disabled={isBtnLoading}
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-red-200 hover:bg-red-50 text-red-600 dark:border-red-950 dark:hover:bg-red-950/30 dark:text-red-400 rounded-xl transition-all shadow-sm disabled:opacity-50"
-                            >
-                              <Trash2 size={12} />
-                              চিরতরে মুছুন
-                            </button>
+                            {item.entityType !== 'OFFICE_ORDER' ? (
+                              <button
+                                type="button"
+                                onClick={() => handlePurge(item)}
+                                disabled={isBtnLoading}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-red-200 hover:bg-red-50 text-red-600 dark:border-red-950 dark:hover:bg-red-950/30 dark:text-red-400 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                              >
+                                <Trash2 size={12} />
+                                চিরতরে মুছুন
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                স্থায়ী সংরক্ষণ
+                              </span>
+                            )}
                           </div>
                         </td>
                       </tr>

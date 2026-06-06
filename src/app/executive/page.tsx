@@ -205,9 +205,15 @@ export default function ExecutivesPage() {
         const data = await res.json();
         if (res.ok && data.authenticated) {
           setCurrentUser(data.user);
+          if (data.user.role !== 'ADMIN') {
+            window.location.href = '/';
+          }
+        } else {
+          window.location.href = '/';
         }
       } catch (err) {
         console.error('Error fetching profile:', err);
+        window.location.href = '/';
       }
     }
     getProfile();
@@ -627,6 +633,13 @@ export default function ExecutivesPage() {
     return (a.fileNo || '').localeCompare(b.fileNo || '', undefined, { numeric: true, sensitivity: 'base' });
   });
 
+  if (!currentUser || currentUser.role !== 'ADMIN') {
+    return (
+      <div className="flex h-[80vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#0b5e9e]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -76,6 +76,7 @@ export default function LeaveGeneratorPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [matchedEmp, setMatchedEmp] = useState<Employee | null>(null);
   const [selectedApplicantEmp, setSelectedApplicantEmp] = useState<Employee | null>(null);
+  const [isProfileUnresolved, setIsProfileUnresolved] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [dbHolidays, setDbHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
@@ -394,6 +395,9 @@ export default function LeaveGeneratorPage() {
                   if (matchedEmp.cell && matchedEmp.cell.name) {
                     setCellName(matchedEmp.cell.name);
                   }
+                } else {
+                  setIsProfileUnresolved(true);
+                  fetch('/api/leaves/log-resolve-failed', { method: 'POST' }).catch(err => console.error(err));
                 }
               }
             }
@@ -785,6 +789,12 @@ export default function LeaveGeneratorPage() {
 
                 {activeTab === 'NEW' ? (
                   <div className="space-y-6">
+                    {isProfileUnresolved && (
+                      <div className="p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-250 dark:border-rose-900 text-rose-800 dark:text-rose-300 text-xs font-bold rounded-xl flex items-center gap-3 shadow-sm animate-pulse">
+                        <AlertCircle size={18} className="text-rose-605 shrink-0" />
+                        <p>আপনার কর্মকর্তা প্রোফাইল সিস্টেমে খুঁজে পাওয়া যায়নি। অনুগ্রহ করে সিস্টেম অ্যাডমিনের সাথে যোগাযোগ করুন।</p>
+                      </div>
+                    )}
                     
                     {/* Box 1: applicant information */}
               <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
@@ -859,7 +869,8 @@ export default function LeaveGeneratorPage() {
                       type="text" 
                       value={applicantName}
                       onChange={(e) => setApplicantName(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-bold"
+                      readOnly={currentUser?.role !== 'ADMIN'}
+                      className={`w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-bold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`}
                     />
                   </div>
 
@@ -871,7 +882,8 @@ export default function LeaveGeneratorPage() {
                       type="text" 
                       value={designation}
                       onChange={(e) => setDesignation(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold"
+                      readOnly={currentUser?.role !== 'ADMIN'}
+                      className={`w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`}
                     />
                   </div>
 
@@ -883,7 +895,8 @@ export default function LeaveGeneratorPage() {
                       type="text" 
                       value={cellName}
                       onChange={(e) => setCellName(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold"
+                      readOnly={currentUser?.role !== 'ADMIN'}
+                      className={`w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`}
                     />
                   </div>
 
@@ -896,7 +909,8 @@ export default function LeaveGeneratorPage() {
                         type="text" 
                         value={bankId}
                         onChange={(e) => setBankId(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-mono font-semibold"
+                        readOnly={currentUser?.role !== 'ADMIN'}
+                        className={`w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-mono font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`}
                       />
                     </div>
 
@@ -909,7 +923,8 @@ export default function LeaveGeneratorPage() {
                         value={fileNo}
                         onChange={(e) => setFileNo(e.target.value)}
                         placeholder="যেমন: এসও (কম)-১৪৫১৯"
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold"
+                        readOnly={currentUser?.role !== 'ADMIN'}
+                        className={`w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`}
                       />
                     </div>
                   </div>
@@ -1151,10 +1166,13 @@ export default function LeaveGeneratorPage() {
                       <button
                         type="button"
                         onClick={handleSaveToArchive}
-                        className={`w-full py-3.5 px-4 rounded-xl text-xs font-bold text-white transition-all shadow-md cursor-pointer text-center hover:scale-[1.01] active:scale-[0.99] ${
-                          editingLeaveId 
-                            ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/10 hover:shadow-amber-500/20' 
-                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/10 hover:shadow-indigo-500/20'
+                        disabled={isProfileUnresolved}
+                        className={`w-full py-3.5 px-4 rounded-xl text-xs font-bold text-white transition-all shadow-md text-center hover:scale-[1.01] active:scale-[0.99] ${
+                          isProfileUnresolved
+                            ? 'bg-slate-400 cursor-not-allowed shadow-none hover:scale-100'
+                            : editingLeaveId 
+                              ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/10 hover:shadow-amber-500/20 cursor-pointer' 
+                              : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/10 hover:shadow-indigo-500/20 cursor-pointer'
                         }`}
                       >
                         {editingLeaveId ? 'আর্কাইভ আপডেট করুন (Update)' : 'আর্কাইভে সংরক্ষণ করুন (Save)'}

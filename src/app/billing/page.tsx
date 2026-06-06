@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Printer, 
   ChevronLeft, 
@@ -11,7 +11,8 @@ import {
   Award,
   Loader2,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  FileSignature
 } from 'lucide-react';
 
 interface Cell {
@@ -63,6 +64,10 @@ interface EmployeeBillingSummary {
 }
 
 export default function BillingPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [billGenerated, setBillGenerated] = useState(false);
+  const isFirstLoadRef = useRef(true);
+  const isInitializingArchiveRef = useRef(false);
   const [duties, setDuties] = useState<Duty[]>([]);
   const [baseOrderRef, setBaseOrderRef] = useState('');
   const [cells, setCells] = useState<Cell[]>([]);
@@ -100,9 +105,17 @@ export default function BillingPage() {
   const [pendingOrderRefs, setPendingOrderRefs] = useState<string[]>([]);
   const [randomNumber, setRandomNumber] = useState(() => Math.floor(10 + Math.random() * 90));
   const [archivedOrders, setArchivedOrders] = useState<any[]>([]);
+  const [showOrderWarning, setShowOrderWarning] = useState(false);
 
   // Sync billRef dynamically
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('edit_ref')) {
+        return;
+      }
+    }
+
     let repName = 'ইমন';
     if (representativeName) {
       repName = representativeName.replace(/^জনাব\s+/, '');
@@ -136,23 +149,30 @@ export default function BillingPage() {
   useEffect(() => {
     async function loadStaticData() {
       try {
-        const [cellRes, execRes, empRes] = await Promise.all([
+        const [cellRes, execRes, empRes, authRes] = await Promise.all([
           fetch('/api/cells'),
           fetch('/api/executives'),
-          fetch('/api/employees')
+          fetch('/api/employees'),
+          fetch('/api/auth')
         ]);
         const cellData = await cellRes.json();
         const execData = await execRes.json();
         const empData = await empRes.json();
+        const authData = await authRes.json();
         setCells(Array.isArray(cellData) ? cellData : []);
         setEmployees(Array.isArray(empData) ? empData : []);
+        if (authRes.ok && authData.authenticated) {
+          setCurrentUser(authData.user);
+        }
         if (Array.isArray(execData)) {
+          const dgmExecs = execData.filter((ex: any) => {
+            const d = ex.designation.trim().toLowerCase();
+            return d.includes('dgm') || d.includes('ডিজিএম') || d.includes('উপ-মহাব্যবস্থাপক');
+          });
           const desigPriority: Record<string, number> = {
-            'মহাব্যবস্থাপক': 1,
-            'উপ-মহাব্যবস্থাপক': 2,
-            'সহকারী মহাব্যবস্থাপক': 3
+            'উপ-মহাব্যবস্থাপক': 1
           };
-          const sortedExecs = [...execData].sort((a, b) => {
+          const sortedExecs = [...dgmExecs].sort((a, b) => {
             const prioA = desigPriority[a.designation] || 99;
             const prioB = desigPriority[b.designation] || 99;
             if (prioA !== prioB) return prioA - prioB;
@@ -175,6 +195,22 @@ export default function BillingPage() {
     loadStaticData();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('orderRef') || params.get('edit_ref')) {
+        return;
+      }
+    }
+    if (currentUser && currentUser.role !== 'ADMIN' && employees.length > 0) {
+      const matchedEmp = employees.find(e => e.bankId && e.bankId.trim().toLowerCase() === currentUser.username?.trim().toLowerCase());
+      const primaryCellId = matchedEmp ? matchedEmp.cellId : (currentUser.cells?.[0]?.id || null);
+      if (primaryCellId) {
+        setSelectedCell(primaryCellId.toString());
+      }
+    }
+  }, [currentUser, employees]);
+
   // Load archived bill details if edit_ref query param is present
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -192,6 +228,7 @@ export default function BillingPage() {
               setIsEditingArchive(true);
               setIsPrintMode(true);
               setOriginalBillRef(editRefVal);
+              setBillRef(editRefVal);
               
               if (archivedBill.category && archivedBill.category.startsWith('BILL_')) {
                 setPrintCategory(archivedBill.category.slice(5) as any);
@@ -219,12 +256,22 @@ export default function BillingPage() {
                   setSigningDesignation(archivedBill.content.signingDesignation);
                 }
               }
+              if (archivedBill.status === 'Generated & Printed' || archivedBill.status === 'Printed') {
+                setBillGenerated(true);
+              } else {
+                setBillGenerated(false);
+              }
             }
           }
         } catch (err) {
           console.error('Error loading archived bill for editing:', err);
+        } finally {
+          setTimeout(() => {
+            isInitializingArchiveRef.current = false;
+          }, 300);
         }
       }
+      isInitializingArchiveRef.current = true;
       loadArchivedBill();
     }
   }, []);
@@ -238,14 +285,45 @@ export default function BillingPage() {
       const targetRef = orderRefParam;
       async function loadTargetOrder() {
         try {
-          const res = await fetch('/api/office-orders');
-          if (res.ok) {
-            const orders = await res.json();
+          const [cellRes, orderRes] = await Promise.all([
+            fetch('/api/cells'),
+            fetch('/api/office-orders')
+          ]);
+          if (cellRes.ok && orderRes.ok) {
+            const localCells = await cellRes.json();
+            const orders = await orderRes.json();
             const matchedOrder = orders.find((o: any) => o.orderRef === targetRef);
+            if (!matchedOrder) {
+              alert('রেফারেন্সকৃত অফিস আদেশটি খুঁজে পাওয়া যায়নি।');
+              window.location.href = '/documents';
+              return;
+            }
+            if (matchedOrder.status === 'Deleted') {
+              alert('এই অফিস আদেশটি মুছে ফেলা হয়েছে। মুছে ফেলা আদেশের বিল তৈরি করা সম্ভব নয়।');
+              window.location.href = '/documents';
+              return;
+            }
+            if (matchedOrder.status !== 'Generated & Printed' && matchedOrder.status !== 'Printed') {
+              alert(`এই অফিস আদেশের বিল তৈরি করা যাবে না। বিল তৈরির পূর্বে অফিস আদেশটি 'Generated & Printed' অবস্থায় থাকতে হবে (বর্তমান অবস্থা: ${matchedOrder.status})।`);
+              window.location.href = '/documents';
+              return;
+            }
+
             if (matchedOrder) {
               setSelectedOrderRef(targetRef);
               setPrintCategory(matchedOrder.category as any);
               setIsPrintMode(true);
+              
+              if (matchedOrder.employeeName) {
+                setRepresentativeName(matchedOrder.employeeName);
+              }
+              
+              if (matchedOrder.cellName) {
+                const matchedCell = localCells.find((c: any) => c.name === matchedOrder.cellName);
+                if (matchedCell) {
+                  setSelectedCell(matchedCell.id.toString());
+                }
+              }
               
               // Extract month from dutiesJson
               let dutiesList: any[] = [];
@@ -283,22 +361,44 @@ export default function BillingPage() {
   async function fetchDutiesForBilling() {
     try {
       setLoading(true);
-      const yearMonth = selectedMonth.split('-');
-      const year = yearMonth[0];
-      const month = yearMonth[1];
       
-      const startDate = `${year}-${month}-01`;
-      const lastDay = new Date(parseInt(year, 10), parseInt(month, 10), 0).getDate();
-      const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
-      
-      let queryUrl = `/api/duties?startDate=${startDate}&endDate=${endDate}&includeArchived=true`;
-      if (selectedCell !== 'all') {
-        queryUrl += `&cellId=${selectedCell}`;
+      let urlOrderRef = '';
+      let urlEditRef = '';
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        urlOrderRef = params.get('orderRef') || '';
+        urlEditRef = params.get('edit_ref') || '';
       }
       
-      const res = await fetch(queryUrl);
-      const data = await res.json();
-      const activeList = Array.isArray(data) ? data : [];
+      let backingRef = '';
+      if (urlEditRef) {
+        backingRef = urlEditRef.endsWith('/বিল') ? urlEditRef.slice(0, -5) : urlEditRef;
+      }
+      const orderRefToFetch = urlOrderRef || backingRef;
+
+      let activeList = [];
+      if (orderRefToFetch) {
+        const res = await fetch(`/api/duties?orderRef=${encodeURIComponent(orderRefToFetch)}&includeArchived=true`);
+        const data = await res.json();
+        activeList = Array.isArray(data) ? data : [];
+      } else {
+        const yearMonth = selectedMonth.split('-');
+        const year = yearMonth[0];
+        const month = yearMonth[1];
+        
+        const startDate = `${year}-${month}-01`;
+        const lastDay = new Date(parseInt(year, 10), parseInt(month, 10), 0).getDate();
+        const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+        
+        let queryUrl = `/api/duties?startDate=${startDate}&endDate=${endDate}&includeArchived=true`;
+        if (selectedCell !== 'all') {
+          queryUrl += `&cellId=${selectedCell}`;
+        }
+        
+        const res = await fetch(queryUrl);
+        const data = await res.json();
+        activeList = Array.isArray(data) ? data : [];
+      }
 
       // Fetch all archived office orders and bills
       const ordersRes = await fetch('/api/office-orders');
@@ -325,30 +425,28 @@ export default function BillingPage() {
           .map(o => getNormalizedRef(o.orderRef))
       );
 
+      const printedOrderRefs = new Set(
+        archivedOrders
+          .filter(o => !o.category?.startsWith('BILL_') && (o.status === 'Generated & Printed' || o.status === 'Printed'))
+          .map(o => o.orderRef)
+      );
+
       const filteredDuties = activeList.filter(d => {
+        if (orderRefToFetch) return true; // Keep all duties for the target order when fetching specifically for it
         if (!d.orderRef) return false; // Must have an office order generated
+        if (!printedOrderRefs.has(d.orderRef)) return false; // Must have a matching printed office order in status Printed/Generated & Printed
         if (d.orderRef.endsWith('/বিল')) return false; // Already billed
         const norm = getNormalizedRef(d.orderRef);
         return !archivedBillNormalizedRefs.has(norm); // Must NOT have a bill generated
       });
 
-      // Merge with archived duties if editing
-      if (isEditingArchive && baseOrderRef) {
-        const archRes = await fetch(`/api/duties?orderRef=${encodeURIComponent(baseOrderRef)}&includeArchived=true`);
-        if (archRes.ok) {
-          const archData = await archRes.json();
-          const archList = Array.isArray(archData) ? archData : [];
-          
-          const merged = [...archList];
-          filteredDuties.forEach(d => {
-            if (!merged.some(m => m.id === d.id)) {
-              merged.push(d);
-            }
-          });
-          setDuties(merged);
-          return;
-        }
-      }
+      const hasUnbilledDutiesWithoutOrder = activeList.some(d => {
+        if (d.orderRef && d.orderRef.endsWith('/বিল')) return false;
+        const norm = getNormalizedRef(d.orderRef);
+        if (archivedBillNormalizedRefs.has(norm)) return false;
+        return !d.orderRef || !printedOrderRefs.has(d.orderRef);
+      });
+      setShowOrderWarning(activeList.length > 0 && hasUnbilledDutiesWithoutOrder && filteredDuties.length === 0);
 
       // Extract distinct orderRefs for the selected printCategory
       const pendingRefs = Array.from(
@@ -360,13 +458,18 @@ export default function BillingPage() {
         )
       ) as string[];
       
-      setPendingOrderRefs(pendingRefs);
-      if (pendingRefs.length > 0) {
-        if (!selectedOrderRef || !pendingRefs.includes(selectedOrderRef)) {
-          setSelectedOrderRef(pendingRefs[0]);
-        }
+      if (orderRefToFetch) {
+        setPendingOrderRefs([orderRefToFetch]);
+        setSelectedOrderRef(orderRefToFetch);
       } else {
-        setSelectedOrderRef('');
+        setPendingOrderRefs(pendingRefs);
+        if (pendingRefs.length > 0) {
+          if (!selectedOrderRef || !pendingRefs.includes(selectedOrderRef)) {
+            setSelectedOrderRef(pendingRefs[0]);
+          }
+        } else {
+          setSelectedOrderRef('');
+        }
       }
 
       setDuties(filteredDuties);
@@ -389,6 +492,29 @@ export default function BillingPage() {
   useEffect(() => {
     fetchDutiesForBilling();
   }, [selectedMonth, selectedCell, isEditingArchive, baseOrderRef, printCategory]);
+
+  // Reset billGenerated to false if inputs change (excluding initial load)
+  useEffect(() => {
+    if (isFirstLoadRef.current) {
+      isFirstLoadRef.current = false;
+      return;
+    }
+    if (isInitializingArchiveRef.current) {
+      return;
+    }
+    console.log("Billing input changed, resetting billGenerated to false");
+    setBillGenerated(false);
+  }, [
+    selectedMonth,
+    selectedCell,
+    printCategory,
+    openingParagraph,
+    subjectText,
+    signingOfficer,
+    signingDesignation,
+    representativeName,
+    billDate
+  ]);
 
   // Reactive effect to keep baseOrderRef in sync with printCategory and duties
   useEffect(() => {
@@ -685,7 +811,7 @@ export default function BillingPage() {
     return sum + days;
   }, 0);
 
-  const handleGenerateAndPrint = async (isPrintPreview: boolean) => {
+  const handleGenerateAndPrint = async (action: 'generate' | 'print' | 'download') => {
     setArchiving(true);
     setArchiveSuccess(null);
     setArchiveError(null);
@@ -722,6 +848,8 @@ export default function BillingPage() {
       const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
       const cellName = matchedCellObj ? matchedCellObj.name : (selectedCell === 'all' ? 'All Cells' : 'IT Department');
 
+      const backingOrder = archivedOrders.find(o => o.orderRef === selectedOrderRef);
+
       const archivePayload = {
         orderRef: billRef,
         originalOrderRef: isEditingArchive ? originalBillRef : undefined,
@@ -729,6 +857,7 @@ export default function BillingPage() {
         category: "BILL_" + printCategory,
         employeeName: representativeName,
         cellName: cellName,
+        status: action === 'generate' ? 'Generated' : undefined,
         duties: summariesPayload.map(s => ({
           employeeId: s.bankId,
           employeeName: s.name,
@@ -740,7 +869,17 @@ export default function BillingPage() {
           grandTotal: s.grandTotal,
           datesFormatted: s.datesFormatted
         })),
-        dutyIds: duties.filter(d => d.orderRef === selectedOrderRef && d.type === printCategory).map(d => d.id),
+        dutyIds: duties
+          .filter(d => 
+            (d.orderRef === selectedOrderRef || 
+             d.orderRef === baseOrderRef || 
+             d.orderRef === billRef || 
+             d.orderRef === (isEditingArchive ? originalBillRef : '') ||
+             (d.orderRef && baseOrderRef && d.orderRef.replace(/\/বিল$/, '') === baseOrderRef.replace(/\/বিল$/, ''))
+            ) && 
+            d.type === printCategory
+          )
+          .map(d => d.id),
         content: {
           openingParagraph: openingParagraph,
           totalDays: totalDaysAll,
@@ -750,66 +889,95 @@ export default function BillingPage() {
           grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
           signingOfficer: signingOfficer,
           signingDesignation: signingDesignation,
-          subjectText: subjectText
+          representativeDesignation: representativeDesignation,
+          subjectText: subjectText,
+          backingOrderId: backingOrder ? backingOrder.id : null,
+          backingOrderRef: backingOrder ? backingOrder.orderRef : (selectedOrderRef || null),
+          backingOrderDate: backingOrder ? backingOrder.orderDate : null
         }
       };
 
-      const archiveRes = await fetch('/api/office-orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(archivePayload),
-      });
+      if (action === 'generate') {
+        const archiveRes = await fetch('/api/office-orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(archivePayload),
+        });
 
-      if (!archiveRes.ok) {
-        throw new Error('Failed to archive bill memo metadata');
-      }
-      console.log('Bill memo metadata archived successfully!');
+        if (!archiveRes.ok) {
+          throw new Error('Failed to archive bill memo metadata');
+        }
+        console.log('Bill memo metadata archived successfully!');
 
-      // 2. Generate PDF and save in Documents table
-      const payload = {
-        billingMonth: billingMonthName,
-        openingParagraph: openingParagraph,
-        summaries: summariesPayload,
-        totalDays: totalDaysAll,
-        totalApyaon: totalApyaonAll,
-        totalTransport: totalTransportAll,
-        grandTotal: grandTotalPrintAll,
-        grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
-        signingOfficer: signingOfficer,
-        signingDesignation: signingDesignation,
-        representativeName: representativeName,
-        representativeDesignation: representativeDesignation,
-        subjectText: subjectText,
-        billDate: billDate,
-        transportRate: transportRate,
-        apyaonRate: apyaonRate,
-        totalTransportInWords: getBanglaNumberWords(totalTransportAll),
-        totalApyaonInWords: getBanglaNumberWords(totalApyaonAll),
-        billRef: billRef
-      };
+        // Generate PDF
+        const payload = {
+          billingMonth: billingMonthName,
+          openingParagraph: openingParagraph,
+          summaries: summariesPayload,
+          totalDays: totalDaysAll,
+          totalApyaon: totalApyaonAll,
+          totalTransport: totalTransportAll,
+          grandTotal: grandTotalPrintAll,
+          grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          representativeName: representativeName,
+          representativeDesignation: representativeDesignation,
+          subjectText: subjectText,
+          billDate: billDate,
+          transportRate: transportRate,
+          apyaonRate: apyaonRate,
+          totalTransportInWords: getBanglaNumberWords(totalTransportAll),
+          totalApyaonInWords: getBanglaNumberWords(totalApyaonAll),
+          billRef: billRef,
+          actionType: 'GENERATE_BILL'
+        };
 
-      const res = await fetch('/api/documents/generate-bill-memo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+        const res = await fetch('/api/documents/generate-bill-memo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-      if (res.ok) {
-        const data = await res.json();
-        console.log('Bill memo archived successfully as PDF:', data);
-        setArchiveSuccess('বিল মেমো সফলভাবে জেনারেট এবং ম্যানুয়াল ফাইল আর্কাইভে সংরক্ষণ করা হয়েছে!');
-        
-        if (isPrintPreview) {
-          setTimeout(() => {
-            window.print();
-            setIsPrintMode(false);
-            setIsEditingArchive(false);
-            if (typeof window !== 'undefined') {
-              window.history.pushState({}, '', '/billing');
-            }
-            fetchDutiesForBilling();
-          }, 300);
+        if (res.ok) {
+          setBillGenerated(true);
+          setArchiveSuccess('বিল মেমো সফলভাবে জেনারেট এবং সংরক্ষণ করা হয়েছে!');
+          fetchDutiesForBilling();
         } else {
+          throw new Error('Failed to generate PDF');
+        }
+      } else if (action === 'download') {
+        const payload = {
+          billingMonth: billingMonthName,
+          openingParagraph: openingParagraph,
+          summaries: summariesPayload,
+          totalDays: totalDaysAll,
+          totalApyaon: totalApyaonAll,
+          totalTransport: totalTransportAll,
+          grandTotal: grandTotalPrintAll,
+          grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          representativeName: representativeName,
+          representativeDesignation: representativeDesignation,
+          subjectText: subjectText,
+          billDate: billDate,
+          transportRate: transportRate,
+          apyaonRate: apyaonRate,
+          totalTransportInWords: getBanglaNumberWords(totalTransportAll),
+          totalApyaonInWords: getBanglaNumberWords(totalApyaonAll),
+          billRef: billRef,
+          actionType: 'DOWNLOAD_BILL_PDF'
+        };
+
+        const res = await fetch('/api/documents/generate-bill-memo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const data = await res.json();
           if (data.filePath) {
             window.open(data.filePath, '_blank');
           }
@@ -819,16 +987,52 @@ export default function BillingPage() {
             window.history.pushState({}, '', '/billing');
           }
           fetchDutiesForBilling();
+        } else {
+          throw new Error('Failed to generate PDF');
         }
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Failed to generate/archive bill memo PDF:', errorData);
-        setArchiveError('বিল মেমো আর্কাইভ করতে ব্যর্থ হয়েছে।');
-        setTimeout(() => setArchiveError(null), 5000);
+      } else if (action === 'print') {
+        const payload = {
+          billingMonth: billingMonthName,
+          openingParagraph: openingParagraph,
+          summaries: summariesPayload,
+          totalDays: totalDaysAll,
+          totalApyaon: totalApyaonAll,
+          totalTransport: totalTransportAll,
+          grandTotal: grandTotalPrintAll,
+          grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          representativeName: representativeName,
+          representativeDesignation: representativeDesignation,
+          subjectText: subjectText,
+          billDate: billDate,
+          transportRate: transportRate,
+          apyaonRate: apyaonRate,
+          totalTransportInWords: getBanglaNumberWords(totalTransportAll),
+          totalApyaonInWords: getBanglaNumberWords(totalApyaonAll),
+          billRef: billRef,
+          actionType: 'PRINT_BILL'
+        };
+
+        await fetch('/api/documents/generate-bill-memo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        setTimeout(() => {
+          window.print();
+          setIsPrintMode(false);
+          setIsEditingArchive(false);
+          if (typeof window !== 'undefined') {
+            window.history.pushState({}, '', '/billing');
+          }
+          fetchDutiesForBilling();
+        }, 100);
       }
     } catch (err: any) {
       console.error('Error in handleGenerateAndPrint:', err);
-      setArchiveError(err.message || 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+      setArchiveError(err.message || 'বিল মেমো প্রসেস করতে ব্যর্থ হয়েছে।');
       setTimeout(() => setArchiveError(null), 5000);
     } finally {
       setArchiving(false);
@@ -853,8 +1057,8 @@ export default function BillingPage() {
             
             <button
               onClick={() => setIsPrintMode(true)}
-              disabled={duties.length === 0}
-              className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md ${duties.length > 0 ? 'bg-gradient-to-r from-emerald-600 to-indigo-600 text-white hover:opacity-95' : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed'}`}
+              disabled={duties.length === 0 || showOrderWarning}
+              className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md ${duties.length > 0 && !showOrderWarning ? 'bg-gradient-to-r from-emerald-600 to-indigo-600 text-white hover:opacity-95' : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed'}`}
             >
               <Printer size={16} />
               বিল মেমো (Legal Size) দেখুন ও প্রিন্ট করুন
@@ -877,8 +1081,13 @@ export default function BillingPage() {
                 onChange={(e) => setSelectedCell(e.target.value)}
                 className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold focus:outline-none"
               >
-                <option value="all">সকল সেল (All Cells)</option>
-                {cells.map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)}
+                {currentUser?.role === 'ADMIN' && (
+                  <option value="all">সকল সেল (All Cells)</option>
+                )}
+                {cells
+                  .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: any) => uc.id === c.id))
+                  .map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)
+                }
               </select>
 
               {/* Month Picker */}
@@ -890,6 +1099,13 @@ export default function BillingPage() {
               />
             </div>
           </div>
+
+          {showOrderWarning && (
+            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-3 font-sans font-medium text-sm animate-fade-in mb-6">
+              <AlertCircle size={18} className="text-rose-600 shrink-0" />
+              <p>নির্বাচিত মাস ও সেলের জন্য কোনো 'জেনারেটেড এন্ড প্রিন্টেড' অফিস আদেশ পাওয়া যায়নি। আগে অফিস আদেশ জেনারেট করুন, তারপর বিল প্রস্তুত করতে পারবেন।</p>
+            </div>
+          )}
 
           {loading ? (
             /* KPI Loading state */
@@ -1097,40 +1313,62 @@ export default function BillingPage() {
               </button>
 
               <div className="flex gap-3">
-                <button
-                  onClick={() => handleGenerateAndPrint(true)}
-                  disabled={archiving}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {archiving ? (
-                    <>
-                      <Loader2 className="animate-spin" size={14} />
-                      প্রসেস হচ্ছে...
-                    </>
-                  ) : (
-                    <>
-                      <Printer size={14} />
-                      প্রিন্ট প্রিভিউ
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => handleGenerateAndPrint(false)}
-                  disabled={archiving}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {archiving ? (
-                    <>
-                      <Loader2 className="animate-spin" size={14} />
-                      প্রসেস হচ্ছে...
-                    </>
-                  ) : (
-                    <>
-                      <Printer size={14} />
-                      ডাউনলোড
-                    </>
-                  )}
-                </button>
+                {!billGenerated ? (
+                  <button
+                    onClick={() => handleGenerateAndPrint('generate')}
+                    disabled={archiving}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {archiving ? (
+                      <>
+                        <Loader2 className="animate-spin" size={14} />
+                        প্রসেস হচ্ছে...
+                      </>
+                    ) : (
+                      <>
+                        <FileSignature size={14} />
+                        বিল জেনারেট করুন (Generate Bill)
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handleGenerateAndPrint('print')}
+                      disabled={archiving}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {archiving ? (
+                        <>
+                          <Loader2 className="animate-spin" size={14} />
+                          প্রসেস হচ্ছে...
+                        </>
+                      ) : (
+                        <>
+                          <Printer size={14} />
+                          প্রিন্ট প্রিভিউ
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleGenerateAndPrint('download')}
+                      disabled={archiving}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {archiving ? (
+                        <>
+                          <Loader2 className="animate-spin" size={14} />
+                          প্রসেস হচ্ছে...
+                        </>
+                      ) : (
+                        <>
+                          <Printer size={14} />
+                          ডাউনলোড
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

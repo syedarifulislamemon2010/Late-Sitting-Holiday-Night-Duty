@@ -33,13 +33,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
 
-    const isAdminOrAdminCell = 
-      currentUser.role === 'ADMIN' || 
-      currentUser.cells.some((c: any) => 
-        c.name.includes('প্রশাসন') || 
-        c.name.toLowerCase().includes('admin') || 
-        c.name.toLowerCase().includes('administration')
-      );
+    const isAdmin = currentUser.role === 'ADMIN';
 
     const combinedCell = await getOrCreateCombinedCell();
     const combinedCellId = combinedCell.id;
@@ -51,7 +45,7 @@ export async function GET(request: Request) {
     }
 
     // Standard user cell privacy check
-    if (!isAdminOrAdminCell) {
+    if (!isAdmin) {
       const userCellIds = currentUser.cells.map((c: any) => c.id);
       if (targetCellId !== 0 && !userCellIds.includes(targetCellId)) {
         return NextResponse.json({ 
@@ -79,7 +73,7 @@ export async function GET(request: Request) {
     }
 
     // If request is from Admin and querying combined sheet (targetCellId === 0)
-    if (isAdminOrAdminCell && targetCellId === 0) {
+    if (isAdmin && targetCellId === 0) {
       return NextResponse.json(combinedBill);
     }
 
@@ -124,15 +118,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
 
-    const isAdminOrAdminCell = 
-      currentUser.role === 'ADMIN' || 
-      currentUser.cells.some((c: any) => 
-        c.name.includes('প্রশাসন') || 
-        c.name.toLowerCase().includes('admin') || 
-        c.name.toLowerCase().includes('administration')
-      );
+    const isAdmin = currentUser.role === 'ADMIN';
 
-    if (!isAdminOrAdminCell) {
+    if (!isAdmin) {
       return NextResponse.json({ 
         error: 'forbidden', 
         message: 'লাঞ্চ বিল প্রস্তুত বা সংরক্ষণ করার ক্ষমতা শুধুমাত্র প্রশাসন বা সিস্টেম এডমিনদের রয়েছে।' 

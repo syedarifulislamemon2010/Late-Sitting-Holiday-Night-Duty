@@ -99,6 +99,24 @@ export class OfficeOrderService {
 
     const validated = officeOrderCreateSchema.parse(body);
 
+    if (currentUser.role !== 'ADMIN') {
+      const userCellNames = currentUser.cells.map((c: any) => c.name);
+      if (!validated.cellName || !userCellNames.includes(validated.cellName)) {
+        throw new AuthError('অন্য সেলের জন্য অফিস আদেশ তৈরি করার অনুমতি নেই।', 403, 'forbidden');
+      }
+    }
+
+    if (validated.category?.startsWith('BILL_')) {
+      const backingOrderRef = validated.content?.backingOrderRef;
+      if (!backingOrderRef) {
+        throw new AppError('বিল সংরক্ষণের জন্য ব্যাকলগ অফিস আদেশ রেফারেন্স প্রয়োজন।', 400, 'backing_order_required');
+      }
+      const backingOrder = await OfficeOrderRepository.findByOrderRef(backingOrderRef);
+      if (!backingOrder || (backingOrder.status !== 'Generated & Printed' && backingOrder.status !== 'Printed')) {
+        throw new AppError(`বিল তৈরির পূর্বে রেফারেন্সকৃত অফিস আদেশ (${backingOrderRef}) 'Generated & Printed' স্ট্যাটাসে থাকতে হবে।`, 400, 'backing_order_invalid');
+      }
+    }
+
     if (validated.originalOrderRef && validated.originalOrderRef !== validated.orderRef) {
       await OfficeOrderRepository.clearDutiesOrderRef(validated.originalOrderRef);
       await OfficeOrderRepository.deleteByOrderRef(validated.originalOrderRef);
@@ -108,7 +126,10 @@ export class OfficeOrderService {
 
     const existingOrder = await OfficeOrderRepository.findByOrderRef(validated.orderRef);
     let orderRecord = existingOrder;
-    const existed = !!existingOrder;
+    const existed = !!existingOrder || !!validated.originalOrderRef;
+    const isBill = validated.category?.startsWith('BILL_');
+
+    const statusToSave = validated.status || (existed ? 'Modified' : 'Generated');
 
     const dataToSave = {
       orderRef: validated.orderRef,
@@ -118,7 +139,7 @@ export class OfficeOrderService {
       cellName: validated.cellName || null,
       dutiesJson: validated.duties ? JSON.stringify(validated.duties) : '[]',
       contentJson: validated.content ? JSON.stringify(validated.content) : null,
-      status: 'Printed'
+      status: statusToSave
     };
 
     if (!orderRecord) {
@@ -130,7 +151,7 @@ export class OfficeOrderService {
         cellName: validated.cellName || null,
         dutiesJson: validated.duties ? JSON.stringify(validated.duties) : '[]',
         contentJson: validated.content ? JSON.stringify(validated.content) : null,
-        status: 'Printed'
+        status: statusToSave
       });
     }
 
@@ -141,16 +162,20 @@ export class OfficeOrderService {
       );
     }
 
-    const isEdit = existed || !!validated.originalOrderRef;
+    const logAction = isBill 
+      ? (existed ? 'EDIT_BILL' : 'GENERATE_BILL') 
+      : (existed ? 'EDIT_OFFICE_ORDER' : 'GENERATE_OFFICE_ORDER');
 
     await logActivity({
       username: currentUser.username,
-      action: isEdit ? 'UPDATE' : 'CREATE',
+      action: logAction,
       entityType: 'OFFICE_ORDER',
       entityId: String(orderRecord.id),
+      userId: currentUser.id,
+      bankId: currentUser.username,
       ipAddress: headersInfo.ipAddress,
       userAgent: headersInfo.userAgent,
-      details: `${currentUser.name} (@${currentUser.username}) ${isEdit ? 'অফিস আদেশ বা বিল মেমো সংশোধন' : 'নতুন অফিস আদেশ বা বিল মেমো তৈরি'} করেছেন (সূত্র: ${validated.orderRef})।`
+      details: `${currentUser.name} (@${currentUser.username}) ${isBill ? (existed ? 'বিল মেমো সংশোধন' : 'নতুন বিল মেমো তৈরি') : (existed ? 'অফিস আদেশ সংশোধন' : 'নতুন অফিস আদেশ তৈরি')} করেছেন (সূত্র: ${validated.orderRef})।`
     });
 
     return { success: true, id: orderRecord.id, order: orderRecord };
@@ -168,6 +193,13 @@ export class OfficeOrderService {
       throw new AppError('অফিস আদেশ পাওয়া যায়নি।', 404, 'not_found');
     }
 
+    if (currentUser.role !== 'ADMIN') {
+      const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+      if (!existingOrder.cellName || !userCellNames.includes(existingOrder.cellName)) {
+        throw new AuthError('অন্য সেলের জন্য অফিস আদেশ আপডেট করার অনুমতি নেই।', 403, 'forbidden');
+      }
+    }
+
     if (validated.orderRef !== existingOrder.orderRef) {
       const duplicateRef = await OfficeOrderRepository.findByOrderRef(validated.orderRef);
       if (duplicateRef) {
@@ -181,22 +213,25 @@ export class OfficeOrderService {
         .where(eq(dutiesOrderRefHelper(), existingOrder.orderRef));
     }
 
+    const isBill = existingOrder.category?.startsWith('BILL_');
     const updated = await OfficeOrderRepository.update(id, {
       orderRef: validated.orderRef,
       orderDate: validated.orderDate,
       employeeName: validated.employeeName,
       cellName: validated.cellName || null,
-      status: validated.status || existingOrder.status
+      status: 'Modified'
     });
 
     await logActivity({
       username: currentUser.username,
-      action: 'UPDATE',
+      action: isBill ? 'EDIT_BILL' : 'EDIT_OFFICE_ORDER',
       entityType: 'OFFICE_ORDER',
       entityId: String(updated.id),
+      userId: currentUser.id,
+      bankId: currentUser.username,
       ipAddress: headersInfo.ipAddress,
       userAgent: headersInfo.userAgent,
-      details: `${currentUser.name} (@${currentUser.username}) অফিস আদেশ বা বিল মেমো সংশোধন করেছেন (সূত্র: ${validated.orderRef})।`
+      details: `${currentUser.name} (@${currentUser.username}) ${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} সংশোধন করেছেন (সূত্র: ${validated.orderRef})।`
     });
 
     return { success: true, order: updated };
@@ -212,26 +247,40 @@ export class OfficeOrderService {
       throw new AppError('অফিস আদেশ পাওয়া যায়নি।', 404, 'not_found');
     }
 
+    if (currentUser.role !== 'ADMIN') {
+      const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+      if (!order.cellName || !userCellNames.includes(order.cellName)) {
+        throw new AuthError('অন্য সেলের জন্য রেকর্ড মুছে ফেলার অনুমতি নেই।', 403, 'forbidden');
+      }
+    }
+
+    const isBill = order.category?.startsWith('BILL_');
+
     await logActivity({
       username: currentUser.username,
-      action: 'DELETE',
+      action: isBill ? 'DELETE_BILL' : 'DELETE_OFFICE_ORDER',
       entityType: 'OFFICE_ORDER',
       entityId: String(id),
+      userId: currentUser.id,
+      bankId: currentUser.username,
       ipAddress: headersInfo.ipAddress,
       userAgent: headersInfo.userAgent,
-      details: `${currentUser.name} (@${currentUser.username}) অফিস আদেশ বা বিল মেমো মুছে ফেলেছেন (সূত্র: ${order.orderRef})।`
+      details: `${currentUser.name} (@${currentUser.username}) ${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} মুছে ফেলেছেন (সূত্র: ${order.orderRef})।`
     });
 
+    // Soft delete in database: update status to 'Deleted'
+    await OfficeOrderRepository.update(id, {
+      status: 'Deleted'
+    });
+
+    // Insert into trash table for restore support
     await db.insert(trash).values({
-      entityType: 'DOCUMENT',
+      entityType: 'OFFICE_ORDER',
       entityId: id,
-      name: `অফিস আদেশ সূত্র: ${order.orderRef}`,
+      name: `${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} সূত্র: ${order.orderRef}`,
       data: JSON.stringify(order),
       deletedBy: currentUser.username
     });
-
-    await OfficeOrderRepository.clearDutiesOrderRef(order.orderRef);
-    await OfficeOrderRepository.delete(id);
 
     return { success: true };
   }

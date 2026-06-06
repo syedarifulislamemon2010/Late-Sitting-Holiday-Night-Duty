@@ -164,13 +164,9 @@ export default function ClosingBillPage() {
     loadData();
   }, []);
 
-  const isAdministrationCell = currentUser?.cells?.some((c: any) => 
-    c.name.includes('প্রশাসন') || 
-    c.name.toLowerCase().includes('admin') || 
-    c.name.toLowerCase().includes('administration')
-  );
-  
-  const isAdminOrAdminCell = currentUser?.role === 'ADMIN' || isAdministrationCell;
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const matchedEmp = employees.find(e => e.bankId && e.bankId.trim().toLowerCase() === currentUser?.username?.trim().toLowerCase());
+  const resolvedPrimaryCellId = matchedEmp ? matchedEmp.cellId : (currentUser?.cells?.[0]?.id || null);
 
   // Load saved closing bill
   useEffect(() => {
@@ -321,13 +317,13 @@ export default function ClosingBillPage() {
   };
 
   // Filter records by cell/executives for standard users
-  const getFilteredRecordsForUser = (primaryCellId: number | undefined) => {
-    if (isAdminOrAdminCell) return records;
+  const getFilteredRecordsForUser = (primaryCellId: number | null) => {
+    if (isAdmin) return records;
     // Standard user gets only officers belonging to their specific cell (primary cell only)
     return records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
   };
 
-  const primaryCellId = activeCellId || currentUser?.cells?.[0]?.id;
+  const primaryCellId = isAdmin ? (activeCellId || null) : resolvedPrimaryCellId;
   const activeRecords = getFilteredRecordsForUser(primaryCellId);
 
   const totalEmployeesCount = activeRecords.length;
@@ -336,7 +332,7 @@ export default function ClosingBillPage() {
   const grandTotalAll = activeRecords.reduce((sum, r) => sum + r.netPayable, 0);
 
   const saveClosingBill = async (): Promise<any> => {
-    if (!isAdminOrAdminCell) return null;
+    if (!isAdmin) return null;
     setSaving(true);
     setSuccessMessage(null);
     setErrorMessage(null);
@@ -370,14 +366,14 @@ export default function ClosingBillPage() {
   };
 
   const getPrintPayload = () => {
-    const primaryCellId = activeCellId || currentUser?.cells?.[0]?.id;
+    const primaryCellId = isAdmin ? (activeCellId || null) : resolvedPrimaryCellId;
 
     // Filter records and cells according to user role/assigned primary cell
-    const allowedRecords = isAdminOrAdminCell 
+    const allowedRecords = isAdmin 
       ? records 
       : records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
       
-    const allowedCells = isAdminOrAdminCell 
+    const allowedCells = isAdmin 
       ? cells 
       : cells.filter(c => c.id === primaryCellId);
 
@@ -394,7 +390,7 @@ export default function ClosingBillPage() {
     }).filter(g => g.records.length > 0);
 
     // 2. Executives
-    const execRecsUnsorted = isAdminOrAdminCell ? records.filter(r => r.isExecutive) : [];
+    const execRecsUnsorted = isAdmin ? records.filter(r => r.isExecutive) : [];
     const execRecs = [...execRecsUnsorted].sort((a, b) => {
       const priority = (desig: string | null | undefined) => {
         if (!desig) return 3;
@@ -436,7 +432,7 @@ export default function ClosingBillPage() {
     setGenerating(true);
     setErrorMessage(null);
     try {
-      if (isAdminOrAdminCell) {
+      if (isAdmin) {
         const savedRecord = await saveClosingBill();
         if (!savedRecord) {
           throw new Error('বিল জেনারেট করার আগে ডাটাবেজ সংরক্ষণ ব্যর্থ হয়েছে।');
@@ -503,7 +499,7 @@ export default function ClosingBillPage() {
           <div>
             <h1 className="app-page-title text-slate-800 dark:text-slate-100 font-sans tracking-wide">ক্লোজিং ভাতার বিল জেনারেটর</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {isAdminOrAdminCell 
+              {isAdmin 
                 ? 'জুন এবং ডিসেম্বর মাসের জন্য কর্মকর্তা ও নির্বাহীদের ক্লোজিং ভাতার সমন্বিত হিসাব প্যানেল।'
                 : 'আপনার সেলের চূড়ান্তকৃত ক্লোজিং ভাতার বিল ও প্রিন্ট বিবরণী।'}
             </p>
@@ -527,22 +523,7 @@ export default function ClosingBillPage() {
               </select>
             </div>
 
-            {/* Cell Selection for Users with Multiple Cells */}
-            {!isAdminOrAdminCell && currentUser?.cells?.length > 1 && (
-              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                <label htmlFor="activeCellId" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেল নির্বাচন করুন</label>
-                <select
-                  id="activeCellId"
-                  value={activeCellId || ''}
-                  onChange={(e) => setActiveCellId(parseInt(e.target.value, 10))}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
-                >
-                  {currentUser.cells.map((c: any) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/* Cell Selection removed under governance rules */}
           </div>
         </div>
 
@@ -601,7 +582,7 @@ export default function ClosingBillPage() {
               </div>
 
               <div className="flex items-center gap-3">
-                {isAdminOrAdminCell && (
+                {isAdmin && (
                   <button
                     onClick={saveClosingBill}
                     disabled={saving}
