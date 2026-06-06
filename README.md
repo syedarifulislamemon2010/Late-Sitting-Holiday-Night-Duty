@@ -19,6 +19,27 @@ The LHN Portal automates administrative tasks for teams working non-standard ope
 
 ---
 
+## 🎨 Centralized Design System & Typography
+
+The LHN Portal utilizes a unified corporate styling architecture tailored for Janata Bank PLC. It relies on a centralized typography design system to enforce consistent readability and a premium internal portal appearance:
+
+* **Bengali Font Priority Stack:** `Hind Siliguri` ➔ `Noto Sans Bengali` ➔ `system-ui` ➔ `sans-serif`
+* **Typography Hierarchy:**
+  * **Page Titles:** `28px` (Bold 700)
+  * **Section Titles:** `22px` (Bold 700)
+  * **Card Titles:** `16px` (Semi-Bold 600)
+  * **Sidebar Menu Items:** `15px` (Medium 500)
+  * **Body Text:** `14px` (Regular 400)
+  * **Metadata / Details:** `13px` (Regular 400)
+  * **KPI Metric Values:** `30px-32px` (Bold 700)
+  * **Footer & Credits:** `12px` (Regular 400)
+* **Standardized Layout Elements:**
+  * **Unified Card System:** All `.glass-card` elements conform to exactly `1rem` (16px) border-radius globally.
+  * **Responsive Grid Layouts:** Grids and flex wrappers scale fluidly across multiple resolutions (from 320px up to 1920px) to prevent horizontal scrollbars or page clipping.
+  * **WCAG 2.1 AA Accessibility:** Symmetrical active menu navigation items with accessible color contrast (`#0b5e9e`), custom outlines for keyboard focus indicators, and screen reader-friendly labels.
+
+---
+
 ## ⚙️ Technology Stack
 
 * **Core Framework:** Next.js (App Router, Server Components)
