@@ -1548,7 +1548,7 @@ export default function RosterPage() {
           {/* Header Dashboard Banner */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-slate-950 font-sans tracking-wide">ডিউটি রোস্টার ও অফিস আদেশ</h1>
+              <h1 className="app-page-title text-slate-800 dark:text-slate-100 font-sans tracking-wide">ডিউটি রোস্টার ও অফিস আদেশ</h1>
               <p className="text-sm text-slate-500 mt-1">কর্মকর্তাদের রোস্টার তৈরি করুন এবং সরকারি প্রটোকলে অফিস আদেশ (জিও) জেনারেট করুন।</p>
             </div>
             

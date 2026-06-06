@@ -13,6 +13,7 @@
   --color-primary-hover: var(--primary-hover);
   --color-accent: var(--accent);
   --color-success: var(--success);
+  --font-sans: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
 }
 
 :root {
@@ -241,4 +242,14 @@ body {
   @page {
     margin: 0 !important;
   }
+}
+
+/* Keyboard Navigation Focus Indicator (WCAG 2.1 AA) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary) !important;
+  outline-offset: 2px !important;
 }

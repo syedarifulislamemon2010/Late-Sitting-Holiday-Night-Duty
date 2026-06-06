@@ -1381,8 +1381,9 @@ export default function EmployeesPage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">কর্মকর্তার নাম *</label>
+                <label htmlFor="emp_name" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">কর্মকর্তার নাম *</label>
                 <input
+                  id="emp_name"
                   type="text"
                   required
                   placeholder="যেমন: জনাব মোঃ আশরাফুল ইসলাম"
@@ -1393,8 +1394,9 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">পদবী *</label>
+                <label htmlFor="emp_designation" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">পদবী *</label>
                 <select
+                  id="emp_designation"
                   value={empForm.designation}
                   disabled={isSelfEditingOnly}
                   onChange={(e) => setEmpForm({ ...empForm, designation: e.target.value })}
@@ -1407,8 +1409,9 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ব্যাংক আইডি *</label>
+                <label htmlFor="emp_bankId" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ব্যাংক আইডি *</label>
                 <input
+                  id="emp_bankId"
                   type="text"
                   required
                   disabled={isSelfEditingOnly}
@@ -1420,8 +1423,9 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">নথি নম্বর (File No) *</label>
+                <label htmlFor="emp_fileNo" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">নথি নম্বর (File No) *</label>
                 <input
+                  id="emp_fileNo"
                   type="text"
                   required
                   disabled={isSelfEditingOnly}
@@ -1433,8 +1437,9 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মোবাইল নম্বর</label>
+                <label htmlFor="emp_mobile" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মোবাইল নম্বর</label>
                 <input
+                  id="emp_mobile"
                   type="text"
                   placeholder="যেমন: 017XXXXXXXX"
                   value={empForm.mobile || ''}
@@ -1444,8 +1449,9 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেল সিলেক্ট করুন *</label>
+                <label htmlFor="emp_cellId" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেল সিলেক্ট করুন *</label>
                 <select
+                  id="emp_cellId"
                   value={empForm.cellId}
                   disabled={isSelfEditingOnly}
                   onChange={(e) => setEmpForm({ ...empForm, cellId: e.target.value })}
@@ -1499,8 +1505,9 @@ export default function EmployeesPage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেলের নাম *</label>
+                <label htmlFor="cell_name" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেলের নাম *</label>
                 <input
+                  id="cell_name"
                   type="text"
                   required
                   placeholder="যেমন: R9, R22, JBNS ইত্যাদি"
@@ -1554,10 +1561,11 @@ export default function EmployeesPage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <label htmlFor="bulk_cell_file" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   অথবা CSV / Text ফাইল আপলোড করুন
                 </label>
                 <input
+                  id="bulk_cell_file"
                   type="file"
                   accept=".csv,.txt"
                   onChange={(e) => {
@@ -1575,10 +1583,11 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <label htmlFor="bulk_cell_text" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   সেলের নামসমূহ (প্রতি লাইনে একটি) *
                 </label>
                 <textarea
+                  id="bulk_cell_text"
                   required
                   rows={8}
                   placeholder="যেমন:\nR9\nR22\nJBNS\nCBS Integrated Development Cell"
@@ -1639,8 +1648,9 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. সেল সিলেক্ট করুন (ঐচ্ছিক)</label>
+                <label htmlFor="bulk_emp_cell_id" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. সেল সিলেক্ট করুন (ঐচ্ছিক)</label>
                 <select
+                  id="bulk_emp_cell_id"
                   value={bulkEmpCellId}
                   onChange={(e) => setBulkEmpCellId(e.target.value)}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
@@ -1653,10 +1663,11 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <label htmlFor="bulk_cell_file" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   অথবা CSV / Text ফাইল আপলোড করুন
                 </label>
                 <input
+                  id="bulk_cell_file"
                   type="file"
                   accept=".csv,.txt"
                   onChange={(e) => {
@@ -1675,17 +1686,18 @@ export default function EmployeesPage() {
 
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <label htmlFor="bulk_emp_text" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     ২. কর্মকর্তার নাম ও পদবী (প্রতি লাইনে একজন) *
                   </label>
                   {isImageImportLoading && (
-                    <span className="text-[10px] text-indigo-600 dark:text-indigo-450 font-bold flex items-center gap-1">
+                    <span className="text-[10px] text-indigo-600 dark:text-indigo-455 font-bold flex items-center gap-1">
                       <span className="w-2 h-2 border border-indigo-600 border-t-transparent rounded-full animate-spin inline-block" />
-                      বিশ্লেষণ করা হচ্ছে...
+                      ... विश्लेषण করা হচ্ছে ...
                     </span>
                   )}
                 </div>
                 <textarea
+                  id="bulk_emp_text"
                   required
                   rows={8}
                   placeholder={`যেমন (হেডার সহ অথবা ছাড়া):\nনাম,পদবী,ব্যাংক আইডি,নথি নং,মোবাইল নম্বর,সেল\nজনাব মোঃ আশরাফুল ইসলাম,সিনিয়র অফিসার,026799,SO(Com)-026799,01712345678,CBS Integrated Development Cell\nজনাব সামিউল হক,অফিসার-আইটি,026800,O(Com)-026800,01712345679,R9`}

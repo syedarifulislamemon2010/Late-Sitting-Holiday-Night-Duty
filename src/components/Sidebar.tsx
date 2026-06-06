@@ -156,12 +156,9 @@ export default function Sidebar() {
                       key={item.name}
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 group relative ${isActive ? 'bg-[#0b5e9e]/8 text-[#0b5e9e] rounded-xl' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 group relative ${isActive ? 'bg-[#0b5e9e] text-white shadow-sm shadow-[#0b5e9e]/15 rounded-xl font-medium' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                     >
-                      {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#0b5e9e] rounded-r-md" />
-                      )}
-                      <Icon size={18} className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${isActive ? 'text-[#0b5e9e]' : 'text-slate-400 group-hover:text-slate-650'}`} />
+                      <Icon size={18} className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`} />
                       <span className="app-sidebar-text">{item.name}</span>
                     </Link>
                   );

@@ -130,14 +130,14 @@ export default function UserManagement() {
         name: 'amber',
         border: 'border-amber-200 dark:border-amber-900/50',
         bg: 'bg-amber-50/20 dark:bg-amber-950/5',
-        badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-455',
+        badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400',
         text: 'text-amber-650 dark:text-amber-400'
       },
       {
         name: 'rose',
         border: 'border-rose-200 dark:border-rose-900/50',
         bg: 'bg-rose-50/20 dark:bg-rose-950/5',
-        badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455',
+        badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400',
         text: 'text-rose-650 dark:text-rose-400'
       },
       {
@@ -209,7 +209,7 @@ export default function UserManagement() {
         <div className="cursor-pointer font-sans" onClick={() => setProfileUser(user)}>
           <div className="flex justify-between items-start gap-2">
             <div className="space-y-1">
-              <h3 className="font-extrabold text-slate-855 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">{user.name}</h3>
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base leading-tight group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">{user.name}</h3>
               {emp && (
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{emp.designation}</p>
               )}
@@ -225,20 +225,20 @@ export default function UserManagement() {
             </div>
             
             {/* Role Tag */}
-            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border ${user.role === 'ADMIN' ? 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-455' : 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400'}`}>
+            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border ${user.role === 'ADMIN' ? 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400' : 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400'}`}>
               {user.role}
             </span>
           </div>
 
           {/* Cells lists */}
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 font-sans">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wide">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
               <Building2 size={12} className="text-slate-400" />
               <span>প্রবেশাধিকার প্রাপ্ত সেলসমূহ:</span>
             </div>
             
             {user.role === 'ADMIN' ? (
-              <p className="text-xs font-semibold text-slate-650 dark:text-slate-400 mt-2 italic flex items-center gap-1">
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-2 italic flex items-center gap-1">
                 <Shield size={12} className="text-rose-500" />
                 এডমিন হিসেবে সব সেলের অ্যাক্সেস রয়েছে
               </p>
@@ -578,19 +578,19 @@ export default function UserManagement() {
         <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2 mb-6 no-print">
           <button
             onClick={() => setActiveSettingsTab('profile')}
-            className={`px-5 py-2.5 font-sans font-bold text-xs transition-all border-b-2 -mb-[2px] ${effectiveTab === 'profile' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-250'}`}
+            className={`px-5 py-2.5 font-sans font-bold text-xs transition-all border-b-2 -mb-[2px] ${effectiveTab === 'profile' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}
           >
             আমার প্রোফাইল ও পাসওয়ার্ড
           </button>
           <button
             onClick={() => setActiveSettingsTab('users')}
-            className={`px-5 py-2.5 font-sans font-bold text-xs transition-all border-b-2 -mb-[2px] ${effectiveTab === 'users' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-250'}`}
+            className={`px-5 py-2.5 font-sans font-bold text-xs transition-all border-b-2 -mb-[2px] ${effectiveTab === 'users' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}
           >
             ইউজার পারমিশন ম্যানেজমেন্ট
           </button>
           <button
             onClick={() => setActiveSettingsTab('logs')}
-            className={`px-5 py-2.5 font-sans font-bold text-xs transition-all border-b-2 -mb-[2px] ${effectiveTab === 'logs' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-250'}`}
+            className={`px-5 py-2.5 font-sans font-bold text-xs transition-all border-b-2 -mb-[2px] ${effectiveTab === 'logs' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}
           >
             সিস্টেম অ্যাক্টিভিটি লগ
           </button>
@@ -605,8 +605,8 @@ export default function UserManagement() {
               {extractNickname(currentUser.name)}
             </div>
             <div>
-              <h3 className="font-extrabold text-slate-850 dark:text-slate-100 text-lg">{currentUser.name}</h3>
-              <p className="text-xs text-slate-400 dark:text-slate-550 mt-0.5">ব্যাংক আইডি: @{currentUser.username} | রোল: {currentUser.role === 'ADMIN' ? 'সিস্টেম সুপার এডমিন' : 'সাধারণ ইউজার'}</p>
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">{currentUser.name}</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">ব্যাংক আইডি: @{currentUser.username} | রোল: {currentUser.role === 'ADMIN' ? 'সিস্টেম সুপার এডমিন' : 'সাধারণ ইউজার'}</p>
             </div>
           </div>
 
@@ -624,8 +624,9 @@ export default function UserManagement() {
 
           <form onSubmit={handleUpdateProfile} className="space-y-5 font-sans">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">আমার নাম</label>
+              <label htmlFor="user_self_name" className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">আমার নাম</label>
               <input
+                id="user_self_name"
                 type="text"
                 required
                 value={profileName}
@@ -635,8 +636,9 @@ export default function UserManagement() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">মোবাইল নম্বর</label>
+              <label htmlFor="user_self_mobile" className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">মোবাইল নম্বর</label>
               <input
+                id="user_self_mobile"
                 type="text"
                 placeholder="যেমন: ০১৭XXXXXXXX"
                 value={profileMobile}
@@ -692,8 +694,9 @@ export default function UserManagement() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-indigo-650 dark:text-indigo-400 uppercase">নতুন পাসওয়ার্ড</label>
+                  <label htmlFor="user_self_new_password" className="text-[10px] font-bold text-indigo-650 dark:text-indigo-400 uppercase">নতুন পাসওয়ার্ড</label>
                   <input
+                    id="user_self_new_password"
                     type="password"
                     placeholder="কমপক্ষে ৪ অক্ষরের পাসওয়ার্ড"
                     value={newPassword}
@@ -703,8 +706,9 @@ export default function UserManagement() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-indigo-650 dark:text-indigo-400 uppercase">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+                  <label htmlFor="user_self_confirm_password" className="text-[10px] font-bold text-indigo-650 dark:text-indigo-400 uppercase">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
                   <input
+                    id="user_self_confirm_password"
                     type="password"
                     placeholder="পুনরায় পাসওয়ার্ডটি দিন"
                     value={confirmPassword}
@@ -774,10 +778,10 @@ export default function UserManagement() {
                       </div>
                       <div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">সিস্টেম এডমিনিস্ট্রেটরবৃন্দ (System Administrators)</h3>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">সব সেলের দায়িত্বপ্রাপ্ত সুপার ইউজারবৃন্দ</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-0.5">সব সেলের দায়িত্বপ্রাপ্ত সুপার ইউজারবৃন্দ</p>
                       </div>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400">
                       {toBanglaDigits(users.filter(u => u.role === 'ADMIN').length)} জন ইউজার
                     </span>
                   </div>
@@ -803,7 +807,7 @@ export default function UserManagement() {
                           <Building2 size={16} />
                         </div>
                         <div>
-                          <h3 className="font-extrabold text-slate-855 dark:text-slate-100 text-sm tracking-wide">{cell.name} সেল ইউজারবৃন্দ</h3>
+                          <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">{cell.name} সেল ইউজারবৃন্দ</h3>
                           <p className="text-[10px] text-slate-400 dark:text-slate-555 font-bold mt-0.5">শুধুমাত্র {cell.name} সেলের দায়িত্বপ্রাপ্ত ইউজারবৃন্দ</p>
                         </div>
                       </div>
@@ -829,10 +833,10 @@ export default function UserManagement() {
                       </div>
                       <div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">সেলের দায়িত্বহীন ইউজারবৃন্দ (Unassigned Users)</h3>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">বর্তমানে কোনো সেলের দায়িত্ব নেই</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-0.5">বর্তমানে কোনো সেলের দায়িত্ব নেই</p>
                       </div>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-455">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
                       {toBanglaDigits(users.filter(u => u.role === 'USER' && u.cells.length === 0).length)} জন ইউজার
                     </span>
                   </div>
@@ -853,7 +857,7 @@ export default function UserManagement() {
         <div className="space-y-6 font-sans">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print bg-slate-50 dark:bg-slate-950/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="text-sm font-extrabold text-slate-850 dark:text-slate-250">সিস্টেম অ্যাক্টিভিটি লগ</h3>
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200">সিস্টেম অ্যাক্টিভিটি লগ</h3>
               <p className="text-[10px] font-bold text-slate-450 dark:text-slate-500 mt-0.5">লগইন, এন্ট্রি, এডিট ও ডিলিটসহ সকল সিস্টেম কার্যক্রমের অডিট ট্রেইল</p>
             </div>
             
@@ -878,7 +882,7 @@ export default function UserManagement() {
               <div className="overflow-x-auto max-h-[60vh] no-scrollbar">
                 <table className="w-full text-xs text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-950/40 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-850">
+                    <tr className="bg-slate-50 dark:bg-slate-950/40 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
                       <th className="px-5 py-3">সময়</th>
                       <th className="px-4 py-3">ব্যবহারকারী</th>
                       <th className="px-4 py-3">কার্যক্রম</th>
@@ -887,7 +891,7 @@ export default function UserManagement() {
                       <th className="px-4 py-3">ম্যাক এড্রেস</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-850 font-sans">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
                     {filteredLogs.map((log: any) => {
                       const dateObj = new Date(log.createdAt);
                       const formattedTime = dateObj.toLocaleDateString('bn-BD', {
@@ -903,25 +907,25 @@ export default function UserManagement() {
                       const actionColors: Record<string, string> = {
                         'LOGIN': 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-100/50 dark:border-blue-900/30',
                         'CREATE': 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-900/30',
-                        'UPDATE': 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-455 border border-amber-100/50 dark:border-amber-900/30',
-                        'DELETE': 'bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-455 border border-rose-100/50 dark:border-rose-900/30',
+                        'UPDATE': 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-100/50 dark:border-amber-900/30',
+                        'DELETE': 'bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-100/50 dark:border-rose-900/30',
                         'CHANGE_PASSWORD': 'bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-100/50 dark:border-purple-900/30'
                       };
 
                       return (
                         <tr key={log.id} className="hover:bg-slate-50/55 dark:hover:bg-slate-950/10 transition-colors">
-                          <td className="px-5 py-3.5 whitespace-nowrap text-slate-400 dark:text-slate-550 font-medium">
+                          <td className="px-5 py-3.5 whitespace-nowrap text-slate-400 dark:text-slate-500 font-medium">
                             {formattedTime}
                           </td>
                           <td className="px-4 py-3.5 font-bold text-slate-800 dark:text-slate-300">
                             @{log.username}
                           </td>
                           <td className="px-4 py-3.5">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${actionColors[log.action] || 'bg-slate-50 text-slate-650'}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${actionColors[log.action] || 'bg-slate-50 text-slate-600'}`}>
                               {log.action}
                             </span>
                           </td>
-                          <td className="px-5 py-3.5 text-slate-650 dark:text-slate-350 max-w-md font-medium">
+                          <td className="px-5 py-3.5 text-slate-600 dark:text-slate-350 max-w-md font-medium">
                             {log.details}
                           </td>
                           <td className="px-4 py-3.5 font-mono text-slate-500 dark:text-slate-450 font-semibold">
@@ -977,8 +981,9 @@ export default function UserManagement() {
 
               {/* 1. Name */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">ইউজারের পূর্ণ নাম *</label>
+                <label htmlFor="user_form_name" className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">ইউজারের পূর্ণ নাম *</label>
                 <input
+                  id="user_form_name"
                   type="text"
                   required
                   placeholder="যেমন: জনাব সৈয়দ ইমন"
@@ -990,8 +995,9 @@ export default function UserManagement() {
 
               {/* Mobile */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">মোবাইল নম্বর</label>
+                <label htmlFor="user_form_mobile" className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">মোবাইল নম্বর</label>
                 <input
+                  id="user_form_mobile"
                   type="text"
                   placeholder="যেমন: ০১৭XXXXXXXX"
                   value={mobile}
@@ -1002,8 +1008,9 @@ export default function UserManagement() {
 
               {/* 2. Username */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">ইউজারনেম (ব্যাংক আইডি) *</label>
+                <label htmlFor="user_form_username" className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">ইউজারনেম (ব্যাংক আইডি) *</label>
                 <input
+                  id="user_form_username"
                   type="text"
                   required
                   disabled={!!editingUser}
@@ -1037,12 +1044,13 @@ export default function UserManagement() {
 
               {/* 4. Role */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">সিস্টেম রোল (Role)</label>
+                <label htmlFor="user_form_role" className="text-[10px] font-bold text-[#1976D2] uppercase tracking-[0.08em]">সিস্টেম রোল (Role)</label>
                 <select
+                  id="user_form_role"
                   value={role}
                   disabled={editingUser?.username === 'admin'}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-855 rounded-xl text-xs font-semibold focus:outline-none"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none"
                 >
                   <option value="USER">USER (সাধারণ ইউজার)</option>
                   <option value="ADMIN">ADMIN (সিস্টেম সুপার এডমিন)</option>
@@ -1073,7 +1081,7 @@ export default function UserManagement() {
                           <div 
                             key={cell.id}
                             onClick={() => handleCellToggle(cell.id)}
-                            className={`p-3 rounded-xl border-2 cursor-pointer flex items-center justify-between transition-all duration-200 active:scale-[0.98] ${isChecked ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50/50 dark:bg-slate-950/10 border-slate-200/70 dark:border-slate-855 text-slate-700 dark:text-slate-330 hover:border-slate-300'}`}
+                            className={`p-3 rounded-xl border-2 cursor-pointer flex items-center justify-between transition-all duration-200 active:scale-[0.98] ${isChecked ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50/50 dark:bg-slate-950/10 border-slate-200/70 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'}`}
                           >
                             <div className="space-y-0.5 text-left leading-none">
                               <span className="font-extrabold text-xs font-mono">{cell.name}</span>
@@ -1146,46 +1154,46 @@ export default function UserManagement() {
               {/* Profile Info Details */}
               <div className="pt-14 pb-8 px-6 text-center space-y-6">
                 <div>
-                  <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-lg leading-tight">{profileUser.name}</h4>
+                  <h4 className="font-extrabold text-slate-800 dark:text-slate-50 text-lg leading-tight">{profileUser.name}</h4>
                   <p className="text-xs font-semibold text-slate-450 dark:text-slate-500 mt-1">@{profileUser.username}</p>
                 </div>
 
                 {/* Grid of Attributes */}
                 <div className="grid grid-cols-2 gap-3 text-left">
-                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5">
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">ইউজার রোল</span>
-                    <p className="text-xs font-bold text-slate-850 dark:text-slate-200">
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                       {profileUser.role === 'ADMIN' ? 'সুপার এডমিন' : 'সাধারণ ইউজার'}
                     </p>
                   </div>
-                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5">
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যাংক আইডি</span>
-                    <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{profileUser.username}</p>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{profileUser.username}</p>
                   </div>
 
                   {emp && (
                     <>
-                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5">
+                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5">
                         <span className="text-[10px] font-bold text-slate-400 uppercase">পদবী</span>
-                        <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.designation}</p>
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{emp.designation}</p>
                       </div>
-                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5">
+                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5">
                         <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যক্তিগত নথি নং</span>
-                        <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.fileNo || 'নেই'}</p>
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{emp.fileNo || 'নেই'}</p>
                       </div>
-                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5 col-span-2">
+                      <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5 col-span-2">
                         <span className="text-[10px] font-bold text-slate-400 uppercase">সেল</span>
-                        <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{emp.cell?.name || 'নেই'}</p>
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{emp.cell?.name || 'নেই'}</p>
                       </div>
                     </>
                   )}
 
-                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5 col-span-2">
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5 col-span-2">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">মোবাইল নম্বর</span>
-                    <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{profileUser.mobile || 'যুক্ত করা হয়নি'}</p>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{profileUser.mobile || 'যুক্ত করা হয়নি'}</p>
                   </div>
 
-                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855 rounded-xl space-y-1.5 col-span-2">
+                  <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5 col-span-2">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">প্রবেশাধিকার প্রাপ্ত সেলসমূহ</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {profileUser.role === 'ADMIN' ? (

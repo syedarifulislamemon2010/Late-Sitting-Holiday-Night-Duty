@@ -685,7 +685,7 @@ export default function LeaveGeneratorPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer">
+            <Link href="/" className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer">
               <ArrowLeft size={14} />
               ড্যাশবোর্ড
             </Link>
@@ -730,13 +730,13 @@ export default function LeaveGeneratorPage() {
                 </div>
               )}
               {errorMsg && (
-                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/20 border border-rose-250 dark:border-rose-900 text-rose-850 dark:text-rose-300 text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm">
+                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/20 border border-rose-250 dark:border-rose-900 text-rose-800 dark:text-rose-300 text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm">
                   <AlertCircle size={14} className="text-rose-500" />
                   {errorMsg}
                 </div>
               )}
               {editingLeaveId && (
-                <div className="p-3.5 bg-amber-50 dark:bg-amber-955/20 border border-amber-250 dark:border-amber-900 text-amber-855 dark:text-amber-300 text-xs font-bold rounded-xl flex justify-between items-center shadow-sm">
+                <div className="p-3.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-250 dark:border-amber-900 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-xl flex justify-between items-center shadow-sm">
                   <span className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping" />
                     আপনি বর্তমানে একটি সংরক্ষিত আবেদন (আইডি #{toBanglaDigits(editingLeaveId)}) এডিট করছেন।
@@ -796,8 +796,9 @@ export default function LeaveGeneratorPage() {
                 <div className="space-y-3.5 text-xs font-sans">
                   {currentUser?.role === 'ADMIN' && (
                     <div className="space-y-1.5 pb-2 border-b border-dashed border-indigo-100 dark:border-indigo-950">
-                      <label className="font-bold text-indigo-700 dark:text-indigo-400 block">আবেদনকারী কর্মকর্তা নির্বাচন:</label>
+                      <label htmlFor="selectedEmployeeId" className="font-bold text-indigo-700 dark:text-indigo-400 block">আবেদনকারী কর্মকর্তা নির্বাচন:</label>
                       <select
+                        id="selectedEmployeeId"
                         value={selectedApplicantEmp?.id || ''}
                         onChange={(e) => {
                           const empId = e.target.value;
@@ -852,8 +853,9 @@ export default function LeaveGeneratorPage() {
                   )}
                   {/* Name field */}
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-500">নাম:</label>
+                    <label htmlFor="applicantName" className="font-bold text-slate-500">নাম:</label>
                     <input 
+                      id="applicantName"
                       type="text" 
                       value={applicantName}
                       onChange={(e) => setApplicantName(e.target.value)}
@@ -863,8 +865,9 @@ export default function LeaveGeneratorPage() {
 
                   {/* Designation */}
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-500">পদবী:</label>
+                    <label htmlFor="designation" className="font-bold text-slate-500">পদবী:</label>
                     <input 
+                      id="designation"
                       type="text" 
                       value={designation}
                       onChange={(e) => setDesignation(e.target.value)}
@@ -874,8 +877,9 @@ export default function LeaveGeneratorPage() {
 
                   {/* Cell Name */}
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-500">বিভাগ/সেল:</label>
+                    <label htmlFor="cellName" className="font-bold text-slate-500">বিভাগ/সেল:</label>
                     <input 
+                      id="cellName"
                       type="text" 
                       value={cellName}
                       onChange={(e) => setCellName(e.target.value)}
@@ -886,8 +890,9 @@ export default function LeaveGeneratorPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {/* Bank ID */}
                     <div className="space-y-1">
-                      <label className="font-bold text-slate-500">ব্যাংক আইডি:</label>
+                      <label htmlFor="bankId" className="font-bold text-slate-500">ব্যাংক আইডি:</label>
                       <input 
+                        id="bankId"
                         type="text" 
                         value={bankId}
                         onChange={(e) => setBankId(e.target.value)}
@@ -897,8 +902,9 @@ export default function LeaveGeneratorPage() {
 
                     {/* File No */}
                     <div className="space-y-1">
-                      <label className="font-bold text-slate-500">নথি নম্বর:</label>
+                      <label htmlFor="fileNo" className="font-bold text-slate-500">নথি নম্বর:</label>
                       <input 
+                        id="fileNo"
                         type="text" 
                         value={fileNo}
                         onChange={(e) => setFileNo(e.target.value)}
@@ -910,8 +916,9 @@ export default function LeaveGeneratorPage() {
 
                   {/* Mobile No */}
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-500">মোবাইল নম্বর:</label>
+                    <label htmlFor="mobileNo" className="font-bold text-slate-500">মোবাইল নম্বর:</label>
                     <input 
+                      id="mobileNo"
                       type="text" 
                       value={mobileNo}
                       onChange={(e) => setMobileNo(e.target.value)}
@@ -921,8 +928,9 @@ export default function LeaveGeneratorPage() {
 
                   {/* District Selection Section */}
                   <div className="space-y-2 border-t border-slate-100 pt-3">
-                    <label className="font-bold text-slate-500 text-xs block">ছুটিতে থাকাকালীন অবস্থান (জেলা):</label>
+                    <label htmlFor="selectedDistrict" className="font-bold text-slate-500 text-xs block">ছুটিতে থাকাকালীন অবস্থান (জেলা):</label>
                     <select
+                      id="selectedDistrict"
                       value={selectedDistrict}
                       onChange={(e) => setSelectedDistrict(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none cursor-pointer"
@@ -950,8 +958,9 @@ export default function LeaveGeneratorPage() {
                 <div className="space-y-3.5 text-xs font-sans">
                   {/* Leave Type */}
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-500">আবেদনের ধরণ:</label>
+                    <label htmlFor="leaveType" className="font-bold text-slate-500">আবেদনের ধরণ:</label>
                     <select
+                      id="leaveType"
                       value={leaveType}
                       onChange={(e) => setLeaveType(e.target.value as any)}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-bold"
@@ -965,8 +974,9 @@ export default function LeaveGeneratorPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {/* Start Date */}
                     <div className="space-y-1">
-                      <label className="font-bold text-slate-500">শুরুর তারিখ:</label>
+                      <label htmlFor="startDate" className="font-bold text-slate-500">শুরুর তারিখ:</label>
                       <input 
+                        id="startDate"
                         type="date" 
                         value={startDate}
                         min={dateLimits.min}
@@ -979,8 +989,9 @@ export default function LeaveGeneratorPage() {
 
                     {/* End Date */}
                     <div className="space-y-1">
-                      <label className="font-bold text-slate-500">শেষের তারিখ:</label>
+                      <label htmlFor="endDate" className="font-bold text-slate-500">শেষের তারিখ:</label>
                       <input 
+                        id="endDate"
                         type="date" 
                         value={endDate}
                         min={startDate || dateLimits.min}
@@ -995,8 +1006,9 @@ export default function LeaveGeneratorPage() {
 
                   {/* Application Date Picker */}
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-500">আবেদনের তারিখ (চিঠির উপরে প্রদর্শিত হবে):</label>
+                    <label htmlFor="applicationDate" className="font-bold text-slate-500">আবেদনের তারিখ (চিঠির উপরে প্রদর্শিত হবে):</label>
                     <input 
+                      id="applicationDate"
                       type="date" 
                       value={applicationDate}
                       onChange={(e) => setApplicationDate(e.target.value)}
@@ -1006,8 +1018,9 @@ export default function LeaveGeneratorPage() {
 
                   {/* Delegate Officer dropdown */}
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-500">ছুটিতে দায়িত্ব পালনকারী কর্মকর্তা:</label>
+                    <label htmlFor="delegateId" className="font-bold text-slate-500">ছুটিতে দায়িত্ব পালনকারী কর্মকর্তা:</label>
                     <select
+                      id="delegateId"
                       value={delegateId}
                       onChange={(e) => setDelegateId(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-bold cursor-pointer"
@@ -1036,8 +1049,9 @@ export default function LeaveGeneratorPage() {
                     <p className="font-extrabold text-indigo-900">নৈমিত্তিক ছুটি ব্যালেন্স:</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
+                        <label htmlFor="casualTotal" className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
                         <input 
+                          id="casualTotal"
                           type="number" 
                           value={casualTotal}
                           onChange={(e) => setCasualTotal(parseInt(e.target.value, 10) || 0)}
@@ -1045,8 +1059,9 @@ export default function LeaveGeneratorPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-400 font-bold">ভোগকৃত (আগের):</label>
+                        <label htmlFor="casualUsed" className="text-[10px] text-slate-400 font-bold">ভোগকৃত (আগের):</label>
                         <input 
+                          id="casualUsed"
                           type="number" 
                           value={casualUsed}
                           onChange={(e) => setCasualUsed(parseInt(e.target.value, 10) || 0)}
@@ -1061,8 +1076,9 @@ export default function LeaveGeneratorPage() {
                     <p className="font-extrabold text-teal-900">সাধারণ ছুটি ব্যালেন্স:</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
+                        <label htmlFor="ordinaryTotal" className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
                         <input 
+                          id="ordinaryTotal"
                           type="number" 
                           value={ordinaryTotal}
                           onChange={(e) => setOrdinaryTotal(parseInt(e.target.value, 10) || 0)}
@@ -1070,8 +1086,9 @@ export default function LeaveGeneratorPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-400 font-bold">ভোগকৃত:</label>
+                        <label htmlFor="ordinaryUsed" className="text-[10px] text-slate-400 font-bold">ভোগকৃত:</label>
                         <input 
+                          id="ordinaryUsed"
                           type="number" 
                           value={ordinaryUsed}
                           onChange={(e) => setOrdinaryUsed(parseInt(e.target.value, 10) || 0)}
@@ -1086,8 +1103,9 @@ export default function LeaveGeneratorPage() {
                     <p className="font-extrabold text-purple-900">বিশেষ ছুটি ব্যালেন্স:</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
+                        <label htmlFor="specialTotal" className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
                         <input 
+                          id="specialTotal"
                           type="number" 
                           value={specialTotal}
                           onChange={(e) => setSpecialTotal(parseInt(e.target.value, 10) || 0)}
@@ -1095,8 +1113,9 @@ export default function LeaveGeneratorPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-400 font-bold">ভোগকৃত:</label>
+                        <label htmlFor="specialUsed" className="text-[10px] text-slate-400 font-bold">ভোগকৃত:</label>
                         <input 
+                          id="specialUsed"
                           type="number" 
                           value={specialUsed}
                           onChange={(e) => setSpecialUsed(parseInt(e.target.value, 10) || 0)}
@@ -1109,7 +1128,7 @@ export default function LeaveGeneratorPage() {
               </div>
                     {/* Box 4: sandwich leave details display */}
                     {leaveDetails.actualDeducted > 0 && (
-                      <div className="p-4 bg-amber-50 dark:bg-amber-955/20 border border-amber-250 dark:border-amber-900 rounded-2xl space-y-2 mt-4">
+                      <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-250 dark:border-amber-900 rounded-2xl space-y-2 mt-4">
                         <h4 className="font-extrabold text-amber-900 dark:text-amber-400 text-xs flex items-center gap-1">
                           <Info size={14} />
                           ছুটি হিসাব বিবরণী (স্যান্ডউইচ নিয়ম অনুসারে):
@@ -1119,7 +1138,7 @@ export default function LeaveGeneratorPage() {
                           <p>• অডিট টাইপ: <span className="font-bold">{leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : 'আগাম নৈমিত্তিক'}</span></p>
                           <p>• স্যান্ডউইচ পরিস্থিতি: <span className="font-bold">{leaveDetails.isSandwiched ? 'হ্যাঁ (ছুটির মাঝখানে Sandwich হয়েছে)' : 'না'}</span></p>
                           {leaveDetails.isSandwiched && (
-                            <p className="text-rose-650 dark:text-rose-455 font-bold">• ছুটি পরবর্তী বন্ধের দিন (+{toBanglaDigits(leaveDetails.sandwichedCount)} দিন) মূল ছুটির সাথে যুক্ত করা হয়েছে.</p>
+                            <p className="text-rose-650 dark:text-rose-400 font-bold">• ছুটি পরবর্তী বন্ধের দিন (+{toBanglaDigits(leaveDetails.sandwichedCount)} দিন) মূল ছুটির সাথে যুক্ত করা হয়েছে.</p>
                           )}
                           <div className="h-px bg-amber-200 dark:bg-amber-900 my-1.5" />
                           <p className="text-xs font-bold text-slate-800 dark:text-slate-205">কাটা যাওয়ার জন্য মোট হিসাবকৃত দিন: <span className="text-indigo-600 dark:text-indigo-400 text-sm font-extrabold">{toBanglaDigits(leaveDetails.actualDeducted)} দিন</span></p>
@@ -1158,7 +1177,7 @@ export default function LeaveGeneratorPage() {
                         {toDisplayDateStr(latestLeave.applicationDate)}
                       </span>
                     </div>
-                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 space-y-1.5 mb-3 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-150 dark:border-slate-800">
+                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 space-y-1.5 mb-3 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                       <p>ছুটির ধরণ: <span className="font-bold text-slate-900 dark:text-slate-100">
                         {latestLeave.leaveType === 'CASUAL' ? 'নৈমিত্তিক ছুটি' : latestLeave.leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক ছুটি' : 'কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি'}
                       </span></p>
@@ -1179,21 +1198,21 @@ export default function LeaveGeneratorPage() {
                       <button
                         type="button"
                         onClick={() => handleEditLeave(latestLeave)}
-                        className="py-2 px-4 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-850 rounded-xl text-xs font-bold transition-all text-center cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                        className="py-2 px-4 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold transition-all text-center cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
                       >
                         এডিট করুন
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="glass-card p-6 text-center rounded-2xl border border-slate-100 dark:border-slate-850 bg-slate-50/50">
+                  <div className="glass-card p-6 text-center rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50">
                     <p className="text-xs text-slate-500 font-bold">কোনো পূর্ববর্তী আবেদন পাওয়া যায়নি।</p>
                   </div>
                 )}
 
                 {/* Past Applications List */}
                 <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                  <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm border-b border-slate-100 dark:border-slate-850 pb-2 flex justify-between items-center">
+                  <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm border-b border-slate-100 dark:border-slate-800 pb-2 flex justify-between items-center">
                     <span>বিগত আবেদনসমূহ</span>
                     <span className="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">
                       মোট: {toBanglaDigits(archivedLeaves.length)} টি
@@ -1205,7 +1224,7 @@ export default function LeaveGeneratorPage() {
                   ) : (
                     <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
                       {archivedLeaves.map((leave) => (
-                        <div key={leave.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl space-y-2 hover:border-indigo-300 dark:hover:border-indigo-900 transition-all">
+                        <div key={leave.id} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 hover:border-indigo-300 dark:hover:border-indigo-900 transition-all">
                           <div className="flex justify-between items-start">
                             <div>
                               <p className="font-extrabold text-slate-905 dark:text-slate-100 text-xs">
@@ -1242,8 +1261,8 @@ export default function LeaveGeneratorPage() {
                               </button>
                             </div>
                           </div>
-                          <div className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold bg-white dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-850">
-                            সময়কাল: <span className="font-bold text-slate-850 dark:text-slate-205">{toDisplayDateStr(leave.startDate)} হতে {toDisplayDateStr(leave.endDate)}</span>
+                          <div className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold bg-white dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                            সময়কাল: <span className="font-bold text-slate-800 dark:text-slate-205">{toDisplayDateStr(leave.startDate)} হতে {toDisplayDateStr(leave.endDate)}</span>
                           </div>
                         </div>
                       ))}
@@ -1267,7 +1286,7 @@ export default function LeaveGeneratorPage() {
                     <span>{validation.message}</span>
                   </div>
                 ) : (
-                  <div className="p-3.5 bg-amber-50 dark:bg-amber-955/20 border border-amber-250 dark:border-amber-900 text-amber-850 dark:text-amber-300 text-xs font-bold rounded-2xl flex items-center gap-2.5 shadow-sm">
+                  <div className="p-3.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-250 dark:border-amber-900 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-2xl flex items-center gap-2.5 shadow-sm">
                     <AlertCircle size={15} className="text-amber-500 shrink-0" />
                     <span>{validation.message}</span>
                   </div>

@@ -46,49 +46,49 @@ const PALETTES = [
   {
     border: 'border-l-4 border-l-emerald-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
     badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30',
-    title: 'text-emerald-900 dark:text-emerald-100 group-hover:text-emerald-655',
+    title: 'text-emerald-900 dark:text-emerald-100 group-hover:text-emerald-600',
     bg: 'bg-emerald-50/10 dark:bg-emerald-950/5',
     name: 'emerald'
   },
   {
     border: 'border-l-4 border-l-amber-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
     badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30',
-    title: 'text-amber-900 dark:text-amber-100 group-hover:text-amber-655',
+    title: 'text-amber-900 dark:text-amber-100 group-hover:text-amber-600',
     bg: 'bg-amber-50/10 dark:bg-emerald-950/5',
     name: 'amber'
   },
   {
     border: 'border-l-4 border-l-rose-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
     badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30',
-    title: 'text-rose-900 dark:text-rose-100 group-hover:text-rose-655',
+    title: 'text-rose-900 dark:text-rose-100 group-hover:text-rose-600',
     bg: 'bg-rose-50/10 dark:bg-rose-950/5',
     name: 'rose'
   },
   {
     border: 'border-l-4 border-l-sky-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
     badge: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30',
-    title: 'text-sky-900 dark:text-sky-100 group-hover:text-sky-655',
+    title: 'text-sky-900 dark:text-sky-100 group-hover:text-sky-600',
     bg: 'bg-sky-50/10 dark:bg-sky-950/5',
     name: 'sky'
   },
   {
     border: 'border-l-4 border-l-violet-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
     badge: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30',
-    title: 'text-violet-900 dark:text-violet-100 group-hover:text-violet-655',
+    title: 'text-violet-900 dark:text-violet-100 group-hover:text-violet-600',
     bg: 'bg-violet-50/10 dark:bg-violet-950/5',
     name: 'violet'
   },
   {
     border: 'border-l-4 border-l-teal-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
     badge: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-400 border border-teal-100 dark:border-teal-900/30',
-    title: 'text-teal-900 dark:text-teal-100 group-hover:text-teal-655',
+    title: 'text-teal-900 dark:text-teal-100 group-hover:text-teal-600',
     bg: 'bg-teal-50/10 dark:bg-teal-950/5',
     name: 'teal'
   },
   {
     border: 'border-l-4 border-l-fuchsia-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
     badge: 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-400 border border-fuchsia-100 dark:border-fuchsia-900/30',
-    title: 'text-fuchsia-900 dark:text-fuchsia-100 group-hover:text-fuchsia-655',
+    title: 'text-fuchsia-900 dark:text-fuchsia-100 group-hover:text-fuchsia-600',
     bg: 'bg-fuchsia-50/10 dark:bg-fuchsia-950/5',
     name: 'fuchsia'
   }
@@ -680,7 +680,7 @@ export default function ExecutivesPage() {
                   }
                 }}
                 disabled={generating}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold border border-slate-250 dark:border-slate-750 transition-colors cursor-pointer disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <Eye size={16} />
                 প্রিন্ট প্রিভিউ
@@ -713,7 +713,7 @@ export default function ExecutivesPage() {
                       setBulkError('');
                       setIsBulkModalOpen(true);
                     }}
-                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750"
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-200 dark:border-slate-700"
                   >
                     <Plus size={16} />
                     বাল্ক টেক্সট আপলোড
@@ -747,32 +747,32 @@ export default function ExecutivesPage() {
                 
                 let accentColor = '#0ea5e9'; // default sky-blue for AGMs
                 let borderClass = 'border-sky-200 dark:border-sky-900/50';
-                let bgClass = 'bg-sky-50/10 dark:bg-sky-955/5 text-sky-850 dark:text-sky-300';
+                let bgClass = 'bg-sky-50/10 dark:bg-sky-950/5 text-sky-800 dark:text-sky-300';
                 let textClass = 'text-sky-800 dark:text-sky-200 group-hover:text-sky-950';
-                let badgeClass = 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-455 border border-sky-100 dark:border-sky-900/30';
+                let badgeClass = 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30';
                 
                 if (isDGM) {
                   if (dgmRank === 1) {
                     // Royal Blue
                     accentColor = '#2563eb';
                     borderClass = 'border-blue-200 dark:border-blue-900/50';
-                    bgClass = 'bg-blue-50/10 dark:bg-blue-955/5 text-blue-850 dark:text-blue-300';
+                    bgClass = 'bg-blue-50/10 dark:bg-blue-950/5 text-blue-800 dark:text-blue-300';
                     textClass = 'text-blue-800 dark:text-blue-200 group-hover:text-blue-950';
-                    badgeClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-455 border border-blue-100 dark:border-blue-900/30';
+                    badgeClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30';
                   } else if (dgmRank === 2) {
                     // Amber/Orange
                     accentColor = '#d97706';
                     borderClass = 'border-amber-200 dark:border-amber-900/50';
-                    bgClass = 'bg-amber-50/10 dark:bg-amber-955/5 text-amber-850 dark:text-amber-300';
+                    bgClass = 'bg-amber-50/10 dark:bg-amber-950/5 text-amber-800 dark:text-amber-300';
                     textClass = 'text-amber-800 dark:text-amber-250 group-hover:text-amber-950';
-                    badgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-455 border border-amber-100 dark:border-amber-900/30';
+                    badgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30';
                   } else {
                     // Teal
                     accentColor = '#0d9488';
                     borderClass = 'border-teal-200 dark:border-teal-900/50';
-                    bgClass = 'bg-teal-50/10 dark:bg-teal-955/5 text-teal-850 dark:text-teal-300';
+                    bgClass = 'bg-teal-50/10 dark:bg-teal-950/5 text-teal-800 dark:text-teal-300';
                     textClass = 'text-teal-800 dark:text-teal-250 group-hover:text-teal-950';
-                    badgeClass = 'bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-455 border border-teal-100 dark:border-teal-900/30';
+                    badgeClass = 'bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400 border border-teal-100 dark:border-teal-900/30';
                   }
                 }
                 
@@ -812,14 +812,14 @@ export default function ExecutivesPage() {
                       <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80 font-sans">
                         <button
                           onClick={() => startEditExec(exec)}
-                          className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
                           title="সম্পাদনা"
                         >
                           <Edit2 size={13} />
                         </button>
                         <button
                           onClick={() => deleteExec(exec.id)}
-                          className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-655 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
                           title="মুছে ফেলুন"
                         >
                           <Trash2 size={13} />
@@ -860,8 +860,9 @@ export default function ExecutivesPage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">কর্মকর্তার নাম *</label>
+                <label htmlFor="exec_name" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">কর্মকর্তার নাম *</label>
                 <input
+                  id="exec_name"
                   type="text"
                   required
                   placeholder="যেমন: জনাব মোহাম্মদ সোহরাব হোসেন"
@@ -872,8 +873,9 @@ export default function ExecutivesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">পদবী *</label>
+                <label htmlFor="exec_designation" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">পদবী *</label>
                 <select
+                  id="exec_designation"
                   value={form.designation}
                   onChange={(e) => setForm({ ...form, designation: e.target.value })}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
@@ -885,8 +887,9 @@ export default function ExecutivesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ব্যাংক আইডি (ঐচ্ছিক)</label>
+                <label htmlFor="exec_bankId" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ব্যাংক আইডি (ঐচ্ছিক)</label>
                 <input
+                  id="exec_bankId"
                   type="text"
                   placeholder="যেমন: 026799"
                   value={form.bankId}
@@ -896,8 +899,9 @@ export default function ExecutivesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ব্যক্তিগত নথি নম্বর (File No) (ঐচ্ছিক)</label>
+                <label htmlFor="exec_fileNo" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ব্যক্তিগত নথি নম্বর (File No) (ঐচ্ছিক)</label>
                 <input
+                  id="exec_fileNo"
                   type="text"
                   placeholder="যেমন: DGM(Com)-026799"
                   value={form.fileNo}
@@ -958,10 +962,11 @@ export default function ExecutivesPage() {
               </div>
 
               <div className="space-y-1.5 font-sans">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <label htmlFor="bulk_exec_file" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   অথবা CSV / Text ফাইল আপলোড করুন
                 </label>
                 <input
+                  id="bulk_exec_file"
                   type="file"
                   accept=".csv,.txt"
                   onChange={(e) => {
@@ -980,7 +985,7 @@ export default function ExecutivesPage() {
 
               <div className="space-y-1.5 font-sans">
                 <div className="flex justify-between items-center font-sans">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <label htmlFor="bulk_exec_text" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     নির্বাহী কর্মকর্তার নাম ও পদবী (প্রতি লাইনে একজন) *
                   </label>
                   {isImageImportLoading && (
@@ -991,6 +996,7 @@ export default function ExecutivesPage() {
                   )}
                 </div>
                 <textarea
+                  id="bulk_exec_text"
                   required
                   rows={8}
                   placeholder={`যেমন:\nজনাব চৌধুরী আশিকুর রহমান - উপ-মহাব্যবস্থাপক\nজনাব মোহাম্মদ সোহরাব হোসেন - সহকারী মহাব্যবস্থাপক\n\n(অথবা নির্বাহী কর্মকর্তাদের তালিকার কোনো ছবি এখানে সরাসরি Ctrl+V দিয়ে পেস্ট করুন)`}
@@ -1017,7 +1023,7 @@ export default function ExecutivesPage() {
                 <button
                   type="submit"
                   disabled={bulkImporting || isImageImportLoading}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:bg-slate-200 dark:disabled:bg-slate-850 disabled:text-slate-400"
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400"
                 >
                   {bulkImporting ? 'আমদানি হচ্ছে...' : 'ইম্পোর্ট করুন'}
                 </button>
@@ -1049,22 +1055,22 @@ export default function ExecutivesPage() {
             {/* Profile Info Details */}
             <div className="pt-14 pb-8 px-6 text-center space-y-6">
               <div>
-                <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-lg leading-tight">{profileExec.name}</h4>
+                <h4 className="font-extrabold text-slate-800 dark:text-slate-50 text-lg leading-tight">{profileExec.name}</h4>
               </div>
 
               {/* Grid of Attributes */}
               <div className="grid grid-cols-2 gap-3 text-left">
-                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5 col-span-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">পদবী</span>
                   <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{profileExec.designation}</p>
                 </div>
-                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যাংক আইডি</span>
-                  <p className="text-xs font-bold text-slate-855 dark:text-slate-150 font-sans">{profileExec.bankId || 'প্রদান করা হয়নি'}</p>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-100 font-sans">{profileExec.bankId || 'প্রদান করা হয়নি'}</p>
                 </div>
-                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
+                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যক্তিগত নথি নং</span>
-                  <p className="text-xs font-bold text-slate-855 dark:text-slate-150 font-sans">{profileExec.fileNo || 'প্রদান করা হয়নি'}</p>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-100 font-sans">{profileExec.fileNo || 'প্রদান করা হয়নি'}</p>
                 </div>
               </div>
 
@@ -1133,7 +1139,7 @@ export default function ExecutivesPage() {
               <iframe 
                 id="preview-print-iframe"
                 src={iframeUrl}
-                className="w-full h-full border border-slate-150 dark:border-slate-800 rounded-2xl shadow-inner bg-white"
+                className="w-full h-full border border-slate-100 dark:border-slate-800 rounded-2xl shadow-inner bg-white"
               />
             </div>
 

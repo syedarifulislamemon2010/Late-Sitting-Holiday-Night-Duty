@@ -707,8 +707,9 @@ export default function LunchBillPage() {
             
             {/* Month Selection */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মাস নির্বাচন করুন</label>
+              <label htmlFor="selectedMonth" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মাস নির্বাচন করুন</label>
               <input
+                id="selectedMonth"
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
@@ -718,11 +719,12 @@ export default function LunchBillPage() {
 
             {/* Working Days Input */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <label htmlFor="workingDays" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 মোট কার্যদিবস
                 {!isAdminOrAdminCell && <span className="text-[10px] text-slate-400 normal-case ml-1.5">(লকড)</span>}
               </label>
               <input
+                id="workingDays"
                 type="number"
                 min="1"
                 max="31"
@@ -736,8 +738,9 @@ export default function LunchBillPage() {
             {/* Cell Selection for Users with Multiple Cells */}
             {!isAdminOrAdminCell && currentUser?.cells?.length > 1 && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেল নির্বাচন করুন</label>
+                <label htmlFor="activeCellId" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">সেল নির্বাচন করুন</label>
                 <select
+                  id="activeCellId"
                   value={activeCellId || ''}
                   onChange={(e) => setActiveCellId(parseInt(e.target.value, 10))}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
@@ -752,10 +755,11 @@ export default function LunchBillPage() {
             {/* Deduction Settings Mode Trigger */}
             {isAdminOrAdminCell && (
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <label htmlFor="deductionMode" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                   <Sliders size={12} /> অতিরিক্ত কর্তন কনফিগারেশন
                 </label>
                 <select
+                  id="deductionMode"
                   value={deductionMode}
                   onChange={(e) => {
                     const mode = e.target.value as any;
@@ -775,7 +779,7 @@ export default function LunchBillPage() {
 
           {/* Dynamic configs dependent panel */}
           {isAdminOrAdminCell && deductionMode === 'flat' && (
-            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855/80 rounded-xl flex items-center gap-4 animate-fade-in">
+            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/80 rounded-xl flex items-center gap-4 animate-fade-in">
               <span className="text-xs font-bold text-slate-500 uppercase">ফ্ল্যাট অতিরিক্ত কর্তনের হার:</span>
               <input
                 type="number"
@@ -789,7 +793,7 @@ export default function LunchBillPage() {
           )}
 
           {isAdminOrAdminCell && deductionMode === 'designation' && (
-            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-855/80 rounded-xl grid grid-cols-2 sm:grid-cols-5 gap-4 animate-fade-in animate-scale-up">
+            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/80 rounded-xl grid grid-cols-2 sm:grid-cols-5 gap-4 animate-fade-in animate-scale-up">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">SPO / SSPO:</span>
                 <input
@@ -863,7 +867,7 @@ export default function LunchBillPage() {
           <div className="glass-card rounded-2xl overflow-hidden border border-slate-200/60 dark:border-slate-800/80">
             
             {/* Card Header Actions */}
-            <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">
                   {isAdminOrAdminCell ? 'সমন্বিত লাঞ্চ বিল এন্ট্রি শিট' : `লাঞ্চ ভাতা বিল শিট - ${cells.find(c => c.id === primaryCellId)?.name || ''}`} - {getBanglaMonthName(selectedMonth)}
@@ -887,7 +891,7 @@ export default function LunchBillPage() {
                   <button
                     onClick={saveLunchBill}
                     disabled={saving}
-                    className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-2 border border-slate-200/50 dark:border-slate-750 transition-colors"
+                    className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-2 border border-slate-200/50 dark:border-slate-700 transition-colors"
                   >
                     {saving && <Loader2 className="animate-spin" size={12} />}
                     সেভ করুন
@@ -897,7 +901,7 @@ export default function LunchBillPage() {
                 <button
                   onClick={handlePrintPreview}
                   disabled={generating}
-                  className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-2 border border-slate-200/50 dark:border-slate-750 transition-colors"
+                  className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-2 border border-slate-200/50 dark:border-slate-700 transition-colors"
                 >
                   <Eye size={14} />
                   প্রিন্ট প্রিভিউ
@@ -932,15 +936,15 @@ export default function LunchBillPage() {
                 const cellGrand = cellRecs.reduce((sum, r) => sum + r.netPayable, 0);
 
                 return (
-                  <div key={cell.id} className="border border-slate-150 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                  <div key={cell.id} className="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                     {/* Collapsible header */}
                     <div 
                       onClick={() => toggleCellCollapse(cell.id)}
-                      className="px-5 py-3 bg-slate-100/50 dark:bg-slate-950/20 border-b border-slate-150 dark:border-slate-800 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-950/30 transition-colors font-sans select-none"
+                      className="px-5 py-3 bg-slate-100/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-950/30 transition-colors font-sans select-none"
                     >
                       <div className="flex items-center gap-2">
                         <Users size={16} className="text-slate-400" />
-                        <span className="font-extrabold text-xs text-slate-850 dark:text-slate-50 uppercase tracking-wide">
+                        <span className="font-extrabold text-xs text-slate-800 dark:text-slate-50 uppercase tracking-wide">
                           সেল: {cell.name} ({cellRecs.length} জন কর্মকর্তা)
                         </span>
                       </div>
@@ -954,7 +958,7 @@ export default function LunchBillPage() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm text-center border-collapse">
                           <thead>
-                            <tr className="bg-slate-50/50 dark:bg-slate-950/10 text-slate-500 dark:text-slate-400 font-bold text-xs border-b border-slate-150 dark:border-slate-800 uppercase tracking-wider">
+                            <tr className="bg-slate-50/50 dark:bg-slate-950/10 text-slate-500 dark:text-slate-400 font-bold text-xs border-b border-slate-100 dark:border-slate-800 uppercase tracking-wider">
                               <th className="py-2.5 px-3 w-10">ক্রমিক</th>
                               <th className="py-2.5 px-3 text-left">কর্মকর্তার নাম</th>
                               <th className="py-2.5 px-3">পদবী</th>
@@ -970,14 +974,14 @@ export default function LunchBillPage() {
                               <th className="py-2.5 px-3">প্রাপ্তব্য</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {cellRecs.map((r, index) => {
                               const additional = r.additionalDeduction ?? 0;
                               const totalDed = 15 + additional;
                               return (
                                 <tr key={r.employeeId} className="hover:bg-slate-50/30 dark:hover:bg-slate-950/5 transition-colors">
                                   <td className="py-3 px-3 font-bold">{toBanglaDigits(index + 1)}</td>
-                                  <td className="py-3 px-3 text-left font-extrabold text-slate-850 dark:text-slate-200">{r.employeeName}</td>
+                                  <td className="py-3 px-3 text-left font-extrabold text-slate-800 dark:text-slate-200">{r.employeeName}</td>
                                   <td className="py-3 px-3 text-xs">{r.designation}</td>
                                   <td className="py-3 px-3 text-xs font-semibold font-sans">{r.bankId || '-'}</td>
                                   <td className="py-3 px-3 font-semibold font-sans text-xs text-slate-600 dark:text-slate-400">
@@ -1033,10 +1037,10 @@ export default function LunchBillPage() {
 
                             {/* ১. সর্বমোট দাবী ও কর্তন রো */}
                             <tr className="bg-slate-100/80 dark:bg-slate-900/60 font-bold border-t border-slate-200 dark:border-slate-800">
-                              <td colSpan={8} className="py-3 px-4 text-right pr-6 text-slate-855 dark:text-slate-200 text-xs">
+                              <td colSpan={8} className="py-3 px-4 text-right pr-6 text-slate-800 dark:text-slate-200 text-xs">
                                 সর্বমোট (১ থেকে {toBanglaDigits(cellRecs.length)} নং কর্মকর্তা) =
                               </td>
-                              <td className="py-3 px-4 font-sans font-bold text-slate-855 dark:text-slate-200">
+                              <td className="py-3 px-4 font-sans font-bold text-slate-800 dark:text-slate-200">
                                 ৳{toBanglaDigits(cellClaim)}/-
                               </td>
                               <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500">
@@ -1045,7 +1049,7 @@ export default function LunchBillPage() {
                               <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500">
                                 ৳{toBanglaDigits(cellExtra)}/-
                               </td>
-                              <td className="py-3 px-4 font-sans font-bold text-rose-600 dark:text-rose-455">
+                              <td className="py-3 px-4 font-sans font-bold text-rose-600 dark:text-rose-400">
                                 ৳{toBanglaDigits(cellStamp + cellExtra)}/-
                               </td>
                               <td className="py-3 px-4 font-sans font-bold text-emerald-600 dark:text-emerald-450 text-sm">
@@ -1112,7 +1116,7 @@ export default function LunchBillPage() {
                                 <td className="py-3 px-3 text-left font-extrabold text-rose-800 dark:text-rose-200">{r.employeeName}</td>
                                 <td className="py-3 px-3 font-bold text-rose-700 dark:text-rose-300 text-xs">{r.designation}</td>
                                 <td className="py-3 px-3 text-xs font-semibold font-sans">{r.bankId || '-'}</td>
-                                <td className="py-3 px-3 font-semibold font-sans text-xs text-rose-850 dark:text-rose-300">
+                                <td className="py-3 px-3 font-semibold font-sans text-xs text-rose-800 dark:text-rose-300">
                                   {(() => {
                                     const exec = executives.find(e => e.id === r.employeeId);
                                     return exec?.phone ? toBanglaDigits(exec.phone) : 'N/A';
@@ -1153,11 +1157,11 @@ export default function LunchBillPage() {
                                 </td>
 
                                 {/* মোট কর্তন */}
-                                <td className="py-3 px-3 font-bold font-sans text-rose-700 dark:text-rose-455">৳{toBanglaDigits(totalDed)}</td>
+                                <td className="py-3 px-3 font-bold font-sans text-rose-700 dark:text-rose-400">৳{toBanglaDigits(totalDed)}</td>
 
                                 {/* Net Payable */}
                                 <td className="py-3 px-3">
-                                  <span className="font-extrabold text-rose-700 dark:text-rose-455 font-sans text-sm">৳{toBanglaDigits(r.netPayable)}</span>
+                                  <span className="font-extrabold text-rose-700 dark:text-rose-400 font-sans text-sm">৳{toBanglaDigits(r.netPayable)}</span>
                                 </td>
                               </tr>
                             );
@@ -1177,7 +1181,7 @@ export default function LunchBillPage() {
                             <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500">
                               ৳{toBanglaDigits(execExtra)}/-
                             </td>
-                            <td className="py-3 px-4 font-sans font-bold text-rose-600 dark:text-rose-455">
+                            <td className="py-3 px-4 font-sans font-bold text-rose-600 dark:text-rose-400">
                               ৳{toBanglaDigits(execStamp + execExtra)}/-
                             </td>
                             <td className="py-3 px-4 font-sans font-bold text-rose-750 dark:text-rose-400 text-sm">
@@ -1193,11 +1197,11 @@ export default function LunchBillPage() {
 
               {/* Deductions Breakdown Summary Box */}
               <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2 animate-scale-up">
-                <h5 className="font-extrabold text-slate-855 dark:text-slate-100 text-xs">● কর্তনের বিস্তারিত বিবরণী:</h5>
+                <h5 className="font-extrabold text-slate-800 dark:text-slate-100 text-xs">● কর্তনের বিস্তারিত বিবরণী:</h5>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-slate-600 dark:text-slate-355">
-                  <p>- রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট {toBanglaDigits(totalEmployeesCount)} জনের): <span className="font-extrabold font-sans text-slate-850 dark:text-slate-100">৳{toBanglaDigits(totalStampAll)}</span></p>
-                  <p>- অতিরিক্ত কর্তন (ডিজিএম/নির্বাহী নির্দেশানুযায়ী): <span className="font-extrabold font-sans text-slate-850 dark:text-slate-100">৳{toBanglaDigits(totalExtraAll)}</span></p>
-                  <p className="sm:border-l border-slate-250 dark:border-slate-750 sm:pl-4 font-extrabold" style={{ color: '#db2777' }}>
+                  <p>- রেভেনিউ স্ট্যাম্প কর্তন (১৫/- টাকা হারে মোট {toBanglaDigits(totalEmployeesCount)} জনের): <span className="font-extrabold font-sans text-slate-800 dark:text-slate-100">৳{toBanglaDigits(totalStampAll)}</span></p>
+                  <p>- অতিরিক্ত কর্তন (ডিজিএম/নির্বাহী নির্দেশানুযায়ী): <span className="font-extrabold font-sans text-slate-800 dark:text-slate-100">৳{toBanglaDigits(totalExtraAll)}</span></p>
+                  <p className="sm:border-l border-slate-200 dark:border-slate-700 sm:pl-4 font-extrabold" style={{ color: '#db2777' }}>
                     = সর্বমোট কর্তন (RS+EXTRA): <span className="font-sans text-sm">৳{toBanglaDigits(totalDeductionAll)}</span>
                   </p>
                 </div>
@@ -1205,12 +1209,12 @@ export default function LunchBillPage() {
 
               {/* Grand Unified Summary Table Footer Breakdown */}
               <div className="bg-indigo-50/30 dark:bg-indigo-950/10 border-2 border-indigo-500 dark:border-indigo-800/80 rounded-2xl p-6 shadow-sm text-center">
-                <p className="text-sm sm:text-base md:text-lg font-black text-slate-850 dark:text-slate-100 leading-relaxed font-sans">
+                <p className="text-sm sm:text-base md:text-lg font-black text-slate-800 dark:text-slate-100 leading-relaxed font-sans">
                   <strong>সেলের প্রাপ্তব্য টাকার পরিমাণ = ৳{toBanglaDigits(totalClaimAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
                   <strong>রেভেনিউ স্ট্যাম্প = ৳{toBanglaDigits(totalStampAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
                   <strong>অতিরিক্ত কর্তন = ৳{toBanglaDigits(totalExtraAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
                   <strong>মোট কর্তন = ৳{toBanglaDigits(totalDeductionAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
-                  <span className="text-emerald-655 dark:text-emerald-400 font-black">প্রাপ্তব্য = ৳{toBanglaDigits(grandTotalAll)}/-</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-black">প্রাপ্তব্য = ৳{toBanglaDigits(grandTotalAll)}/-</span>
                 </p>
               </div>
 
@@ -1230,7 +1234,7 @@ export default function LunchBillPage() {
               <Lock size={28} />
             </div>
             <div className="space-y-2">
-              <h3 className="font-extrabold text-slate-850 dark:text-slate-100 text-lg">লাঞ্চ বিল প্রস্তুত করা হয়নি</h3>
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">লাঞ্চ বিল প্রস্তুত করা হয়নি</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
                 {isAdminOrAdminCell 
                   ? 'এই সেলে এই মাসের কোনো সক্রিয় কর্মকর্তা ডেটাবেজে তালিকাভুক্ত নেই। অনুগ্রহ করে কর্মকর্তা তথ্য যুক্ত করুন।'
@@ -1248,7 +1252,7 @@ export default function LunchBillPage() {
                 <AlertTriangle size={26} />
               </div>
               <div className="space-y-2">
-                <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-base">অতিরিক্ত কর্তন ও ডেটা সংরক্ষণ</h4>
+                <h4 className="font-extrabold text-slate-800 dark:text-slate-50 text-base">অতিরিক্ত কর্তন ও ডেটা সংরক্ষণ</h4>
                 <p className="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed">
                   এ মাসে কোনো কর্মকর্তার বেতন/ভাতা থেকে অতিরিক্ত কর্তন (ডিজিএম বা নির্বাহীর নির্দেশানুযায়ী) কাটা হবে কি না?
                 </p>
@@ -1277,12 +1281,12 @@ export default function LunchBillPage() {
         {/* Premium In-Page Print Preview Modal */}
         {isPreviewOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
-            <div className="bg-white dark:bg-slate-955 w-full max-w-5xl rounded-[32px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-scale-up h-[90vh]">
+            <div className="bg-white dark:bg-slate-950 w-full max-w-5xl rounded-[32px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-scale-up h-[90vh]">
               
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-855 flex items-center justify-between">
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-sm">ইন-পেজ লাঞ্চ বিল প্রিন্ট প্রিভিউ</h4>
+                  <h4 className="font-extrabold text-slate-800 dark:text-slate-50 text-sm">ইন-পেজ লাঞ্চ বিল প্রিন্ট প্রিভিউ</h4>
                   <p className="text-[10px] text-slate-400 mt-0.5">নতুন ট্যাবে ওপেন না করে সরাসরি ড্যাশবোর্ড থেকে প্রিভিউ করুন।</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1309,11 +1313,11 @@ export default function LunchBillPage() {
               </div>
 
               {/* Modal Body: Printable HTML loaded inside Iframe */}
-              <div className="flex-1 bg-slate-50/50 dark:bg-slate-955/10 p-4 relative">
+              <div className="flex-1 bg-slate-50/50 dark:bg-slate-950/10 p-4 relative">
                 <iframe 
                   id="preview-print-iframe"
                   src={iframeUrl}
-                  className="w-full h-full border border-slate-150 dark:border-slate-850 rounded-2xl shadow-inner bg-white animate-scale-up"
+                  className="w-full h-full border border-slate-100 dark:border-slate-800 rounded-2xl shadow-inner bg-white animate-scale-up"
                 />
               </div>
 

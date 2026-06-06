@@ -640,10 +640,11 @@ export default function DocumentsPage() {
 
                 {selectedFile && (
                   <div className="space-y-1.5 animate-fadeIn">
-                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    <label htmlFor="customName" className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       ফাইলের নাম (ঐচ্ছিক)
                     </label>
                     <input
+                      id="customName"
                       type="text"
                       placeholder="নথির টাইটেল লিখুন"
                       value={customName}
@@ -711,7 +712,7 @@ export default function DocumentsPage() {
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as any)}
-                      className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-xs font-semibold text-slate-600 dark:text-slate-305 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer"
+                      className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer"
                     >
                       <option value="date-desc">আপলোড তারিখ (নতুন আগে)</option>
                       <option value="date-asc">আপলোড তারিখ (পুরাতন আগে)</option>
@@ -792,7 +793,7 @@ export default function DocumentsPage() {
                             {doc.name.includes('লাঞ্চ বিল') && currentUser?.role !== 'USER' && (
                               <button 
                                 onClick={() => window.location.href = `/lunch-bill`}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-305 rounded-lg text-[10px] font-extrabold transition-all border border-slate-200 dark:border-slate-750"
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-extrabold transition-all border border-slate-200 dark:border-slate-700"
                                 title="লাঞ্চ বিল শিটে ফিরে এডিট করুন"
                               >
                                 <FileSignature size={12} />
@@ -936,7 +937,7 @@ export default function DocumentsPage() {
                           {currentUser?.role !== 'USER' && (
                             <button 
                               onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
                               title="রোস্টারে ফিরে এডিট করুন (স্মারক একই থাকবে)"
                             >
                               <FileSignature size={12} />
@@ -1063,7 +1064,7 @@ export default function DocumentsPage() {
                           {currentUser?.role !== 'USER' && (
                             <button 
                               onClick={() => window.location.href = `/billing?edit_ref=${encodeURIComponent(order.orderRef)}`}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
                               title="বিলিং এ ফিরে এডিট করুন (স্মারক একই থাকবে)"
                             >
                               <FileSignature size={12} />

@@ -903,14 +903,14 @@ export default function BillingPage() {
               <div className="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-800 transition-all">
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
-                    <p className="text-[13px] sm:text-[14px] font-medium text-slate-400 dark:text-slate-550 uppercase tracking-wider">লেট সিটিং বিল (Snacks + Travel)</p>
+                    <p className="app-metadata-text font-medium text-slate-500 uppercase tracking-wider">লেট সিটিং বিল (Snacks + Travel)</p>
                     <h3 className="app-kpi-value text-slate-800 dark:text-slate-100 font-sans">৳{metrics.totalLateSittingBill.toLocaleString('bn-BD')}</h3>
                   </div>
                   <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
                     <Clock size={16} />
                   </div>
                 </div>
-                <div className="text-[13px] text-slate-400 border-t border-slate-100 dark:border-slate-850 pt-2 mt-4 space-y-0.5">
+                <div className="app-metadata-text text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2 mt-4 space-y-0.5">
                   <p>• নাস্তা বরাদ্দ (৳১০০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalLateAllowance1.toLocaleString('bn-BD')}</span></p>
                   <p>• যাতায়াত বরাদ্দ (৳২০০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalLateAllowance2.toLocaleString('bn-BD')}</span></p>
                 </div>
@@ -920,14 +920,14 @@ export default function BillingPage() {
               <div className="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-800 transition-all">
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
-                    <p className="text-[13px] sm:text-[14px] font-medium text-slate-400 dark:text-slate-550 uppercase tracking-wider">হলিডে ডিউটি বিল (Lunch + Travel)</p>
+                    <p className="app-metadata-text font-medium text-slate-500 uppercase tracking-wider">হলিডে ডিউটি বিল (Lunch + Travel)</p>
                     <h3 className="app-kpi-value text-slate-800 dark:text-slate-100 font-sans">৳{metrics.totalHolidayBill.toLocaleString('bn-BD')}</h3>
                   </div>
                   <div className="p-2 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-lg">
                     <Award size={16} />
                   </div>
                 </div>
-                <div className="text-[13px] text-slate-400 border-t border-slate-100 dark:border-slate-850 pt-2 mt-4 space-y-0.5">
+                <div className="app-metadata-text text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2 mt-4 space-y-0.5">
                   <p>• দুপুরের খাবার (৳২৫০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalHolidayAllowance1.toLocaleString('bn-BD')}</span></p>
                   <p>• যাতায়াত বরাদ্দ (৳২৫০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalHolidayAllowance2.toLocaleString('bn-BD')}</span></p>
                 </div>
@@ -937,14 +937,14 @@ export default function BillingPage() {
               <div className="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-800 transition-all">
                 <div className="flex justify-between items-start">
                   <div className="space-y-1 flex-1">
-                    <p className="text-[13px] sm:text-[14px] font-medium text-slate-400 dark:text-slate-550 uppercase tracking-wider">নাইট শিফট বিল (Dinner + Travel)</p>
+                    <p className="app-metadata-text font-medium text-slate-500 uppercase tracking-wider">নাইট শিফট বিল (Dinner + Travel)</p>
                     <h3 className="app-kpi-value text-slate-800 dark:text-slate-100 font-sans">৳{metrics.totalNightBill.toLocaleString('bn-BD')}</h3>
                   </div>
                   <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg">
                     <ShieldCheck size={16} />
                   </div>
                 </div>
-                <div className="text-[13px] text-slate-400 border-t border-slate-100 dark:border-slate-850 pt-2 mt-4 space-y-0.5">
+                <div className="app-metadata-text text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2 mt-4 space-y-0.5">
                   <p>• রাতের খাবার (৳৬০০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalNightAllowance1.toLocaleString('bn-BD')}</span></p>
                   <p>• যাতায়াত বরাদ্দ (৳৪০০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalNightAllowance2.toLocaleString('bn-BD')}</span></p>
                 </div>
@@ -954,14 +954,14 @@ export default function BillingPage() {
               <div className="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between bg-gradient-to-tr from-indigo-950/30 to-emerald-950/20 border-emerald-500/20 hover:border-emerald-500/40 transition-all">
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
-                    <p className="text-[13px] sm:text-[14px] font-medium text-emerald-500 dark:text-emerald-400 uppercase tracking-wider">সর্বমোট প্রদেয় বিল (Grand Total)</p>
+                    <p className="app-metadata-text font-medium text-emerald-500 dark:text-emerald-400 uppercase tracking-wider">সর্বমোট প্রদেয় বিল (Grand Total)</p>
                     <h3 className="app-kpi-value text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-400 font-sans">৳{metrics.grandTotal.toLocaleString('bn-BD')}</h3>
                   </div>
                   <div className="p-2 bg-emerald-600 text-white rounded-lg shadow-sm">
                     <DollarSign size={16} />
                   </div>
                 </div>
-                <div className="text-[13px] text-slate-400 border-t border-slate-100 dark:border-slate-850 pt-2 mt-4 space-y-0.5">
+                <div className="app-metadata-text text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2 mt-4 space-y-0.5">
                   <p>• সর্বমোট আপ্যায়ন ব্যয়: <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{(metrics.totalLateAllowance1 + metrics.totalHolidayAllowance1 + metrics.totalNightAllowance1).toLocaleString('bn-BD')}</span></p>
                   <p>• সর্বমোট যাতায়াত ব্যয়: <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{(metrics.totalLateAllowance2 + metrics.totalHolidayAllowance2 + metrics.totalNightAllowance2).toLocaleString('bn-BD')}</span></p>
                 </div>
@@ -977,7 +977,7 @@ export default function BillingPage() {
             </div>
 
             {loading ? (
-              <div className="h-64 bg-slate-200 dark:bg-slate-850 animate-pulse rounded-xl" />
+              <div className="h-64 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl" />
             ) : Object.keys(groupedSummaries).length > 0 ? (
               <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800/80">
                 <table className="w-full text-left text-xs leading-normal">
@@ -1135,14 +1135,14 @@ export default function BillingPage() {
             </div>
 
             {archiveSuccess && (
-              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 p-3 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-455">
-                <CheckCircle size={16} className="text-emerald-505" />
+              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 p-3 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                <CheckCircle size={16} className="text-emerald-500" />
                 <span>{archiveSuccess}</span>
               </div>
             )}
 
             {archiveError && (
-              <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 p-3 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-455">
+              <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 p-3 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-400">
                 <AlertCircle size={16} className="text-rose-505" />
                 <span>{archiveError}</span>
               </div>
@@ -1157,11 +1157,12 @@ export default function BillingPage() {
               {/* Row 1: Document Metadata & Dates */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">ডিউটির ক্যাটাগরি (Duty Category)</label>
+                  <label htmlFor="printCategory" className="text-xs font-bold text-slate-500">ডিউটির ক্যাটাগরি (Duty Category)</label>
                   <select
+                    id="printCategory"
                     value={printCategory}
                     onChange={(e) => setPrintCategory(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500"
                   >
                     <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
                     <option value="NIGHT_SHIFT">Night Shift (রাত্রের ডিউটি)</option>
@@ -1170,32 +1171,35 @@ export default function BillingPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">মেমো তারিখ (Memo Date)</label>
+                  <label htmlFor="billDate" className="text-xs font-bold text-slate-500">মেমো তারিখ (Memo Date)</label>
                   <input
+                    id="billDate"
                     type="date"
                     value={billDate}
                     onChange={(e) => setBillDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-sans"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-sans"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">বিষয় (Memo Subject)</label>
+                  <label htmlFor="subjectText" className="text-xs font-bold text-slate-500">বিষয় (Memo Subject)</label>
                   <input
+                    id="subjectText"
                     type="text"
                     value={subjectText}
                     onChange={(e) => setSubjectText(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">স্মারক/সূত্র নম্বর (Bill Ref)</label>
+                  <label htmlFor="billRef" className="text-xs font-bold text-slate-500">স্মারক/সূত্র নম্বর (Bill Ref)</label>
                   <input
+                    id="billRef"
                     type="text"
                     value={billRef}
                     onChange={(e) => setBillRef(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               </div>
@@ -1222,8 +1226,9 @@ export default function BillingPage() {
               {/* Row 2: Payees & Representatives & DGM */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">তহবিল সংগ্রহকারী কর্মকর্তা (Bill Favoring To)</label>
+                  <label htmlFor="representativeName" className="text-xs font-bold text-slate-500">তহবিল সংগ্রহকারী কর্মকর্তা (Bill Favoring To)</label>
                   <select
+                    id="representativeName"
                     value={representativeName}
                     onChange={(e) => {
                       const selectedVal = e.target.value;
@@ -1233,7 +1238,7 @@ export default function BillingPage() {
                         setRepresentativeDesignation(getShortDesignation(found.designation));
                       }
                     }}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
                   >
                     <option value="">Select Payee (সিলেক্ট করুন)</option>
                     {printFilteredSummaries.map(summary => (
@@ -1245,18 +1250,20 @@ export default function BillingPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">প্রতিনিধির পদবী (Representative Designation)</label>
+                  <label htmlFor="representativeDesignation" className="text-xs font-bold text-slate-500">প্রতিনিধির পদবী (Representative Designation)</label>
                   <input
+                    id="representativeDesignation"
                     type="text"
                     disabled
                     value={representativeDesignation}
-                    className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-850 border border-slate-200 dark:border-slate-850 rounded-lg text-xs cursor-not-allowed text-slate-500 font-semibold"
+                    className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg text-xs cursor-not-allowed text-slate-500 font-semibold"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">অনুমোদনকারী কর্মকর্তা (DGM)</label>
+                  <label htmlFor="selectedExecutiveId" className="text-xs font-bold text-slate-500">অনুমোদনকারী কর্মকর্তা (DGM)</label>
                   <select
+                    id="selectedExecutiveId"
                     value={selectedExecutiveId}
                     onChange={(e) => {
                       const execId = e.target.value;
@@ -1267,7 +1274,7 @@ export default function BillingPage() {
                         setSigningDesignation(exec.designation);
                       }
                     }}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-850 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
                   >
                     <option value="">DGM নির্বাচন করুন</option>
                     {executives.map(ex => (

@@ -266,13 +266,13 @@ export default function Dashboard() {
                     return <div key={`empty-${idx}`} className="aspect-square" />;
                   }
 
-                  let cellClass = 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-850 hover:bg-slate-50/60 dark:hover:bg-slate-850/60';
+                  let cellClass = 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60';
                   let holidayDot = false;
 
                   if (slot.isHoliday) {
                     cellClass = 'bg-rose-500 text-white font-extrabold shadow-sm scale-[1.02] border border-rose-600 hover:bg-rose-600 shadow-rose-500/10 cursor-pointer relative group';
                   } else if (slot.isWeekend) {
-                    cellClass = 'bg-rose-50/40 dark:bg-rose-950/10 text-rose-600 dark:text-rose-455 font-bold border border-rose-100/50 dark:border-rose-950/20';
+                    cellClass = 'bg-rose-50/40 dark:bg-rose-950/10 text-rose-600 dark:text-rose-400 font-bold border border-rose-100/50 dark:border-rose-950/20';
                   }
 
                   return (
@@ -406,8 +406,8 @@ export default function Dashboard() {
                 {finalUpcomingHolidays.map((holiday: any) => {
                   const dateObj = new Date(holiday.date);
                   return (
-                    <div key={holiday.date} className="flex items-center gap-3 hover:bg-slate-50/55 dark:hover:bg-slate-850/30 p-2 rounded-xl transition-colors">
-                      <div className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-455 font-bold text-center shrink-0 border border-rose-100 dark:border-rose-900/30 w-12 shadow-xs">
+                    <div key={holiday.date} className="flex items-center gap-3 hover:bg-slate-50/55 dark:hover:bg-slate-800/30 p-2 rounded-xl transition-colors">
+                      <div className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-bold text-center shrink-0 border border-rose-100 dark:border-rose-900/30 w-12 shadow-xs">
                         <p className="text-xs leading-none tracking-tight">
                           {toBanglaDigits(dateObj.getDate())}
                         </p>
@@ -477,14 +477,14 @@ export default function Dashboard() {
               {/* Night Shift (৳1000) */}
               <div className="p-4 bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/50 dark:border-rose-900/20 rounded-2xl space-y-2">
                 <div className="flex justify-between items-center">
-                  <h4 className="font-extrabold text-rose-700 dark:text-rose-455 text-xs">Night Shift (রাত্রীকালীন ডিউটি)</h4>
+                  <h4 className="font-extrabold text-rose-700 dark:text-rose-400 text-xs">Night Shift (রাত্রীকালীন ডিউটি)</h4>
                   <span className="text-[10px] font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">৳১,০০০</span>
                 </div>
                 <div className="text-[10px] text-slate-500 dark:text-slate-400 space-y-1 leading-normal">
                   <p className="flex justify-between font-bold"><span>• রাতের খাবার (ডিনার):</span> <span>৳৬০০</span></p>
                   <p className="flex justify-between font-bold"><span>• যাতায়াত ভাতা:</span> <span>৳৪০০</span></p>
                   <div className="h-px bg-rose-100/30 my-1" />
-                  <p className="text-[9px] text-rose-600 dark:text-rose-455 leading-normal font-black font-sans">রিপোর্ট এর ডাটা এক্সট্রাকশন, ডাটা আপ্লোড এবং ডাউনলোড ডিউটি।</p>
+                  <p className="text-[9px] text-rose-600 dark:text-rose-400 leading-normal font-black font-sans">রিপোর্ট এর ডাটা এক্সট্রাকশন, ডাটা আপ্লোড এবং ডাউনলোড ডিউটি।</p>
                 </div>
               </div>
 

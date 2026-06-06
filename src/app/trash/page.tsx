@@ -247,7 +247,7 @@ export default function TrashPage() {
           <button
             onClick={fetchTrash}
             disabled={loading}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm font-semibold transition-all shadow-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm font-semibold transition-all shadow-sm"
           >
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             রিলোড করুন
@@ -345,10 +345,10 @@ export default function TrashPage() {
               <p className="text-sm font-bold text-slate-500 dark:text-slate-400">এই বিভাগে কোনো মুছে ফেলা রেকর্ড নেই</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-850">
+            <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/70 dark:bg-slate-950/40 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-850">
+                  <tr className="bg-slate-50/70 dark:bg-slate-950/40 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                     <th className="px-5 py-3.5 w-12 text-center">
                       <input 
                         type="checkbox" 
@@ -364,7 +364,7 @@ export default function TrashPage() {
                     <th className="px-5 py-3.5 w-56 text-right">পদক্ষেপ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {filteredItems.map((item) => {
                     const remainingDays = getRemainingDays(item.deletedAt);
                     const delDate = new Date(item.deletedAt).toLocaleDateString('bn-BD', {
