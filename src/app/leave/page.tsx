@@ -675,7 +675,7 @@ export default function LeaveGeneratorPage() {
         {/* Header section */}
         <div className="no-print flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/60 dark:border-slate-800/80 pb-5">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-wide flex items-center gap-3">
+            <h1 className="app-page-title text-slate-800 dark:text-slate-100 tracking-wide flex items-center gap-3">
               <CalendarCheck className="text-indigo-600" size={28} />
               ছুটি আবেদন (Leave Application)
             </h1>

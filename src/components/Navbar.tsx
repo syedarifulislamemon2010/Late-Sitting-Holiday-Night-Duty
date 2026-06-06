@@ -126,8 +126,8 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2.5 group">
           <img src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" className="h-9 w-9 shrink-0 object-contain transition-transform group-hover:scale-105" />
           <div className="hidden sm:block leading-none">
-            <h1 className="font-semibold text-slate-950 dark:text-slate-100 text-[15px] leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
-            <p className="text-xs font-medium text-blue-600 tracking-wide mt-0.5">জনতা ব্যাংক পিএলসি.</p>
+            <h1 className="font-extrabold text-slate-950 dark:text-slate-100 text-[16px] sm:text-[18px] leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
+            <p className="text-[11px] font-bold text-[#0b5e9e] dark:text-[#38bdf8] uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
           </div>
         </Link>
       </div>

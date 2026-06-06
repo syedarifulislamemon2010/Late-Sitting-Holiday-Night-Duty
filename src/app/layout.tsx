@@ -69,12 +69,12 @@ export default function RootLayout({
                 </div>
                 
                 {/* Premium Dashboard Footer */}
-                <footer className="no-print print:hidden py-6 mt-auto text-slate-400 text-xs font-medium text-center">
-                  <p>
-                    Designed & Developed by <span className="font-semibold text-blue-600">CBS Integrated Development Cell</span>
+                <footer className="no-print print:hidden py-6 mt-auto text-slate-400 text-center app-footer-text flex flex-col items-center gap-1 font-sans">
+                  <p className="font-semibold">
+                    ডিজাইন ও ডেভেলপমেন্ট: <span className="text-[#0b5e9e] dark:text-[#38bdf8]">সিবিএস ইন্টিগ্রেটেড ডেভেলপমেন্ট সেল</span>, অনলাইন ব্যাংকিং ডিপার্টমেন্ট
                   </p>
-                  <p className="mt-1">
-                    Online Banking Department | © 2026 Janata Bank PLC. All Rights Reserved.
+                  <p>
+                    সংস্করণ ১.০.০ | বিল্ড: ২০২৬.০৫.৩০ | © ২০২৬ জনতা ব্যাংক পিএলসি। সর্বস্বত্ব সংরক্ষিত।
                   </p>
                 </footer>
               </div>

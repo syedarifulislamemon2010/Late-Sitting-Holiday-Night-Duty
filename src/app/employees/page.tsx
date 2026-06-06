@@ -944,7 +944,7 @@ export default function EmployeesPage() {
       {/* Page Title & Tabs Toggler */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">কর্মকর্তা ও সেল ডিরেক্টরি</h1>
+          <h1 className="app-page-title text-slate-800 dark:text-slate-100 font-sans tracking-wide">কর্মকর্তা ও সেল ডিরেক্টরি</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">কর্মকর্তাবৃন্দ এবং সেল (Cell) ম্যানেজমেন্ট প্যানেল।</p>
         </div>
         
@@ -1129,15 +1129,15 @@ export default function EmployeesPage() {
                           <div className="space-y-4">
                             <div className="flex items-start justify-between gap-3">
                               <div>
-                                <h3 className={`font-extrabold text-base leading-tight transition-colors ${textClass}`}>{exec.name}</h3>
-                                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
+                                <h3 className={`app-card-title transition-colors ${textClass}`}>{exec.name}</h3>
+                                <p className="text-[13px] sm:text-[14px] font-medium text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
                                   <Briefcase size={12} className="text-slate-400" />
                                   {exec.designation}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                            <div className="mt-3 grid grid-cols-2 gap-2 app-metadata-text text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                               <div className="flex items-center gap-1">
                                 <Hash size={12} className="text-slate-400" />
                                 <span>ব্যাংক আইডি: <strong>{exec.bankId || '-'}</strong></span>
@@ -1148,7 +1148,7 @@ export default function EmployeesPage() {
                               </div>
                             </div>
 
-                            <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 pt-2 border-t border-dashed border-slate-100 dark:border-slate-800/80">
+                            <div className="mt-2 app-metadata-text text-slate-500 dark:text-slate-400 pt-2 border-t border-dashed border-slate-100 dark:border-slate-800/80">
                               <span>মোবাইল নম্বর: <strong className="font-sans">{exec.phone ? toBanglaDigits(exec.phone) : '-'}</strong></span>
                             </div>
                           </div>
@@ -1181,9 +1181,9 @@ export default function EmployeesPage() {
                             <Building2 size={16} />
                           </div>
                           <div>
-                            <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm tracking-wide">{cell.name}</h3>
+                            <h3 className="app-card-title text-slate-800 dark:text-slate-100 tracking-wide">{cell.name}</h3>
                             {cell.description && (
-                              <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">{cell.description}</p>
+                              <p className="app-metadata-text text-slate-400 dark:text-slate-550 font-bold mt-0.5">{cell.description}</p>
                             )}
                           </div>
                         </div>
@@ -1203,7 +1203,7 @@ export default function EmployeesPage() {
                               <div className="space-y-4 cursor-pointer" onClick={() => setProfileEmp(emp)}>
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
-                                    <h3 className={`font-extrabold text-base leading-tight transition-colors flex items-center gap-2 ${isCellIncharge ? 'text-teal-700 dark:text-teal-400 group-hover:text-teal-800' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400'}`}>
+                                    <h3 className={`app-card-title transition-colors flex items-center gap-2 ${isCellIncharge ? 'text-teal-700 dark:text-teal-400 group-hover:text-teal-800' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400'}`}>
                                       {emp.name}
                                       {isCellIncharge && (
                                         <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-450 text-[9px] font-bold rounded-lg border border-teal-200/50 dark:border-teal-955/30">
@@ -1211,14 +1211,14 @@ export default function EmployeesPage() {
                                         </span>
                                       )}
                                     </h3>
-                                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
+                                    <p className="text-[13px] sm:text-[14px] font-medium text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
                                       <Briefcase size={12} className="text-slate-400" />
                                       {emp.designation}
                                     </p>
                                   </div>
                                 </div>
 
-                                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                                <div className="mt-3 grid grid-cols-2 gap-2 app-metadata-text text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                                   <div className="flex items-center gap-1">
                                     <Hash size={12} className="text-slate-400" />
                                     <span>ব্যাংক আইডি: <strong>{emp.bankId}</strong></span>

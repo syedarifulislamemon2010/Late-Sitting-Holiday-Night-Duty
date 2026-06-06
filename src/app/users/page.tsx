@@ -568,7 +568,7 @@ export default function UserManagement() {
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">সিস্টেম সেটিংস</h1>
+          <h1 className="app-page-title text-slate-800 dark:text-slate-100 font-sans tracking-wide">সিস্টেম সেটিংস</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">আপনার প্রোফাইল পাসওয়ার্ড পরিবর্তন এবং ইউজার পারমিশন সমূহ নিয়ন্ত্রণ করুন।</p>
         </div>
       </div>

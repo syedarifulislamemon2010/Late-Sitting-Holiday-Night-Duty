@@ -186,7 +186,7 @@ export default function Dashboard() {
       {/* Title & Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/60 dark:border-slate-800/80 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-wide font-sans flex items-center gap-3">
+          <h1 className="app-page-title text-slate-800 dark:text-slate-100 tracking-wide font-sans flex items-center gap-3">
             <Compass className="text-indigo-600 animate-spin-slow" size={28} />
             লেট সিটিং, সরকারি ছুটি ও রাত্রীকালীন ডিউটি পোর্টাল
           </h1>

@@ -48,13 +48,68 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Hind Siliguri', 'Inter', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+  font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   letter-spacing: -0.01em;
+}
+
+/* Centralized Typography Design System Tokens */
+.app-page-title {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+}
+
+.app-section-title {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+}
+
+.app-card-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+.app-sidebar-text {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+}
+
+.app-body-text {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+}
+
+.app-metadata-text {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+}
+
+.app-kpi-value {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+}
+
+.app-footer-text {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+}
+
+.app-button-text {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
 }
 
 .glass-card {

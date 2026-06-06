@@ -240,7 +240,7 @@ export default function TrashPage() {
         {/* Top Header Banner */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">রিসাইকেল বিন</h1>
+            <h1 className="app-page-title text-slate-800 dark:text-slate-100 font-sans tracking-wide">রিসাইকেল বিন</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">মুছে ফেলা সমস্ত রেকর্ড এখানে ৩০ দিনের জন্য জমা থাকবে। এর পর স্থায়ীভাবে স্বয়ংক্রিয়ভাবে মুছে যাবে।</p>
           </div>
           

@@ -488,7 +488,7 @@ export default function ClosingBillPage() {
         {/* Header Title */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-sans tracking-wide">ক্লোজিং ভাতার বিল জেনারেটর</h1>
+            <h1 className="app-page-title text-slate-800 dark:text-slate-100 font-sans tracking-wide">ক্লোজিং ভাতার বিল জেনারেটর</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               {isAdminOrAdminCell 
                 ? 'জুন এবং ডিসেম্বর মাসের জন্য কর্মকর্তা ও নির্বাহীদের ক্লোজিং ভাতার সমন্বিত হিসাব প্যানেল।'

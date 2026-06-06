@@ -127,8 +127,8 @@ export default function Sidebar() {
           <div className="flex items-center gap-3">
             <img src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" className="h-9 w-9 shrink-0 object-contain" />
             <div>
-              <h1 className="font-semibold text-slate-950 text-[15px] leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
-              <p className="text-xs font-medium text-blue-600 tracking-wide mt-0.5">জনতা ব্যাংক পিএলসি.</p>
+              <h1 className="font-extrabold text-slate-950 text-[15px] sm:text-[16px] leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
+              <p className="text-[10px] font-bold text-[#0b5e9e] uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
             </div>
           </div>
           <button 
@@ -156,13 +156,13 @@ export default function Sidebar() {
                       key={item.name}
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 group relative ${isActive ? 'bg-blue-50/80 text-blue-600 font-semibold rounded-xl' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'}`}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 group relative ${isActive ? 'bg-[#0b5e9e]/8 text-[#0b5e9e] rounded-xl' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                     >
                       {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-blue-600 rounded-r-md" />
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#0b5e9e] rounded-r-md" />
                       )}
-                      <Icon size={18} className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-650'}`} />
-                      <span className="text-[15px]">{item.name}</span>
+                      <Icon size={18} className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${isActive ? 'text-[#0b5e9e]' : 'text-slate-400 group-hover:text-slate-650'}`} />
+                      <span className="app-sidebar-text">{item.name}</span>
                     </Link>
                   );
                 })}

@@ -487,7 +487,7 @@ export default function DocumentsPage() {
       {/* Top Banner Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+          <h1 className="app-page-title tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
             সেন্ট্রাল ফাইল ও অর্ডার আর্কাইভ
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1.5 text-sm">
