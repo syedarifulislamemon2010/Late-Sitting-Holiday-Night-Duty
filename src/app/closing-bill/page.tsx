@@ -623,6 +623,81 @@ export default function ClosingBillPage() {
             {/* List Table Content */}
             <div className="p-6 space-y-8">
               
+              {/* Group B: DGM & AGM Executives */}
+              {activeRecords.some(r => r.isExecutive) && (() => {
+                const execRecs = activeRecords.filter(r => r.isExecutive);
+                const execClaim = execRecs.length * 2000;
+                const execStamp = execRecs.length * 15;
+                const execGrand = execRecs.length * 1985;
+
+                return (
+                  <div className="border border-rose-150 dark:border-rose-900/40 rounded-xl overflow-hidden shadow-sm" style={{ borderLeft: '3px solid #db2777' }}>
+                    <div className="px-5 py-3 bg-rose-50/40 dark:bg-rose-950/10 border-b border-rose-150 dark:border-rose-900/40 flex items-center justify-between font-sans">
+                      <div className="flex items-center gap-2">
+                        <Lock size={16} className="text-rose-500" />
+                        <span className="font-extrabold text-xs text-rose-800 dark:text-rose-300 uppercase tracking-wide">
+                          নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-rose-600 dark:text-rose-350">
+                        নির্বাহীদের বিল সমষ্টি: ৳{toBanglaDigits(execGrand)}
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-center border-collapse">
+                        <thead>
+                          <tr className="bg-rose-50/20 dark:bg-rose-950/5 text-rose-900 dark:text-rose-300 font-bold text-xs border-b border-rose-150 dark:border-rose-900/30 uppercase tracking-wider">
+                            <th className="py-2.5 px-3 w-10">ক্রমিক</th>
+                            <th className="py-2.5 px-3 text-left">নির্বাহীর নাম</th>
+                            <th className="py-2.5 px-3">পদবী</th>
+                            <th className="py-2.5 px-3">ব্যাংক আইডি</th>
+                            <th className="py-2.5 px-3">মোবাইল নম্বর</th>
+                            <th className="py-2.5 px-3">ভাতার পরিমাণ</th>
+                            <th className="py-2.5 px-3">রেভেনিউ স্ট্যাম্প</th>
+                            <th className="py-2.5 px-3">প্রাপ্তব্য</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-rose-50 dark:divide-rose-950/20">
+                          {execRecs.map((r, index) => (
+                            <tr key={r.employeeId} className="hover:bg-rose-50/10 dark:hover:bg-rose-950/5 transition-colors" style={{ backgroundColor: '#fffdfd' }}>
+                              <td className="py-3 px-3 font-bold text-rose-800">{toBanglaDigits(index + 1)}</td>
+                              <td className="py-3 px-3 text-left font-extrabold text-rose-800 dark:text-rose-200">{r.employeeName}</td>
+                              <td className="py-3 px-3 font-bold text-rose-700 dark:text-rose-300 text-xs">{r.designation}</td>
+                              <td className="py-3 px-3 text-xs font-semibold font-sans">{r.bankId || '-'}</td>
+                              <td className="py-3 px-3 font-semibold font-sans text-xs text-rose-800 dark:text-rose-300">
+                                {(() => {
+                                  const exec = executives.find(e => e.id === r.employeeId);
+                                  return exec?.phone ? toBanglaDigits(exec.phone) : 'N/A';
+                                })()}
+                              </td>
+                              <td className="py-3 px-3 font-bold font-sans text-slate-500">৳{toBanglaDigits(2000)}</td>
+                              <td className="py-3 px-3 font-bold font-sans text-slate-500">৳{toBanglaDigits(15)}</td>
+                              <td className="py-3 px-3 font-extrabold text-rose-700 dark:text-rose-400 font-sans text-sm">৳{toBanglaDigits(1985)}</td>
+                            </tr>
+                          ))}
+
+                          <tr className="bg-rose-100/80 dark:bg-rose-900/60 font-bold border-t border-rose-200 dark:border-rose-800">
+                            <td colSpan={5} className="py-3 px-4 text-right pr-6 text-rose-900 dark:text-rose-200 text-xs">
+                              সর্বমোট (নির্বাহী প্যানেল) =
+                            </td>
+                            <td className="py-3 px-4 font-sans font-bold text-rose-900 dark:text-rose-200">
+                              ৳{toBanglaDigits(execClaim)}/-
+                            </td>
+                            <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500">
+                              ৳{toBanglaDigits(execStamp)}/-
+                            </td>
+                            <td className="py-3 px-4 font-sans font-bold text-rose-750 dark:text-rose-400 text-sm">
+                              ৳{toBanglaDigits(execGrand)}/-
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Group A: Cell officers */}
               {cells.map(cell => {
                 const cellRecs = activeRecords.filter(r => !r.isExecutive && r.cellId === cell.id);
@@ -709,81 +784,6 @@ export default function ClosingBillPage() {
                   </div>
                 );
               })}
-
-              {/* Group B: DGM & AGM Executives */}
-              {activeRecords.some(r => r.isExecutive) && (() => {
-                const execRecs = activeRecords.filter(r => r.isExecutive);
-                const execClaim = execRecs.length * 2000;
-                const execStamp = execRecs.length * 15;
-                const execGrand = execRecs.length * 1985;
-
-                return (
-                  <div className="border border-rose-150 dark:border-rose-900/40 rounded-xl overflow-hidden shadow-sm" style={{ borderLeft: '3px solid #db2777' }}>
-                    <div className="px-5 py-3 bg-rose-50/40 dark:bg-rose-950/10 border-b border-rose-150 dark:border-rose-900/40 flex items-center justify-between font-sans">
-                      <div className="flex items-center gap-2">
-                        <Lock size={16} className="text-rose-500" />
-                        <span className="font-extrabold text-xs text-rose-800 dark:text-rose-300 uppercase tracking-wide">
-                          নির্বাহী প্যানেল (ডিজিএম ও এজিএম)
-                        </span>
-                      </div>
-                      <span className="text-xs font-bold text-rose-600 dark:text-rose-350">
-                        নির্বাহীদের বিল সমষ্টি: ৳{toBanglaDigits(execGrand)}
-                      </span>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-center border-collapse">
-                        <thead>
-                          <tr className="bg-rose-50/20 dark:bg-rose-950/5 text-rose-900 dark:text-rose-300 font-bold text-xs border-b border-rose-150 dark:border-rose-900/30 uppercase tracking-wider">
-                            <th className="py-2.5 px-3 w-10">ক্রমিক</th>
-                            <th className="py-2.5 px-3 text-left">নির্বাহীর নাম</th>
-                            <th className="py-2.5 px-3">পদবী</th>
-                            <th className="py-2.5 px-3">ব্যাংক আইডি</th>
-                            <th className="py-2.5 px-3">মোবাইল নম্বর</th>
-                            <th className="py-2.5 px-3">ভাতার পরিমাণ</th>
-                            <th className="py-2.5 px-3">রেভেনিউ স্ট্যাম্প</th>
-                            <th className="py-2.5 px-3">প্রাপ্তব্য</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-rose-50 dark:divide-rose-950/20">
-                          {execRecs.map((r, index) => (
-                            <tr key={r.employeeId} className="hover:bg-rose-50/10 dark:hover:bg-rose-950/5 transition-colors" style={{ backgroundColor: '#fffdfd' }}>
-                              <td className="py-3 px-3 font-bold text-rose-800">{toBanglaDigits(index + 1)}</td>
-                              <td className="py-3 px-3 text-left font-extrabold text-rose-800 dark:text-rose-200">{r.employeeName}</td>
-                              <td className="py-3 px-3 font-bold text-rose-700 dark:text-rose-300 text-xs">{r.designation}</td>
-                              <td className="py-3 px-3 text-xs font-semibold font-sans">{r.bankId || '-'}</td>
-                              <td className="py-3 px-3 font-semibold font-sans text-xs text-rose-800 dark:text-rose-300">
-                                {(() => {
-                                  const exec = executives.find(e => e.id === r.employeeId);
-                                  return exec?.phone ? toBanglaDigits(exec.phone) : 'N/A';
-                                })()}
-                              </td>
-                              <td className="py-3 px-3 font-bold font-sans text-slate-500">৳{toBanglaDigits(2000)}</td>
-                              <td className="py-3 px-3 font-bold font-sans text-slate-500">৳{toBanglaDigits(15)}</td>
-                              <td className="py-3 px-3 font-extrabold text-rose-700 dark:text-rose-400 font-sans text-sm">৳{toBanglaDigits(1985)}</td>
-                            </tr>
-                          ))}
-
-                          <tr className="bg-rose-100/80 dark:bg-rose-900/60 font-bold border-t border-rose-200 dark:border-rose-800">
-                            <td colSpan={5} className="py-3 px-4 text-right pr-6 text-rose-900 dark:text-rose-200 text-xs">
-                              সর্বমোট (নির্বাহী প্যানেল) =
-                            </td>
-                            <td className="py-3 px-4 font-sans font-bold text-rose-900 dark:text-rose-200">
-                              ৳{toBanglaDigits(execClaim)}/-
-                            </td>
-                            <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500">
-                              ৳{toBanglaDigits(execStamp)}/-
-                            </td>
-                            <td className="py-3 px-4 font-sans font-bold text-rose-750 dark:text-rose-400 text-sm">
-                              ৳{toBanglaDigits(execGrand)}/-
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
 
               {/* Grand summary banner */}
               <div className="bg-indigo-50/30 dark:bg-indigo-950/10 border-2 border-indigo-500 dark:border-indigo-800/80 rounded-2xl p-6 shadow-sm text-center">

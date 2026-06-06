@@ -328,7 +328,7 @@ export async function POST(request: Request) {
       box-sizing: border-box;
     }
     @page {
-      size: a4 portrait;
+      size: legal portrait;
       margin-top: 0.5in;
       margin-bottom: 0.5in;
       margin-left: 0.5in;

@@ -1326,7 +1326,7 @@ export default function EmployeesPage() {
 
           {/* Cells List Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {selectableCells.map((cell) => (
+            {cells.map((cell) => (
               <div key={cell.id} className="glass-card p-6 rounded-2xl flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
                 <div className="space-y-3">
                   <div className="flex justify-between items-start">

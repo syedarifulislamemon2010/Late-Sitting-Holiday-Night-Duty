@@ -34,7 +34,6 @@ __pycache__/
 *.db-journal
 *.db-shm
 *.db-wal
-postgres_dump.json
 
 # misc
 .DS_Store
