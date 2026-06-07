@@ -1,37 +1,93 @@
 import { OfficeOrderRepository } from '@/repositories/officeOrder.repository';
 import { db } from '@/lib/db';
-import { trash, officeOrders } from '@/db/schema';
+import { trash, officeOrders, duties, employees } from '@/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
-import { AppError, AuthError, ValidationError } from '@/lib/errors';
+import { AppError, AuthError } from '@/lib/errors';
 import { officeOrderCreateSchema, officeOrderUpdateSchema } from '@/validations/officeOrder.schema';
 
+interface UserSession {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells: { id: number; name: string }[];
+}
+
+interface OrderDutyInput {
+  employeeId?: string | null;
+  employeeName: string;
+  designation: string;
+  days: number;
+  apyaonRate: number;
+  totalApyaon: number;
+  totalTransport: number;
+  grandTotal: number;
+  datesFormatted?: string;
+}
+
+interface OfficeOrderInput {
+  orderRef: string;
+  originalOrderRef?: string;
+  orderDate: string;
+  category: string;
+  employeeName: string;
+  cellName?: string | null;
+  duties?: OrderDutyInput[];
+  content?: {
+    backingOrderRef?: string;
+    [key: string]: unknown;
+  } | null;
+  status?: string;
+  dutyIds?: number[];
+}
+
+interface OfficeOrderUpdateInput {
+  orderRef: string;
+  orderDate: string;
+  employeeName: string;
+  cellName?: string | null;
+}
+
+interface OfficeOrderDBRecord {
+  id: number;
+  orderRef: string;
+  orderDate: string;
+  category: string;
+  employeeName: string;
+  cellName: string | null;
+  status: string;
+  dutiesJson?: string | null;
+  contentJson?: string | null;
+  createdAt: Date;
+}
+
 export class OfficeOrderService {
-  static async listOfficeOrders(currentUser: any) {
+  static async listOfficeOrders(currentUser: UserSession | null) {
     let userCellNames: string[] = [];
     let isUserRestricted = false;
 
     if (currentUser) {
       if (currentUser.role === 'USER') {
         isUserRestricted = true;
-        userCellNames = currentUser.cells.map((c: any) => c.name);
+        userCellNames = currentUser.cells.map((c) => c.name);
       }
     }
 
-    let ordersList: any[] = [];
+    let ordersList: OfficeOrderDBRecord[] = [];
     if (isUserRestricted) {
       if (userCellNames.length > 0) {
         const allowedNames = [...userCellNames, 'All Cells', 'All My Cells', 'IT Department'];
-        ordersList = await OfficeOrderRepository.listAll(inArray(officeOrdersCellNameHelper(), allowedNames));
+        ordersList = await OfficeOrderRepository.listAll(inArray(officeOrdersCellNameHelper(), allowedNames)) as unknown as OfficeOrderDBRecord[];
       } else {
         ordersList = [];
       }
     } else {
-      ordersList = await OfficeOrderRepository.listAll();
+      ordersList = await OfficeOrderRepository.listAll() as unknown as OfficeOrderDBRecord[];
     }
 
-    const orderRefs = ordersList.map((o: any) => o.orderRef);
-    let linkedDuties: any[] = [];
+    const orderRefs = ordersList.map((o) => o.orderRef);
+    let linkedDuties: { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null } }[] = [];
     if (orderRefs.length > 0) {
       linkedDuties = await db.select({
         id: dutiesIdHelper(),
@@ -45,7 +101,7 @@ export class OfficeOrderService {
       })
       .from(dutiesTableHelper())
       .innerJoin(employeesTableHelper(), eq(dutiesEmployeeIdHelper(), employeesIdHelper()))
-      .where(inArray(dutiesOrderRefHelper(), orderRefs));
+      .where(inArray(dutiesOrderRefHelper(), orderRefs)) as unknown as { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null } }[];
     }
 
     const toBanglaDigits = (num: string | number): string => {
@@ -53,20 +109,20 @@ export class OfficeOrderService {
       return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit)]);
     };
 
-    const res = ordersList.map((order: any) => {
-      let parsedDuties = order.dutiesJson ? JSON.parse(order.dutiesJson) : [];
+    const res = ordersList.map((order) => {
+      let parsedDuties: OrderDutyInput[] = order.dutiesJson ? JSON.parse(order.dutiesJson) : [];
       
       if (order.category.startsWith('BILL_')) {
-        parsedDuties = parsedDuties.map((s: any) => {
+        parsedDuties = parsedDuties.map((s) => {
           if (!s.datesFormatted) {
-            const matches = linkedDuties.filter((d: any) => 
+            const matches = linkedDuties.filter((d) => 
               d.orderRef === order.orderRef && 
               (d.employee.bankId === s.employeeId || d.employee.id.toString() === s.employeeId || d.employee.name === s.employeeName)
             );
             if (matches.length > 0) {
-              const uniqueDates = Array.from(new Set(matches.map((m: any) => m.date as string))).sort();
-              const formatted = uniqueDates.map((dStr: any) => {
-                const [year, month, day] = (dStr as string).split('-');
+              const uniqueDates = Array.from(new Set(matches.map((m) => m.date))).sort();
+              const formatted = uniqueDates.map((dStr) => {
+                const [year, month, day] = dStr.split('-');
                 return toBanglaDigits(`${day}-${month}-${year}`);
               }).join(', ');
               return { ...s, datesFormatted: formatted };
@@ -93,7 +149,7 @@ export class OfficeOrderService {
     return res;
   }
 
-  static async createOfficeOrder(currentUser: any, body: any, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async createOfficeOrder(currentUser: UserSession | null, body: OfficeOrderInput, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('ব্যবহারকারী পাওয়া যায়নি।', 403, 'unauthorized');
     }
@@ -101,7 +157,7 @@ export class OfficeOrderService {
     const validated = officeOrderCreateSchema.parse(body);
 
     if (currentUser.role !== 'ADMIN') {
-      const userCellNames = currentUser.cells.map((c: any) => c.name);
+      const userCellNames = currentUser.cells.map((c) => c.name);
       if (validated.cellName !== 'All Cells' && validated.cellName !== 'all' && (!validated.cellName || !userCellNames.includes(validated.cellName))) {
         throw new AuthError('অন্য সেলের জন্য অফিস আদেশ তৈরি করার অনুমতি নেই।', 403, 'forbidden');
       }
@@ -182,7 +238,7 @@ export class OfficeOrderService {
     return { success: true, id: orderRecord.id, order: orderRecord };
   }
 
-  static async updateOfficeOrder(currentUser: any, id: number, body: any, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async updateOfficeOrder(currentUser: UserSession | null, id: number, body: OfficeOrderUpdateInput, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('ব্যবহারকারী পাওয়া যায়নি।', 403, 'unauthorized');
     }
@@ -195,7 +251,7 @@ export class OfficeOrderService {
     }
 
     if (currentUser.role !== 'ADMIN') {
-      const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+      const userCellNames = currentUser.cells?.map((c) => c.name) || [];
       if (existingOrder.cellName !== 'All Cells' && existingOrder.cellName !== 'all' && (!existingOrder.cellName || !userCellNames.includes(existingOrder.cellName))) {
         throw new AuthError('অন্য সেলের জন্য অফিস আদেশ আপডেট করার অনুমতি নেই।', 403, 'forbidden');
       }
@@ -238,7 +294,7 @@ export class OfficeOrderService {
     return { success: true, order: updated };
   }
 
-  static async deleteOfficeOrder(currentUser: any, id: number, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async deleteOfficeOrder(currentUser: UserSession | null, id: number, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('ব্যবহারকারী পাওয়া যায়নি।', 403, 'unauthorized');
     }
@@ -249,7 +305,7 @@ export class OfficeOrderService {
     }
 
     if (currentUser.role !== 'ADMIN') {
-      const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+      const userCellNames = currentUser.cells?.map((c) => c.name) || [];
       if (order.cellName !== 'All Cells' && order.cellName !== 'all' && (!order.cellName || !userCellNames.includes(order.cellName))) {
         throw new AuthError('অন্য সেলের জন্য রেকর্ড মুছে ফেলার অনুমতি নেই।', 403, 'forbidden');
       }
@@ -276,8 +332,6 @@ export class OfficeOrderService {
 
     // Free the duties associated with this office order by setting orderRef to null
     if (order.orderRef) {
-      const { duties } = require('@/db/schema');
-      const { eq } = require('drizzle-orm');
       await db.update(duties)
         .set({ orderRef: null })
         .where(eq(duties.orderRef, order.orderRef));
@@ -296,44 +350,34 @@ export class OfficeOrderService {
   }
 }
 
-// Dynamic import resolution helper functions for tables
+// Helpers for schema referencing
 function officeOrdersCellNameHelper() {
-  const { officeOrders } = require('@/db/schema');
   return officeOrders.cellName;
 }
 function dutiesTableHelper() {
-  const { duties } = require('@/db/schema');
   return duties;
 }
 function dutiesIdHelper() {
-  const { duties } = require('@/db/schema');
   return duties.id;
 }
 function dutiesDateHelper() {
-  const { duties } = require('@/db/schema');
   return duties.date;
 }
 function dutiesOrderRefHelper() {
-  const { duties } = require('@/db/schema');
   return duties.orderRef;
 }
 function dutiesEmployeeIdHelper() {
-  const { duties } = require('@/db/schema');
   return duties.employeeId;
 }
 function employeesTableHelper() {
-  const { employees } = require('@/db/schema');
   return employees;
 }
 function employeesIdHelper() {
-  const { employees } = require('@/db/schema');
   return employees.id;
 }
 function employeesNameHelper() {
-  const { employees } = require('@/db/schema');
   return employees.name;
 }
 function employeesBankIdHelper() {
-  const { employees } = require('@/db/schema');
   return employees.bankId;
 }

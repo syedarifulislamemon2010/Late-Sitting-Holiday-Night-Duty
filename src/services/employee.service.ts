@@ -1,23 +1,64 @@
 import { EmployeeRepository } from '@/repositories/employee.repository';
 import { UserRepository } from '@/repositories/user.repository';
 import { db } from '@/lib/db';
-import { trash, cells, users } from '@/db/schema';
-import { eq, inArray, and, sql } from 'drizzle-orm';
+import { trash, cells, users, employees, userCells, duties } from '@/db/schema';
+import { eq, inArray, and, sql, SQL } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
-import { AppError, AuthError, ValidationError } from '@/lib/errors';
+import { AppError, AuthError } from '@/lib/errors';
 import { employeeCreateSchema, employeeUpdateSchema } from '@/validations/employee.schema';
-import { duties } from '@/db/schema';
+
+interface UserSession {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells?: { id: number; name: string; description?: string | null; createdAt?: Date | null }[];
+}
+
+interface EmployeeWithCell {
+  id: number;
+  name: string;
+  designation: string;
+  bankId: string | null;
+  fileNo: string | null;
+  cellId: number;
+  mobile: string;
+  cell: {
+    id: number;
+    name: string;
+    description?: string | null;
+    createdAt?: Date | null;
+  };
+}
+
+interface EmployeeInput {
+  name: string;
+  designation: string;
+  bankId?: string | null;
+  fileNo?: string | null;
+  mobile: string;
+  cellId: number;
+}
+
+interface EmployeeUpdateInput {
+  name?: string;
+  designation?: string;
+  bankId?: string | null;
+  fileNo?: string | null;
+  mobile?: string;
+  cellId?: number;
+}
 
 export class EmployeeService {
-  static async listEmployees(currentUser: any, isDirectory: boolean, cellId: string | null) {
+  static async listEmployees(currentUser: UserSession | null, isDirectory: boolean, cellId: string | null) {
     let cellIds: number[] = [];
     let isUserRestricted = false;
 
     if (currentUser && currentUser.role === 'USER') {
       isUserRestricted = true;
       if (currentUser.cells && currentUser.cells.length > 0) {
-        cellIds = currentUser.cells.map((c: any) => c.id);
+        cellIds = currentUser.cells.map((c) => c.id);
       } else {
         const emp = await EmployeeRepository.findByBankId(currentUser.username);
         if (emp) {
@@ -28,7 +69,7 @@ export class EmployeeService {
       }
     }
 
-    const conditions: any[] = [];
+    const conditions: SQL[] = [];
     if (isUserRestricted && !isDirectory) {
       if (cellIds.length > 0) {
         conditions.push(inArray(employeesCellIdHelper(), cellIds));
@@ -52,26 +93,26 @@ export class EmployeeService {
       conditions.length > 0 ? and(...conditions) : undefined
     );
 
-    let finalEmployees = empList;
+    let finalEmployees = empList as unknown as EmployeeWithCell[];
     if (isDirectory) {
       const allUsers = await UserRepository.listAll();
       const allUserCells = await db
         .select({
-          userId: userCellsBHelper(),
+          userId: userCells.B,
           cellId: cells.id,
           cellName: cells.name,
           cellDescription: cells.description,
           cellCreatedAt: cells.createdAt
         })
-        .from(userCellsHelper())
-        .innerJoin(cells, eq(userCellsAHelper(), cells.id));
+        .from(userCells)
+        .innerJoin(cells, eq(userCells.A, cells.id));
 
-      const userCellsMap = new Map<string, any[]>();
+      const userCellsMap = new Map<string, { id: number; name: string; description: string | null; createdAt: Date | null }[]>();
       allUsers.forEach(u => {
         if (u.username) {
           const uCells = allUserCells
-            .filter((uc: any) => uc.userId === u.id)
-            .map((uc: any) => ({
+            .filter((uc) => uc.userId === u.id)
+            .map((uc) => ({
               id: uc.cellId,
               name: uc.cellName,
               description: uc.cellDescription,
@@ -81,8 +122,8 @@ export class EmployeeService {
         }
       });
 
-      const expandedEmployees: any[] = [];
-      for (const emp of empList) {
+      const expandedEmployees: EmployeeWithCell[] = [];
+      for (const emp of empList as unknown as EmployeeWithCell[]) {
         expandedEmployees.push(emp);
         
         if (emp.bankId) {
@@ -110,7 +151,7 @@ export class EmployeeService {
     return sortEmployeesBySeniority(finalEmployees);
   }
 
-  static async createEmployee(currentUser: any, body: any, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async createEmployee(currentUser: UserSession | null, body: EmployeeInput, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('অনুমতি নেই।', 403, 'unauthorized');
     }
@@ -157,7 +198,7 @@ export class EmployeeService {
     return employee;
   }
 
-  static async updateEmployee(currentUser: any, id: number, body: any, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async updateEmployee(currentUser: UserSession | null, id: number, body: EmployeeUpdateInput, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('অনুমতি নেই।', 403, 'unauthorized');
     }
@@ -169,9 +210,9 @@ export class EmployeeService {
       throw new AppError('কর্মকর্তা পাওয়া যায়নি।', 404, 'employee_not_found');
     }
 
-    let updatedData: any = {
+    const updatedData: Partial<EmployeeInput> = {
       name: validated.name ? validated.name.trim() : existingEmployee.name,
-      mobile: validated.mobile !== undefined ? (validated.mobile?.trim() || null) : existingEmployee.mobile
+      mobile: validated.mobile !== undefined ? (validated.mobile?.trim() || '') : existingEmployee.mobile
     };
 
     if (currentUser.role !== 'ADMIN') {
@@ -220,7 +261,7 @@ export class EmployeeService {
     return employee;
   }
 
-  static async deleteEmployee(currentUser: any, id: number, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async deleteEmployee(currentUser: UserSession | null, id: number, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('অনুমতি নেই।', 403, 'unauthorized');
     }
@@ -266,18 +307,5 @@ export class EmployeeService {
 
 // Helpers for schema referencing (to handle compilation types dynamically if required)
 function employeesCellIdHelper() {
-  const { employees } = require('@/db/schema');
   return employees.cellId;
-}
-function userCellsHelper() {
-  const { userCells } = require('@/db/schema');
-  return userCells;
-}
-function userCellsAHelper() {
-  const { userCells } = require('@/db/schema');
-  return userCells.A;
-}
-function userCellsBHelper() {
-  const { userCells } = require('@/db/schema');
-  return userCells.B;
 }

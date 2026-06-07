@@ -1,17 +1,47 @@
 import { LeaveRepository } from '@/repositories/leave.repository';
 import { logActivity } from '@/lib/audit';
-import { AppError, AuthError, ValidationError } from '@/lib/errors';
+import { AppError, AuthError } from '@/lib/errors';
 import { leaveCreateSchema } from '@/validations/leave.schema';
 import { eq, and } from 'drizzle-orm';
 import { leaveApplications } from '@/db/schema';
+import { db } from '@/lib/db';
+
+interface UserSession {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+}
+
+interface LeaveInput {
+  leaveType: 'POST_FACTO' | 'STATION_LEAVE' | 'CASUAL';
+  startDate: string;
+  endDate: string;
+  applicationDate: string;
+  applicantName: string;
+  designation: string;
+  bankId: string;
+  fileNo?: string | null;
+  cellName: string;
+  leaveLocation: string;
+  mobileNo: string;
+  selectedDistrict?: string | null;
+  delegateId?: number | null;
+  casualTotal?: number | null;
+  casualUsed?: number | null;
+  ordinaryTotal?: number | null;
+  ordinaryUsed?: number | null;
+  specialTotal?: number | null;
+  specialUsed?: number | null;
+}
 
 export class LeaveService {
-  static async listLeaves(currentUser: any, filters: { latest: boolean, bankId: string | null }) {
+  static async listLeaves(currentUser: UserSession | null, filters: { latest: boolean, bankId: string | null }) {
     if (!currentUser) {
       throw new AuthError('unauthorized', 401, 'unauthorized');
     }
 
-    const conditions: any[] = [];
+    const conditions = [];
     if (currentUser.role === 'ADMIN') {
       if (filters.bankId) {
         conditions.push(eq(leaveApplications.bankId, filters.bankId));
@@ -30,7 +60,7 @@ export class LeaveService {
     return LeaveRepository.listAll(whereCondition);
   }
 
-  static async createLeave(currentUser: any, body: any, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async createLeave(currentUser: UserSession | null, body: LeaveInput, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('unauthorized', 401, 'unauthorized');
     }
@@ -67,13 +97,13 @@ export class LeaveService {
       entityId: String(newLeave.id),
       ipAddress: headersInfo.ipAddress,
       userAgent: headersInfo.userAgent,
-      details: `${currentUser.name} (@${currentUser.username}) নতুন ছুটির আবেদন (${validated.leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : validated.leaveType === 'STATION_LEAVE' ? 'কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক' : 'নৈমিত্তিক'}) তৈরি ও সংরক্ষণ করেছেন।`
+      details: `${currentUser.name} (@${currentUser.username}) নতুন ছুটির আবেদন (${validated.leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : validated.leaveType === 'STATION_LEAVE' ? 'कर्मस्थल ত্যাগের অনুমতিসহ নৈমিত্তিক' : 'নৈমিত্তিক'}) তৈরি ও সংরক্ষণ করেছেন।`
     });
 
     return newLeave;
   }
 
-  static async updateLeave(currentUser: any, id: number, body: any, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async updateLeave(currentUser: UserSession | null, id: number, body: LeaveInput, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('unauthorized', 401, 'unauthorized');
     }
@@ -89,8 +119,6 @@ export class LeaveService {
 
     const validated = leaveCreateSchema.parse(body);
 
-    const { db } = require('@/lib/db');
-    const { leaveApplications } = require('@/db/schema');
     const updatedLeaveList = await db.update(leaveApplications)
       .set({
         leaveType: validated.leaveType,
@@ -130,7 +158,7 @@ export class LeaveService {
     return updatedLeave;
   }
 
-  static async deleteLeave(currentUser: any, id: number, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async deleteLeave(currentUser: UserSession | null, id: number, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('unauthorized', 401, 'unauthorized');
     }

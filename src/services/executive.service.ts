@@ -4,15 +4,31 @@ import { eq } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { AuthError, AppError } from '@/lib/errors';
 
+interface UserSession {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+}
+
+interface ExecutiveInput {
+  name: string;
+  designation: string;
+  phone?: string | null;
+  email?: string | null;
+  bankId?: string | null;
+  fileNo?: string | null;
+}
+
 export class ExecutiveService {
-  static async listExecutives(currentUser: any) {
+  static async listExecutives(currentUser: UserSession | null) {
     if (!currentUser) {
       throw new AuthError('অনুমতি নেই।', 401, 'unauthorized');
     }
     return db.select().from(executives).orderBy(executives.createdAt);
   }
 
-  static async createExecutive(currentUser: any, body: any, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async createExecutive(currentUser: UserSession | null, body: ExecutiveInput, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('অনুমতি নেই।', 401, 'unauthorized');
     }
@@ -48,7 +64,7 @@ export class ExecutiveService {
     return created;
   }
 
-  static async updateExecutive(currentUser: any, id: number, body: any, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async updateExecutive(currentUser: UserSession | null, id: number, body: ExecutiveInput, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('অনুমতি নেই।', 401, 'unauthorized');
     }
@@ -91,7 +107,7 @@ export class ExecutiveService {
     return updated;
   }
 
-  static async deleteExecutive(currentUser: any, id: number, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async deleteExecutive(currentUser: UserSession | null, id: number, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('অনুমতি নেই।', 401, 'unauthorized');
     }
