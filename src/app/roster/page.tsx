@@ -376,7 +376,7 @@ export default function RosterPage() {
     }
     return false;
   });
-  const [archiveSerial, setArchiveSerial] = useState('');
+
   const [originalOrderRef, setOriginalOrderRef] = useState('');
   const [activePartIdx, setActivePartIdx] = useState(0);
 
@@ -798,25 +798,17 @@ export default function RosterPage() {
       }
     }
     const catBangla = printCategory === 'LATE_SITTING' ? 'লেট-সিটিং' : printCategory === 'HOLIDAY' ? 'অফ-ডে' : 'নাইট';
-    const bnYear = toBanglaDigits('2026');
 
-    if (isEditingArchive) {
-      let currentSerial = archiveSerial;
-      if (!currentSerial && originalOrderRef) {
-        const parts = originalOrderRef.split('/');
-        if (parts.length >= 7) {
-          currentSerial = parts[6];
-        }
-      }
-      if (currentSerial) {
-        return `৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${currentSerial}`;
-      }
+    if (isEditingArchive && originalOrderRef) {
+      return originalOrderRef;
     }
 
+    const cleanDate = orderDate.replace(/-/g, '');
+    const bnDate = toBanglaDigits(cleanDate);
     const activeStableNumber = stableNumber + activePartIdx;
     const bnRand = toBanglaDigits(activeStableNumber);
-    return `৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${bnRand}`;
-  }, [userCustomOrderRef, isArchived, duties, selectedCell, printCategory, payeeEmployeeId, employees, isEditingArchive, archiveSerial, originalOrderRef, stableNumber, activePartIdx, getGroupedDuties]);
+    return `৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnDate}/${bnRand}`;
+  }, [userCustomOrderRef, isArchived, duties, selectedCell, printCategory, payeeEmployeeId, employees, isEditingArchive, originalOrderRef, stableNumber, activePartIdx, getGroupedDuties, orderDate]);
 
   const [headerMode, setHeaderMode] = useState<'with_header' | 'without_header'>('with_header');
 
@@ -1011,6 +1003,8 @@ export default function RosterPage() {
         if (isEditingArchive) {
           setIsEditingArchive(false);
           window.location.assign('/documents');
+        } else {
+          window.location.assign('/billing?orderRef=' + encodeURIComponent(orderRef));
         }
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -1524,11 +1518,6 @@ export default function RosterPage() {
               // Set orderRef and date
               setUserCustomOrderRef(editRef);
               setOriginalOrderRef(editRef);
-              if (editRef && editRef.includes('/')) {
-                const parts = editRef.split('/');
-                const serial = parts[parts.length - 1] || '';
-                setArchiveSerial(serial);
-              }
               setUserCustomOrderDate(matchingOrder.orderDate);
               
               // Populate content
@@ -1653,7 +1642,6 @@ export default function RosterPage() {
     setSelectedMonths,
     setUserCustomOrderRef,
     setOriginalOrderRef,
-    setArchiveSerial,
     setUserCustomOrderDate,
     setUserCustomOrderText,
     setSigningOfficer,
@@ -1669,7 +1657,6 @@ export default function RosterPage() {
     setIsPrintMode(false);
     if (isEditingArchive) {
       setIsEditingArchive(false);
-      setArchiveSerial('');
       window.history.pushState({}, '', '/roster');
       setTimeout(() => {
         loadDuties();
@@ -1823,6 +1810,8 @@ export default function RosterPage() {
           setErrorMessage('ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।');
         } else if (err.error === 'holiday_duty_on_working_day') {
           setErrorMessage('কার্যদিবসে সরকারি ছুটির ডিউটি দেওয়া সম্ভব নয়।');
+        } else if (err.error === 'late_sitting_night_shift_conflict') {
+          setErrorMessage('একই কার্যদিবসে লেট সিটিং ও নাইট শিফট ডিউটি একসাথে বরাদ্দ করা সম্ভব নয়।');
         } else if (err.error === 'leave_conflict') {
           setErrorMessage('সংশ্লিষ্ট কর্মকর্তা উক্ত তারিখে ছুটিতে আছেন। ছুটিতে থাকা অবস্থায় ডিউটি বরাদ্দ করা সম্ভব নয়।');
         } else {
@@ -1992,6 +1981,8 @@ export default function RosterPage() {
           msg = 'ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।';
         } else if (err.error === 'holiday_duty_on_working_day') {
           msg = 'কার্যদিবসে সরকারি ছুটির ডিউটি দেওয়া সম্ভব নয়।';
+        } else if (err.error === 'late_sitting_night_shift_conflict') {
+          msg = 'একই কার্যদিবসে লেট সিটিং ও নাইট শিফট ডিউটি একসাথে বরাদ্দ করা সম্ভব নয়।';
         } else if (err.error === 'duplicate_duty_on_date') {
           msg = 'এই কর্মকর্তার জন্য এই তারিখে ইতিমধ্যে অন্য ডিউটি বরাদ্দ রয়েছে।';
         } else if (err.error === 'leave_conflict') {
@@ -2316,7 +2307,6 @@ export default function RosterPage() {
                 onClick={() => {
                   setIsEditingArchive(false);
                   setUserCustomOrderRef(null);
-                  setArchiveSerial('');
                   window.history.pushState({}, '', '/roster');
                   loadDuties();
                 }}
@@ -2819,7 +2809,13 @@ export default function RosterPage() {
               {(() => {
                 const pendingDuties = duties
                   .filter(d => !d.orderRef)
-                  .filter(d => selectedCategory === 'all' || d.type === selectedCategory);
+                  .filter(d => selectedCategory === 'all' || d.type === selectedCategory)
+                  .filter(d => selectedCell === 'all' || d.employee.cellId.toString() === selectedCell)
+                  .filter(d => {
+                    if (selectedMonths.length === 0) return true;
+                    const ym = d.date.substring(0, 7);
+                    return selectedMonths.includes(ym);
+                  });
                 
                 const activeCellObj = cells.find(c => c.id.toString() === selectedCell);
                 const activeCellName = activeCellObj ? activeCellObj.name : null;
@@ -2863,7 +2859,7 @@ export default function RosterPage() {
                             : 'border-transparent text-slate-400 hover:text-slate-650 dark:hover:text-slate-350'
                         }`}
                       >
-                        অপেক্ষমাণ ডিউটি তালিকা (Pending Duties)
+                        অপেক্ষমান অর্ডার জেনারেট করুন
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                           activeRosterTab === 'pending'
                             ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400'
@@ -2882,7 +2878,7 @@ export default function RosterPage() {
                             : 'border-transparent text-slate-400 hover:text-slate-650 dark:hover:text-slate-350'
                         }`}
                       >
-                        অফিস অর্ডার ডিউটি রেকর্ড লিস্ট (Archived Orders)
+                        জেনারেটেড এবং প্রিন্টেড সেকশন
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                           activeRosterTab === 'archived'
                             ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400'
@@ -2898,7 +2894,7 @@ export default function RosterPage() {
                       <div className="space-y-3">
                         <h4 className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                          অপেক্ষমাণ ডিউটি তালিকা (Pending/Ungenerated Duties) - {toBanglaDigits(pendingDuties.length)} টি
+                          অপেক্ষমান অর্ডার জেনারেট করুন - {toBanglaDigits(pendingDuties.length)} টি
                         </h4>
                         {pendingDuties.length > 0 ? (
                           renderDutiesTable(pendingDuties)
@@ -2912,7 +2908,7 @@ export default function RosterPage() {
                       <div className="space-y-3">
                         <h4 className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                          জেনারেটেড এবং প্রিন্টেড অর্ডার (Generated & Archived Orders) - {toBanglaDigits(filteredOfficeOrders.length)} টি
+                          জেনারেটেড এবং প্রিন্টেড সেকশন - {toBanglaDigits(filteredOfficeOrders.length)} টি
                         </h4>
                         {filteredOfficeOrders.length > 0 ? (
                           renderOfficeOrdersList(filteredOfficeOrders)

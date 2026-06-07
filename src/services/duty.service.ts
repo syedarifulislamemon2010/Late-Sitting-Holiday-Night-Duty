@@ -191,7 +191,7 @@ export class DutyService {
       leaves = await db.select().from(leaveApplications).where(inArray(leaveApplications.bankId, employeeBankIds));
     }
 
-    const dutiesToInsert = [];
+    const dutiesToInsert: any[] = [];
 
     for (const assignment of validated.assignments) {
       const isHoliday = checkIsHolidayLocal(assignment.date);
@@ -202,6 +202,23 @@ export class DutyService {
 
       if (assignment.type === 'HOLIDAY' && !isHoliday) {
         throw new AppError('holiday_duty_on_working_day', 400, 'holiday_duty_on_working_day');
+      }
+
+      if (assignment.type === 'LATE_SITTING' || assignment.type === 'NIGHT_SHIFT') {
+        const conflictingType = assignment.type === 'LATE_SITTING' ? 'NIGHT_SHIFT' : 'LATE_SITTING';
+        const dbConflict = allExistingDuties.some(d =>
+          d.employeeId === assignment.employeeId &&
+          d.date === assignment.date &&
+          d.type === conflictingType
+        );
+        const batchConflict = dutiesToInsert.some(d =>
+          d.employeeId === assignment.employeeId &&
+          d.date === assignment.date &&
+          d.type === conflictingType
+        );
+        if (dbConflict || batchConflict) {
+          throw new AppError('late_sitting_night_shift_conflict', 400, 'late_sitting_night_shift_conflict');
+        }
       }
 
       const emp = employeeMap.get(assignment.employeeId);
@@ -299,6 +316,15 @@ export class DutyService {
       );
       if (hasLeaveConflict) {
         throw new AppError('leave_conflict', 400, 'leave_conflict');
+      }
+    }
+
+    if (targetType === 'LATE_SITTING' || targetType === 'NIGHT_SHIFT') {
+      const conflictingType = targetType === 'LATE_SITTING' ? 'NIGHT_SHIFT' : 'LATE_SITTING';
+      const conflictList = await DutyRepository.findDuplicateDutyForEmployee(currentDuty.employeeId, targetDate, id);
+      const hasConflict = conflictList.some(d => d.type === conflictingType);
+      if (hasConflict) {
+        throw new AppError('late_sitting_night_shift_conflict', 400, 'late_sitting_night_shift_conflict');
       }
     }
 

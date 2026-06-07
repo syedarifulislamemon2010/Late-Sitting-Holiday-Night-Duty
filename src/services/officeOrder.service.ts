@@ -276,7 +276,7 @@ export class OfficeOrderService {
       orderDate: validated.orderDate,
       employeeName: validated.employeeName,
       cellName: validated.cellName || null,
-      status: 'Modified'
+      status: validated.status || 'Modified'
     });
 
     await logActivity({
@@ -325,10 +325,8 @@ export class OfficeOrderService {
       details: `${currentUser.name} (@${currentUser.username}) ${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} মুছে ফেলেছেন (সূত্র: ${order.orderRef})।`
     });
 
-    // Soft delete in database: update status to 'Deleted'
-    await OfficeOrderRepository.update(id, {
-      status: 'Deleted'
-    });
+    // Hard delete in database
+    await OfficeOrderRepository.delete(id);
 
     // Free the duties associated with this office order by setting orderRef to null
     if (order.orderRef) {

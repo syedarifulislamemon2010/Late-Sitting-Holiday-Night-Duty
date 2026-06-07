@@ -253,6 +253,35 @@ export default function BillingPage() {
     }
   };
 
+  const handlePrintButtonClick = () => {
+    if (selectedCategory === 'all') {
+      const categoriesWithDuties = new Set<'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'>();
+      duties.forEach(d => {
+        if (d.type === 'LATE_SITTING' || d.type === 'HOLIDAY' || d.type === 'NIGHT_SHIFT') {
+          categoriesWithDuties.add(d.type);
+        }
+      });
+
+      if (categoriesWithDuties.size === 0) {
+        alert('কোনো ডিউটি পাওয়া যায়নি।');
+        return;
+      }
+
+      if (categoriesWithDuties.size === 1) {
+        const cat = Array.from(categoriesWithDuties)[0];
+        handleCategoryChange(cat);
+        setIsPrintMode(true);
+      } else {
+        alert('একাধিক ক্যাটাগরির ডিউটি রয়েছে। অনুগ্রহ করে ফিল্টার প্যানেল থেকে নির্দিষ্ট ক্যাটাগরি ফিল্টার করে প্রিন্ট করুন। প্রথম ক্যাটাগরিটি প্রিন্টের জন্য লোড করা হচ্ছে।');
+        const firstCat = Array.from(categoriesWithDuties)[0];
+        handleCategoryChange(firstCat);
+        setIsPrintMode(true);
+      }
+    } else {
+      setIsPrintMode(true);
+    }
+  };
+
   // Legal Print Form Configs
   const [isPrintMode, setIsPrintMode] = useState(false);
   const [isEditingArchive, setIsEditingArchive] = useState(false);
@@ -1040,7 +1069,7 @@ export default function BillingPage() {
         category: "BILL_" + printCategory,
         employeeName: representativeName,
         cellName: cellName,
-        status: action === 'generate' ? 'Generated' : undefined,
+        status: action === 'generate' ? 'Generated' : 'Printed',
         duties: summariesPayload.map(s => ({
           employeeId: s.bankId,
           employeeName: s.name,
@@ -1080,18 +1109,19 @@ export default function BillingPage() {
         }
       };
 
+      // Always save to database for all actions (generate, download, print)
+      const archiveRes = await fetch('/api/office-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(archivePayload),
+      });
+
+      if (!archiveRes.ok) {
+        throw new Error('Failed to archive bill memo metadata');
+      }
+      console.log('Bill memo metadata archived successfully!');
+
       if (action === 'generate') {
-        const archiveRes = await fetch('/api/office-orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(archivePayload),
-        });
-
-        if (!archiveRes.ok) {
-          throw new Error('Failed to archive bill memo metadata');
-        }
-        console.log('Bill memo metadata archived successfully!');
-
         // Generate PDF
         const payload = {
           billingMonth: billingMonthName,
@@ -1618,20 +1648,17 @@ export default function BillingPage() {
             </div>
             
             <button
-              onClick={() => setIsPrintMode(true)}
-              disabled={selectedCategory === 'all' || duties.length === 0 || showOrderWarning}
-              title={selectedCategory === 'all' ? 'বিল প্রিন্ট করার জন্য একটি নির্দিষ্ট ক্যাটাগরি নির্বাচন করুন' : ''}
+              onClick={handlePrintButtonClick}
+              disabled={duties.length === 0 || showOrderWarning}
+              title={duties.length === 0 ? 'বিল প্রিন্ট করার জন্য কোনো অপেক্ষমান ডিউটি পাওয়া যায়নি' : ''}
               className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md ${
-                selectedCategory !== 'all' && duties.length > 0 && !showOrderWarning 
+                duties.length > 0 && !showOrderWarning 
                   ? 'bg-gradient-to-r from-emerald-600 to-indigo-600 text-white hover:opacity-95 cursor-pointer' 
                   : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed'
               }`}
             >
               <Printer size={16} />
-              {selectedCategory === 'all' 
-                ? 'প্রিন্ট করতে ক্যাটাগরি সিলেক্ট করুন' 
-                : 'বিল মেমো (Legal Size) দেখুন ও প্রিন্ট করুন'
-              }
+              বিল মেমো (Legal Size) দেখুন ও প্রিন্ট করুন
             </button>
           </div>
 
@@ -2045,7 +2072,47 @@ export default function BillingPage() {
                   </div>
                 </div>
               ) : (
-                renderBillMemosGrid(filteredBillMemos)
+                <div className="space-y-8">
+                  {/* Section 1: Generated but not printed */}
+                  {(() => {
+                    const pendingPrintBillMemos = filteredBillMemos.filter(b => b.status === 'Generated');
+                    return (
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-2 border-b border-amber-200/30 pb-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                          জেনারেটেড কিন্তু প্রিন্ট করা হয়নি ({pendingPrintBillMemos.length} টি)
+                        </h3>
+                        {pendingPrintBillMemos.length > 0 ? (
+                          renderBillMemosGrid(pendingPrintBillMemos)
+                        ) : (
+                          <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs">
+                            কোনো প্রিন্ট অপেক্ষমাণ বিল মেমো নেই।
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Section 2: Printed/Generated & Printed/Modified */}
+                  {(() => {
+                    const printedBillMemos = filteredBillMemos.filter(b => b.status === 'Printed' || b.status === 'Generated & Printed' || b.status === 'Modified');
+                    return (
+                      <div className="space-y-4 pt-4">
+                        <h3 className="text-sm font-extrabold text-teal-600 dark:text-teal-400 flex items-center gap-2 border-b border-teal-200/30 pb-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+                          জেনারেটেড এবং প্রিন্টেড বিল সেকশন ({printedBillMemos.length} টি)
+                        </h3>
+                        {printedBillMemos.length > 0 ? (
+                          renderBillMemosGrid(printedBillMemos)
+                        ) : (
+                          <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs">
+                            কোনো প্রিন্টেড বিল মেমো নেই।
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
               )}
             </div>
           )}
@@ -2512,9 +2579,27 @@ export default function BillingPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       const printContent = document.getElementById('printable-order-sheet');
                       if (!printContent) return;
+                      if (isBill && viewingOrder.status === 'Generated') {
+                        try {
+                          await fetch(`/api/office-orders/${viewingOrder.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              orderRef: viewingOrder.orderRef,
+                              orderDate: viewingOrder.orderDate,
+                              employeeName: viewingOrder.employeeName,
+                              cellName: viewingOrder.cellName,
+                              status: 'Printed'
+                            })
+                          });
+                          fetchDutiesForBilling();
+                        } catch (e) {
+                          console.error('Failed to update printed status:', e);
+                        }
+                      }
                       const printWindow = window.open('', '_blank');
                       if (printWindow) {
                         printWindow.document.write(`
@@ -2693,7 +2778,14 @@ export default function BillingPage() {
                             </div>
 
                             {/* Table */}
-                            {viewingOrder.duties && viewingOrder.duties.length > 0 ? (() => {
+                            {(() => {
+                              let dutiesList: OrderDuty[] = [];
+                              try {
+                                dutiesList = viewingOrder.duties || JSON.parse(viewingOrder.dutiesJson || '[]');
+                              } catch (e) {
+                                console.error(e);
+                              }
+                              if (!dutiesList || dutiesList.length === 0) return null;
                               const cat = viewingOrder.category || '';
                               const isHoliday = cat.includes('HOLIDAY');
                               const isNight = cat.includes('NIGHT_SHIFT');
@@ -2712,7 +2804,7 @@ export default function BillingPage() {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {viewingOrder.duties.map((s: OrderDuty, idx: number) => (
+                                    {dutiesList.map((s: OrderDuty, idx: number) => (
                                       <tr key={idx} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                                         <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(idx + 1)}</td>
                                         <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>
@@ -2744,7 +2836,7 @@ export default function BillingPage() {
                                   </tbody>
                                 </table>
                               );
-                            })() : null}
+                            })()}
 
                             {/* Words and paragraphs */}
                             <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6' }}>

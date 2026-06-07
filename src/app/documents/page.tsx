@@ -1358,7 +1358,15 @@ export default function DocumentsPage() {
                             </div>
 
                             {/* Table */}
-                            {viewingOrder.duties && viewingOrder.duties.length > 0 ? (() => {
+                            {(() => {
+                              let dutiesList: OrderDuty[] = [];
+                              try {
+                                dutiesList = viewingOrder.duties || JSON.parse(viewingOrder.dutiesJson || '[]');
+                              } catch (e) {
+                                console.error(e);
+                              }
+                              if (!dutiesList || dutiesList.length === 0) return null;
+
                               const cat = viewingOrder.category || '';
                               const isHoliday = cat.includes('HOLIDAY');
                               const isNight = cat.includes('NIGHT_SHIFT');
@@ -1377,7 +1385,7 @@ export default function DocumentsPage() {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {viewingOrder.duties.map((s: OrderDuty, index: number) => (
+                                    {dutiesList.map((s: OrderDuty, index: number) => (
                                       <tr key={index} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                                         <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(index + 1)}</td>
                                         <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>
@@ -1409,7 +1417,7 @@ export default function DocumentsPage() {
                                   </tbody>
                                 </table>
                               );
-                            })() : null}
+                            })()}
 
                             {/* Words and paragraphs */}
                             <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
@@ -1523,40 +1531,49 @@ export default function DocumentsPage() {
                           />
 
                           {/* Redesigned Printed Duty Table Grouped by Employee */}
-                          {viewingOrder.duties && viewingOrder.duties.length > 0 ? (
-                            <table className="w-full border-collapse border border-black text-center mt-2.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
-                              <thead>
-                                <tr className="bg-slate-50 font-bold border-b border-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                                  <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '4px' }}>ক্রমিক নং</th>
-                                  <th className="border border-black p-1 text-left pl-2 w-[28%]" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>নির্বাহী/ কর্মকর্তার নাম</th>
-                                  <th className="border border-black p-1 text-center w-[12%]" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>পদবী</th>
-                                  <th className="border border-black p-1 text-left pl-2 w-[27%]" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>কাজের বিবরণ</th>
-                                  <th className="border border-black p-1 text-center w-[25%]" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>তারিখ</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {viewingOrder.duties.map((group: OrderDuty, index: number) => (
-                                  <tr key={index} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                                    <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>
-                                      {toBanglaDigits(index + 1)}
-                                    </td>
-                                    <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-[10px]" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>
-                                      {group.employeeName.startsWith('জনাব') ? group.employeeName : `জনাব ${group.employeeName}`}
-                                    </td>
-                                    <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>
-                                      {group.designation.match(/\(([^)]+)\)/)?.[1] ?? group.designation}
-                                    </td>
-                                    <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-black" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>
-                                      {group.description || 'Customization এবং Development সংক্রান্ত'}
-                                    </td>
-                                    <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>
-                                      {getFormattedDateList(group.dates)}
-                                    </td>
+                          {(() => {
+                            let dutiesList: OrderDuty[] = [];
+                            try {
+                              dutiesList = viewingOrder.duties || JSON.parse(viewingOrder.dutiesJson || '[]');
+                            } catch (e) {
+                              console.error(e);
+                            }
+                            if (!dutiesList || dutiesList.length === 0) return null;
+                            return (
+                              <table className="w-full border-collapse border border-black text-center mt-2.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                                <thead>
+                                  <tr className="bg-slate-50 font-bold border-b border-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                    <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '4px' }}>ক্রমিক নং</th>
+                                    <th className="border border-black p-1 text-left pl-2 w-[28%]" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>নির্বাহী/ কর্মকর্তার নাম</th>
+                                    <th className="border border-black p-1 text-center w-[12%]" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>পদবী</th>
+                                    <th className="border border-black p-1 text-left pl-2 w-[27%]" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>কাজের বিবরণ</th>
+                                    <th className="border border-black p-1 text-center w-[25%]" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>তারিখ</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          ) : null}
+                                </thead>
+                                <tbody>
+                                  {dutiesList.map((group: OrderDuty, index: number) => (
+                                    <tr key={index} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                      <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>
+                                        {toBanglaDigits(index + 1)}
+                                      </td>
+                                      <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-[10px]" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>
+                                        {group.employeeName.startsWith('জনাব') ? group.employeeName : `জনাব ${group.employeeName}`}
+                                      </td>
+                                      <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>
+                                        {group.designation.match(/\(([^)]+)\)/)?.[1] ?? group.designation}
+                                      </td>
+                                      <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-black" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>
+                                        {group.description || 'Customization এবং Development সংক্রান্ত'}
+                                      </td>
+                                      <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>
+                                        {getFormattedDateList(group.dates)}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            );
+                          })()}
 
                           {/* Sign-off Officer block (Left Aligned on Bottom Left with 1 inch space above it) */}
                           <div className="w-full flex justify-start text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', marginTop: '1.0in' }}>
