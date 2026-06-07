@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   Printer, 
   ChevronLeft, 
@@ -63,6 +63,79 @@ interface EmployeeBillingSummary {
   nightAllowance2: number;
   grandTotal: number;
 }
+
+// Convert English digits/text to Bengali digits
+const toBanglaDigits = (num: number | string | undefined | null): string => {
+  if (num === undefined || num === null) return '';
+  const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
+};
+
+// Convert Gregorian Date String to formal Bengali Date (e.g. ২৩-০৫-২০২৬)
+const getBanglaDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-');
+  const bnDay = toBanglaDigits(parseInt(day, 10).toString().padStart(2, '0'));
+  const bnMonth = toBanglaDigits(parseInt(month, 10).toString().padStart(2, '0'));
+  const bnYear = toBanglaDigits(year);
+  return `${bnDay}-${bnMonth}-${bnYear}`;
+};
+
+// Convert Gregorian YYYY-MM into formal Bengali Month Year (e.g. জুন ২০২৬)
+const getBanglaMonthYearLabel = (ym: string) => {
+  if (!ym || !ym.includes('-')) return '';
+  const [yearStr, monthStr] = ym.split('-');
+  const month = parseInt(monthStr, 10);
+  const banglaMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+  return `${banglaMonths[month - 1]} ${toBanglaDigits(yearStr)}`;
+};
+
+// Convert total number into Bengali Words for Legal certification note
+const getBanglaNumberWords = (num: number) => {
+  if (num === 0) return 'শূন্য';
+  
+  const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
+  const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
+  const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
+
+  const convertTens = (n: number): string => {
+    if (n < 10) return singleWords[n];
+    if (n >= 10 && n < 20) return teenWords[n - 10];
+    const ten = Math.floor(n / 10);
+    const unit = n % 10;
+    return doubleWords[ten] + (unit > 0 ? ' ' + singleWords[unit] : '');
+  };
+
+  let wordStr = '';
+  
+  // Lac portion
+  if (num >= 100000) {
+    const lac = Math.floor(num / 100000);
+    wordStr += convertTens(lac) + ' লক্ষ ';
+    num %= 100000;
+  }
+
+  // Thousand portion
+  if (num >= 1000) {
+    const thousand = Math.floor(num / 1000);
+    wordStr += convertTens(thousand) + ' হাজার ';
+    num %= 1000;
+  }
+  
+  // Hundred portion
+  if (num >= 100) {
+    const hundred = Math.floor(num / 100);
+    wordStr += singleWords[hundred] + ' শত ';
+    num %= 100;
+  }
+  
+  // Tens portion
+  if (num > 0) {
+    wordStr += convertTens(num);
+  }
+  
+  return wordStr.trim() + ' টাকা মাত্র';
+};
 
 export default function BillingPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -154,12 +227,18 @@ export default function BillingPage() {
       if (parts.length >= 3) {
         parts[2] = repName;
       }
-      setBillRef(parts.join('/') + '/বিল');
+      const val = parts.join('/') + '/বিল';
+      setTimeout(() => {
+        setBillRef(val);
+      }, 0);
     } else {
       const catBangla = printCategory === 'LATE_SITTING' ? 'লেট-সিটিং' : printCategory === 'HOLIDAY' ? 'অফ-ডে' : 'নাইট';
       const bnYear = toBanglaDigits('2026');
       const bnRand = toBanglaDigits(randomNumber);
-      setBillRef(`৯১০৩/ডেভ/${repName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${bnRand}/বিল`);
+      const val = `৯১০৩/ডেভ/${repName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${bnRand}/বিল`;
+      setTimeout(() => {
+        setBillRef(val);
+      }, 0);
     }
   }, [baseOrderRef, selectedOrderRef, printCategory, representativeName, randomNumber]);
 
@@ -232,7 +311,9 @@ export default function BillingPage() {
       const matchedEmp = employees.find(e => e.bankId && e.bankId.trim().toLowerCase() === currentUser.username?.trim().toLowerCase());
       const primaryCellId = matchedEmp ? matchedEmp.cellId : (currentUser.cells?.[0]?.id || null);
       if (primaryCellId) {
-        setSelectedCell(primaryCellId.toString());
+        setTimeout(() => {
+          setSelectedCell(primaryCellId.toString());
+        }, 0);
       }
     }
   }, [currentUser, employees]);
@@ -383,8 +464,7 @@ export default function BillingPage() {
   }, []);
 
   // Fetch duties based on selected month & filters
-  // Fetch duties based on selected month & filters
-  async function fetchDutiesForBilling() {
+  const fetchDutiesForBilling = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -505,13 +585,19 @@ export default function BillingPage() {
         setPendingOrderRefs(pendingRefs);
         setBilledOrderRefs(billedRefs);
         if (pendingRefs.length > 0) {
-          if (!selectedOrderRef || (!pendingRefs.includes(selectedOrderRef) && !billedRefs.includes(selectedOrderRef))) {
-            setSelectedOrderRef(pendingRefs[0]);
-          }
+          setSelectedOrderRef(current => {
+            if (!current || (!pendingRefs.includes(current) && !billedRefs.includes(current))) {
+              return pendingRefs[0];
+            }
+            return current;
+          });
         } else if (billedRefs.length > 0) {
-          if (!selectedOrderRef || (!pendingRefs.includes(selectedOrderRef) && !billedRefs.includes(selectedOrderRef))) {
-            setSelectedOrderRef(billedRefs[0]);
-          }
+          setSelectedOrderRef(current => {
+            if (!current || (!pendingRefs.includes(current) && !billedRefs.includes(current))) {
+              return billedRefs[0];
+            }
+            return current;
+          });
         } else {
           setSelectedOrderRef('');
         }
@@ -523,7 +609,7 @@ export default function BillingPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [selectedMonth, selectedCell, printCategory, isEditingArchive, baseOrderRef]);
 
   const handleBackToLedger = () => {
     setIsPrintMode(false);
@@ -531,12 +617,16 @@ export default function BillingPage() {
     if (typeof window !== 'undefined') {
       window.history.pushState({}, '', '/billing');
     }
-    fetchDutiesForBilling();
+    setTimeout(() => {
+      fetchDutiesForBilling();
+    }, 0);
   };
 
   useEffect(() => {
-    fetchDutiesForBilling();
-  }, [selectedMonth, selectedCell, isEditingArchive, baseOrderRef, printCategory]);
+    setTimeout(() => {
+      fetchDutiesForBilling();
+    }, 0);
+  }, [fetchDutiesForBilling]);
 
   // Reset billGenerated to false if inputs change (excluding initial load)
   useEffect(() => {
@@ -565,7 +655,9 @@ export default function BillingPage() {
   // Reactive effect to keep baseOrderRef in sync with printCategory and duties
   useEffect(() => {
     const firstDuty = duties.find(d => d.type === printCategory && d.orderRef);
-    setBaseOrderRef(firstDuty ? firstDuty.orderRef || '' : '');
+    setTimeout(() => {
+      setBaseOrderRef(firstDuty ? firstDuty.orderRef || '' : '');
+    }, 0);
   }, [duties, printCategory]);
 
   // Sync templates and openingParagraph dynamically based on printCategory
@@ -578,7 +670,9 @@ export default function BillingPage() {
     } else if (printCategory === 'HOLIDAY') {
       text = 'কর্তৃপক্ষের নির্দেশক্রমে Online Banking Software T-24 বাস্তবায়ন ও উক্ত Software দ্বারা পরিচালিত শাখা সমুহে অপারেশনাল সহায়তা প্রদানের নিমিত্তে অত্র ডিপার্টমেন্টের নিম্নবর্ণিত কর্মকর্তাগণ তাদের নামের পার্শ্বে বর্নিত তারিখে ছুটির দিনে অফিসে অবস্থান করেছেন। উল্লেখ্য, গত ০৪/০৯/২০১৪ ইং তারিখে অনুষ্ঠিত র্বোড অব ডিরেক্টরস এর ৩৩৪ তম সভার সিদ্ধান্ত "ঙ" মোতাবেক আইটি কার্যক্রম 24 ঘন্টা নিরবিচ্ছিন্ন সাপোর্ট প্রদানের ক্ষেত্রে ছুটির দিনে দায়িত্ব পালনকারী নির্বাহী/কর্মকতাদের অনুকুলে ৫০০/- (যাতায়াত- ২৫০/-+আপ্যায়ন-২৫০/-) হারে ভাতা প্রদান অনুমোদিত আছে। নিম্নে বর্ণিত নির্বাহী/কর্মকতাদের অনুকূলে যাতায়াত ও আপ্যায়ন ভাতা বাবদ খরচ উল্লেখ করা হলঃ';
     }
-    setOpeningParagraph(text);
+    setTimeout(() => {
+      setOpeningParagraph(text);
+    }, 0);
   }, [printCategory]);
 
   // Aggregate duties by employee for billing ledger
@@ -653,25 +747,31 @@ export default function BillingPage() {
     if (selectedOrderRef && archivedOrders.length > 0) {
       const matchedOrder = archivedOrders.find(o => o.orderRef === selectedOrderRef);
       if (matchedOrder && matchedOrder.employeeName) {
-        setRepresentativeName(matchedOrder.employeeName);
-        const matchedEmp = employees.find(e => e.name === matchedOrder.employeeName);
-        if (matchedEmp) {
-          setRepresentativeDesignation(getShortDesignation(matchedEmp.designation));
-        } else {
-          setRepresentativeDesignation('এসও-আইটি'); // Fallback designation
-        }
+        const nameVal = matchedOrder.employeeName;
+        const matchedEmp = employees.find(e => e.name === nameVal);
+        const desigVal = matchedEmp ? getShortDesignation(matchedEmp.designation) : 'এসও-আইটি';
+        setTimeout(() => {
+          setRepresentativeName(nameVal);
+          setRepresentativeDesignation(desigVal);
+        }, 0);
         return;
       }
     }
 
     if (printFilteredSummaries.length > 0) {
-      setRepresentativeName(printFilteredSummaries[0].name);
-      setRepresentativeDesignation(getShortDesignation(printFilteredSummaries[0].designation));
+      const nameVal = printFilteredSummaries[0].name;
+      const desigVal = getShortDesignation(printFilteredSummaries[0].designation);
+      setTimeout(() => {
+        setRepresentativeName(nameVal);
+        setRepresentativeDesignation(desigVal);
+      }, 0);
     } else {
-      setRepresentativeName('');
-      setRepresentativeDesignation('');
+      setTimeout(() => {
+        setRepresentativeName('');
+        setRepresentativeDesignation('');
+      }, 0);
     }
-  }, [duties, printCategory, selectedOrderRef, archivedOrders, employees]);
+  }, [duties, printCategory, selectedOrderRef, archivedOrders, employees, printFilteredSummaries]);
 
   // Aggregate financial metrics for general dashboard
   const aggregateMetrics = () => {
@@ -734,78 +834,6 @@ export default function BillingPage() {
     return { transportRate, apyaonRate };
   };
 
-  // Convert English digits/text to Bengali digits
-  const toBanglaDigits = (num: number | string | undefined | null): string => {
-    if (num === undefined || num === null) return '';
-    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
-  };
-
-  // Convert Gregorian Date String to formal Bengali Date (e.g. ২৩-০৫-২০২৬)
-  const getBanglaDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    const [year, month, day] = dateStr.split('-');
-    const bnDay = toBanglaDigits(parseInt(day, 10).toString().padStart(2, '0'));
-    const bnMonth = toBanglaDigits(parseInt(month, 10).toString().padStart(2, '0'));
-    const bnYear = toBanglaDigits(year);
-    return `${bnDay}-${bnMonth}-${bnYear}`;
-  };
-
-  // Convert Gregorian YYYY-MM into formal Bengali Month Year (e.g. জুন ২০২৬)
-  const getBanglaMonthYearLabel = (ym: string) => {
-    if (!ym || !ym.includes('-')) return '';
-    const [yearStr, monthStr] = ym.split('-');
-    const month = parseInt(monthStr, 10);
-    const banglaMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
-    return `${banglaMonths[month - 1]} ${toBanglaDigits(yearStr)}`;
-  };
-
-  // Convert total number into Bengali Words for Legal certification note
-  const getBanglaNumberWords = (num: number) => {
-    if (num === 0) return 'শূন্য';
-    
-    const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
-    const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
-    const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
-
-    const convertTens = (n: number): string => {
-      if (n < 10) return singleWords[n];
-      if (n >= 10 && n < 20) return teenWords[n - 10];
-      const ten = Math.floor(n / 10);
-      const unit = n % 10;
-      return doubleWords[ten] + (unit > 0 ? ' ' + singleWords[unit] : '');
-    };
-
-    let wordStr = '';
-    
-    // Lac portion
-    if (num >= 100000) {
-      const lac = Math.floor(num / 100000);
-      wordStr += convertTens(lac) + ' লক্ষ ';
-      num %= 100000;
-    }
-
-    // Thousand portion
-    if (num >= 1000) {
-      const thousand = Math.floor(num / 1000);
-      wordStr += convertTens(thousand) + ' হাজার ';
-      num %= 1000;
-    }
-    
-    // Hundred portion
-    if (num >= 100) {
-      const hundred = Math.floor(num / 100);
-      wordStr += singleWords[hundred] + ' শত ';
-      num %= 100;
-    }
-    
-    // Tens portion
-    if (num > 0) {
-      wordStr += convertTens(num);
-    }
-    
-    return wordStr.trim() + ' টাকা মাত্র';
-  };
 
   // Helper to extract category duties for formatting
   const getEmployeeCategoryDuties = (employeeId: number) => {
