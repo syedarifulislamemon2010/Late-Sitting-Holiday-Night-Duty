@@ -4,22 +4,12 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Calendar,
-  Clock,
-  Briefcase,
-  AlertCircle,
-  Building2,
-  Users,
   CalendarCheck,
   Receipt,
   FileText,
   FileSpreadsheet,
-  ArrowRight,
   TrendingUp,
-  Activity,
-  Award,
-  ChevronRight,
   Info,
-  DollarSign,
   Compass,
   CalendarPlus,
   UserPlus
@@ -77,20 +67,21 @@ const DEFAULT_2026_HOLIDAYS = [
   { date: '2026-12-31', name: 'ব্যাংক ছুটির দিন (বার্ষিকী)' },
 ];
 
+interface Holiday {
+  date: string;
+  name: string;
+  isWorkingDay?: boolean;
+}
+
 export default function Dashboard() {
-  const [holidays, setHolidays] = useState<any[]>([]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState<number>(0);
-
-  // Initialize selected month to current month if in year 2026
-  useEffect(() => {
+  const [selectedMonth, setSelectedMonth] = useState<number>(() => {
     const today = new Date();
-    if (today.getFullYear() === 2026) {
-      setSelectedMonth(today.getMonth());
-    } else {
-      setSelectedMonth(0); // default to Jan
-    }
+    return today.getFullYear() === 2026 ? today.getMonth() : 0;
+  });
 
+  useEffect(() => {
     async function loadStats() {
       try {
         const holidayRes = await fetch('/api/holidays');
@@ -107,7 +98,7 @@ export default function Dashboard() {
 
   // Combine default 2026 holidays with any user-configured database holidays
   let allHolidays = [...DEFAULT_2026_HOLIDAYS];
-  holidays.forEach((h: any) => {
+  holidays.forEach((h: Holiday) => {
     if (h.isWorkingDay) {
       allHolidays = allHolidays.filter(dh => dh.date !== h.date);
     } else {
@@ -267,7 +258,6 @@ export default function Dashboard() {
                   }
 
                   let cellClass = 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60';
-                  let holidayDot = false;
 
                   if (slot.isHoliday) {
                     cellClass = 'bg-rose-500 text-white font-extrabold shadow-sm scale-[1.02] border border-rose-600 hover:bg-rose-600 shadow-rose-500/10 cursor-pointer relative group';
@@ -403,7 +393,7 @@ export default function Dashboard() {
             
             {finalUpcomingHolidays.length > 0 ? (
               <div className="space-y-3 font-sans">
-                {finalUpcomingHolidays.map((holiday: any) => {
+                {finalUpcomingHolidays.map((holiday: Holiday) => {
                   const dateObj = new Date(holiday.date);
                   return (
                     <div key={holiday.date} className="flex items-center gap-3 hover:bg-slate-50/55 dark:hover:bg-slate-800/30 p-2 rounded-xl transition-colors">

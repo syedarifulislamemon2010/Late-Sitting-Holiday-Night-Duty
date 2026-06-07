@@ -32,6 +32,7 @@ export default function TrashPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [nowTime, setNowTime] = useState<number>(0);
 
   const fetchTrash = async () => {
     try {
@@ -49,12 +50,19 @@ export default function TrashPage() {
   };
 
   useEffect(() => {
-    fetchTrash();
+    const timer = setTimeout(() => {
+      fetchTrash();
+      setNowTime(Date.now());
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Clear selections on tab or search queries change for safety
   useEffect(() => {
-    setSelectedIds([]);
+    const timer = setTimeout(() => {
+      setSelectedIds([]);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [activeTab, searchQuery]);
 
   const toggleSelect = (id: number) => {
@@ -90,7 +98,7 @@ export default function TrashPage() {
       } else {
         alert(result.message || 'রেকর্ড পুনরুদ্ধার করতে ব্যর্থ হয়েছে।');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error restoring:', err);
       alert('পুনরুদ্ধার প্রক্রিয়া ব্যর্থ হয়েছে।');
     } finally {
@@ -145,7 +153,7 @@ export default function TrashPage() {
       } else {
         alert(result.message || 'রেকর্ড পুনরুদ্ধার করতে ব্যর্থ হয়েছে।');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error bulk restoring:', err);
       alert('পুনরুদ্ধার প্রক্রিয়া ব্যর্থ হয়েছে।');
     } finally {
@@ -189,9 +197,10 @@ export default function TrashPage() {
   };
 
   const getRemainingDays = (deletedAtStr: string) => {
+    if (nowTime === 0) return 30;
     const deletedAt = new Date(deletedAtStr);
     const expireTime = deletedAt.getTime() + 30 * 24 * 60 * 60 * 1000;
-    const diff = expireTime - Date.now();
+    const diff = expireTime - nowTime;
     const days = Math.ceil(diff / (24 * 60 * 60 * 1000));
     return days > 0 ? days : 0;
   };
