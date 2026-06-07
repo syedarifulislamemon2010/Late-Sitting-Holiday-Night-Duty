@@ -1,16 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { 
   Clipboard, 
   Trash2, 
   Download, 
-  RefreshCw, 
   Languages, 
   HelpCircle, 
   Check, 
-  ArrowRightLeft,
-  FileText,
   FileCode,
   ShieldCheck
 } from 'lucide-react';
@@ -22,38 +19,28 @@ import {
 
 export default function BengaliConverterPage() {
   const [inputText, setInputText] = useState('');
-  const [outputText, setOutputText] = useState('');
   const [mode, setMode] = useState<'AUTO' | 'U2B' | 'B2U'>('AUTO');
-  const [detectedType, setDetectedType] = useState<'UNICODE' | 'BIJOY_ANSI'>('UNICODE');
   const [isCopied, setIsCopied] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Real-time conversion logic
-  useEffect(() => {
-    if (!inputText.trim()) {
-      setOutputText('');
-      return;
-    }
-
-    const encoding = detectEncoding(inputText);
-    setDetectedType(encoding);
-
-    let converted = '';
+  // Compute encoding/output text dynamically inline during rendering
+  const detectedType = detectEncoding(inputText);
+  
+  let outputText = '';
+  if (inputText.trim()) {
     if (mode === 'AUTO') {
-      if (encoding === 'UNICODE') {
-        converted = convertUnicodeToBijoy(inputText);
+      if (detectedType === 'UNICODE') {
+        outputText = convertUnicodeToBijoy(inputText);
       } else {
-        converted = convertBijoyToUnicode(inputText);
+        outputText = convertBijoyToUnicode(inputText);
       }
     } else if (mode === 'U2B') {
-      converted = convertUnicodeToBijoy(inputText);
+      outputText = convertUnicodeToBijoy(inputText);
     } else {
-      converted = convertBijoyToUnicode(inputText);
+      outputText = convertBijoyToUnicode(inputText);
     }
-
-    setOutputText(converted);
-  }, [inputText, mode]);
+  }
 
   // Copy to clipboard helper
   const handleCopy = async () => {
@@ -70,7 +57,6 @@ export default function BengaliConverterPage() {
   // Clear textareas
   const handleClear = () => {
     setInputText('');
-    setOutputText('');
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
@@ -314,7 +300,7 @@ export default function BengaliConverterPage() {
             </div>
             {(mode === 'U2B' || (mode === 'AUTO' && detectedType === 'UNICODE')) && outputText && (
               <span className="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-100 animate-pulse">
-                ওয়ার্ড/এক্সেলে এটি দেখতে 'SutonnyMJ' ফন্ট ব্যবহার করুন।
+                ওয়ার্ড/এক্সেলে এটি দেখতে &quot;SutonnyMJ&quot; ফন্ট ব্যবহার করুন।
               </span>
             )}
           </div>

@@ -7,7 +7,6 @@ import {
   Trash2, 
   Search, 
   Eye, 
-  Download, 
   AlertCircle, 
   Loader2, 
   Calendar, 
@@ -29,47 +28,65 @@ interface DocumentFile {
   uploadedAt: string;
 }
 
-export default function DocumentsPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const hasDeletePermission = (order: any) => {
-    if (currentUser?.role === 'ADMIN') return true;
-    if (currentUser?.role === 'USER') {
-      const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
-      return order.cellName && userCellNames.includes(order.cellName);
-    }
-    return false;
-  };
+interface UserSession {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells: { id: number; name: string }[];
+}
 
-  const hasEditPermission = (order: any) => {
-    if (currentUser?.role === 'ADMIN') return true;
-    if (currentUser?.role === 'USER') {
-      const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
-      return order.cellName && userCellNames.includes(order.cellName);
-    }
-    return false;
-  };
+interface OrderDuty {
+  employeeId?: string | null;
+  employeeName: string;
+  designation: string;
+  days: number;
+  apyaonRate: number;
+  totalApyaon: number;
+  totalTransport: number;
+  grandTotal: number;
+  dates: string[];
+  datesFormatted?: string;
+  description?: string;
+}
+
+interface OfficeOrder {
+  id: number;
+  orderRef: string;
+  originalOrderRef?: string;
+  orderDate: string;
+  category: string;
+  employeeName: string;
+  cellName: string | null;
+  status: string;
+  dutiesJson?: string | null;
+  duties: OrderDuty[];
+  content?: {
+    subjectText?: string;
+    openingParagraph?: string;
+    signingOfficer?: string;
+    signingDesignation?: string;
+    representativeDesignation?: string;
+    totalDays?: number;
+    totalApyaon?: number;
+    totalTransport?: number;
+    grandTotal?: number;
+    grandTotalInWords?: string;
+    backingOrderId?: number | null;
+    backingOrderRef?: string | null;
+    backingOrderDate?: string | null;
+    orderText?: string;
+  } | null;
+}
+
+export default function DocumentsPage() {
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [activeTab, setActiveTab] = useState<'files' | 'orders' | 'bills'>('files');
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
-  const [officeOrders, setOfficeOrders] = useState<any[]>([]);
+  const [officeOrders, setOfficeOrders] = useState<OfficeOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [error, setError] = useState('');
-
-  // Load user role from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('currentUser');
-    if (stored) {
-      try {
-        const userObj = JSON.parse(stored);
-        setCurrentUser(userObj);
-        if (userObj.role === 'USER') {
-          setActiveTab('orders'); // default to office orders since files is restricted for USER
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, []);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   
@@ -84,9 +101,45 @@ export default function DocumentsPage() {
   const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'size-desc' | 'size-asc'>('date-desc');
 
   // Viewing Modal
-  const [viewingOrder, setViewingOrder] = useState<any | null>(null);
+  const [viewingOrder, setViewingOrder] = useState<OfficeOrder | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load user role from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('currentUser');
+    if (stored) {
+      try {
+        const userObj: UserSession = JSON.parse(stored);
+        setTimeout(() => {
+          setCurrentUser(userObj);
+          if (userObj.role === 'USER') {
+            setActiveTab('orders'); // default to office orders since files is restricted for USER
+          }
+        }, 0);
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
+
+  const hasDeletePermission = (order: OfficeOrder) => {
+    if (currentUser?.role === 'ADMIN') return true;
+    if (currentUser?.role === 'USER') {
+      const userCellNames = currentUser.cells?.map((c: { name: string }) => c.name) || [];
+      return order.cellName && userCellNames.includes(order.cellName);
+    }
+    return false;
+  };
+
+  const hasEditPermission = (order: OfficeOrder) => {
+    if (currentUser?.role === 'ADMIN') return true;
+    if (currentUser?.role === 'USER') {
+      const userCellNames = currentUser.cells?.map((c: { name: string }) => c.name) || [];
+      return order.cellName && userCellNames.includes(order.cellName);
+    }
+    return false;
+  };
 
   const toBanglaDigits = (numStr: string | number) => {
     const banglaMap: { [key: string]: string } = {
@@ -149,7 +202,7 @@ export default function DocumentsPage() {
       } else {
         setError('নথিপত্র লোড করতে ব্যর্থ হয়েছে।');
       }
-    } catch (err) {
+    } catch {
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     } finally {
       setLoading(false);
@@ -167,7 +220,7 @@ export default function DocumentsPage() {
       } else {
         setError('অফিস অর্ডার আর্কাইভ লোড করতে ব্যর্থ হয়েছে।');
       }
-    } catch (err) {
+    } catch {
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     } finally {
       setLoadingOrders(false);
@@ -175,14 +228,17 @@ export default function DocumentsPage() {
   };
 
   useEffect(() => {
-    if (activeTab === 'files') {
-      if (currentUser && currentUser.role === 'USER') {
-        return;
+    const timer = setTimeout(() => {
+      if (activeTab === 'files') {
+        if (currentUser && currentUser.role === 'USER') {
+          return;
+        }
+        fetchDocuments();
+      } else {
+        fetchOfficeOrders();
       }
-      fetchDocuments();
-    } else {
-      fetchOfficeOrders();
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [activeTab, currentUser]);
 
   // Format File Size
@@ -206,7 +262,7 @@ export default function DocumentsPage() {
         minute: '2-digit',
         hour12: true
       });
-    } catch (e) {
+    } catch {
       return dateStr;
     }
   };
@@ -292,7 +348,7 @@ export default function DocumentsPage() {
       } else {
         setError(data.message || 'ফাইল আপলোড করতে ব্যর্থ হয়েছে।');
       }
-    } catch (err) {
+    } catch {
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।');
     } finally {
       setUploading(false);
@@ -318,7 +374,7 @@ export default function DocumentsPage() {
       } else {
         setError('নথিটি মুছে ফেলা সম্ভব হয়নি।');
       }
-    } catch (err) {
+    } catch {
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     }
   };
@@ -354,7 +410,7 @@ export default function DocumentsPage() {
         const errData = await res.json().catch(() => ({}));
         setError(errData.message || 'অফিস আদেশটি মুছে ফেলা সম্ভব হয়নি।');
       }
-    } catch (err) {
+    } catch {
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     }
   };
@@ -518,23 +574,23 @@ export default function DocumentsPage() {
 
   const archivedBillNormalizedRefs = new Set(
     officeOrders
-      .filter((o: any) => o.category?.startsWith('BILL_') || o.orderRef?.endsWith('/বিল'))
-      .map((o: any) => getNormalizedRef(o.orderRef))
+      .filter((o: OfficeOrder) => o.category?.startsWith('BILL_') || o.orderRef?.endsWith('/বিল'))
+      .map((o: OfficeOrder) => getNormalizedRef(o.orderRef))
   );
 
   // Filtered Office Orders (Only categories NOT starting with BILL_)
-  const officeOrdersList = officeOrders.filter((order: any) => !order.category?.startsWith('BILL_') && order.status !== 'Deleted');
-  const filteredOfficeOrders = officeOrdersList.filter((order: any) => 
+  const officeOrdersList = officeOrders.filter((order: OfficeOrder) => !order.category?.startsWith('BILL_') && order.status !== 'Deleted');
+  const filteredOfficeOrders = officeOrdersList.filter((order: OfficeOrder) => 
     order.orderRef.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
     order.employeeName.toLowerCase().includes(orderSearchQuery.toLowerCase())
   );
 
   const pendingBillingOfficeOrders = filteredOfficeOrders.filter(
-    (o: any) => !archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))
+    (o: OfficeOrder) => !archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))
   );
 
   const billedOfficeOrders = filteredOfficeOrders.filter(
-    (o: any) => archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))
+    (o: OfficeOrder) => archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))
   );
 
   // Filtered Bill Memos (Only categories starting with BILL_)
@@ -544,7 +600,7 @@ export default function DocumentsPage() {
     order.employeeName.toLowerCase().includes(orderSearchQuery.toLowerCase())
   );
 
-  const renderOrdersGrid = (ordersList: any[]) => {
+  const renderOrdersGrid = (ordersList: OfficeOrder[]) => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {ordersList.map((order) => {
@@ -894,7 +950,7 @@ export default function DocumentsPage() {
                     <ArrowUpDown size={14} className="text-slate-400" />
                     <select
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as any)}
+                      onChange={(e) => setSortBy(e.target.value as 'date-desc' | 'date-asc' | 'size-desc' | 'size-asc')}
                       className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer"
                     >
                       <option value="date-desc">আপলোড তারিখ (নতুন আগে)</option>
@@ -1308,7 +1364,7 @@ export default function DocumentsPage() {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {viewingOrder.duties.map((s: any, index: number) => (
+                                    {viewingOrder.duties.map((s: OrderDuty, index: number) => (
                                       <tr key={index} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                                         <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(index + 1)}</td>
                                         <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>
@@ -1363,7 +1419,7 @@ export default function DocumentsPage() {
                           <div className="text-right leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', paddingRight: '0.1in' }}>
                             <p className="font-extrabold text-[10px]">({viewingOrder.employeeName})</p>
                             <p className="text-[10px] font-bold text-slate-800 mt-1">
-                              {viewingOrder.content?.representativeDesignation || viewingOrder.duties?.find((d: any) => d.employeeName === viewingOrder.employeeName)?.designation || 'প্রিন্সিপাল অফিসার (পিও)'}
+                              {viewingOrder.content?.representativeDesignation || viewingOrder.duties?.find((d: OrderDuty) => d.employeeName === viewingOrder.employeeName)?.designation || 'প্রিন্সিপাল অফিসার (পিও)'}
                             </p>
                           </div>
                         </div>
@@ -1466,7 +1522,7 @@ export default function DocumentsPage() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {viewingOrder.duties.map((group: any, index: number) => (
+                                {viewingOrder.duties.map((group: OrderDuty, index: number) => (
                                   <tr key={index} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                                     <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>
                                       {toBanglaDigits(index + 1)}
