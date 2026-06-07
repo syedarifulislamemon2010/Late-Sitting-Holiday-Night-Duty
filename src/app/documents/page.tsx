@@ -126,21 +126,17 @@ export default function DocumentsPage() {
   }, []);
 
   const hasDeletePermission = (order: OfficeOrder) => {
-    if (currentUser?.role === 'ADMIN') return true;
-    if (currentUser?.role === 'USER') {
-      const userCellNames = currentUser.cells?.map((c: { name: string }) => c.name) || [];
-      return order.cellName && userCellNames.includes(order.cellName);
-    }
-    return false;
+    if (!currentUser) return false;
+    if (currentUser.role === 'ADMIN') return true;
+    const userCellNames = currentUser.cells?.map((c: { name: string }) => c.name) || [];
+    return order.cellName === 'All Cells' || order.cellName === 'all' || !order.cellName || userCellNames.includes(order.cellName);
   };
 
   const hasEditPermission = (order: OfficeOrder) => {
-    if (currentUser?.role === 'ADMIN') return true;
-    if (currentUser?.role === 'USER') {
-      const userCellNames = currentUser.cells?.map((c: { name: string }) => c.name) || [];
-      return order.cellName && userCellNames.includes(order.cellName);
-    }
-    return false;
+    if (!currentUser) return false;
+    if (currentUser.role === 'ADMIN') return true;
+    const userCellNames = currentUser.cells?.map((c: { name: string }) => c.name) || [];
+    return order.cellName === 'All Cells' || order.cellName === 'all' || !order.cellName || userCellNames.includes(order.cellName);
   };
 
   const toBanglaDigits = (numStr: string | number) => {
