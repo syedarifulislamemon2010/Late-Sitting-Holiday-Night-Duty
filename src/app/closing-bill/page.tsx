@@ -57,8 +57,45 @@ interface ClosingRecord {
   remarks?: string;
 }
 
+interface UserSession {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells?: Cell[];
+}
+
+interface SavedBill {
+  id: number;
+  month: string;
+  workingDays: number;
+  recordsJson: string;
+}
+
+const getInitialClosingMonth = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1; // 1-12
+  const toBnDigits = (num: number | string): string => {
+    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
+  };
+  if (month === 6) {
+    return {
+      options: [{ value: `${year}-06`, label: `জুন ${toBnDigits(year)}` }],
+      month: `${year}-06`
+    };
+  } else if (month === 12) {
+    return {
+      options: [{ value: `${year}-12`, label: `ডিসেম্বর ${toBnDigits(year)}` }],
+      month: `${year}-12`
+    };
+  }
+  return { options: [], month: '' };
+};
+
 export default function ClosingBillPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [activeCellId, setActiveCellId] = useState<number | null>(null);
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -67,36 +104,13 @@ export default function ClosingBillPage() {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  // Dynamic June & December options list for closing bills based on current calendar date
-  const [closingMonthOptions, setClosingMonthOptions] = useState<{ value: string; label: string }[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>('');
-
-  useEffect(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1; // 1-12
-
-    const toBnDigits = (num: number | string): string => {
-      const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-      return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
-    };
-
-    if (month === 6) {
-      const option = { value: `${year}-06`, label: `জুন ${toBnDigits(year)}` };
-      setClosingMonthOptions([option]);
-      setSelectedMonth(`${year}-06`);
-    } else if (month === 12) {
-      const option = { value: `${year}-12`, label: `ডিসেম্বর ${toBnDigits(year)}` };
-      setClosingMonthOptions([option]);
-      setSelectedMonth(`${year}-12`);
-    } else {
-      setClosingMonthOptions([]);
-      setSelectedMonth('');
-    }
-  }, []);
+  // Dynamic June & December options list calculated inline
+  const initialClosing = getInitialClosingMonth();
+  const [closingMonthOptions] = useState<{ value: string; label: string }[]>(initialClosing.options);
+  const [selectedMonth, setSelectedMonth] = useState<string>(initialClosing.month);
 
   const [records, setRecords] = useState<ClosingRecord[]>([]);
-  const [savedBill, setSavedBill] = useState<any>(null);
+  const [savedBill, setSavedBill] = useState<SavedBill | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -180,7 +194,7 @@ export default function ClosingBillPage() {
           const data = await res.json();
           if (data) {
             setSavedBill(data);
-            const parsed = JSON.parse(data.recordsJson).map((r: any) => {
+            const parsed = JSON.parse(data.recordsJson).map((r: ClosingRecord) => {
               let bId = r.bankId;
               if (!bId) {
                 if (r.isExecutive) {
@@ -331,7 +345,7 @@ export default function ClosingBillPage() {
   const totalStampAll = totalEmployeesCount * 15;
   const grandTotalAll = activeRecords.reduce((sum, r) => sum + r.netPayable, 0);
 
-  const saveClosingBill = async (): Promise<any> => {
+  const saveClosingBill = async (): Promise<SavedBill | null> => {
     setSaving(true);
     setSuccessMessage(null);
     setErrorMessage(null);
@@ -451,9 +465,10 @@ export default function ClosingBillPage() {
         setErrorMessage(data.message || 'প্রিন্ট মেমো প্রস্তুত করতে ব্যর্থ হয়েছে।');
         return null;
       }
-    } catch (err: any) {
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।';
       console.error('Error generating closing bill:', err);
-      setErrorMessage(err.message || 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+      setErrorMessage(errorMsg);
       return null;
     } finally {
       setGenerating(false);
