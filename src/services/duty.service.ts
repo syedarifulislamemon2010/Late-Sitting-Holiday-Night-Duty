@@ -67,13 +67,25 @@ export class DutyService {
       }
     }
     
-    if (filters.startDate) {
-      conditions.push(gteDutiesDateHelper(filters.startDate));
-    }
-    if (filters.endDate) {
-      conditions.push(lteDutiesDateHelper(filters.endDate));
-    }
-    if (filters.orderRef) {
+    if (!filters.orderRef) {
+      const dateConditions: any[] = [];
+      if (filters.startDate) {
+        dateConditions.push(gteDutiesDateHelper(filters.startDate));
+      }
+      if (filters.endDate) {
+        dateConditions.push(lteDutiesDateHelper(filters.endDate));
+      }
+
+      if (dateConditions.length > 0) {
+        const { or, isNull } = require('drizzle-orm');
+        conditions.push(
+          or(
+            and(...dateConditions),
+            isNull(dutiesOrderRefHelper())
+          )
+        );
+      }
+    } else {
       let refs = [filters.orderRef];
       if (filters.orderRef.endsWith('/বিল')) {
         refs.push(filters.orderRef.slice(0, -5));

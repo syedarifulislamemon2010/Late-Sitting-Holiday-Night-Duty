@@ -522,7 +522,6 @@ export default function LunchBillPage() {
 
   // Save entire combined record
   const saveLunchBill = async (): Promise<any> => {
-    if (!isAdmin) return null;
     setSaving(true);
     setSuccessMessage(null);
     setErrorMessage(null);
@@ -533,13 +532,13 @@ export default function LunchBillPage() {
         body: JSON.stringify({
           month: selectedMonth,
           workingDays: workingDays,
-          records: records // Saves entire combined department records list
+          records: isAdmin ? records : activeRecords // Send only activeRecords for coordinators
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         setSavedLunchBill(data.lunchBill);
-        setSuccessMessage('সমন্বিত লাঞ্চ ভাতার বিল সফলভাবে ডাটাবেজে সংরক্ষণ করা হয়েছে!');
+        setSuccessMessage('লাঞ্চ ভাতার বিল সফলভাবে সংরক্ষণ করা হয়েছে!');
         setTimeout(() => setSuccessMessage(null), 5000);
         return data.lunchBill;
       } else {
@@ -881,7 +880,7 @@ export default function LunchBillPage() {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-3">
-                {isAdmin && (
+                {(isAdmin || !isAdmin) && (
                   <button
                     onClick={saveLunchBill}
                     disabled={saving}

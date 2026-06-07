@@ -12,6 +12,7 @@ import {
   Printer, 
   Building2, 
   ChevronLeft, 
+  ChevronRight,
   Check, 
   Users,
   AlertCircle,
@@ -50,6 +51,14 @@ interface Duty {
 const toBanglaDigits = (num: number | string) => {
   const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   return num.toString().replace(/\d/g, d => bn[parseInt(d, 10)]);
+};
+
+const getBanglaMonthYearLabel = (ym: string) => {
+  if (!ym || !ym.includes('-')) return '';
+  const [yearStr, monthStr] = ym.split('-');
+  const month = parseInt(monthStr, 10);
+  const banglaMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+  return `${banglaMonths[month - 1]} ${toBanglaDigits(yearStr)}`;
 };
 
 const getBanglaNumberWords = (num: number) => {
@@ -101,6 +110,8 @@ const getBanglaNumberWords = (num: number) => {
 export default function RosterPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [orderGenerated, setOrderGenerated] = useState(false);
+  const [isArchived, setIsArchived] = useState(false);
+  const [officeOrders, setOfficeOrders] = useState<any[]>([]);
   const isFirstLoadRef = useRef(true);
   const isInitializingArchiveRef = useRef(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -122,11 +133,28 @@ export default function RosterPage() {
 
   // Filters state
   const [selectedCell, setSelectedCell] = useState('all');
-  const [selectedMonth, setSelectedMonth] = useState(() => {
+  const [selectedMonths, setSelectedMonths] = useState<string[]>(() => {
     const today = new Date();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
-    return `${today.getFullYear()}-${mm}`;
+    return [`${today.getFullYear()}-${mm}`];
   });
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [activeRosterTab, setActiveRosterTab] = useState<'pending' | 'archived'>('pending');
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [currentPickerYear, setCurrentPickerYear] = useState(() => new Date().getFullYear());
+  const monthPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
+        setIsMonthPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Duty assignment form state
   const [assignmentForm, setAssignmentForm] = useState({
@@ -142,6 +170,49 @@ export default function RosterPage() {
   // Option 1 states
   const [opt1CellId, setOpt1CellId] = useState<string>('all');
   const [opt1Assignments, setOpt1Assignments] = useState<Record<number, string[]>>({});
+  const [opt1ViewedMonths, setOpt1ViewedMonths] = useState<Record<number, string>>({});
+
+  const getEmployeeViewedMonth = (empId: number) => {
+    if (opt1ViewedMonths[empId]) {
+      return opt1ViewedMonths[empId];
+    }
+    if (selectedMonths && selectedMonths.length > 0) {
+      return selectedMonths[0];
+    }
+    const today = new Date();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    return `${today.getFullYear()}-${mm}`;
+  };
+
+  const handlePrevMonth = (empId: number) => {
+    const ym = getEmployeeViewedMonth(empId);
+    const [yearStr, monthStr] = ym.split('-');
+    let year = parseInt(yearStr, 10);
+    let month = parseInt(monthStr, 10);
+    
+    month--;
+    if (month < 1) {
+      month = 12;
+      year--;
+    }
+    const prevYm = `${year}-${String(month).padStart(2, '0')}`;
+    setOpt1ViewedMonths(prev => ({ ...prev, [empId]: prevYm }));
+  };
+
+  const handleNextMonth = (empId: number) => {
+    const ym = getEmployeeViewedMonth(empId);
+    const [yearStr, monthStr] = ym.split('-');
+    let year = parseInt(yearStr, 10);
+    let month = parseInt(monthStr, 10);
+    
+    month++;
+    if (month > 12) {
+      month = 1;
+      year++;
+    }
+    const nextYm = `${year}-${String(month).padStart(2, '0')}`;
+    setOpt1ViewedMonths(prev => ({ ...prev, [empId]: nextYm }));
+  };
 
   useEffect(() => {
     if (cells.length > 0 && opt1CellId === 'all') {
@@ -290,8 +361,8 @@ export default function RosterPage() {
   };
 
   // Render stunning month calendar for multi-date selection
-  const renderMonthCalendar = (empId: number) => {
-    const [yearStr, monthStr] = selectedMonth.split('-');
+  const renderMonthCalendar = (empId: number, ym: string) => {
+    const [yearStr, monthStr] = ym.split('-');
     const year = parseInt(yearStr, 10);
     const month = parseInt(monthStr, 10); // 1-indexed
     
@@ -321,33 +392,66 @@ export default function RosterPage() {
         isDbHoliday
       });
     }
+
+    const banglaMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+    const banglaMonthLabel = `${banglaMonths[month - 1]} ${toBanglaDigits(yearStr)}`;
     
     return (
-      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 no-print">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-slate-555 dark:text-slate-400">
-            ডিউটি তারিখসমূহ ({selectedMonth}):
-          </span>
-          {opt1Assignments[empId] && opt1Assignments[empId].length > 0 && (
+      <div key={ym} className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 no-print flex-1 min-w-[240px]">
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">ডিউটি তারিখসমূহ:</span>
+          {opt1Assignments[empId] && opt1Assignments[empId].some(d => d.startsWith(ym)) && (
             <button
               type="button"
-              onClick={() => setOpt1Assignments(prev => ({ ...prev, [empId]: [] }))}
+              onClick={() => setOpt1Assignments(prev => {
+                const currentDates = prev[empId] || [];
+                return {
+                  ...prev,
+                  [empId]: currentDates.filter(d => !d.startsWith(ym))
+                };
+              })}
               className="text-[9px] font-bold text-red-500 hover:text-red-650 transition-colors"
             >
-              সব মুছুন
+              এই মাসের সব মুছুন
             </button>
           )}
         </div>
+        
+        {/* Month Selector Bar */}
+        <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/40 p-1.5 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
+          <button
+            type="button"
+            onClick={() => handlePrevMonth(empId)}
+            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-850 rounded transition-colors text-slate-650 dark:text-slate-350"
+            title="পূর্ববর্তী মাস"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          
+          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+            {banglaMonthLabel}
+          </span>
+          
+          <button
+            type="button"
+            onClick={() => handleNextMonth(empId)}
+            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-850 rounded transition-colors text-slate-650 dark:text-slate-350"
+            title="পরবর্তী মাস"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+
         <div className="grid grid-cols-7 gap-1 font-sans text-center">
-          {['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি'].map((dName, idx) => (
-            <div key={idx} className={`text-[10px] sm:text-xs font-bold py-0.5 ${idx === 5 || idx === 6 ? 'text-red-500 font-extrabold' : 'text-slate-400 dark:text-slate-550'}`}>
+          {['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহ', 'শুক্র', 'শনি'].map((dName, idx) => (
+            <div key={idx} className={`text-[9px] sm:text-[10px] font-bold py-0.5 ${idx === 5 || idx === 6 ? 'text-red-500 font-extrabold' : 'text-slate-400 dark:text-slate-500'}`}>
               {dName}
             </div>
           ))}
           
           {/* Pad grid */}
           {Array.from({ length: new Date(year, month - 1, 1).getDay() }).map((_, idx) => (
-            <div key={`pad-${idx}`} className="min-h-[36px]" />
+            <div key={`pad-${idx}`} className="min-h-[32px]" />
           ))}
           
           {cells.map(c => {
@@ -366,9 +470,9 @@ export default function RosterPage() {
                     handleOpt1AddDate(empId, c.dateStr);
                   }
                 }}
-                className={`relative p-1 text-[10px] font-bold rounded-lg transition-all flex flex-col items-center justify-center min-h-[36px] border ${
+                className={`relative p-0.5 text-[10px] font-bold rounded-md transition-all flex flex-col items-center justify-center min-h-[32px] border ${
                   c.isSelected
-                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm font-extrabold scale-105'
+                    ? 'bg-indigo-650 border-indigo-650 text-white shadow-sm font-extrabold scale-105'
                     : isDisabled
                       ? 'bg-slate-100/50 dark:bg-slate-900/10 border-slate-200/20 dark:border-slate-800/10 text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-40'
                       : !c.isWorking
@@ -384,6 +488,36 @@ export default function RosterPage() {
             );
           })}
         </div>
+
+        {/* Selected dates summary across all months */}
+        {opt1Assignments[empId] && opt1Assignments[empId].length > 0 && (
+          <div className="pt-2 border-t border-dashed border-slate-100 dark:border-slate-800/60">
+            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">
+              মোট নির্বাচিত তারিখ ({toBanglaDigits(opt1Assignments[empId].length)}টি):
+            </p>
+            <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
+              {opt1Assignments[empId].map(dateStr => {
+                const [y, m, d] = dateStr.split('-');
+                const shortLabel = `${toBanglaDigits(parseInt(d, 10))} ${banglaMonths[parseInt(m, 10) - 1].substring(0, 3)}`;
+                return (
+                  <span
+                    key={dateStr}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 border border-indigo-100/50 dark:border-indigo-900/30"
+                  >
+                    {shortLabel}
+                    <button
+                      type="button"
+                      onClick={() => handleOpt1RemoveDate(empId, dateStr)}
+                      className="text-indigo-400 hover:text-red-500 transition-colors ml-0.5 font-sans"
+                    >
+                      ×
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -393,7 +527,7 @@ export default function RosterPage() {
 
   useEffect(() => {
     setActivePartIdx(0);
-  }, [selectedMonth, selectedCell, printCategory]);
+  }, [selectedMonths, selectedCell, printCategory]);
 
   const [payeeEmployeeId, setPayeeEmployeeId] = useState<string>('');
   const [orderDate, setOrderDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -429,21 +563,29 @@ export default function RosterPage() {
     return 10 + (hash % 90);
   }, [duties, printCategory, payeeEmployeeId, selectedCell]);
 
-  // Automatically select first employee of the duty table as payee representative by default
+  // Automatically select employee with max duties as payee representative by default
   useEffect(() => {
+    if (isEditingArchive || isPrintMode || isArchived) return;
+
     const tableEmps = getGroupedDuties();
     if (tableEmps.length > 0) {
-      const isCurrentPayeeValid = tableEmps.some(g => g.employee.id.toString() === payeeEmployeeId);
-      if (!payeeEmployeeId || !isCurrentPayeeValid) {
-        setPayeeEmployeeId(tableEmps[0].employee.id.toString());
+      let maxDutiesGroup = tableEmps[0];
+      for (let i = 1; i < tableEmps.length; i++) {
+        if (tableEmps[i].dates.length > maxDutiesGroup.dates.length) {
+          maxDutiesGroup = tableEmps[i];
+        }
       }
+      setPayeeEmployeeId(maxDutiesGroup.employee.id.toString());
     } else {
       setPayeeEmployeeId('');
     }
-  }, [selectedCell, duties, printCategory, payeeEmployeeId]);
+  }, [selectedCell, duties, printCategory, isEditingArchive, isPrintMode, isArchived]);
 
   // Sync templates and orderRef dynamically
   useEffect(() => {
+    if (isArchived) {
+      return;
+    }
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('edit_ref')) {
@@ -505,7 +647,7 @@ export default function RosterPage() {
     const activeStableNumber = stableNumber + activePartIdx;
     const bnRand = toBanglaDigits(activeStableNumber);
     setOrderRef(`৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${bnRand}`);
-  }, [printCategory, payeeEmployeeId, employees, stableNumber, isEditingArchive, activePartIdx, archiveSerial]);
+  }, [printCategory, payeeEmployeeId, employees, stableNumber, isEditingArchive, activePartIdx, archiveSerial, isPrintMode, isArchived]);
 
   const archiveOrder = async (action: 'generate' | 'print' | 'download') => {
     if (!payeeEmployeeId || !orderRef) return;
@@ -519,83 +661,40 @@ export default function RosterPage() {
       
       const printTableDuties = getGroupedDuties();
 
-      const payload = {
-        orderRef: orderRef,
-        originalOrderRef: isEditingArchive ? originalOrderRef : undefined,
-        orderDate: orderDate,
-        category: printCategory,
-        employeeName: payeeName,
-        cellName: cellName,
-        status: action === 'generate' ? 'Generated' : undefined,
-        duties: printTableDuties.map(group => ({
-          employeeId: group.employee.id,
-          employeeName: group.employee.name,
-          designation: group.employee.designation,
-          dates: group.dates,
-          description: group.description
-        })),
-        dutyIds: printTableDuties.flatMap(group => {
-          const ids: number[] = [];
-          group.dates.forEach(dStr => {
-            const matchedDuty = duties.find(d => d.employee.id === group.employee.id && d.date === dStr && d.type === printCategory);
-            if (matchedDuty) ids.push(matchedDuty.id);
-          });
-          return ids;
-        }),
-        content: {
+      if (action === 'generate') {
+        // Pre-generate order file/preview in backend, do not save in DB
+        const pdfPayload = {
+          orderRef: orderRef,
+          orderDate: orderDate,
           orderText: orderText,
+          duties: printTableDuties.map(group => ({
+            employee: {
+              name: group.employee.name,
+              designation: getShortDesignation(group.employee.designation),
+              bankId: group.employee.bankId || ''
+            },
+            datesFormatted: getFormattedDateList(group.dates),
+            description: group.description
+          })),
           signingOfficer: signingOfficer,
           signingDesignation: signingDesignation,
           copies: copies,
-          cellName: cellName
-        }
-      };
+          headerMode: headerMode,
+          actionType: 'GENERATE_OFFICE_ORDER'
+        };
 
-      if (action === 'generate') {
-        const res = await fetch('/api/office-orders', {
+        const res = await fetch('/api/documents/generate-office-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(pdfPayload)
         });
 
         if (res.ok) {
-          console.log('Office order generated successfully!');
-          
-          await updateAssociatedBill(orderRef);
-          
-          // Generate PDF
-          const pdfPayload = {
-            orderRef: orderRef,
-            orderDate: orderDate,
-            orderText: orderText,
-            duties: printTableDuties.map(group => ({
-              employee: {
-                name: group.employee.name,
-                designation: getShortDesignation(group.employee.designation),
-                bankId: group.employee.bankId || ''
-              },
-              datesFormatted: getFormattedDateList(group.dates),
-              description: group.description
-            })),
-            signingOfficer: signingOfficer,
-            signingDesignation: signingDesignation,
-            copies: copies,
-            headerMode: headerMode,
-            actionType: 'GENERATE_OFFICE_ORDER'
-          };
-
-          await fetch('/api/documents/generate-office-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(pdfPayload)
-          });
-
           setOrderGenerated(true);
-          alert('অফিস আদেশটি সফলভাবে তৈরি করা হয়েছে! এখন আপনি প্রিন্ট প্রিভিউ বা ডাউনলোড করতে পারেন।');
-          loadDuties();
+          setIsArchived(false); // Not archived yet
+          alert('অফিস আদেশ প্রস্তুত করা হয়েছে! এখন আপনি প্রিভিউ দেখতে পারেন। অনুগ্রহ করে এটি ডাটাবেইজে সংরক্ষণ করতে "আর্কাইভ করুন" বাটনে ক্লিক করুন।');
         } else {
-          const errData = await res.json().catch(() => ({}));
-          alert(`অফিস আদেশ তৈরি করতে ব্যর্থ হয়েছে। সার্ভার মেসেজ: ${errData.message || errData.error || 'অজানা ত্রুটি'}`);
+          alert('অফিস আদেশ প্রস্তুত করতে ব্যর্থ হয়েছে।');
         }
       } else if (action === 'download') {
         const pdfPayload = {
@@ -677,6 +776,172 @@ export default function RosterPage() {
       }
     } catch (err) {
       console.error('Error in archiveOrder:', err);
+      alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    }
+  };
+
+  const saveOrderToArchive = async () => {
+    if (!payeeEmployeeId || !orderRef) return;
+    
+    try {
+      setSubmitting(true);
+      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
+      const payeeName = emp ? emp.name : 'Unknown';
+      
+      const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
+      const cellName = matchedCellObj ? matchedCellObj.name : (selectedCell === 'all' ? 'All Cells' : 'IT Department');
+      
+      const printTableDuties = getGroupedDuties();
+
+      const payload = {
+        orderRef: orderRef,
+        originalOrderRef: isEditingArchive ? originalOrderRef : undefined,
+        orderDate: orderDate,
+        category: printCategory,
+        employeeName: payeeName,
+        cellName: cellName,
+        status: isEditingArchive ? 'Modified' : 'Generated',
+        duties: printTableDuties.map(group => ({
+          employeeId: group.employee.id,
+          employeeName: group.employee.name,
+          designation: group.employee.designation,
+          dates: group.dates,
+          description: group.description
+        })),
+        dutyIds: printTableDuties.flatMap(group => {
+          const ids: number[] = [];
+          group.dates.forEach(dStr => {
+            const matchedDuty = duties.find(d => d.employee.id === group.employee.id && d.date === dStr && d.type === printCategory);
+            if (matchedDuty) ids.push(matchedDuty.id);
+          });
+          return ids;
+        }),
+        content: {
+          orderText: orderText,
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          copies: copies,
+          cellName: cellName
+        }
+      };
+
+      const res = await fetch('/api/office-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        console.log('Office order saved to archive successfully!');
+        setIsArchived(true);
+        
+        await updateAssociatedBill(orderRef);
+        
+        alert(isEditingArchive ? 'আর্কাইভটি সফলভাবে আপডেট করা হয়েছে!' : 'অফিস আদেশটি সফলভাবে আর্কাইভে সংরক্ষণ করা হয়েছে!');
+        
+        loadDuties();
+        loadOfficeOrders();
+        
+        if (isEditingArchive) {
+          setIsEditingArchive(false);
+          window.location.href = '/documents';
+        }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`আর্কাইভে সংরক্ষণ করতে ব্যর্থ হয়েছে। সার্ভার মেসেজ: ${errData.message || errData.error || 'অজানা ত্রুটি'}`);
+      }
+    } catch (err) {
+      console.error('Error in saveOrderToArchive:', err);
+      alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePreviewOfficeOrder = async (order: any) => {
+    // Find representative employee ID
+    const localEmps = employees;
+    const cleanName = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const matchedRep = localEmps.find((e: any) => 
+      cleanName(e.name) === cleanName(order.employeeName) || 
+      (e.bankId && order.employeeName.includes(e.bankId))
+    );
+    
+    if (matchedRep) {
+      setPayeeEmployeeId(matchedRep.id.toString());
+    }
+    
+    // Find Cell ID
+    if (order.cellName) {
+      const matchedCell = cells.find((c: any) => c.name === order.cellName);
+      if (matchedCell) {
+        setSelectedCell(matchedCell.id.toString());
+      }
+    }
+    
+    setPrintCategory(order.category);
+    setOrderRef(order.orderRef);
+    setOriginalOrderRef(order.orderRef);
+    setOrderDate(order.orderDate);
+    
+    if (order.content) {
+      setOrderText(order.content.orderText || '');
+      setSigningOfficer(order.content.signingOfficer || '');
+      setSigningDesignation(order.content.signingDesignation || '');
+      if (Array.isArray(order.content.copies)) {
+        setCopies(order.content.copies);
+      }
+    }
+    
+    // Load duties from DB for this order
+    try {
+      const res = await fetch(`/api/duties?orderRef=${encodeURIComponent(order.orderRef)}&includeArchived=true`);
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        setDuties(list);
+        
+        // Pre-populate opt1Assignments
+        const assignments: Record<number, string[]> = {};
+        list.forEach(d => {
+          if (!assignments[d.employeeId]) {
+            assignments[d.employeeId] = [];
+          }
+          if (!assignments[d.employeeId].includes(d.date)) {
+            assignments[d.employeeId].push(d.date);
+          }
+        });
+        setOpt1Assignments(assignments);
+      }
+    } catch (err) {
+      console.error('Error loading duties for preview:', err);
+    }
+    
+    setOrderGenerated(true);
+    setIsArchived(true);
+    setIsPrintMode(true);
+  };
+
+  const handleDeleteOfficeOrder = async (orderId: number, refNo: string) => {
+    if (!confirm(`আপনি কি নিশ্চিত যে স্মারক নং: ${refNo} এর অফিস আদেশটি মুছে ফেলতে চান? এটি মুছে ফেললে এর সাথে সম্পর্কিত ডিউটিগুলো আবার অপেক্ষমাণ তালিকায় ফিরে যাবে।`)) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/office-orders/${orderId}`, {
+        method: 'DELETE'
+      });
+      
+      if (res.ok) {
+        alert('অফিস আদেশটি সফলভাবে মুছে ফেলা হয়েছে এবং ডিউটিগুলো আবার অপেক্ষমাণ তালিকায় ফিরে গেছে।');
+        loadDuties();
+        loadOfficeOrders();
+      } else {
+        const data = await res.json();
+        alert(`মুছে ফেলতে ব্যর্থ হয়েছে: ${data.message || data.error || 'অজানা ত্রুটি'}`);
+      }
+    } catch (err) {
+      console.error('Error deleting office order:', err);
       alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     }
   };
@@ -768,7 +1033,7 @@ export default function RosterPage() {
       const payeeName = emp ? emp.name : 'Unknown';
       
       const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
-      const cellName = matchedCellObj ? matchedCellObj.name : 'IT Department';
+      const cellName = matchedCellObj ? matchedCellObj.name : (selectedCell === 'all' ? 'All Cells' : 'IT Department');
       
       const billPayload = {
         orderRef: billRef,
@@ -815,8 +1080,12 @@ export default function RosterPage() {
         return `${monthName}-${year}`;
       };
       
+      const billingMonthString = selectedMonths.length > 0 
+        ? selectedMonths.map(formatMonthName).join(', ')
+        : formatMonthName(new Date().toISOString().substring(0, 7));
+      
       const pdfPayload = {
-        billingMonth: formatMonthName(selectedMonth),
+        billingMonth: billingMonthString,
         openingParagraph: billPayload.content.openingParagraph,
         summaries: summariesPayload,
         totalDays: totalDaysAll,
@@ -853,7 +1122,10 @@ export default function RosterPage() {
     const filtered = duties.filter(d => {
       const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
       const matchesCategory = d.type === printCategory;
-      return matchesCell && matchesCategory;
+      const matchesOrderRef = (isEditingArchive || isPrintMode)
+        ? (d.orderRef === orderRef || !d.orderRef)
+        : !d.orderRef;
+      return matchesCell && matchesCategory && matchesOrderRef;
     });
 
     const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
@@ -899,6 +1171,9 @@ export default function RosterPage() {
 
   // Automatically calculate orderDate to be the previous working day of the earliest selected duty date or printed table date
   useEffect(() => {
+    if (isArchived || isEditingArchive) {
+      return;
+    }
     let earliestDate: string | null = null;
 
     // First try to calculate from the matched duties in the print table
@@ -929,11 +1204,30 @@ export default function RosterPage() {
     }
 
     if (earliestDate) {
-      const steps = isEditingArchive ? 1 : (1 + activePartIdx);
+      const steps = 1;
       const calculated = calculateOrderDate(earliestDate, holidays, steps);
       setOrderDate(calculated);
     }
-  }, [duties, selectedCell, printCategory, opt1Assignments, assignmentForm.date, entryMode, holidays, activePartIdx, isEditingArchive]);
+  }, [duties, selectedCell, printCategory, opt1Assignments, assignmentForm.date, entryMode, holidays, activePartIdx, isEditingArchive, isPrintMode, isArchived]);
+
+  // Automatically select print category based on the latest entered duty
+  useEffect(() => {
+    if (isEditingArchive || isPrintMode || isArchived) return;
+
+    if (duties && duties.length > 0) {
+      // Find the duty with the maximum ID
+      let latestDuty = duties[0];
+      for (let i = 1; i < duties.length; i++) {
+        if (duties[i].id > latestDuty.id) {
+          latestDuty = duties[i];
+        }
+      }
+
+      if (latestDuty && latestDuty.type) {
+        setPrintCategory(latestDuty.type);
+      }
+    }
+  }, [duties, isEditingArchive, isPrintMode, isArchived]);
 
   // Reset orderGenerated to false if inputs change (excluding initial load)
   useEffect(() => {
@@ -1016,23 +1310,40 @@ export default function RosterPage() {
       return;
     }
     try {
-      const yearMonth = selectedMonth.split('-');
-      const year = yearMonth[0];
-      const month = yearMonth[1];
+      let queryUrl = `/api/duties?`;
+      if (selectedMonths.length > 0) {
+        const sortedMonths = [...selectedMonths].sort();
+        const startYrMn = sortedMonths[0];
+        const endYrMn = sortedMonths[sortedMonths.length - 1];
+        
+        const [startY, startM] = startYrMn.split('-');
+        const [endY, endM] = endYrMn.split('-');
+        
+        const startDate = `${startY}-${startM}-01`;
+        const lastDay = new Date(parseInt(endY, 10), parseInt(endM, 10), 0).getDate();
+        const endDate = `${endY}-${endM}-${String(lastDay).padStart(2, '0')}`;
+        
+        queryUrl += `startDate=${startDate}&endDate=${endDate}&`;
+      }
       
-      // Calculate start and end date of the selected month
-      const startDate = `${year}-${month}-01`;
-      const lastDay = new Date(parseInt(year, 10), parseInt(month, 10), 0).getDate();
-      const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
-      
-      let queryUrl = `/api/duties?startDate=${startDate}&endDate=${endDate}`;
       if (selectedCell !== 'all') {
-        queryUrl += `&cellId=${selectedCell}`;
+        queryUrl += `cellId=${selectedCell}`;
       }
       
       const res = await fetch(queryUrl);
       const data = await res.json();
       const activeList = Array.isArray(data) ? data : [];
+
+      // Filter list to keep only duties matching selectedMonths OR pending duties
+      let filteredList = activeList;
+      if (selectedMonths.length > 0 && !isEditingArchive && !isPrintMode && !isArchived) {
+        filteredList = activeList.filter(d => {
+          if (!d.orderRef) return true; // Keep all pending duties across all months!
+          if (!d.date) return false;
+          const ym = d.date.substring(0, 7);
+          return selectedMonths.includes(ym);
+        });
+      }
 
       // Merge with archived duties if editing
       if (isEditingArchive && orderRef) {
@@ -1042,7 +1353,7 @@ export default function RosterPage() {
           const archList = Array.isArray(archData) ? archData : [];
           
           const merged = [...archList];
-          activeList.forEach(d => {
+          filteredList.forEach(d => {
             if (!merged.some(m => m.id === d.id)) {
               merged.push(d);
             }
@@ -1052,9 +1363,21 @@ export default function RosterPage() {
         }
       }
       
-      setDuties(activeList);
+      setDuties(filteredList);
     } catch (err) {
       console.error('Error loading duties:', err);
+    }
+  }
+
+  async function loadOfficeOrders() {
+    try {
+      const res = await fetch('/api/office-orders');
+      if (res.ok) {
+        const data = await res.json();
+        setOfficeOrders(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Error loading office orders:', err);
     }
   }
 
@@ -1081,20 +1404,22 @@ export default function RosterPage() {
         return;
       }
     }
-    if (currentUser && currentUser.role !== 'ADMIN' && employees.length > 0) {
-      const matchedEmp = employees.find(e => e.bankId && e.bankId.trim().toLowerCase() === currentUser.username?.trim().toLowerCase());
-      const primaryCellId = matchedEmp ? matchedEmp.cellId : (currentUser.cells?.[0]?.id || null);
-      if (primaryCellId) {
-        const pIdStr = primaryCellId.toString();
+    if (currentUser && currentUser.role !== 'ADMIN') {
+      if (currentUser.cells && currentUser.cells.length === 1) {
+        const pIdStr = currentUser.cells[0].id.toString();
         setSelectedCell(pIdStr);
         setOpt1CellId(pIdStr);
+      } else {
+        setSelectedCell('all');
+        setOpt1CellId('all');
       }
     }
-  }, [currentUser, employees]);
+  }, [currentUser]);
 
   useEffect(() => {
     loadDuties();
-  }, [selectedMonth, selectedCell, isEditingArchive, orderRef]);
+    loadOfficeOrders();
+  }, [selectedMonths, selectedCell, isEditingArchive, orderRef]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -1148,16 +1473,21 @@ export default function RosterPage() {
                 }
               }
               
-              // Set selectedMonth dynamically to match the archived order's duties month
-              if (orderDuties.length > 0 && orderDuties[0].dates && orderDuties[0].dates.length > 0) {
-                const firstDate = orderDuties[0].dates[0]; // e.g. "2026-05-23"
-                if (firstDate && firstDate.includes('-')) {
-                  const parts = firstDate.split('-');
-                  if (parts.length >= 2) {
-                    const orderMonth = `${parts[0]}-${parts[1]}`;
-                    setSelectedMonth(orderMonth);
-                  }
+              // Extract all unique months from orderDuties and set selectedMonths
+              const orderMonthsSet = new Set<string>();
+              orderDuties.forEach((group: any) => {
+                if (Array.isArray(group.dates)) {
+                  group.dates.forEach((date: string) => {
+                    if (date && date.includes('-')) {
+                      const ym = date.substring(0, 7);
+                      orderMonthsSet.add(ym);
+                    }
+                  });
                 }
+              });
+              
+              if (orderMonthsSet.size > 0) {
+                setSelectedMonths(Array.from(orderMonthsSet).sort());
               }
               
               // Set orderRef and date
@@ -1221,10 +1551,12 @@ export default function RosterPage() {
                 });
               });
               setDuties(reconstructedDuties);
-              if (matchingOrder.status === 'Generated & Printed' || matchingOrder.status === 'Printed') {
+              if (matchingOrder.status === 'Generated' || matchingOrder.status === 'Modified' || matchingOrder.status === 'Generated & Printed' || matchingOrder.status === 'Printed') {
                 setOrderGenerated(true);
+                setIsArchived(true);
               } else {
                 setOrderGenerated(false);
+                setIsArchived(false);
               }
             }
           } catch (e) {
@@ -1459,6 +1791,7 @@ export default function RosterPage() {
       // Normal mode reset logic
       if (entryMode === 'EMPLOYEE_WISE') {
         setOpt1Assignments({});
+        setOpt1ViewedMonths({});
       } else {
         setAssignmentForm(prev => ({
           ...prev,
@@ -1604,9 +1937,9 @@ export default function RosterPage() {
       case 'LATE_SITTING':
         return 'bg-indigo-50/70 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border-indigo-100/50 dark:border-indigo-950/20';
       case 'HOLIDAY':
-        return 'bg-sky-50/70 dark:bg-sky-950/20 text-sky-600 dark:text-sky-400 border-sky-100/50 dark:border-sky-950/20';
+        return 'bg-red-50/70 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-100/50 dark:border-red-950/20 font-bold';
       case 'NIGHT_SHIFT':
-        return 'bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100/50 dark:border-emerald-950/20';
+        return 'bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-100 border-slate-950 dark:border-slate-800 font-bold';
       default:
         return 'bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-100';
     }
@@ -1636,6 +1969,95 @@ export default function RosterPage() {
 
   const removeCopyRecipient = (index: number) => {
     setCopies(copies.filter((_, i) => i !== index));
+  };
+
+  const renderOfficeOrdersList = (ordersList: any[]) => {
+    return (
+      <div className="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-xl">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800">
+              <th className="p-3 text-[10px] uppercase font-bold tracking-wider text-center">ক্রমিক</th>
+              <th className="p-3 text-[10px] uppercase font-bold tracking-wider">স্মারক সূত্র নং</th>
+              <th className="p-3 text-[10px] uppercase font-bold tracking-wider">তারিখ</th>
+              <th className="p-3 text-[10px] uppercase font-bold tracking-wider">ডিউটি ক্যাটাগরি</th>
+              <th className="p-3 text-[10px] uppercase font-bold tracking-wider text-center font-bold">মোট ডিউটি সংখ্যা</th>
+              <th className="p-3 text-[10px] uppercase font-bold tracking-wider text-right font-bold">মোট বিল (টাকা)</th>
+              <th className="p-3 text-[10px] uppercase font-bold tracking-wider text-right">অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-950/20 font-medium">
+            {ordersList.map((order, index) => {
+              let catName = 'লেট সিটিং';
+              if (order.category === 'HOLIDAY') catName = 'ছুটির দিনে';
+              if (order.category === 'NIGHT_SHIFT') catName = 'রাত্রিকালীন';
+              
+              const bnDate = order.orderDate ? toBanglaDigits(order.orderDate.split('-').reverse().join('-')) : '';
+              
+              const recordCount = (order.duties || []).reduce((sum: number, g: any) => sum + (g.dates ? g.dates.length : 0), 0);
+              const ratePerDay = order.category === 'HOLIDAY' ? 500 : order.category === 'NIGHT_SHIFT' ? 1000 : 300;
+              const totalAmount = recordCount * ratePerDay;
+
+              return (
+                <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors font-medium">
+                  <td className="p-3 text-center text-slate-500 font-sans font-semibold">
+                    {toBanglaDigits(index + 1)}
+                  </td>
+                  <td className="p-3 font-mono font-bold text-slate-700 dark:text-slate-300 break-all select-all">
+                    {order.orderRef}
+                  </td>
+                  <td className="p-3 text-slate-500 dark:text-slate-400 font-sans whitespace-nowrap">
+                    {bnDate}
+                  </td>
+                  <td className="p-3">
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                      order.category === 'HOLIDAY' 
+                        ? 'bg-red-50 text-red-650 border border-red-100 dark:bg-red-955/20 dark:text-red-400 dark:border-red-900/30' 
+                        : order.category === 'NIGHT_SHIFT'
+                          ? 'bg-slate-900 text-white border border-slate-950 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700 font-extrabold'
+                          : 'bg-indigo-50 text-indigo-600 border border-indigo-100 dark:bg-indigo-955/20 dark:text-indigo-400 dark:border-indigo-900/30'
+                    }`}>
+                      {catName}
+                    </span>
+                  </td>
+                  <td className="p-3 text-center text-slate-600 dark:text-slate-400 font-sans font-bold">
+                    {toBanglaDigits(recordCount)} টি
+                  </td>
+                  <td className="p-3 text-right text-indigo-600 dark:text-indigo-400 font-sans font-bold">
+                    ৳{toBanglaDigits(totalAmount.toLocaleString('en-US'))}
+                  </td>
+                  <td className="p-3 text-right whitespace-nowrap space-x-1.5">
+                    <button
+                      onClick={() => handlePreviewOfficeOrder(order)}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
+                      title="অফিস আদেশ দেখুন ও প্রিন্ট করুন"
+                    >
+                      প্রিভিউ
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`;
+                      }}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-955/20 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
+                      title="অফিস আদেশ এডিট করুন"
+                    >
+                      সম্পাদন
+                    </button>
+                    <button
+                      onClick={() => handleDeleteOfficeOrder(order.id, order.orderRef)}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
+                      title="অফিস আদেশ মুছে ফেলুন"
+                    >
+                      মুছুন
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
   };
 
   // Filter form employees list based on search or cell
@@ -1681,7 +2103,103 @@ export default function RosterPage() {
     printParaSpacing = 'leading-relaxed text-[11px]';
     printSigSpacing = 'pt-4';
     printLogoSize = 'w-11 h-11';
-  }  return (
+  }
+
+  const renderDutiesTable = (dutiesList: Duty[]) => {
+    const groupedDuties = Object.entries(
+      dutiesList.reduce((acc, duty) => {
+        const key = `${duty.employeeId}-${duty.type}`;
+        if (!acc[key]) {
+          acc[key] = {
+            employee: duty.employee,
+            type: duty.type,
+            duties: [],
+            totalBill: 0
+          };
+        }
+        acc[key].duties.push(duty);
+        acc[key].totalBill += duty.totalBill;
+        return acc;
+      }, {} as Record<string, { employee: Employee; type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'; duties: Duty[]; totalBill: number }>)
+    ).map(([_, val]) => val);
+
+    return (
+      <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/30">
+        <table className="w-full text-left text-xs leading-normal">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
+              <th className="px-5 py-3">তারিখ</th>
+              <th className="px-5 py-3">সেল</th>
+              <th className="px-5 py-3">কর্মকর্তা</th>
+              <th className="px-5 py-3">পদবী</th>
+              <th className="px-5 py-3">ডিউটির ক্যাটাগরি</th>
+              <th className="px-5 py-3">মোট বিল</th>
+              <th className="px-5 py-3 no-print">অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium">
+            {groupedDuties.map((group) => {
+              const datesSorted = group.duties.sort((a, b) => a.date.localeCompare(b.date));
+              const datesJoined = datesSorted.map(d => d.date).join(', ');
+              const bnDatesJoined = datesSorted.map(d => getBanglaDate(d.date)).join(', ');
+              
+              return (
+                <tr key={`${group.employee.id}-${group.type}`} className="hover:bg-slate-50/40 dark:hover:bg-slate-950/20 text-slate-600 dark:text-slate-300">
+                  <td className="px-5 py-3.5 font-sans font-semibold text-slate-800 dark:text-slate-200 leading-snug">
+                    {datesJoined}
+                    <p className="text-[10px] text-slate-400 mt-0.5 font-normal leading-normal">{bnDatesJoined}</p>
+                  </td>
+                  <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400">
+                    {group.employee.cell?.name || 'N/A'}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <p className="font-bold text-slate-800 dark:text-slate-200">{group.employee.name}</p>
+                    {group.duties[0]?.description && <p className="text-[10px] text-slate-400 font-normal italic mt-0.5">মন্তব্য: {group.duties[0].description}</p>}
+                  </td>
+                  <td className="px-5 py-3.5 font-sans text-[11px]">
+                    {group.employee.designation}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold ${getDutyBadgeStyles(group.type)}`}>
+                      {group.type === 'LATE_SITTING' ? 'Late Sitting (লেট সিটিং)' : group.type === 'HOLIDAY' ? 'Holiday Duty (ছুটির দিনে)' : 'Night Shift (রাত্রিকালীন ডিউটি)'}
+                    </span>
+                    {group.duties.some(d => d.orderRef) && (
+                      <div className="mt-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold font-mono flex items-center gap-1">
+                        <span>স্মারকঃ {group.duties.find(d => d.orderRef)?.orderRef}</span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-5 py-3.5 font-bold text-indigo-600 dark:text-indigo-400 font-sans">
+                    ৳{group.totalBill.toLocaleString('bn-BD')}
+                  </td>
+                  <td className="px-5 py-3.5 no-print flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleStartEdit(group.duties[0])}
+                      className="p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-400 hover:text-indigo-500 transition-colors"
+                      title="সম্পাদনা (Edit)"
+                    >
+                      <Edit2 size={13} />
+                    </button>
+                    <button
+                      onClick={() => deleteGroupedDuties(group.duties)}
+                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-400 hover:text-red-500 transition-colors"
+                      title="মুছে ফেলুন"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+
+
+  return (
     <div className="space-y-6 min-h-screen bg-slate-50/50 -m-4 lg:-m-8 p-4 lg:p-8">
       {/* ----------------------------------------------------
           NORMAL VIEW MODE
@@ -1799,7 +2317,7 @@ export default function RosterPage() {
                     className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
-                    <option value="HOLIDAY">Holiday Duty (সরকারি ছুটি)</option>
+                    <option value="HOLIDAY">Holiday Duty (ছুটির দিনে)</option>
                     <option value="NIGHT_SHIFT">Night Shift (রাত্রীকালীন ডিউটি)</option>
                   </select>
                 </div>
@@ -1817,9 +2335,13 @@ export default function RosterPage() {
                         onChange={(e) => {
                           setOpt1CellId(e.target.value);
                           setOpt1Assignments({}); // Reset assignments when cell changes to keep it clean
+                          setOpt1ViewedMonths({});
                         }}
                         className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
+                        {(currentUser?.role === 'ADMIN' || (currentUser?.cells && currentUser.cells.length > 1)) && (
+                          <option value="all">সকল সেল (All Cells)</option>
+                        )}
                         {cells
                           .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: any) => uc.id === c.id))
                           .map(c => (
@@ -1835,10 +2357,19 @@ export default function RosterPage() {
                       </label>
                       
                       <div className="max-h-80 overflow-y-auto border border-slate-100 rounded-xl p-2 bg-white space-y-1">
-                        {employees.filter(emp => emp.cellId.toString() === opt1CellId).length > 0 ? (
-                          employees
-                            .filter(emp => emp.cellId.toString() === opt1CellId)
-                            .map(emp => {
+                        {(() => {
+                          const allowedCellIds = currentUser?.role === 'ADMIN'
+                            ? cells.map(c => c.id)
+                            : currentUser?.cells?.map((c: any) => c.id) || [];
+                          
+                          const listEmployees = employees.filter(emp => 
+                            opt1CellId === 'all' 
+                              ? allowedCellIds.includes(emp.cellId) 
+                              : emp.cellId.toString() === opt1CellId
+                          );
+                          
+                          if (listEmployees.length > 0) {
+                            return listEmployees.map(emp => {
                               const isChecked = emp.id in opt1Assignments;
                               return (
                                 <div key={emp.id} className="border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-2.5 bg-white dark:bg-slate-900/40 space-y-2">
@@ -1857,13 +2388,19 @@ export default function RosterPage() {
                                     </div>
                                   </div>
                                   
-                                  {isChecked && renderMonthCalendar(emp.id)}
+                                  {isChecked && (
+                                    <div className="flex flex-col gap-4 mt-2">
+                                      {renderMonthCalendar(emp.id, getEmployeeViewedMonth(emp.id))}
+                                    </div>
+                                  )}
                                 </div>
                               );
-                            })
-                        ) : (
-                          <p className="text-[11px] text-center text-slate-400 py-4">এই সেলে কোনো কর্মকর্তা পাওয়া যায়নি</p>
-                        )}
+                            });
+                          }
+                          return (
+                            <p className="text-xs text-slate-400 text-center py-4">এই সেলের অধীনে কোনো কর্মকর্তা পাওয়া যায়নি।</p>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -2077,7 +2614,7 @@ export default function RosterPage() {
                     onChange={(e) => setSelectedCell(e.target.value)}
                     className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"
                   >
-                    {currentUser?.role === 'ADMIN' && (
+                    {(currentUser?.role === 'ADMIN' || (currentUser?.cells && currentUser.cells.length > 1)) && (
                       <option value="all">সকল সেল (All Cells)</option>
                     )}
                     {cells
@@ -2086,134 +2623,238 @@ export default function RosterPage() {
                     }
                   </select>
 
-                  {/* Select Month Picker */}
-                  <input
-                    type="month"
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none font-sans"
-                  />
+                  {/* Select Category Filter */}
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"
+                  >
+                    <option value="all">সকল ক্যাটাগরি (All Categories)</option>
+                    <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
+                    <option value="HOLIDAY">Holiday Duty (ছুটির দিনে)</option>
+                    <option value="NIGHT_SHIFT">Night Shift (রাত্রিকালীন)</option>
+                  </select>
+
+                  {/* Custom Modern Multi-Month Picker */}
+                  <div className="relative" ref={monthPickerRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none transition-all shadow-sm cursor-pointer"
+                    >
+                      <Calendar size={13} className="text-indigo-500 shrink-0" />
+                      <span>{(() => {
+                        if (selectedMonths.length === 0) return 'মাস নির্বাচন করুন';
+                        if (selectedMonths.length === 1) return getBanglaMonthYearLabel(selectedMonths[0]);
+                        const sorted = [...selectedMonths].sort();
+                        return `${getBanglaMonthYearLabel(sorted[0])} (+${toBanglaDigits(selectedMonths.length - 1)}টি)`;
+                      })()}</span>
+                      <svg
+                        className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${isMonthPickerOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {isMonthPickerOpen && (
+                      <div className="absolute right-0 mt-2 w-72 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                        {/* Popover Header */}
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => setCurrentPickerYear(prev => prev - 1)}
+                            className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-500 dark:text-slate-400 transition-colors"
+                          >
+                            <ChevronLeft size={16} />
+                          </button>
+                          
+                          <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider font-sans">
+                            {toBanglaDigits(currentPickerYear)} সাল
+                          </span>
+                          
+                          <button
+                            type="button"
+                            onClick={() => setCurrentPickerYear(prev => prev + 1)}
+                            className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-500 dark:text-slate-400 transition-colors"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+
+                        {/* Month Selection Grid */}
+                        <div className="grid grid-cols-3 gap-2 py-4">
+                          {['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'].map((mName, idx) => {
+                            const ymStr = `${currentPickerYear}-${String(idx + 1).padStart(2, '0')}`;
+                            const isSelected = selectedMonths.includes(ymStr);
+                            
+                            return (
+                              <button
+                                type="button"
+                                key={ymStr}
+                                onClick={() => {
+                                  setSelectedMonths(prev => {
+                                    if (prev.includes(ymStr)) {
+                                      if (prev.length === 1) return prev; // Don't allow empty selection
+                                      return prev.filter(m => m !== ymStr);
+                                    } else {
+                                      return [...prev, ymStr].sort();
+                                    }
+                                  });
+                                }}
+                                className={`py-2 px-1 text-[10px] font-bold rounded-lg border text-center transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-indigo-600 border-indigo-600 text-white font-extrabold shadow-md scale-102 hover:bg-indigo-700'
+                                    : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200/50 dark:border-slate-800/50 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                                }`}
+                              >
+                                {mName}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Popover Footer */}
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const today = new Date();
+                              const mm = String(today.getMonth() + 1).padStart(2, '0');
+                              setSelectedMonths([`${today.getFullYear()}-${mm}`]);
+                            }}
+                            className="text-[9px] font-bold text-indigo-500 hover:text-indigo-650 dark:hover:text-indigo-400 transition-colors"
+                          >
+                            চলতি মাস রিসেট
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => setIsMonthPickerOpen(false)}
+                            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold rounded-md transition-colors cursor-pointer"
+                          >
+                            ঠিক আছে
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Roster Table Grid */}
-              {duties.length > 0 ? (
-                <div className="space-y-6">
-                  {Object.entries(
-                    duties.reduce((acc, duty) => {
-                      const cellName = duty.employee.cell.name;
-                      if (!acc[cellName]) {
-                        acc[cellName] = [];
-                      }
-                      acc[cellName].push(duty);
-                      return acc;
-                    }, {} as Record<string, Duty[]>)
-                  ).map(([cellName, cellDuties]) => (
-                    <div key={cellName} className="border border-slate-200/60 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900/30 p-4 space-y-3">
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80">
-                        <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
-                          <Building2 size={16} className="text-indigo-500" />
-                          {cellName} ({cellDuties.length.toLocaleString('bn-BD')} টি ডিউটি রেকর্ড)
-                        </h4>
-                      </div>
-                      
-                      <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800/80">
-                        <table className="w-full text-left text-xs leading-normal">
-                          <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-                              <th className="px-5 py-3">তারিখ</th>
-                              <th className="px-5 py-3">কর্মকর্তা</th>
-                              <th className="px-5 py-3">পদবী</th>
-                              <th className="px-5 py-3">ডিউটির ক্যাটাগরি</th>
-                              <th className="px-5 py-3">মোট বিল</th>
-                              <th className="px-5 py-3 no-print">অ্যাকশন</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium">
-                            {(() => {
-                              const cellGroupedDuties = Object.entries(
-                                cellDuties.reduce((acc, duty) => {
-                                  const key = `${duty.employeeId}-${duty.type}`;
-                                  if (!acc[key]) {
-                                    acc[key] = {
-                                      employee: duty.employee,
-                                      type: duty.type,
-                                      duties: [],
-                                      totalBill: 0
-                                    };
-                                  }
-                                  acc[key].duties.push(duty);
-                                  acc[key].totalBill += duty.totalBill;
-                                  return acc;
-                                }, {} as Record<string, { employee: Employee; type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'; duties: Duty[]; totalBill: number }>)
-                              ).map(([_, val]) => val);
+              {(() => {
+                const pendingDuties = duties
+                  .filter(d => !d.orderRef)
+                  .filter(d => selectedCategory === 'all' || d.type === selectedCategory);
+                
+                const activeCellObj = cells.find(c => c.id.toString() === selectedCell);
+                const activeCellName = activeCellObj ? activeCellObj.name : null;
+                
+                const filteredOfficeOrders = officeOrders
+                  .filter(o => o.status !== 'Deleted' && !o.category?.startsWith('BILL_'))
+                  .filter(o => {
+                    const cellMatches = selectedCell === 'all' || o.cellName === activeCellName;
+                    let monthMatches = true;
+                    if (selectedMonths.length > 0 && o.orderDate) {
+                      const orderYM = o.orderDate.substring(0, 7);
+                      monthMatches = selectedMonths.includes(orderYM);
+                    }
+                    const categoryMatches = selectedCategory === 'all' || o.category === selectedCategory;
+                    return cellMatches && monthMatches && categoryMatches;
+                  })
+                  .sort((a, b) => b.id - a.id);
 
-                              return cellGroupedDuties.map((group) => {
-                                const datesSorted = group.duties.sort((a, b) => a.date.localeCompare(b.date));
-                                const datesJoined = datesSorted.map(d => d.date).join(', ');
-                                const bnDatesJoined = datesSorted.map(d => getBanglaDate(d.date)).join(', ');
-                                
-                                return (
-                                  <tr key={`${group.employee.id}-${group.type}`} className="hover:bg-slate-50/40 dark:hover:bg-slate-950/20 text-slate-600 dark:text-slate-300">
-                                    <td className="px-5 py-3.5 font-sans font-semibold text-slate-800 dark:text-slate-200 leading-snug">
-                                      {datesJoined}
-                                      <p className="text-[10px] text-slate-400 mt-0.5 font-normal leading-normal">{bnDatesJoined}</p>
-                                    </td>
-                                    <td className="px-5 py-3.5">
-                                      <p className="font-bold text-slate-800 dark:text-slate-200">{group.employee.name}</p>
-                                      {group.duties[0]?.description && <p className="text-[10px] text-slate-400 font-normal italic mt-0.5">মন্তব্য: {group.duties[0].description}</p>}
-                                    </td>
-                                    <td className="px-5 py-3.5 font-sans text-[11px]">
-                                      {group.employee.designation}
-                                    </td>
-                                    <td className="px-5 py-3.5">
-                                      <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold ${getDutyBadgeStyles(group.type)}`}>
-                                        {group.type === 'LATE_SITTING' ? 'Late Sitting (লেট সিটিং)' : group.type === 'HOLIDAY' ? 'Holiday Duty (সরকারি ছুটি)' : 'Night Shift (রাত্রীকালীন ডিউটি)'}
-                                      </span>
-                                      {group.duties.some(d => d.orderRef) && (
-                                        <div className="mt-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold font-mono flex items-center gap-1">
-                                          <span>স্মারকঃ {group.duties.find(d => d.orderRef)?.orderRef}</span>
-                                        </div>
-                                      )}
-                                    </td>
-                                    <td className="px-5 py-3.5 font-bold text-indigo-600 dark:text-indigo-400 font-sans">
-                                      ৳{group.totalBill.toLocaleString('bn-BD')}
-                                    </td>
-                                    <td className="px-5 py-3.5 no-print flex items-center gap-1.5">
-                                      <button
-                                        onClick={() => handleStartEdit(group.duties[0])}
-                                        className="p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-400 hover:text-indigo-500 transition-colors"
-                                        title="সম্পাদনা (Edit)"
-                                      >
-                                        <Edit2 size={13} />
-                                      </button>
-                                      <button
-                                        onClick={() => deleteGroupedDuties(group.duties)}
-                                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-400 hover:text-red-500 transition-colors"
-                                        title="মুছে ফেলুন"
-                                      >
-                                        <Trash2 size={13} />
-                                      </button>
-                                    </td>
-                                  </tr>
-                                );
-                              });
-                            })()}
-                          </tbody>
-                        </table>
+                if (pendingDuties.length === 0 && filteredOfficeOrders.length === 0) {
+                  return (
+                    <div className="py-16 text-center flex flex-col items-center justify-center max-w-md mx-auto">
+                      <div className="p-4 bg-slate-50 text-slate-400 rounded-full mb-4 border border-slate-100">
+                        <Calendar size={32} />
                       </div>
+                      <h4 className="text-base font-semibold text-slate-800 mb-1">কোনো রেকর্ড পাওয়া যায়নি</h4>
+                      <p className="text-sm text-slate-400">এই সেল, মাস বা ক্যাটাগরির অধীনে কোনো অপেক্ষমাণ ডিউটি বা জেনারেটেড অফিস আদেশ নেই।</p>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-16 text-center flex flex-col items-center justify-center max-w-md mx-auto">
-                  <div className="p-4 bg-slate-50 text-slate-400 rounded-full mb-4 border border-slate-100">
-                    <Calendar size={32} />
+                  );
+                }
+
+                return (
+                  <div className="space-y-6">
+                    {/* Tab Navigation */}
+                    <div className="flex border-b border-slate-200 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setActiveRosterTab('pending')}
+                        className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+                          activeRosterTab === 'pending'
+                            ? 'border-indigo-650 text-indigo-650 dark:text-indigo-400 font-extrabold border-indigo-650'
+                            : 'border-transparent text-slate-400 hover:text-slate-650 dark:hover:text-slate-350'
+                        }`}
+                      >
+                        অপেক্ষমাণ ডিউটি তালিকা (Pending Duties)
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                          activeRosterTab === 'pending'
+                            ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400'
+                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400'
+                        }`}>
+                          {toBanglaDigits(pendingDuties.length)}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveRosterTab('archived')}
+                        className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+                          activeRosterTab === 'archived'
+                            ? 'border-indigo-650 text-indigo-650 dark:text-indigo-400 font-extrabold border-indigo-650'
+                            : 'border-transparent text-slate-400 hover:text-slate-650 dark:hover:text-slate-350'
+                        }`}
+                      >
+                        অফিস অর্ডার ডিউটি রেকর্ড লিস্ট (Archived Orders)
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                          activeRosterTab === 'archived'
+                            ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400'
+                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400'
+                        }`}>
+                          {toBanglaDigits(filteredOfficeOrders.length)}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Tab Contents */}
+                    {activeRosterTab === 'pending' ? (
+                      <div className="space-y-3">
+                        <h4 className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                          অপেক্ষমাণ ডিউটি তালিকা (Pending/Ungenerated Duties) - {toBanglaDigits(pendingDuties.length)} টি
+                        </h4>
+                        {pendingDuties.length > 0 ? (
+                          renderDutiesTable(pendingDuties)
+                        ) : (
+                          <div className="p-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 italic text-xs bg-slate-50/30 dark:bg-slate-900/10">
+                            কোনো অপেক্ষমাণ ডিউটি পাওয়া যায়নি।
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <h4 className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          জেনারেটেড এবং প্রিন্টেড অর্ডার (Generated & Archived Orders) - {toBanglaDigits(filteredOfficeOrders.length)} টি
+                        </h4>
+                        {filteredOfficeOrders.length > 0 ? (
+                          renderOfficeOrdersList(filteredOfficeOrders)
+                        ) : (
+                          <div className="p-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 italic text-xs bg-slate-50/30 dark:bg-slate-900/10">
+                            কোনো জেনারেটেড অফিস আদেশ পাওয়া যায়নি।
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <h4 className="text-base font-semibold text-slate-800 mb-1">কোনো ডিউটি রেকর্ড নেই</h4>
-                  <p className="text-sm text-slate-400">অনুগ্রহ করে বাম পাশের প্যানেল থেকে নতুন ডিউটি বরাদ্দ করুন।</p>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
         </>
@@ -2273,7 +2914,7 @@ export default function RosterPage() {
               ফিরে যান (রোস্টার ভিউ)
             </button>
 
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3">
               {!orderGenerated ? (
                 <button
                   onClick={() => archiveOrder('generate')}
@@ -2298,6 +2939,30 @@ export default function RosterPage() {
                     <Printer size={14} />
                     ডাউনলোড পিডিএফ (Download)
                   </button>
+                  {isEditingArchive ? (
+                    <button
+                      onClick={saveOrderToArchive}
+                      disabled={submitting}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer disabled:opacity-50"
+                    >
+                      <FileText size={14} />
+                      {submitting ? 'আপডেট হচ্ছে...' : 'আর্কাইভ আপডেট করুন'}
+                    </button>
+                  ) : !isArchived ? (
+                    <button
+                      onClick={saveOrderToArchive}
+                      disabled={submitting}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer disabled:opacity-50"
+                    >
+                      <FileText size={14} />
+                      {submitting ? 'আর্কাইভ হচ্ছে...' : 'আর্কাইভ করুন (Archive)'}
+                    </button>
+                  ) : (
+                    <span className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-xs font-bold border border-emerald-200 dark:border-emerald-900/30 whitespace-nowrap">
+                      <Check size={14} />
+                      আর্কাইভ সম্পন্ন
+                    </span>
+                  )}
                 </>
               )}
             </div>
@@ -2317,7 +2982,7 @@ export default function RosterPage() {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
                   >
                     <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
-                    <option value="HOLIDAY">Holiday Duty (সরকারি ছুটি)</option>
+                    <option value="HOLIDAY">Holiday Duty (ছুটির দিনে)</option>
                     <option value="NIGHT_SHIFT">Night Shift (রাত্রীকালীন ডিউটি)</option>
                   </select>
                 </div>
@@ -2630,7 +3295,7 @@ export default function RosterPage() {
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
                 >
                   <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
-                  <option value="HOLIDAY">Holiday Duty (সরকারি ছুটি)</option>
+                  <option value="HOLIDAY">Holiday Duty (ছুটির দিনে)</option>
                   <option value="NIGHT_SHIFT">Night Shift (রাত্রীকালীন ডিউটি)</option>
                 </select>
               </div>

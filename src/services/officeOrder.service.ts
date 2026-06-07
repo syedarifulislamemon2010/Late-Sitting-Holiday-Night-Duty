@@ -21,7 +21,8 @@ export class OfficeOrderService {
     let ordersList: any[] = [];
     if (isUserRestricted) {
       if (userCellNames.length > 0) {
-        ordersList = await OfficeOrderRepository.listAll(inArray(officeOrdersCellNameHelper(), userCellNames));
+        const allowedNames = [...userCellNames, 'All Cells', 'All My Cells', 'IT Department'];
+        ordersList = await OfficeOrderRepository.listAll(inArray(officeOrdersCellNameHelper(), allowedNames));
       } else {
         ordersList = [];
       }
@@ -101,7 +102,7 @@ export class OfficeOrderService {
 
     if (currentUser.role !== 'ADMIN') {
       const userCellNames = currentUser.cells.map((c: any) => c.name);
-      if (!validated.cellName || !userCellNames.includes(validated.cellName)) {
+      if (validated.cellName !== 'All Cells' && validated.cellName !== 'all' && (!validated.cellName || !userCellNames.includes(validated.cellName))) {
         throw new AuthError('অন্য সেলের জন্য অফিস আদেশ তৈরি করার অনুমতি নেই।', 403, 'forbidden');
       }
     }
@@ -112,8 +113,8 @@ export class OfficeOrderService {
         throw new AppError('বিল সংরক্ষণের জন্য ব্যাকলগ অফিস আদেশ রেফারেন্স প্রয়োজন।', 400, 'backing_order_required');
       }
       const backingOrder = await OfficeOrderRepository.findByOrderRef(backingOrderRef);
-      if (!backingOrder || (backingOrder.status !== 'Generated & Printed' && backingOrder.status !== 'Printed')) {
-        throw new AppError(`বিল তৈরির পূর্বে রেফারেন্সকৃত অফিস আদেশ (${backingOrderRef}) 'Generated & Printed' স্ট্যাটাসে থাকতে হবে।`, 400, 'backing_order_invalid');
+      if (!backingOrder || (backingOrder.status !== 'Generated & Printed' && backingOrder.status !== 'Printed' && backingOrder.status !== 'Generated' && backingOrder.status !== 'Modified')) {
+        throw new AppError(`বিল তৈরির পূর্বে রেফারেন্সকৃত অফিস আদেশ (${backingOrderRef}) প্রিন্ট অথবা জেনারেটেড অবস্থায় থাকতে হবে।`, 400, 'backing_order_invalid');
       }
     }
 
@@ -195,7 +196,7 @@ export class OfficeOrderService {
 
     if (currentUser.role !== 'ADMIN') {
       const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
-      if (!existingOrder.cellName || !userCellNames.includes(existingOrder.cellName)) {
+      if (existingOrder.cellName !== 'All Cells' && existingOrder.cellName !== 'all' && (!existingOrder.cellName || !userCellNames.includes(existingOrder.cellName))) {
         throw new AuthError('অন্য সেলের জন্য অফিস আদেশ আপডেট করার অনুমতি নেই।', 403, 'forbidden');
       }
     }
@@ -249,7 +250,7 @@ export class OfficeOrderService {
 
     if (currentUser.role !== 'ADMIN') {
       const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
-      if (!order.cellName || !userCellNames.includes(order.cellName)) {
+      if (order.cellName !== 'All Cells' && order.cellName !== 'all' && (!order.cellName || !userCellNames.includes(order.cellName))) {
         throw new AuthError('অন্য সেলের জন্য রেকর্ড মুছে ফেলার অনুমতি নেই।', 403, 'forbidden');
       }
     }
@@ -272,6 +273,15 @@ export class OfficeOrderService {
     await OfficeOrderRepository.update(id, {
       status: 'Deleted'
     });
+
+    // Free the duties associated with this office order by setting orderRef to null
+    if (order.orderRef) {
+      const { duties } = require('@/db/schema');
+      const { eq } = require('drizzle-orm');
+      await db.update(duties)
+        .set({ orderRef: null })
+        .where(eq(duties.orderRef, order.orderRef));
+    }
 
     // Insert into trash table for restore support
     await db.insert(trash).values({

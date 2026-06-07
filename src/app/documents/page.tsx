@@ -503,11 +503,38 @@ export default function DocumentsPage() {
       return 0;
     });
 
+  const getNormalizedRef = (ref: string) => {
+    if (!ref) return '';
+    let clean = ref;
+    if (clean.endsWith('/বিল')) {
+      clean = clean.slice(0, -5);
+    }
+    const parts = clean.split('/');
+    if (parts.length >= 3) {
+      parts.splice(2, 1); // remove name component
+    }
+    return parts.join('/');
+  };
+
+  const archivedBillNormalizedRefs = new Set(
+    officeOrders
+      .filter((o: any) => o.category?.startsWith('BILL_') || o.orderRef?.endsWith('/বিল'))
+      .map((o: any) => getNormalizedRef(o.orderRef))
+  );
+
   // Filtered Office Orders (Only categories NOT starting with BILL_)
-  const officeOrdersList = officeOrders.filter(order => !order.category?.startsWith('BILL_') && order.status !== 'Deleted');
-  const filteredOfficeOrders = officeOrdersList.filter(order => 
+  const officeOrdersList = officeOrders.filter((order: any) => !order.category?.startsWith('BILL_') && order.status !== 'Deleted');
+  const filteredOfficeOrders = officeOrdersList.filter((order: any) => 
     order.orderRef.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
     order.employeeName.toLowerCase().includes(orderSearchQuery.toLowerCase())
+  );
+
+  const pendingBillingOfficeOrders = filteredOfficeOrders.filter(
+    (o: any) => !archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))
+  );
+
+  const billedOfficeOrders = filteredOfficeOrders.filter(
+    (o: any) => archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))
   );
 
   // Filtered Bill Memos (Only categories starting with BILL_)
@@ -516,6 +543,127 @@ export default function DocumentsPage() {
     order.orderRef.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
     order.employeeName.toLowerCase().includes(orderSearchQuery.toLowerCase())
   );
+
+  const renderOrdersGrid = (ordersList: any[]) => {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {ordersList.map((order) => {
+          const isOrderBilled = archivedBillNormalizedRefs.has(getNormalizedRef(order.orderRef));
+          
+          return (
+            <div 
+              key={order.id}
+              className="group border border-slate-200/60 dark:border-slate-800/80 rounded-2xl p-5 bg-white/30 dark:bg-slate-900/20 hover:bg-white dark:hover:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 flex flex-col justify-between gap-4 shadow-sm"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-500/20">
+                    <CheckCircle size={10} className="text-emerald-500" />
+                    {order.status === 'Generated & Printed' || order.status === 'Printed' ? 'জেনারেটেড এন্ড প্রিন্টেড' : order.status}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {isOrderBilled ? (
+                      <span className="text-[10px] bg-teal-500/10 text-teal-600 dark:text-teal-400 px-2 py-0.5 rounded-full font-extrabold border border-teal-500/20">
+                        বিল সম্পন্ন
+                      </span>
+                    ) : (
+                      <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-extrabold border border-amber-500/20 animate-pulse">
+                        বিল অপেক্ষমাণ
+                      </span>
+                    )}
+                    <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-bold uppercase">
+                      {order.category === 'LATE_SITTING' ? 'লেট সিটিং' : order.category === 'HOLIDAY' ? 'সরকারি ছুটি' : 'রাত্রীকালীন'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-100 leading-snug font-mono break-all animate-pulse" title={order.orderRef}>
+                    {order.orderRef}
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-semibold pt-1 border-t border-slate-100/50 dark:border-slate-800/50 mt-2">
+                    <div>
+                      <span className="text-slate-400 font-medium block">আদেশের তারিখ:</span>
+                      <span>{order.orderDate}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-medium block">কর্মকর্তা:</span>
+                      <span className="truncate block" title={order.employeeName}>{order.employeeName}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-slate-400 font-medium block">শাখা/সেল:</span>
+                      <span>{order.cellName || 'আইটি বিভাগ'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-3">
+                <div className="flex items-center gap-1.5">
+                  <button 
+                    onClick={() => setViewingOrder(order)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold transition-all"
+                    title="অর্ডারটি ভিউ করুন"
+                  >
+                    <Eye size={12} />
+                    <span>ভিউ</span>
+                  </button>
+
+                  {isOrderBilled ? (
+                    <button 
+                      onClick={() => {
+                        const norm = getNormalizedRef(order.orderRef);
+                        const existingBill = officeOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
+                        if (existingBill) {
+                          window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}`;
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 dark:hover:bg-teal-950/50 text-teal-600 dark:text-teal-400 rounded-lg text-[10px] font-extrabold transition-all border border-teal-100 dark:border-teal-950/30"
+                      title="বিলটি সম্পাদন করুন"
+                    >
+                      <Receipt size={12} />
+                      <span>বিল সম্পাদন</span>
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => window.location.href = `/billing?orderRef=${encodeURIComponent(order.orderRef)}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-extrabold transition-all border border-amber-100 dark:border-amber-950/30"
+                      title="বিল জেনারেট করুন"
+                    >
+                      <Receipt size={12} />
+                      <span>বিল জেনারেট</span>
+                    </button>
+                  )}
+                  
+                  {hasEditPermission(order) && (
+                    <button 
+                      onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
+                      title="রোস্টারে ফিরে এডিট করুন (স্মারক একই থাকবে)"
+                    >
+                      <FileSignature size={12} />
+                      <span>সম্পাদনা (রোস্টার)</span>
+                    </button>
+                  )}
+                </div>
+
+                {hasDeletePermission(order) && (
+                  <button 
+                    onClick={() => handleDeleteOrder(order.id)}
+                    className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
+                    title="আর্কাইভ থেকে মুছে ফেলুন"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-8 font-sans max-w-7xl mx-auto pb-12">
@@ -910,89 +1058,36 @@ export default function DocumentsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredOfficeOrders.map((order) => (
-                    <div 
-                      key={order.id}
-                      className="group border border-slate-200/60 dark:border-slate-800/80 rounded-2xl p-5 bg-white/30 dark:bg-slate-900/20 hover:bg-white dark:hover:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 flex flex-col justify-between gap-4 shadow-sm"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-500/20">
-                            <CheckCircle size={10} className="text-emerald-500" />
-                            {order.status === 'Generated & Printed' || order.status === 'Printed' ? 'জেনারেটেড এন্ড প্রিন্টেড' : order.status}
-                          </span>
-                          <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-bold uppercase">
-                            {order.category === 'LATE_SITTING' ? 'লেট সিটিং' : order.category === 'HOLIDAY' ? 'সরকারি ছুটি' : 'রাত্রীকালীন'}
-                          </span>
-                        </div>
-                        
-                        <div className="space-y-1.5">
-                          <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-100 leading-snug font-mono break-all animate-pulse" title={order.orderRef}>
-                            {order.orderRef}
-                          </h4>
-                          
-                          <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-semibold pt-1 border-t border-slate-100/50 dark:border-slate-800/50 mt-2">
-                            <div>
-                              <span className="text-slate-400 font-medium block">আদেশের তারিখ:</span>
-                              <span>{order.orderDate}</span>
-                            </div>
-                            <div>
-                              <span className="text-slate-400 font-medium block">কর্মকর্তা:</span>
-                              <span className="truncate block" title={order.employeeName}>{order.employeeName}</span>
-                            </div>
-                            <div className="col-span-2">
-                              <span className="text-slate-400 font-medium block">শাখা/সেল:</span>
-                              <span>{order.cellName || 'আইটি বিভাগ'}</span>
-                            </div>
-                          </div>
-                        </div>
+                <div className="space-y-8">
+                  {/* Section 1: Pending Billing */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-2 border-b border-amber-200/30 pb-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                      বিল প্রস্তুত করা হয়নি এমন অফিস আদেশ (Pending Billing) - {pendingBillingOfficeOrders.length} টি
+                    </h3>
+                    {pendingBillingOfficeOrders.length > 0 ? (
+                      renderOrdersGrid(pendingBillingOfficeOrders)
+                    ) : (
+                      <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-450 dark:text-slate-500 italic text-xs">
+                        কোনো বিল অপেক্ষমাণ অফিস আদেশ নেই।
                       </div>
+                    )}
+                  </div>
 
-                      <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-3">
-                        <div className="flex items-center gap-1.5">
-                          <button 
-                            onClick={() => setViewingOrder(order)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold transition-all"
-                            title="অর্ডারটি ভিউ করুন"
-                          >
-                            <Eye size={12} />
-                            <span>ভিউ</span>
-                          </button>
-
-                          <button 
-                            onClick={() => window.location.href = `/billing?orderRef=${encodeURIComponent(order.orderRef)}`}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-extrabold transition-all"
-                            title="বিল জেনারেট করুন"
-                          >
-                            <Receipt size={12} />
-                            <span>বিল জেনারেট</span>
-                          </button>
-                          
-                          {hasEditPermission(order) && (
-                            <button 
-                              onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
-                              title="রোস্টারে ফিরে এডিট করুন (স্মারক একই থাকবে)"
-                            >
-                              <FileSignature size={12} />
-                              <span>সম্পাদনা (রোস্টার)</span>
-                            </button>
-                          )}
-                        </div>
-
-                        {hasDeletePermission(order) && (
-                          <button 
-                            onClick={() => handleDeleteOrder(order.id)}
-                            className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
-                            title="আর্কাইভ থেকে মুছে ফেলুন"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        )}
+                  {/* Section 2: Already Billed */}
+                  <div className="space-y-4 pt-4">
+                    <h3 className="text-sm font-extrabold text-teal-600 dark:text-teal-400 flex items-center gap-2 border-b border-teal-200/30 pb-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-teal-505" />
+                      ইতিমধ্যেই বিল প্রস্তুত সম্পন্ন হয়েছে (Already Billed) - {billedOfficeOrders.length} টি
+                    </h3>
+                    {billedOfficeOrders.length > 0 ? (
+                      renderOrdersGrid(billedOfficeOrders)
+                    ) : (
+                      <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-450 dark:text-slate-500 italic text-xs">
+                        কোনো বিল প্রস্তুতকৃত অফিস আদেশ নেই।
                       </div>
-                    </div>
-                  ))}
+                    )}
+                  </div>
                 </div>
               )}
             </div>

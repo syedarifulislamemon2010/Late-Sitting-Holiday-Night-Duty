@@ -72,7 +72,7 @@ export async function POST(request: Request) {
   }
   body {
     font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
-    font-size: 10px;
+    font-size: 12px;
     line-height: 1.6;
     color: #000;
     background: #fff;
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     line-height: 1.0;
   }
   .bank-tagline {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: bold;
     color: #555555;
     margin: 4px 0 0 0;
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
     padding-bottom: 5px;
     margin-bottom: 15px;
     margin-top: 5px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: bold;
   }
   .ref-date-table td {
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
   }
   .body-content {
     text-align: justify;
-    font-size: 10px;
+    font-size: 12px;
     line-height: 1.6;
     margin-bottom: 15px;
     text-indent: 0.5in;
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
     border-collapse: collapse;
     margin-top: 10px;
     margin-bottom: 15px;
-    font-size: 10px;
+    font-size: 12px;
   }
   table.duty-table th, table.duty-table td {
     border: 1px solid #000;
@@ -174,7 +174,7 @@ export async function POST(request: Request) {
   .signature-container {
     width: 100%;
     margin-top: 1.0in;
-    font-size: 10px;
+    font-size: 12px;
     overflow: hidden;
   }
   .signature-block {
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
   }
   .footer-copy {
     margin-top: 40px;
-    font-size: 8px;
+    font-size: 12px;
     color: #333;
     border-top: 1px dashed #ccc;
     padding-top: 10px;

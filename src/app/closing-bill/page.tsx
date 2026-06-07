@@ -332,7 +332,6 @@ export default function ClosingBillPage() {
   const grandTotalAll = activeRecords.reduce((sum, r) => sum + r.netPayable, 0);
 
   const saveClosingBill = async (): Promise<any> => {
-    if (!isAdmin) return null;
     setSaving(true);
     setSuccessMessage(null);
     setErrorMessage(null);
@@ -343,13 +342,13 @@ export default function ClosingBillPage() {
         body: JSON.stringify({
           month: `closing-${selectedMonth}`,
           workingDays: 1,
-          records: records
+          records: isAdmin ? records : activeRecords // Send only activeRecords for coordinators
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         setSavedBill(data.lunchBill);
-        setSuccessMessage('সমন্বিত ক্লোজিং ভাতা বিল সফলভাবে ডাটাবেজে সংরক্ষণ করা হয়েছে!');
+        setSuccessMessage('ক্লোজিং ভাতা বিল সফলভাবে সংরক্ষণ করা হয়েছে!');
         setTimeout(() => setSuccessMessage(null), 5000);
         return data.lunchBill;
       } else {
@@ -582,7 +581,7 @@ export default function ClosingBillPage() {
               </div>
 
               <div className="flex items-center gap-3">
-                {isAdmin && (
+                {(isAdmin || !isAdmin) && (
                   <button
                     onClick={saveClosingBill}
                     disabled={saving}

@@ -103,6 +103,7 @@ export default function BillingPage() {
   const [originalBillRef, setOriginalBillRef] = useState('');
   const [selectedOrderRef, setSelectedOrderRef] = useState<string>('');
   const [pendingOrderRefs, setPendingOrderRefs] = useState<string[]>([]);
+  const [billedOrderRefs, setBilledOrderRefs] = useState<string[]>([]);
   const [randomNumber, setRandomNumber] = useState(() => Math.floor(10 + Math.random() * 90));
   const [archivedOrders, setArchivedOrders] = useState<any[]>([]);
   const [showOrderWarning, setShowOrderWarning] = useState(false);
@@ -256,7 +257,7 @@ export default function BillingPage() {
                   setSigningDesignation(archivedBill.content.signingDesignation);
                 }
               }
-              if (archivedBill.status === 'Generated & Printed' || archivedBill.status === 'Printed') {
+              if (archivedBill.status === 'Generated' || archivedBill.status === 'Modified' || archivedBill.status === 'Generated & Printed' || archivedBill.status === 'Printed') {
                 setBillGenerated(true);
               } else {
                 setBillGenerated(false);
@@ -303,8 +304,8 @@ export default function BillingPage() {
               window.location.href = '/documents';
               return;
             }
-            if (matchedOrder.status !== 'Generated & Printed' && matchedOrder.status !== 'Printed') {
-              alert(`এই অফিস আদেশের বিল তৈরি করা যাবে না। বিল তৈরির পূর্বে অফিস আদেশটি 'Generated & Printed' অবস্থায় থাকতে হবে (বর্তমান অবস্থা: ${matchedOrder.status})।`);
+            if (matchedOrder.status !== 'Generated & Printed' && matchedOrder.status !== 'Printed' && matchedOrder.status !== 'Generated' && matchedOrder.status !== 'Modified') {
+              alert(`এই অফিস আদেশের বিল তৈরি করা যাবে না। বিল তৈরির পূর্বে অফিস আদেশটি প্রিন্ট অথবা জেনারেটেড অবস্থায় থাকতে হবে (বর্তমান অবস্থা: ${matchedOrder.status})।`);
               window.location.href = '/documents';
               return;
             }
@@ -427,7 +428,7 @@ export default function BillingPage() {
 
       const printedOrderRefs = new Set(
         archivedOrders
-          .filter(o => !o.category?.startsWith('BILL_') && (o.status === 'Generated & Printed' || o.status === 'Printed'))
+          .filter(o => !o.category?.startsWith('BILL_') && (o.status === 'Generated & Printed' || o.status === 'Printed' || o.status === 'Generated' || o.status === 'Modified'))
           .map(o => o.orderRef)
       );
 
@@ -457,15 +458,34 @@ export default function BillingPage() {
             .filter(Boolean)
         )
       ) as string[];
+
+      const billedRefs = Array.from(
+        new Set(
+          archivedOrders
+            .filter(o => {
+              const isOfficeOrder = o.category === printCategory && (o.status === 'Generated & Printed' || o.status === 'Printed' || o.status === 'Generated' || o.status === 'Modified');
+              if (!isOfficeOrder) return false;
+              const norm = getNormalizedRef(o.orderRef);
+              return archivedBillNormalizedRefs.has(norm);
+            })
+            .map(o => o.orderRef)
+        )
+      ) as string[];
       
       if (orderRefToFetch) {
         setPendingOrderRefs([orderRefToFetch]);
+        setBilledOrderRefs([]);
         setSelectedOrderRef(orderRefToFetch);
       } else {
         setPendingOrderRefs(pendingRefs);
+        setBilledOrderRefs(billedRefs);
         if (pendingRefs.length > 0) {
-          if (!selectedOrderRef || !pendingRefs.includes(selectedOrderRef)) {
+          if (!selectedOrderRef || (!pendingRefs.includes(selectedOrderRef) && !billedRefs.includes(selectedOrderRef))) {
             setSelectedOrderRef(pendingRefs[0]);
+          }
+        } else if (billedRefs.length > 0) {
+          if (!selectedOrderRef || (!pendingRefs.includes(selectedOrderRef) && !billedRefs.includes(selectedOrderRef))) {
+            setSelectedOrderRef(billedRefs[0]);
           }
         } else {
           setSelectedOrderRef('');
@@ -1442,21 +1462,58 @@ export default function BillingPage() {
                 </div>
               </div>
 
-              {/* office order selection dropdown if there are pending orders */}
-              {pendingOrderRefs.length > 0 && (
-                <div className="p-4 rounded-xl bg-amber-500/5 dark:bg-amber-950/10 border border-amber-200/40 dark:border-amber-900/20 space-y-1.5">
-                  <label className="text-xs font-extrabold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                    কোন অফিস আদেশের বিল তৈরি করতে চান? (Select Office Order)
+              {/* office order selection dropdown (Pending vs Billed) */}
+              {(pendingOrderRefs.length > 0 || billedOrderRefs.length > 0) && (
+                <div className="p-4 rounded-xl bg-indigo-500/5 dark:bg-indigo-950/10 border border-indigo-150/40 dark:border-indigo-900/20 space-y-1.5">
+                  <label className="text-xs font-extrabold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5">
+                    কোন অফিস আদেশের বিল প্রস্তুত/সম্পাদনা করতে চান? (Select Office Order)
                   </label>
                   <select
                     value={selectedOrderRef}
-                    onChange={(e) => setSelectedOrderRef(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-amber-200/60 dark:border-amber-900/40 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
+                    onChange={async (e) => {
+                      const val = e.target.value;
+                      setSelectedOrderRef(val);
+                      
+                      // Check if already billed
+                      if (billedOrderRefs.includes(val)) {
+                        const getNormalizedRef = (ref: string) => {
+                          if (!ref) return '';
+                          let clean = ref;
+                          if (clean.endsWith('/বিল')) {
+                            clean = clean.slice(0, -5);
+                          }
+                          const parts = clean.split('/');
+                          if (parts.length >= 3) {
+                            parts.splice(2, 1); // remove name component
+                          }
+                          return parts.join('/');
+                        };
+                        const norm = getNormalizedRef(val);
+                        const existingBill = archivedOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
+                        if (existingBill) {
+                          if (confirm('এই অফিস আদেশের অধীনে ইতিমধ্যেই বিল তৈরি করা হয়েছে। আপনি কি পূর্ববর্তী বিলটি সম্পাদনা (Edit) করতে চান?')) {
+                            window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}`;
+                          }
+                        }
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-200/60 dark:border-indigo-900/40 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
                   >
-                    {pendingOrderRefs.map(ref => (
-                      <option key={ref} value={ref}>{ref}</option>
-                    ))}
+                    <option value="">-- অফিস আদেশ নির্বাচন করুন --</option>
+                    {pendingOrderRefs.length > 0 && (
+                      <optgroup label="বিল প্রস্তুত করা হয়নি (Pending Billing)">
+                        {pendingOrderRefs.map(ref => (
+                          <option key={ref} value={ref}>{ref}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {billedOrderRefs.length > 0 && (
+                      <optgroup label="ইতিমধ্যেই বিল প্রস্তুত করা হয়েছে (Already Billed)">
+                        {billedOrderRefs.map(ref => (
+                          <option key={ref} value={ref}>{ref} (বিল সম্পন্ন)</option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
               )}

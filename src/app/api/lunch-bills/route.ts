@@ -119,18 +119,47 @@ export async function POST(request: Request) {
     }
 
     const isAdmin = currentUser.role === 'ADMIN';
+    const userCellIds = currentUser.cells?.map((c: any) => c.id) || [];
 
-    if (!isAdmin) {
+    if (!isAdmin && userCellIds.length === 0) {
       return NextResponse.json({ 
         error: 'forbidden', 
-        message: 'লাঞ্চ বিল প্রস্তুত বা সংরক্ষণ করার ক্ষমতা শুধুমাত্র প্রশাসন বা সিস্টেম এডমিনদের রয়েছে।' 
+        message: 'লাঞ্চ বিল প্রস্তুত বা সংরক্ষণ করার ক্ষমতা আপনার নেই।' 
       }, { status: 403 });
     }
 
     const combinedCell = await getOrCreateCombinedCell();
     const combinedCellId = combinedCell.id;
 
-    const recordsJson = JSON.stringify(records);
+    // Load existing combined LunchBill record
+    const existingBillList = await db.select().from(lunchBills).where(
+      and(
+        eq(lunchBills.month, month),
+        eq(lunchBills.cellId, combinedCellId)
+      )
+    );
+    const existingBill = existingBillList[0];
+
+    let recordsToSave = Array.isArray(records) ? records : [];
+    if (!isAdmin) {
+      // Filter out any records that do not belong to the user's assigned cells, and also filter out executives
+      recordsToSave = recordsToSave.filter((r: any) => r && !r.isExecutive && userCellIds.includes(r.cellId));
+    }
+
+    let finalRecords = [];
+    if (isAdmin) {
+      finalRecords = recordsToSave;
+    } else {
+      if (existingBill) {
+        const existingRecords = JSON.parse(existingBill.recordsJson);
+        const otherRecords = existingRecords.filter((r: any) => r && (r.isExecutive || !userCellIds.includes(r.cellId)));
+        finalRecords = [...otherRecords, ...recordsToSave];
+      } else {
+        finalRecords = recordsToSave;
+      }
+    }
+
+    const recordsJson = JSON.stringify(finalRecords);
 
     // Save the combined sheet under cellId = combinedCellId (System Combined Cell)
     const lunchBillList = await db.insert(lunchBills)
@@ -139,7 +168,9 @@ export async function POST(request: Request) {
         cellId: combinedCellId,
         workingDays: parsedWorkingDays,
         recordsJson,
-        generatedBy: currentUser.name
+        generatedBy: currentUser.name,
+        createdAt: new Date(),
+        updatedAt: new Date()
       })
       .onConflictDoUpdate({
         target: [lunchBills.month, lunchBills.cellId],
