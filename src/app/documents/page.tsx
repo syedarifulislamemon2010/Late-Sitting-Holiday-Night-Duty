@@ -106,22 +106,23 @@ export default function DocumentsPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load user role from localStorage
+  // Load user session from /api/auth
   useEffect(() => {
-    const stored = localStorage.getItem('currentUser');
-    if (stored) {
+    async function loadUser() {
       try {
-        const userObj: UserSession = JSON.parse(stored);
-        setTimeout(() => {
-          setCurrentUser(userObj);
-          if (userObj.role === 'USER') {
+        const res = await fetch('/api/auth');
+        const data = await res.json();
+        if (res.ok && data.authenticated && data.user) {
+          setCurrentUser(data.user);
+          if (data.user.role === 'USER') {
             setActiveTab('orders'); // default to office orders since files is restricted for USER
           }
-        }, 0);
-      } catch {
-        // ignore
+        }
+      } catch (err) {
+        console.error('Failed to load authenticated user in documents page:', err);
       }
     }
+    loadUser();
   }, []);
 
   const hasDeletePermission = (order: OfficeOrder) => {

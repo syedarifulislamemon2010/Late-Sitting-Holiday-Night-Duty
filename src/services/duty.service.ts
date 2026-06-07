@@ -191,7 +191,16 @@ export class DutyService {
       leaves = await db.select().from(leaveApplications).where(inArray(leaveApplications.bankId, employeeBankIds));
     }
 
-    const dutiesToInsert: any[] = [];
+    const dutiesToInsert: {
+      employeeId: number;
+      type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+      date: string;
+      description: string | null;
+      allowance1: number;
+      allowance2: number;
+      totalBill: number;
+      orderRef: string | null;
+    }[] = [];
 
     for (const assignment of validated.assignments) {
       const isHoliday = checkIsHolidayLocal(assignment.date);
