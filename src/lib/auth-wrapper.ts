@@ -10,7 +10,7 @@ export async function getCurrentUser() {
     // 1. Try NextAuth session
     const session = await getServerSession(authOptions);
     if (session?.user) {
-      const nextAuthUserId = (session.user as any).id;
+      const nextAuthUserId = (session.user as { id?: number }).id;
       if (nextAuthUserId) {
         // Query user details with cells
         const userList = await db.select().from(users).where(eq(users.id, nextAuthUserId));
@@ -30,7 +30,7 @@ export async function getCurrentUser() {
             id: user.id,
             username: user.username,
             name: user.name,
-            role: user.role,
+            role: user.role as 'USER' | 'ADMIN',
             mobile: user.mobile,
             cells: assignedCells,
           };
@@ -61,7 +61,7 @@ export async function getCurrentUser() {
             id: user.id,
             username: user.username,
             name: user.name,
-            role: user.role,
+            role: user.role as 'USER' | 'ADMIN',
             mobile: user.mobile,
             cells: assignedCells,
           };

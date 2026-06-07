@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { officeOrders, duties as dutiesTable } from '@/db/schema';
-import { eq, inArray, desc } from 'drizzle-orm';
+import { eq, inArray, desc, SQL } from 'drizzle-orm';
 
 export class OfficeOrderRepository {
   static async findById(id: number) {
@@ -13,7 +13,7 @@ export class OfficeOrderRepository {
     return list[0] || null;
   }
 
-  static async listAll(conditions?: any) {
+  static async listAll(conditions?: SQL | undefined) {
     return db.select().from(officeOrders).where(conditions).orderBy(desc(officeOrders.createdAt));
   }
 

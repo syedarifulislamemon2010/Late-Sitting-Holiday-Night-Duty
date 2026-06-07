@@ -58,7 +58,7 @@ export async function GET() {
       .orderBy(desc(trashTable.deletedAt));
 
     return NextResponse.json(activeTrash);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching/cleaning trash:', error);
     return NextResponse.json({ error: 'failed_to_fetch_trash' }, { status: 500 });
   }
@@ -135,7 +135,15 @@ export async function POST(request: Request) {
 
               if (parsed.duties && parsed.duties.length > 0) {
                 await db.insert(duties).values(
-                  parsed.duties.map((d: any) => ({
+                  parsed.duties.map((d: {
+                    type: string;
+                    date: string;
+                    description: string;
+                    allowance1: number;
+                    allowance2: number;
+                    totalBill: number;
+                    orderRef?: string | null;
+                  }) => ({
                     employeeId: newEmp.id,
                     type: d.type,
                     date: d.date,
@@ -263,32 +271,14 @@ export async function POST(request: Request) {
           await db.delete(trashTable).where(eq(trashTable.id, trashRecord.id));
           successCount++;
         } else if (action === 'purge') {
-          if (trashRecord.entityType === 'OFFICE_ORDER') {
-            failCount++;
-            lastErrorMessage = 'অফিস আদেশ বা বিল মেমো স্থায়ীভাবে মুছে ফেলা নিষিদ্ধ।';
-            continue;
-          }
-          if (trashRecord.entityType === 'DOCUMENT') {
-            try {
-              const parsed = JSON.parse(trashRecord.data);
-              if (parsed.filePath) {
-                const absolutePath = path.join(process.cwd(), 'public', parsed.filePath);
-                if (fs.existsSync(absolutePath)) {
-                  fs.unlinkSync(absolutePath);
-                }
-              }
-            } catch (fileErr) {
-              console.error('Failed to permanently delete document file from disk:', fileErr);
-            }
-          }
-
-          await db.delete(trashTable).where(eq(trashTable.id, trashRecord.id));
-          successCount++;
+          failCount++;
+          lastErrorMessage = 'স্থায়ীভাবে মুছে ফেলা সম্ভব নয় (শুধুমাত্র সফট-ডিলিট সিস্টেম কার্যকর আছে)।';
+          continue;
         }
-      } catch (innerErr: any) {
+      } catch (innerErr) {
         console.error(`Error processing trash ID ${currentId}:`, innerErr);
         failCount++;
-        lastErrorMessage = innerErr.message || 'সার্ভার সমস্যা হয়েছে।';
+        lastErrorMessage = (innerErr instanceof Error ? innerErr.message : String(innerErr)) || 'সার্ভার সমস্যা হয়েছে।';
       }
     }
 
@@ -300,8 +290,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, message: 'সব রেকর্ড সফলভাবে প্রসেস করা হয়েছে!' });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error handling trash action:', error);
-    return NextResponse.json({ error: 'trash_action_failed', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'trash_action_failed', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

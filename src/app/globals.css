@@ -13,6 +13,7 @@
   --color-primary-hover: var(--primary-hover);
   --color-accent: var(--accent);
   --color-success: var(--success);
+  --color-indigo-650: #493ee0;
   --font-sans: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
 }
 

@@ -29,6 +29,26 @@ interface User {
   mobile?: string | null;
 }
 
+interface Employee {
+  id: number;
+  name: string;
+  designation: string;
+  bankId: string | null;
+  fileNo: string | null;
+  cellId: number;
+  cell?: { id: number; name: string } | null;
+}
+
+interface AuditLog {
+  id: number;
+  createdAt: string;
+  username: string;
+  action: string;
+  details: string;
+  ipAddress?: string | null;
+  macAddress?: string | null;
+}
+
 const extractNickname = (nameStr: string): string => {
   const clean = nameStr.trim();
   
@@ -73,10 +93,10 @@ const extractNickname = (nameStr: string): string => {
 };
 
 export default function UserManagement() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -105,7 +125,7 @@ export default function UserManagement() {
   const [updatingProfile, setUpdatingProfile] = useState(false);
 
   // Audit logs state
-  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [logSearchQuery, setLogSearchQuery] = useState('');
 
@@ -345,13 +365,21 @@ export default function UserManagement() {
   };
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
     if (currentUser && currentUser.role === 'ADMIN') {
       if (activeSettingsTab === 'users') {
-        loadData();
+        timer = setTimeout(() => {
+          loadData();
+        }, 0);
       } else if (activeSettingsTab === 'logs') {
-        fetchAuditLogs();
+        timer = setTimeout(() => {
+          fetchAuditLogs();
+        }, 0);
       }
     }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [currentUser, activeSettingsTab]);
 
   const handleOpenCreateModal = () => {
@@ -369,16 +397,22 @@ export default function UserManagement() {
 
   // Auto-fetch employee details by bankId (username)
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
     if (!editingUser && username.trim() !== '') {
       const match = employees.find(
         (emp) => (emp.bankId || '').trim().toLowerCase() === username.trim().toLowerCase()
       );
       if (match) {
-        setName(match.name);
-        setSelectedCellIds([match.cellId]);
-        setPassword('123456');
+        timer = setTimeout(() => {
+          setName(match.name);
+          setSelectedCellIds([match.cellId]);
+          setPassword('123456');
+        }, 0);
       }
     }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [username, editingUser, employees]);
 
   const handleOpenEditModal = (user: User) => {
@@ -461,6 +495,7 @@ export default function UserManagement() {
         setError(data.message || 'ইউজার সংরক্ষণ করতে সমস্যা হয়েছে।');
       }
     } catch (err) {
+      console.error(err);
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     }
   };
@@ -488,6 +523,7 @@ export default function UserManagement() {
         setError(data.message || 'ইউজার মুছতে ব্যর্থ হয়েছে।');
       }
     } catch (err) {
+      console.error(err);
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     }
   };
@@ -496,6 +532,11 @@ export default function UserManagement() {
     e.preventDefault();
     setProfileError('');
     setProfileSuccess('');
+
+    if (!currentUser) {
+      setProfileError('ব্যবহারকারী পাওয়া যায়নি।');
+      return;
+    }
 
     if (!profileName.trim()) {
       setProfileError('নাম পূরণ করা আবশ্যক।');
@@ -534,6 +575,7 @@ export default function UserManagement() {
         setProfileError(data.message || 'আপডেট করতে ব্যর্থ হয়েছে।');
       }
     } catch (err) {
+      console.error(err);
       setProfileError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     } finally {
       setUpdatingProfile(false);
@@ -674,7 +716,7 @@ export default function UserManagement() {
                 <span className="text-[10px] font-bold text-slate-400 uppercase">আমার প্রবেশাধিকার প্রাপ্ত সেলসমূহ:</span>
                 <div className="flex flex-wrap gap-1.5">
                   {currentUser.cells && currentUser.cells.length > 0 ? (
-                    currentUser.cells.map((c: any) => (
+                    currentUser.cells.map((c) => (
                       <span key={c.id} className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-650 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 text-[10px] font-bold rounded-lg font-mono">
                         {c.name}
                       </span>
@@ -892,7 +934,7 @@ export default function UserManagement() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
-                    {filteredLogs.map((log: any) => {
+                    {filteredLogs.map((log: AuditLog) => {
                       const dateObj = new Date(log.createdAt);
                       const formattedTime = dateObj.toLocaleDateString('bn-BD', {
                         year: 'numeric',

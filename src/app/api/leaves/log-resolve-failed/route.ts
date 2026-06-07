@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to log resolve failed activity:', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }

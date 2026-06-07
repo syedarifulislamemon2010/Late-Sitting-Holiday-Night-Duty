@@ -2,11 +2,20 @@ import { DutyRepository } from '@/repositories/duty.repository';
 import { EmployeeRepository } from '@/repositories/employee.repository';
 import { HolidayRepository } from '@/repositories/holiday.repository';
 import { db } from '@/lib/db';
-import { trash, cells, employees, holidays as holidaysTable } from '@/db/schema';
-import { eq, ne, inArray, and } from 'drizzle-orm';
+import { trash, cells, employees, duties, leaveApplications } from '@/db/schema';
+import { eq, inArray, and, or, isNull, gte, lte, SQL } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
-import { AppError, AuthError, ValidationError } from '@/lib/errors';
+import { AppError, AuthError } from '@/lib/errors';
 import { dutiesBulkCreateSchema, dutyUpdateSchema } from '@/validations/duty.schema';
+
+export interface UserSession {
+  id: number;
+  username: string;
+  name: string;
+  role: 'ADMIN' | 'USER';
+  mobile: string | null;
+  cells: { id: number; name: string }[];
+}
 
 export class DutyService {
   static calculateAllowances(type: string) {
@@ -35,16 +44,16 @@ export class DutyService {
     return isWeekend;
   }
 
-  static async listDuties(currentUser: any, filters: { cellId: string | null, startDate: string | null, endDate: string | null, orderRef: string | null }) {
+  static async listDuties(currentUser: UserSession | null | undefined, filters: { cellId: string | null, startDate: string | null, endDate: string | null, orderRef: string | null }) {
     let userCellIds: number[] = [];
     let isUserRestricted = false;
 
     if (currentUser && currentUser.role === 'USER') {
       isUserRestricted = true;
-      userCellIds = currentUser.cells.map((c: any) => c.id);
+      userCellIds = currentUser.cells.map((c: { id: number }) => c.id);
     }
 
-    const conditions: any[] = [];
+    const conditions: SQL[] = [];
     
     if (isUserRestricted) {
       if (filters.cellId && filters.cellId !== 'all') {
@@ -68,7 +77,7 @@ export class DutyService {
     }
     
     if (!filters.orderRef) {
-      const dateConditions: any[] = [];
+      const dateConditions: SQL[] = [];
       if (filters.startDate) {
         dateConditions.push(gteDutiesDateHelper(filters.startDate));
       }
@@ -77,16 +86,16 @@ export class DutyService {
       }
 
       if (dateConditions.length > 0) {
-        const { or, isNull } = require('drizzle-orm');
-        conditions.push(
-          or(
-            and(...dateConditions),
-            isNull(dutiesOrderRefHelper())
-          )
-        );
+        const dateAnd = and(...dateConditions);
+        if (dateAnd) {
+          const dateOr = or(dateAnd, isNull(dutiesOrderRefHelper()));
+          if (dateOr) {
+            conditions.push(dateOr);
+          }
+        }
       }
     } else {
-      let refs = [filters.orderRef];
+      const refs = [filters.orderRef];
       if (filters.orderRef.endsWith('/বিল')) {
         refs.push(filters.orderRef.slice(0, -5));
       } else {
@@ -129,7 +138,7 @@ export class DutyService {
     }));
   }
 
-  static async createDuties(currentUser: any, body: any, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async createDuties(currentUser: UserSession | null | undefined, body: unknown, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('অনুমতি নেই।', 403, 'unauthorized');
     }
@@ -137,8 +146,8 @@ export class DutyService {
     const validated = dutiesBulkCreateSchema.parse(body);
 
     if (currentUser.role !== 'ADMIN') {
-      const userCellIds = currentUser.cells.map((c: any) => c.id);
-      const uniqueEmployeeIds = Array.from(new Set(validated.assignments.map((a: any) => a.employeeId)));
+      const userCellIds = currentUser.cells.map((c: { id: number }) => c.id);
+      const uniqueEmployeeIds = Array.from(new Set(validated.assignments.map((a: { employeeId: number }) => a.employeeId)));
       const employeesToCheck = await db.select().from(employees)
         .where(inArray(employees.id, uniqueEmployeeIds));
       for (const emp of employeesToCheck) {
@@ -155,9 +164,9 @@ export class DutyService {
       await DutyRepository.deleteDutiesByOrderRef(validated.orderRef);
     }
 
-    const uniqueDates = Array.from(new Set(validated.assignments.map((a: any) => a.date)));
+    const uniqueDates = Array.from(new Set(validated.assignments.map((a: { date: string }) => a.date)));
     const holidayOverrides = await HolidayRepository.findHolidaysByDates(uniqueDates);
-    const holidayOverrideMap = new Map(holidayOverrides.map((h: any) => [h.date, h.isWorkingDay]));
+    const holidayOverrideMap = new Map(holidayOverrides.map((h) => [h.date, h.isWorkingDay]));
 
     const checkIsHolidayLocal = (dateStr: string): boolean => {
       const dateObj = new Date(dateStr);
@@ -170,8 +179,17 @@ export class DutyService {
       return isWeekend;
     };
 
-    const uniqueEmployeeIds = Array.from(new Set(validated.assignments.map((a: any) => a.employeeId)));
+    const uniqueEmployeeIds = Array.from(new Set(validated.assignments.map((a: { employeeId: number }) => a.employeeId)));
     const allExistingDuties = await DutyRepository.findExistingDuties(uniqueEmployeeIds, uniqueDates);
+
+    const employeesList = await db.select().from(employees).where(inArray(employees.id, uniqueEmployeeIds));
+    const employeeMap = new Map(employeesList.map(e => [e.id, e]));
+
+    const employeeBankIds = employeesList.map(e => e.bankId).filter((bid): bid is string => Boolean(bid));
+    let leaves: (typeof leaveApplications.$inferSelect)[] = [];
+    if (employeeBankIds.length > 0) {
+      leaves = await db.select().from(leaveApplications).where(inArray(leaveApplications.bankId, employeeBankIds));
+    }
 
     const dutiesToInsert = [];
 
@@ -186,8 +204,23 @@ export class DutyService {
         throw new AppError('holiday_duty_on_working_day', 400, 'holiday_duty_on_working_day');
       }
 
-      // Check for duplicate on this date (regardless of type)
-      const duplicate = allExistingDuties.find(d => d.employeeId === assignment.employeeId && d.date === assignment.date);
+      const emp = employeeMap.get(assignment.employeeId);
+      if (emp && emp.bankId) {
+        const hasLeaveConflict = leaves.some(l => 
+          l.bankId === emp.bankId && 
+          l.startDate <= assignment.date && 
+          l.endDate >= assignment.date
+        );
+        if (hasLeaveConflict) {
+          throw new AppError('leave_conflict', 400, 'leave_conflict');
+        }
+      }
+
+      const duplicate = allExistingDuties.find(d => 
+        d.employeeId === assignment.employeeId && 
+        d.date === assignment.date && 
+        d.type === assignment.type
+      );
       if (duplicate) {
         throw new AppError('duplicate_duty_on_date', 400, 'duplicate_duty_on_date');
       }
@@ -226,7 +259,7 @@ export class DutyService {
     return inserted;
   }
 
-  static async updateDuty(currentUser: any, id: number, body: any, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async updateDuty(currentUser: UserSession | null | undefined, id: number, body: unknown, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('অনুমতি নেই।', 403, 'unauthorized');
     }
@@ -238,9 +271,10 @@ export class DutyService {
       throw new AppError('duty_not_found', 444, 'duty_not_found');
     }
 
+    const emp = await EmployeeRepository.findById(currentDuty.employeeId);
+
     if (currentUser.role !== 'ADMIN') {
-      const userCellIds = currentUser.cells.map((c: any) => c.id);
-      const emp = await EmployeeRepository.findById(currentDuty.employeeId);
+      const userCellIds = currentUser.cells.map((c: { id: number }) => c.id);
       if (!emp || !userCellIds.includes(emp.cellId)) {
         throw new AuthError('অন্য সেলের কর্মকর্তা আপডেট করার অনুমতি নেই।', 403, 'forbidden');
       }
@@ -257,8 +291,20 @@ export class DutyService {
       throw new AppError('holiday_duty_on_working_day', 400, 'holiday_duty_on_working_day');
     }
 
+    if (emp && emp.bankId) {
+      const leaves = await db.select().from(leaveApplications).where(eq(leaveApplications.bankId, emp.bankId));
+      const hasLeaveConflict = leaves.some(l => 
+        l.startDate <= targetDate && 
+        l.endDate >= targetDate
+      );
+      if (hasLeaveConflict) {
+        throw new AppError('leave_conflict', 400, 'leave_conflict');
+      }
+    }
+
     const duplicateList = await DutyRepository.findDuplicateDutyForEmployee(currentDuty.employeeId, targetDate, id);
-    if (duplicateList.length > 0) {
+    const duplicate = duplicateList.find(d => d.type === targetType);
+    if (duplicate) {
       throw new AppError('duplicate_duty_on_date', 400, 'duplicate_duty_on_date');
     }
 
@@ -273,13 +319,13 @@ export class DutyService {
       totalBill
     });
 
-    const emp = await EmployeeRepository.findById(updatedDuty.employeeId);
-    const cell = emp ? (await db.select().from(cells).where(eq(cells.id, emp.cellId)))[0] : null;
+    const updatedEmp = await EmployeeRepository.findById(updatedDuty.employeeId);
+    const cell = updatedEmp ? (await db.select().from(cells).where(eq(cells.id, updatedEmp.cellId)))[0] : null;
 
     const updated = {
       ...updatedDuty,
       employee: {
-        ...emp,
+        ...updatedEmp,
         cell
       }
     };
@@ -303,7 +349,7 @@ export class DutyService {
     return updated;
   }
 
-  static async deleteDuty(currentUser: any, id: number) {
+  static async deleteDuty(currentUser: UserSession | null | undefined, id: number) {
     const dutyRecord = await DutyRepository.findById(id);
     if (!dutyRecord) {
       throw new AppError('duty_not_found', 404, 'duty_not_found');
@@ -339,20 +385,14 @@ export class DutyService {
 
 // Helper query function wrappers for dynamic import resolution
 function employeesCellIdHelper() {
-  const { employees } = require('@/db/schema');
   return employees.cellId;
 }
 function dutiesOrderRefHelper() {
-  const { duties } = require('@/db/schema');
   return duties.orderRef;
 }
 function gteDutiesDateHelper(val: string) {
-  const { duties } = require('@/db/schema');
-  const { gte } = require('drizzle-orm');
   return gte(duties.date, val);
 }
 function lteDutiesDateHelper(val: string) {
-  const { duties } = require('@/db/schema');
-  const { lte } = require('drizzle-orm');
   return lte(duties.date, val);
 }

@@ -12,7 +12,7 @@ export const authOptions: NextAuthOptions = {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials, req) {
+      async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
           return null;
         }
@@ -21,23 +21,23 @@ export const authOptions: NextAuthOptions = {
         const password = credentials.password;
 
         // Query user using Drizzle
-        let userList = await db.select().from(users).where(eq(users.username, username));
+        const userList = await db.select().from(users).where(eq(users.username, username));
         let user = userList[0];
 
         // Case-insensitive fallback if exact match fails
         if (!user) {
           const allUsers = await db.select().from(users);
-          user = allUsers.find((u: any) => u.username.toLowerCase() === username.toLowerCase())!;
+          user = allUsers.find((u) => u.username.toLowerCase() === username.toLowerCase())!;
         }
 
         // Auto-provision user if missing, but employee with this bankId exists
         if (!user) {
-          let empList = await db.select().from(employees).where(eq(employees.bankId, username));
+          const empList = await db.select().from(employees).where(eq(employees.bankId, username));
           let employee = empList[0];
 
           if (!employee) {
             const allEmps = await db.select().from(employees);
-            employee = allEmps.find((e: any) => e.bankId?.toLowerCase() === username.toLowerCase())!;
+            employee = allEmps.find((e) => e.bankId?.toLowerCase() === username.toLowerCase())!;
           }
 
           if (employee && employee.bankId) {
@@ -82,15 +82,21 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
+        token.role = (user as { role?: string }).role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = parseInt(token.id as string, 10);
-        (session.user as any).role = token.role;
-        (session.user as any).username = session.user.email;
+        const sessionUser = session.user as {
+          id?: number;
+          role?: string;
+          username?: string | null;
+          email?: string | null;
+        };
+        sessionUser.id = parseInt(token.id as string, 10);
+        sessionUser.role = token.role as string;
+        sessionUser.username = sessionUser.email;
       }
       return session;
     }

@@ -9,8 +9,6 @@ import {
   UserCheck, 
   AlertCircle,
   Briefcase,
-  Phone,
-  Mail,
   Download,
   Eye,
   Printer,
@@ -29,70 +27,20 @@ interface Executive {
   createdAt: string;
 }
 
+interface User {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+}
+
 const STRICT_DESIGNATIONS = [
   'মহাব্যবস্থাপক',
   'উপ-মহাব্যবস্থাপক',
   'সহকারী মহাব্যবস্থাপক'
 ];
 
-const PALETTES = [
-  {
-    border: 'border-l-4 border-l-indigo-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
-    badge: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30',
-    title: 'text-indigo-900 dark:text-indigo-100 group-hover:text-indigo-650',
-    bg: 'bg-indigo-50/10 dark:bg-indigo-950/5',
-    name: 'indigo'
-  },
-  {
-    border: 'border-l-4 border-l-emerald-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
-    badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30',
-    title: 'text-emerald-900 dark:text-emerald-100 group-hover:text-emerald-600',
-    bg: 'bg-emerald-50/10 dark:bg-emerald-950/5',
-    name: 'emerald'
-  },
-  {
-    border: 'border-l-4 border-l-amber-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
-    badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30',
-    title: 'text-amber-900 dark:text-amber-100 group-hover:text-amber-600',
-    bg: 'bg-amber-50/10 dark:bg-emerald-950/5',
-    name: 'amber'
-  },
-  {
-    border: 'border-l-4 border-l-rose-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
-    badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30',
-    title: 'text-rose-900 dark:text-rose-100 group-hover:text-rose-600',
-    bg: 'bg-rose-50/10 dark:bg-rose-950/5',
-    name: 'rose'
-  },
-  {
-    border: 'border-l-4 border-l-sky-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
-    badge: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30',
-    title: 'text-sky-900 dark:text-sky-100 group-hover:text-sky-600',
-    bg: 'bg-sky-50/10 dark:bg-sky-950/5',
-    name: 'sky'
-  },
-  {
-    border: 'border-l-4 border-l-violet-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
-    badge: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30',
-    title: 'text-violet-900 dark:text-violet-100 group-hover:text-violet-600',
-    bg: 'bg-violet-50/10 dark:bg-violet-950/5',
-    name: 'violet'
-  },
-  {
-    border: 'border-l-4 border-l-teal-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
-    badge: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-400 border border-teal-100 dark:border-teal-900/30',
-    title: 'text-teal-900 dark:text-teal-100 group-hover:text-teal-600',
-    bg: 'bg-teal-50/10 dark:bg-teal-950/5',
-    name: 'teal'
-  },
-  {
-    border: 'border-l-4 border-l-fuchsia-500 border-t border-r border-b border-slate-200 dark:border-slate-800',
-    badge: 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-400 border border-fuchsia-100 dark:border-fuchsia-900/30',
-    title: 'text-fuchsia-900 dark:text-fuchsia-100 group-hover:text-fuchsia-600',
-    bg: 'bg-fuchsia-50/10 dark:bg-fuchsia-950/5',
-    name: 'fuchsia'
-  }
-];
+
 
 const extractNickname = (nameStr: string): string => {
   const clean = nameStr.trim();
@@ -120,12 +68,10 @@ const extractNickname = (nameStr: string): string => {
   return parts[0] ? parts[0].substring(0, 10) : 'ইউ';
 };
 
-const getPalette = (id: number) => {
-  return PALETTES[id % PALETTES.length];
-};
+
 
 export default function ExecutivesPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [executives, setExecutives] = useState<Executive[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -158,13 +104,12 @@ export default function ExecutivesPage() {
 
   // Image paste parsing states
   const [isImageImportLoading, setIsImageImportLoading] = useState(false);
-  const [customApiKey, setCustomApiKey] = useState(() => {
+  const [customApiKey] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('ai_api_key') || '';
     }
     return '';
   });
-  const [showKeyInput, setShowKeyInput] = useState(false);
 
   // Fetch initial data
   async function loadData() {
@@ -217,7 +162,10 @@ export default function ExecutivesPage() {
       }
     }
     getProfile();
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Handle Form Submit
@@ -254,7 +202,8 @@ export default function ExecutivesPage() {
       setEditingExec(null);
       setForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '' });
       loadData();
-    } catch (err: any) {
+    } catch (err) {
+      console.error(err);
       setErrorMessage('সার্ভার সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
     }
   };
@@ -286,7 +235,7 @@ export default function ExecutivesPage() {
         setErrorMessage(data.message || 'নির্বাহী তালিকা প্রস্তুত করতে ব্যর্থ হয়েছে।');
         return null;
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error generating employee list:', err);
       setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
       return null;
@@ -516,8 +465,9 @@ export default function ExecutivesPage() {
       setBulkText('');
       setBulkError('');
       loadData();
-    } catch (err: any) {
-      setBulkError(err.message || 'আমদানিতে কিছু সমস্যা হয়েছে। অনুগ্রহ করে ডেটা চেক করে পুনরায় চেষ্টা করুন।');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'আমদানিতে কিছু সমস্যা হয়েছে। অনুগ্রহ করে ডেটা চেক করে পুনরায় চেষ্টা করুন।';
+      setBulkError(msg);
     } finally {
       setBulkImporting(false);
     }
@@ -544,11 +494,12 @@ export default function ExecutivesPage() {
       }
 
       if (data.employees && Array.isArray(data.employees)) {
-        const textLines = data.employees.map((emp: any) => `${emp.name} - ${emp.designation}`).join('\n');
+        const textLines = data.employees.map((emp: { name: string; designation: string }) => `${emp.name} - ${emp.designation}`).join('\n');
         setBulkText(prev => prev ? `${prev}\n${textLines}` : textLines);
       }
-    } catch (err: any) {
-      setBulkError(err.message || 'ছবি থেকে তথ্য বের করতে সমস্যা হয়েছে।');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'ছবি থেকে তথ্য বের করতে সমস্যা হয়েছে।';
+      setBulkError(msg);
     } finally {
       setIsImageImportLoading(false);
     }
@@ -575,11 +526,7 @@ export default function ExecutivesPage() {
     }
   };
 
-  const handleSaveApiKey = (key: string) => {
-    setCustomApiKey(key);
-    localStorage.setItem('ai_api_key', key);
-    setShowKeyInput(false);
-  };
+
 
   const exportExecutivesToCSV = () => {
     let csvContent = '\uFEFFনাম,পদবী,ব্যাংক আইডি,নথি নম্বর\n';
@@ -1020,7 +967,7 @@ export default function ExecutivesPage() {
                   disabled={isImageImportLoading}
                 />
                 <p className="text-[10px] text-slate-400">
-                  প্যাটার্ন: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">নাম - পদবী</code> (যেমন: নাম ও পদবীর মাঝে হাইফেন <strong>-</strong> বা কমা <strong>,</strong> ব্যবহার করুন)। পদবী না দিলে স্বয়ংক্রিয়ভাবে "উপ-মহাব্যবস্থাপক" ধরা হবে।
+                  প্যাটার্ন: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">নাম - পদবী</code> (যেমন: নাম ও পদবীর মাঝে হাইফেন <strong>-</strong> বা কমা <strong>,</strong> ব্যবহার করুন)। পদবী না দিলে স্বয়ংক্রিয়ভাবে &quot;উপ-মহাব্যবস্থাপক&quot; ধরা হবে।
                 </p>
               </div>
 

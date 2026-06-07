@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { leaveApplications } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, SQL } from 'drizzle-orm';
 
 export class LeaveRepository {
   static async findById(id: number) {
@@ -8,11 +8,11 @@ export class LeaveRepository {
     return list[0] || null;
   }
 
-  static async listAll(conditions?: any) {
+  static async listAll(conditions?: SQL | undefined) {
     return db.select().from(leaveApplications).where(conditions).orderBy(desc(leaveApplications.createdAt));
   }
 
-  static async findLatestLeave(conditions?: any) {
+  static async findLatestLeave(conditions?: SQL | undefined) {
     const list = await db.select().from(leaveApplications)
       .where(conditions)
       .orderBy(desc(leaveApplications.createdAt))

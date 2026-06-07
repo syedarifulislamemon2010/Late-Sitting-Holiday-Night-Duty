@@ -19,7 +19,12 @@ const supabase = supabaseUrl && supabaseAnonKey
  */
 export function useRealtime(
   table: string,
-  callback: (payload: any) => void,
+  callback: (payload: {
+    eventType: string;
+    new: Record<string, unknown>;
+    old: Record<string, unknown>;
+    [key: string]: unknown;
+  }) => void,
   event: 'INSERT' | 'UPDATE' | 'DELETE' | '*' = '*'
 ) {
   useEffect(() => {

@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { documents, officeOrders } from '@/db/schema';
+import { officeOrders } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
+
+interface DutyItem {
+  employee: {
+    name: string;
+    designation: string;
+    bankId: string;
+  };
+  datesFormatted: string;
+  description: string;
+}
 
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
@@ -33,7 +43,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'missing_required_fields' }, { status: 400 });
     }
 
-    const dutiesHtml = duties.map((d: any, index: number) => {
+    const dutiesHtml = duties.map((d: DutyItem, index: number) => {
       const name = d.employee.name.startsWith('জনাব ') || d.employee.name.startsWith('জনাব')
         ? d.employee.name
         : `জনাব ${d.employee.name}`;
@@ -98,21 +108,21 @@ export async function POST(request: Request) {
     text-align: right;
   }
   .bank-title {
-    font-size: 24px;
+    font-size: 20pt;
     font-weight: bold;
     color: #0b5e9e;
     margin: 0;
     line-height: 1.0;
   }
   .bank-tagline {
-    font-size: 12px;
+    font-size: 10pt;
     font-weight: bold;
     color: #555555;
     margin: 4px 0 0 0;
     line-height: 1.0;
   }
   .dept-title {
-    font-size: 18px;
+    font-size: 15pt;
     font-weight: bold;
     color: #000000;
     margin: 8px 0 0 0;
@@ -125,7 +135,7 @@ export async function POST(request: Request) {
     padding-bottom: 5px;
     margin-bottom: 15px;
     margin-top: 5px;
-    font-size: 12px;
+    font-size: 11pt;
     font-weight: bold;
   }
   .ref-date-table td {
@@ -134,7 +144,7 @@ export async function POST(request: Request) {
   }
   .title-content {
     text-align: center;
-    font-size: 12px;
+    font-size: 16pt;
     font-weight: bold;
     text-decoration: underline;
     margin-bottom: 10px;
@@ -142,7 +152,7 @@ export async function POST(request: Request) {
   }
   .body-content {
     text-align: justify;
-    font-size: 12px;
+    font-size: 12pt;
     line-height: 1.6;
     margin-bottom: 15px;
     text-indent: 0.5in;
@@ -152,7 +162,7 @@ export async function POST(request: Request) {
     border-collapse: collapse;
     margin-top: 10px;
     margin-bottom: 15px;
-    font-size: 12px;
+    font-size: 11pt;
   }
   table.duty-table th, table.duty-table td {
     border: 1px solid #000;
@@ -161,8 +171,12 @@ export async function POST(request: Request) {
   }
   table.duty-table th {
     background-color: #f8fafc;
+    font-size: 12pt;
     font-weight: bold;
     text-align: center;
+  }
+  table.duty-table td {
+    font-size: 11pt;
   }
   table.duty-table td.text-center {
     text-align: center;
@@ -174,7 +188,7 @@ export async function POST(request: Request) {
   .signature-container {
     width: 100%;
     margin-top: 1.0in;
-    font-size: 12px;
+    font-size: 11pt;
     overflow: hidden;
   }
   .signature-block {
@@ -184,11 +198,12 @@ export async function POST(request: Request) {
     line-height: 1.2;
   }
   .sig-name {
+    font-size: 12pt;
     font-weight: bold;
   }
   .footer-copy {
     margin-top: 40px;
-    font-size: 12px;
+    font-size: 10pt;
     color: #333;
     border-top: 1px dashed #ccc;
     padding-top: 10px;
@@ -335,8 +350,8 @@ export async function POST(request: Request) {
       filePath: relativePath
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error generating office order document:', error);
-    return NextResponse.json({ error: 'failed_to_generate_office_order', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_generate_office_order', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

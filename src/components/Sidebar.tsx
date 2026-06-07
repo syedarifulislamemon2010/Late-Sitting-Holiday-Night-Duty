@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { 
@@ -16,22 +17,33 @@ import {
   Utensils,
   Languages,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ClipboardList
 } from 'lucide-react';
+
+interface UserSession {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells: { id: number; name: string }[];
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
-    const stored = localStorage.getItem('sidebar-collapsed');
-    if (stored === 'true') {
-      setIsCollapsed(true);
-    }
+    setTimeout(() => {
+      setIsMounted(true);
+      const stored = localStorage.getItem('sidebar-collapsed');
+      if (stored === 'true') {
+        setIsCollapsed(true);
+      }
+    }, 0);
   }, []);
 
   useEffect(() => {
@@ -84,7 +96,10 @@ export default function Sidebar() {
     {
       title: 'প্রশাসনিক কার্যক্রম',
       items: [
-        ...(isAdmin ? [{ name: 'নির্বাহী প্যানেল', href: '/executive', icon: Users }] : []),
+        ...(isAdmin ? [
+          { name: 'নির্বাহী প্যানেল', href: '/executive', icon: Users },
+          { name: 'অডিট লগ', href: '/audit', icon: ClipboardList }
+        ] : []),
         { name: 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
         { name: 'অফিস অর্ডার', href: '/roster', icon: CalendarRange }
       ]
@@ -118,7 +133,7 @@ export default function Sidebar() {
       {/* Mobile Top Navigation */}
       <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <Link href="/" className="flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] rounded-lg">
-          <img src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" className="h-8 w-8 shrink-0 object-contain" />
+          <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={32} height={32} className="shrink-0 object-contain" />
           <h1 className="font-semibold text-slate-950 text-sm leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
         </Link>
         <button 
@@ -154,10 +169,12 @@ export default function Sidebar() {
             href="/" 
             className="flex items-center gap-3 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] focus:ring-offset-2 rounded-lg"
           >
-            <img 
+            <Image 
               src="/janata-bank-logo-real.svg" 
               alt="Janata Bank Logo" 
-              className="h-9 w-9 shrink-0 object-contain transition-transform group-hover:scale-105" 
+              width={36}
+              height={36}
+              className="shrink-0 object-contain transition-transform group-hover:scale-105" 
             />
             {!(isMounted && isCollapsed) && (
               <div className="whitespace-nowrap transition-opacity duration-200">

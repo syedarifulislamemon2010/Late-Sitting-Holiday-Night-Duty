@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { cells, employees, users, executives as executivesTable, documents } from '@/db/schema';
-import { eq, and, ne, inArray, asc } from 'drizzle-orm';
+import { cells, employees, executives as executivesTable, documents } from '@/db/schema';
+import { eq, and, ne, inArray, asc, SQL } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import fs from 'fs';
 import path from 'path';
@@ -69,14 +69,14 @@ export async function POST(request: Request) {
       }
     }
 
-    let cond = ne(cells.name, 'Combined Departmental Sheet');
+    let cond: SQL | undefined = ne(cells.name, 'Combined Departmental Sheet');
     if (cellFilter === 'executives') {
       cond = eq(cells.id, -1);
     } else if (cellIds.length > 0) {
-      cond = and(cond, inArray(cells.id, cellIds)) as any;
+      cond = and(cond, inArray(cells.id, cellIds));
     }
     
-    let cellsList = await db.query.cells.findMany({
+    const cellsList = await db.query.cells.findMany({
       where: cond,
       orderBy: [asc(cells.name)],
       with: {
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       }
     });
 
-    const userCellsMap = new Map<string, any[]>();
+    const userCellsMap = new Map<string, { id: number; name: string }[]>();
     usersForExpansion.forEach(u => {
       if (u.username) {
         userCellsMap.set(
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
 
     const allEmployeesForExpansion = await db.select().from(employees);
 
-    cellsList = cellsList.map(cell => {
+    const cellsListWithEmployees = cellsList.map(cell => {
       const cellEmps = [...cell.employees];
       
       for (const emp of allEmployeesForExpansion) {
@@ -126,9 +126,9 @@ export async function POST(request: Request) {
         ...cell,
         employees: cellEmps
       };
-    }) as any;
+    });
 
-    let executives: any[] = [];
+    let executives: (typeof executivesTable.$inferSelect)[] = [];
     if (isAdmin && cellFilter === 'executives') {
       const execList = await db.select().from(executivesTable);
       executives = execList.filter(e => {
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const sortExecutives = (execs: any[]) => {
+    const sortExecutives = (execs: (typeof executivesTable.$inferSelect)[]) => {
       return [...execs].sort((a, b) => {
         const priority = (desig: string) => {
           const d = desig.toLowerCase();
@@ -236,7 +236,7 @@ export async function POST(request: Request) {
 
     let tablesHtml = '';
     
-    cellsList.forEach((cell) => {
+    cellsListWithEmployees.forEach((cell) => {
       if (cell.employees.length === 0) return;
 
       const sortedEmployees = [...cell.employees].sort((a, b) => {
@@ -465,8 +465,8 @@ export async function POST(request: Request) {
       document: doc
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error generating employee list document:', error);
-    return NextResponse.json({ error: 'failed_to_generate_employee_list', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_generate_employee_list', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

@@ -58,8 +58,8 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
     }
 
     return NextResponse.json({ success: true, employees: parsedEmployees });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error parsing employee image:', error);
-    return NextResponse.json({ error: 'failed_to_parse_image', message: error.message }, { status: 550 });
+    return NextResponse.json({ error: 'failed_to_parse_image', message: (error instanceof Error ? error.message : String(error)) }, { status: 550 });
   }
 }

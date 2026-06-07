@@ -1,20 +1,16 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 
 import { 
-  Plus, 
-  Search, 
   Trash2, 
   Edit2,
   Calendar, 
   Printer, 
-  Building2, 
   ChevronLeft, 
   ChevronRight,
   Check, 
-  Users,
   AlertCircle,
   FileText
 } from 'lucide-react';
@@ -33,6 +29,72 @@ interface Employee {
   fileNo: string | null;
   cellId: number;
   cell: Cell;
+}
+
+interface Executive {
+  id: number;
+  name: string;
+  designation: string;
+  fileNo?: string | null;
+}
+
+interface Holiday {
+  id: number;
+  date: string;
+  name: string;
+  isWorkingDay: boolean;
+}
+
+interface User {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells?: Cell[];
+}
+
+interface OrderDuty {
+  employeeId?: string | null;
+  employeeName: string;
+  designation: string;
+  days: number;
+  apyaonRate: number;
+  totalApyaon: number;
+  totalTransport: number;
+  grandTotal: number;
+  datesFormatted: string;
+  dates?: string[];
+  description?: string;
+}
+
+interface OfficeOrder {
+  id: number;
+  orderRef: string;
+  originalOrderRef?: string;
+  orderDate: string;
+  category: string;
+  employeeName: string;
+  cellName: string | null;
+  status: string;
+  dutiesJson?: string | null;
+  duties?: OrderDuty[];
+  content?: {
+    subjectText?: string;
+    openingParagraph?: string;
+    signingOfficer?: string;
+    signingDesignation?: string;
+    representativeDesignation?: string;
+    totalDays?: number;
+    totalApyaon?: number;
+    totalTransport?: number;
+    grandTotal?: number;
+    grandTotalInWords?: string;
+    backingOrderId?: number | null;
+    backingOrderRef?: string | null;
+    backingOrderDate?: string | null;
+    orderText?: string;
+    copies?: string[];
+  } | null;
 }
 
 interface Duty {
@@ -107,17 +169,71 @@ const getBanglaNumberWords = (num: number) => {
   return wordStr.trim() + ' টাকা মাত্র';
 };
 
+const LATE_SITTING_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>ছুটির পর (Late Sitting)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
+const NIGHT_SHIFT_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>রাত্রিকালীন (Night Shift)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
+const HOLIDAY_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>ছুটির দিনে (Holiday)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
+
+const checkIsWorkingDay = (dateStr: string, holidaysList: Holiday[]) => {
+  if (!dateStr) return true;
+  
+  // Hardcoded override for May 23, 2026 (Saturday) to be a working day (just like in dashboard calendar)
+  if (dateStr === '2026-05-23') {
+    return true;
+  }
+  
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
+  
+  // Find database holiday entry
+  const holiday = holidaysList.find(h => h.date === dateStr);
+  
+  if (holiday) {
+    return holiday.isWorkingDay; // If isWorkingDay is false, it's a holiday (non-working day)
+  }
+  
+  // Default weekends in Bangladesh (Friday and Saturday)
+  if (dayOfWeek === 5 || dayOfWeek === 6) {
+    return false;
+  }
+  
+  return true;
+};
+
+const calculateOrderDate = (earliestDateStr: string, holidaysList: Holiday[], steps: number = 1) => {
+  if (!earliestDateStr) return new Date().toISOString().split('T')[0];
+  
+  const [y, m, d] = earliestDateStr.split('-').map(Number);
+  const currentDate = new Date(y, m - 1, d);
+  
+  let workingDaysFound = 0;
+  while (true) {
+    // Subtract 1 day
+    currentDate.setDate(currentDate.getDate() - 1);
+    
+    const cy = currentDate.getFullYear();
+    const cm = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const cd = String(currentDate.getDate()).padStart(2, '0');
+    const cDateStr = `${cy}-${cm}-${cd}`;
+    
+    if (checkIsWorkingDay(cDateStr, holidaysList)) {
+      workingDaysFound++;
+      if (workingDaysFound === steps) {
+        return cDateStr;
+      }
+    }
+  }
+};
+
 export default function RosterPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [orderGenerated, setOrderGenerated] = useState(false);
   const [isArchived, setIsArchived] = useState(false);
-  const [officeOrders, setOfficeOrders] = useState<any[]>([]);
-  const isFirstLoadRef = useRef(true);
+  const [officeOrders, setOfficeOrders] = useState<OfficeOrder[]>([]);
   const isInitializingArchiveRef = useRef(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [duties, setDuties] = useState<Duty[]>([]);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
@@ -214,11 +330,8 @@ export default function RosterPage() {
     setOpt1ViewedMonths(prev => ({ ...prev, [empId]: nextYm }));
   };
 
-  useEffect(() => {
-    if (cells.length > 0 && opt1CellId === 'all') {
-      setOpt1CellId(cells[0].id.toString());
-    }
-  }, [cells]);
+  // Removed automatic setOpt1CellId useEffect to resolve setState in effect warning.
+  // Cell pre-selection is now done inside data load functions.
 
   const handleOpt1EmployeeToggle = (empId: number) => {
     setOpt1Assignments(prev => {
@@ -256,13 +369,19 @@ export default function RosterPage() {
 
   // Office Order (জিও) custom edit fields
   const [isPrintMode, setIsPrintMode] = useState(false);
-  const [isEditingArchive, setIsEditingArchive] = useState(false);
+  const [isEditingArchive, setIsEditingArchive] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return !!params.get('edit_ref');
+    }
+    return false;
+  });
   const [archiveSerial, setArchiveSerial] = useState('');
   const [originalOrderRef, setOriginalOrderRef] = useState('');
   const [activePartIdx, setActivePartIdx] = useState(0);
 
-  const getSplitParts = (flatDuties: any[], numParts: number) => {
-    const parts: any[][] = Array.from({ length: numParts }, () => []);
+  const getSplitParts = (flatDuties: Duty[], numParts: number): Duty[][] => {
+    const parts: Duty[][] = Array.from({ length: numParts }, () => []);
     const sorted = [...flatDuties].sort((a, b) => {
       const dComp = a.date.localeCompare(b.date);
       if (dComp !== 0) return dComp;
@@ -283,45 +402,12 @@ export default function RosterPage() {
     return parts;
   };
 
-  const [memoNo, setMemoNo] = useState('স্মারক নং: ৪৬.০২.০০০০.০০১.১৯.০০২.২৬-১৫৪');
-  const [issuingOffice, setIssuingOffice] = useState('প্রশাসনিক সেল, ডিউটি পোর্টাল কার্যালয়');
   const [signingOfficer, setSigningOfficer] = useState('জনাব মোহাম্মদ সোহরাব হোসেন');
   const [signingDesignation, setSigningDesignation] = useState('উপ-মহাব্যবস্থাপক');
-  const [signingPhone, setSigningPhone] = useState('০২-৯৫৫৫৬৬৬');
-  const [signingEmail, setSigningEmail] = useState('ashikur.rahman@office.gov.bd');
   const [copies, setCopies] = useState<string[]>([]);
-  const [newCopyText, setNewCopyText] = useState('');
-  const [executives, setExecutives] = useState<any[]>([]);
+  const [executives, setExecutives] = useState<Executive[]>([]);
   const [selectedExecutiveId, setSelectedExecutiveId] = useState<string>('');
-  const [holidays, setHolidays] = useState<any[]>([]);
-
-  // Helper to check if a date is a working day or weekend/holiday
-  const checkIsWorkingDay = (dateStr: string, holidaysList: any[]) => {
-    if (!dateStr) return true;
-    
-    // Hardcoded override for May 23, 2026 (Saturday) to be a working day (just like in dashboard calendar)
-    if (dateStr === '2026-05-23') {
-      return true;
-    }
-    
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
-    
-    // Find database holiday entry
-    const holiday = holidaysList.find(h => h.date === dateStr);
-    
-    if (holiday) {
-      return holiday.isWorkingDay; // If isWorkingDay is false, it's a holiday (non-working day)
-    }
-    
-    // Default weekends in Bangladesh (Friday and Saturday)
-    if (dayOfWeek === 5 || dayOfWeek === 6) {
-      return false;
-    }
-    
-    return true;
-  };
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   // Check if a date should be disabled based on selected duty category
   const isDateDisabledForType = (isWorking: boolean, type: string) => {
@@ -332,32 +418,6 @@ export default function RosterPage() {
       return isWorking; // Disable normal working days for Holiday Duty
     }
     return false; // Night Shift allows any date
-  };
-
-  // Helper to walk backward to find the N-th previous working day
-  const calculateOrderDate = (earliestDateStr: string, holidaysList: any[], steps: number = 1) => {
-    if (!earliestDateStr) return new Date().toISOString().split('T')[0];
-    
-    let [y, m, d] = earliestDateStr.split('-').map(Number);
-    let currentDate = new Date(y, m - 1, d);
-    
-    let workingDaysFound = 0;
-    while (true) {
-      // Subtract 1 day
-      currentDate.setDate(currentDate.getDate() - 1);
-      
-      const cy = currentDate.getFullYear();
-      const cm = String(currentDate.getMonth() + 1).padStart(2, '0');
-      const cd = String(currentDate.getDate()).padStart(2, '0');
-      const cDateStr = `${cy}-${cm}-${cd}`;
-      
-      if (checkIsWorkingDay(cDateStr, holidaysList)) {
-        workingDaysFound++;
-        if (workingDaysFound === steps) {
-          return cDateStr;
-        }
-      }
-    }
   };
 
   // Render stunning month calendar for multi-date selection
@@ -497,7 +557,7 @@ export default function RosterPage() {
             </p>
             <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
               {opt1Assignments[empId].map(dateStr => {
-                const [y, m, d] = dateStr.split('-');
+                const [, m, d] = dateStr.split('-');
                 const shortLabel = `${toBanglaDigits(parseInt(d, 10))} ${banglaMonths[parseInt(m, 10) - 1].substring(0, 3)}`;
                 return (
                   <span
@@ -523,26 +583,171 @@ export default function RosterPage() {
   };
 
   // New customizable parameters for Janata Bank Office Order
-  const [printCategory, setPrintCategory] = useState<'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'>('LATE_SITTING');
+  const [userSelectedPrintCategory, setUserSelectedPrintCategory] = useState<'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | null>(null);
 
-  useEffect(() => {
+  const printCategory = useMemo(() => {
+    if (userSelectedPrintCategory !== null) return userSelectedPrintCategory;
+    if (isEditingArchive || isPrintMode || isArchived) {
+      // return default fallback
+    }
+    if (duties && duties.length > 0) {
+      let latestDuty = duties[0];
+      for (let i = 1; i < duties.length; i++) {
+        if (duties[i].id > latestDuty.id) {
+          latestDuty = duties[i];
+        }
+      }
+      if (latestDuty && latestDuty.type) {
+        return latestDuty.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+      }
+    }
+    return 'LATE_SITTING';
+  }, [userSelectedPrintCategory, duties, isEditingArchive, isPrintMode, isArchived]);
+
+  const changePrintCategory = (category: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT') => {
+    setUserSelectedPrintCategory(category);
     setActivePartIdx(0);
-  }, [selectedMonths, selectedCell, printCategory]);
+    setUserSelectedPayeeId(null);
+    setUserCustomOrderText(null);
+    setUserCustomOrderRef(null);
+    setOrderGenerated(false);
+  };
 
-  const [payeeEmployeeId, setPayeeEmployeeId] = useState<string>('');
-  const [orderDate, setOrderDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const changeSelectedCell = (cellId: string) => {
+    setSelectedCell(cellId);
+    setActivePartIdx(0);
+    setUserSelectedPayeeId(null);
+    setUserCustomOrderText(null);
+    setUserCustomOrderRef(null);
+    setOrderGenerated(false);
+  };
+
+  const changeSelectedMonths = (months: string[] | ((prev: string[]) => string[])) => {
+    setSelectedMonths(months);
+    setActivePartIdx(0);
+    setUserSelectedPayeeId(null);
+    setUserCustomOrderText(null);
+    setUserCustomOrderRef(null);
+    setOrderGenerated(false);
+  };
+
+  const [userSelectedPayeeId, setUserSelectedPayeeId] = useState<string | null>(null);
   
-  const LATE_SITTING_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>ছুটির পর (Late Sitting)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
+  const [userCustomOrderDate, setUserCustomOrderDate] = useState<string | null>(null);
+  const [userCustomOrderText, setUserCustomOrderText] = useState<string | null>(null);
+  const [userCustomOrderRef, setUserCustomOrderRef] = useState<string | null>(null);
 
-  const NIGHT_SHIFT_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>রাত্রিকালীন (Night Shift)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
 
-  const HOLIDAY_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>ছুটির দিনে (Holiday)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
 
-  const [orderText, setOrderText] = useState(LATE_SITTING_TEMPLATE);
-  const [orderRef, setOrderRef] = useState('');
-  const [headerMode, setHeaderMode] = useState<'with_header' | 'without_header'>('with_header');
+  const getGroupedDuties = useCallback(() => {
+    const filtered = duties.filter(d => {
+      const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
+      const matchesCategory = d.type === printCategory;
+      const matchesOrderRef = (isEditingArchive || isPrintMode)
+        ? (d.orderRef === originalOrderRef || !d.orderRef)
+        : !d.orderRef;
+      return matchesCell && matchesCategory && matchesOrderRef;
+    });
 
-  // Calculate stable, deterministic reference number suffix based on selected duties
+    const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
+    const totalDays = filtered.length;
+    const totalApyaon = totalDays * apyaonRate;
+
+    let activeDuties = filtered;
+    if (totalApyaon > 7500) {
+      const numParts = Math.ceil(totalApyaon / 7500);
+      const parts = getSplitParts(filtered, numParts);
+      activeDuties = parts[activePartIdx] || [];
+    }
+
+    const groupedMap = new Map<number, { employee: Employee; dates: string[]; description: string }>();
+    activeDuties.forEach(d => {
+      const empId = d.employee.id;
+      if (!groupedMap.has(empId)) {
+        groupedMap.set(empId, {
+          employee: d.employee,
+          dates: [],
+          description: d.description || `Customization এবং Development সংক্রান্ত কাজ (${d.employee.cell?.name || ''})`
+        });
+      }
+      const group = groupedMap.get(empId)!;
+      if (!group.dates.includes(d.date)) {
+        group.dates.push(d.date);
+      }
+      if (d.description && d.description.trim() !== '') {
+        group.description = d.description;
+      }
+    });
+
+    const groupedList = Array.from(groupedMap.values());
+    const sortedEmployees = sortEmployeesBySeniority(groupedList.map(g => g.employee));
+    groupedList.sort((a, b) => {
+      const idxA = sortedEmployees.findIndex(emp => emp.id === a.employee.id);
+      const idxB = sortedEmployees.findIndex(emp => emp.id === b.employee.id);
+      return idxA - idxB;
+    });
+
+    return groupedList;
+  }, [duties, selectedCell, printCategory, isEditingArchive, isPrintMode, originalOrderRef, activePartIdx]);
+
+  const payeeEmployeeId = useMemo(() => {
+    if (userSelectedPayeeId !== null) return userSelectedPayeeId;
+    const tableEmps = getGroupedDuties();
+    if (tableEmps.length > 0) {
+      let maxDutiesGroup = tableEmps[0];
+      for (let i = 1; i < tableEmps.length; i++) {
+        if (tableEmps[i].dates.length > maxDutiesGroup.dates.length) {
+          maxDutiesGroup = tableEmps[i];
+        }
+      }
+      return maxDutiesGroup.employee.id.toString();
+    }
+    return '';
+  }, [userSelectedPayeeId, getGroupedDuties]);
+
+  const orderText = useMemo(() => {
+    if (userCustomOrderText !== null) return userCustomOrderText;
+    let template = LATE_SITTING_TEMPLATE;
+    if (printCategory === 'NIGHT_SHIFT') template = NIGHT_SHIFT_TEMPLATE;
+    if (printCategory === 'HOLIDAY') template = HOLIDAY_TEMPLATE;
+    return template;
+  }, [userCustomOrderText, printCategory]);
+
+  const orderDate = useMemo(() => {
+    if (userCustomOrderDate !== null) return userCustomOrderDate;
+    
+    let earliestDate: string | null = null;
+    const tableGroups = getGroupedDuties();
+    const tableDates = tableGroups.flatMap(g => g.dates);
+    if (tableDates.length > 0) {
+      tableDates.sort();
+      earliestDate = tableDates[0];
+    } else {
+      if (entryMode === 'EMPLOYEE_WISE') {
+        const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+        const allDates: string[] = [];
+        activeEmployeeIds.forEach(empId => {
+          if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
+            allDates.push(...opt1Assignments[empId]);
+          }
+        });
+        if (allDates.length > 0) {
+          allDates.sort();
+          earliestDate = allDates[0];
+        }
+      } else {
+        if (assignmentForm.date) {
+          earliestDate = assignmentForm.date;
+        }
+      }
+    }
+
+    if (earliestDate) {
+      return calculateOrderDate(earliestDate, holidays, 1);
+    }
+    return new Date().toISOString().split('T')[0];
+  }, [userCustomOrderDate, getGroupedDuties, entryMode, opt1Assignments, assignmentForm.date, holidays]);
+
   const stableNumber = useMemo(() => {
     const filtered = duties.filter(d => {
       const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
@@ -552,7 +757,7 @@ export default function RosterPage() {
 
     const dutyIds = filtered.map(d => d.id).sort((a, b) => a - b);
     if (dutyIds.length === 0) {
-      return 84; // Fallback default
+      return 84;
     }
 
     const hashStr = `${dutyIds.join(',')}|${printCategory}|${payeeEmployeeId}`;
@@ -563,40 +768,21 @@ export default function RosterPage() {
     return 10 + (hash % 90);
   }, [duties, printCategory, payeeEmployeeId, selectedCell]);
 
-  // Automatically select employee with max duties as payee representative by default
-  useEffect(() => {
-    if (isEditingArchive || isPrintMode || isArchived) return;
+  const orderRef = useMemo(() => {
+    if (userCustomOrderRef !== null) return userCustomOrderRef;
+    if (isArchived) return '';
 
-    const tableEmps = getGroupedDuties();
-    if (tableEmps.length > 0) {
-      let maxDutiesGroup = tableEmps[0];
-      for (let i = 1; i < tableEmps.length; i++) {
-        if (tableEmps[i].dates.length > maxDutiesGroup.dates.length) {
-          maxDutiesGroup = tableEmps[i];
-        }
-      }
-      setPayeeEmployeeId(maxDutiesGroup.employee.id.toString());
-    } else {
-      setPayeeEmployeeId('');
+    const tableGroups = getGroupedDuties();
+    const tableDates = tableGroups.flatMap(g => g.dates);
+    const activeDuties = duties.filter(d => {
+      const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
+      const matchesCategory = d.type === printCategory;
+      return matchesCell && matchesCategory && tableDates.includes(d.date);
+    });
+    const firstArchivedDuty = activeDuties.find(d => d.orderRef);
+    if (firstArchivedDuty && firstArchivedDuty.orderRef) {
+      return firstArchivedDuty.orderRef;
     }
-  }, [selectedCell, duties, printCategory, isEditingArchive, isPrintMode, isArchived]);
-
-  // Sync templates and orderRef dynamically
-  useEffect(() => {
-    if (isArchived) {
-      return;
-    }
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('edit_ref')) {
-        return;
-      }
-    }
-
-    let template = LATE_SITTING_TEMPLATE;
-    if (printCategory === 'NIGHT_SHIFT') template = NIGHT_SHIFT_TEMPLATE;
-    if (printCategory === 'HOLIDAY') template = HOLIDAY_TEMPLATE;
-    setOrderText(template);
 
     let empName = 'ইমন';
     if (payeeEmployeeId) {
@@ -613,51 +799,31 @@ export default function RosterPage() {
     }
     const catBangla = printCategory === 'LATE_SITTING' ? 'লেট-সিটিং' : printCategory === 'HOLIDAY' ? 'অফ-ডে' : 'নাইট';
     const bnYear = toBanglaDigits('2026');
-    
-    // Check if there are any duties in the print table that already have an orderRef
-    const tableGroups = getGroupedDuties();
-    const tableDates = tableGroups.flatMap(g => g.dates);
-    const activeDuties = duties.filter(d => {
-      const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
-      const matchesCategory = d.type === printCategory;
-      return matchesCell && matchesCategory && tableDates.includes(d.date);
-    });
-    const firstArchivedDuty = activeDuties.find(d => d.orderRef);
-    if (firstArchivedDuty && firstArchivedDuty.orderRef) {
-      setOrderRef(firstArchivedDuty.orderRef);
-      return;
-    }
-    
+
     if (isEditingArchive) {
-      // If editing, use the preserved archiveSerial, or fall back to parsing current orderRef
       let currentSerial = archiveSerial;
-      if (!currentSerial && orderRef) {
-        const parts = orderRef.split('/');
+      if (!currentSerial && originalOrderRef) {
+        const parts = originalOrderRef.split('/');
         if (parts.length >= 7) {
           currentSerial = parts[6];
         }
       }
       if (currentSerial) {
-        setOrderRef(`৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${currentSerial}`);
+        return `৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${currentSerial}`;
       }
-      return;
     }
 
-    // Consecutive reference numbers for split parts (e.g., 85 and 86)
     const activeStableNumber = stableNumber + activePartIdx;
     const bnRand = toBanglaDigits(activeStableNumber);
-    setOrderRef(`৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${bnRand}`);
-  }, [printCategory, payeeEmployeeId, employees, stableNumber, isEditingArchive, activePartIdx, archiveSerial, isPrintMode, isArchived]);
+    return `৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnYear}/${bnRand}`;
+  }, [userCustomOrderRef, isArchived, duties, selectedCell, printCategory, payeeEmployeeId, employees, isEditingArchive, archiveSerial, originalOrderRef, stableNumber, activePartIdx, getGroupedDuties]);
+
+  const [headerMode, setHeaderMode] = useState<'with_header' | 'without_header'>('with_header');
 
   const archiveOrder = async (action: 'generate' | 'print' | 'download') => {
     if (!payeeEmployeeId || !orderRef) return;
     
     try {
-      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
-      const payeeName = emp ? emp.name : 'Unknown';
-      
-      const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
-      const cellName = matchedCellObj ? matchedCellObj.name : (selectedCell === 'all' ? 'All Cells' : 'IT Department');
       
       const printTableDuties = getGroupedDuties();
 
@@ -844,7 +1010,7 @@ export default function RosterPage() {
         
         if (isEditingArchive) {
           setIsEditingArchive(false);
-          window.location.href = '/documents';
+          window.location.assign('/documents');
         }
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -858,34 +1024,34 @@ export default function RosterPage() {
     }
   };
 
-  const handlePreviewOfficeOrder = async (order: any) => {
+  const handlePreviewOfficeOrder = async (order: OfficeOrder) => {
     // Find representative employee ID
     const localEmps = employees;
     const cleanName = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
-    const matchedRep = localEmps.find((e: any) => 
+    const matchedRep = localEmps.find((e: Employee) => 
       cleanName(e.name) === cleanName(order.employeeName) || 
       (e.bankId && order.employeeName.includes(e.bankId))
     );
     
     if (matchedRep) {
-      setPayeeEmployeeId(matchedRep.id.toString());
+      setUserSelectedPayeeId(matchedRep.id.toString());
     }
     
     // Find Cell ID
     if (order.cellName) {
-      const matchedCell = cells.find((c: any) => c.name === order.cellName);
+      const matchedCell = cells.find((c: Cell) => c.name === order.cellName);
       if (matchedCell) {
         setSelectedCell(matchedCell.id.toString());
       }
     }
     
-    setPrintCategory(order.category);
-    setOrderRef(order.orderRef);
+    setUserSelectedPrintCategory(order.category as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT');
+    setUserCustomOrderRef(order.orderRef);
     setOriginalOrderRef(order.orderRef);
-    setOrderDate(order.orderDate);
+    setUserCustomOrderDate(order.orderDate);
     
     if (order.content) {
-      setOrderText(order.content.orderText || '');
+      setUserCustomOrderText(order.content.orderText || '');
       setSigningOfficer(order.content.signingOfficer || '');
       setSigningDesignation(order.content.signingDesignation || '');
       if (Array.isArray(order.content.copies)) {
@@ -978,7 +1144,7 @@ export default function RosterPage() {
       const ordersRes = await fetch('/api/office-orders');
       if (!ordersRes.ok) return;
       const orders = await ordersRes.json();
-      const existingBill = orders.find((o: any) => o.orderRef === billRef);
+      const existingBill = orders.find((o: OfficeOrder) => o.orderRef === billRef);
       if (!existingBill) {
         console.log("No existing bill found for this office order. Skipping bill update.");
         return;
@@ -1118,143 +1284,10 @@ export default function RosterPage() {
     }
   };
 
-  const getGroupedDuties = () => {
-    const filtered = duties.filter(d => {
-      const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
-      const matchesCategory = d.type === printCategory;
-      const matchesOrderRef = (isEditingArchive || isPrintMode)
-        ? (d.orderRef === orderRef || !d.orderRef)
-        : !d.orderRef;
-      return matchesCell && matchesCategory && matchesOrderRef;
-    });
 
-    const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
-    const totalDays = filtered.length;
-    const totalApyaon = totalDays * apyaonRate;
-
-    let activeDuties = filtered;
-    if (totalApyaon > 7500) {
-      const numParts = Math.ceil(totalApyaon / 7500);
-      const parts = getSplitParts(filtered, numParts);
-      activeDuties = parts[activePartIdx] || [];
-    }
-
-    const groupedMap = new Map<number, { employee: Employee; dates: string[]; description: string }>();
-    activeDuties.forEach(d => {
-      const empId = d.employee.id;
-      if (!groupedMap.has(empId)) {
-        groupedMap.set(empId, {
-          employee: d.employee,
-          dates: [],
-          description: d.description || `Customization এবং Development সংক্রান্ত কাজ (${d.employee.cell?.name || ''})`
-        });
-      }
-      const group = groupedMap.get(empId)!;
-      if (!group.dates.includes(d.date)) {
-        group.dates.push(d.date);
-      }
-      if (d.description && d.description.trim() !== '') {
-        group.description = d.description;
-      }
-    });
-
-    const groupedList = Array.from(groupedMap.values());
-    const sortedEmployees = sortEmployeesBySeniority(groupedList.map(g => g.employee));
-    groupedList.sort((a, b) => {
-      const idxA = sortedEmployees.findIndex(emp => emp.id === a.employee.id);
-      const idxB = sortedEmployees.findIndex(emp => emp.id === b.employee.id);
-      return idxA - idxB;
-    });
-
-    return groupedList;
-  };
-
-  // Automatically calculate orderDate to be the previous working day of the earliest selected duty date or printed table date
-  useEffect(() => {
-    if (isArchived || isEditingArchive) {
-      return;
-    }
-    let earliestDate: string | null = null;
-
-    // First try to calculate from the matched duties in the print table
-    const tableGroups = getGroupedDuties();
-    const tableDates = tableGroups.flatMap(g => g.dates);
-    if (tableDates.length > 0) {
-      tableDates.sort();
-      earliestDate = tableDates[0];
-    } else {
-      // Fallback to the form inputs if print table is empty
-      if (entryMode === 'EMPLOYEE_WISE') {
-        const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
-        const allDates: string[] = [];
-        activeEmployeeIds.forEach(empId => {
-          if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
-            allDates.push(...opt1Assignments[empId]);
-          }
-        });
-        if (allDates.length > 0) {
-          allDates.sort();
-          earliestDate = allDates[0];
-        }
-      } else {
-        if (assignmentForm.date) {
-          earliestDate = assignmentForm.date;
-        }
-      }
-    }
-
-    if (earliestDate) {
-      const steps = 1;
-      const calculated = calculateOrderDate(earliestDate, holidays, steps);
-      setOrderDate(calculated);
-    }
-  }, [duties, selectedCell, printCategory, opt1Assignments, assignmentForm.date, entryMode, holidays, activePartIdx, isEditingArchive, isPrintMode, isArchived]);
-
-  // Automatically select print category based on the latest entered duty
-  useEffect(() => {
-    if (isEditingArchive || isPrintMode || isArchived) return;
-
-    if (duties && duties.length > 0) {
-      // Find the duty with the maximum ID
-      let latestDuty = duties[0];
-      for (let i = 1; i < duties.length; i++) {
-        if (duties[i].id > latestDuty.id) {
-          latestDuty = duties[i];
-        }
-      }
-
-      if (latestDuty && latestDuty.type) {
-        setPrintCategory(latestDuty.type);
-      }
-    }
-  }, [duties, isEditingArchive, isPrintMode, isArchived]);
-
-  // Reset orderGenerated to false if inputs change (excluding initial load)
-  useEffect(() => {
-    if (isFirstLoadRef.current) {
-      isFirstLoadRef.current = false;
-      return;
-    }
-    if (isInitializingArchiveRef.current) {
-      return;
-    }
-    console.log("Input changed, resetting orderGenerated to false");
-    setOrderGenerated(false);
-  }, [
-    printCategory,
-    payeeEmployeeId,
-    selectedExecutiveId,
-    orderRef,
-    orderDate,
-    orderText,
-    headerMode,
-    copies,
-    duties.length
-  ]);
 
   async function loadData() {
     try {
-      setLoading(true);
       const [empRes, cellRes, execRes, holidayRes] = await Promise.all([
         fetch('/api/employees'),
         fetch('/api/cells'),
@@ -1268,12 +1301,16 @@ export default function RosterPage() {
       
       const sortedEmps = Array.isArray(empData) ? sortEmployeesBySeniority(empData) : [];
       setEmployees(sortedEmps);
-      setCells(Array.isArray(cellData) ? cellData : []);
+      const cellsList = Array.isArray(cellData) ? cellData : [];
+      setCells(cellsList);
+      if (cellsList.length > 0) {
+        setOpt1CellId(cellsList[0].id.toString());
+      }
       setHolidays(Array.isArray(holidayData) ? holidayData : []);
       
       if (Array.isArray(execData)) {
         // Filter to only DGMs based on designation query
-        const dgmExecs = execData.filter((ex: any) => {
+        const dgmExecs = execData.filter((ex: Executive) => {
           const d = ex.designation.trim().toLowerCase();
           return d.includes('dgm') || d.includes('ডিজিএম') || d.includes('উপ-মহাব্যবস্থাপক');
         });
@@ -1289,7 +1326,7 @@ export default function RosterPage() {
         });
         setExecutives(sortedExecs);
         if (sortedExecs.length > 0) {
-          const defaultExec = sortedExecs.find((ex: any) => ex.name.includes('মোহাম্মদ সোহরাব হোসেন') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || sortedExecs[0];
+          const defaultExec = sortedExecs.find((ex: Executive) => ex.name.includes('মোহাম্মদ সোহরাব হোসেন') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || sortedExecs[0];
           if (defaultExec) {
             setSelectedExecutiveId(defaultExec.id.toString());
             setSigningOfficer(defaultExec.name);
@@ -1299,12 +1336,10 @@ export default function RosterPage() {
       }
     } catch (err) {
       console.error('Error loading static data:', err);
-    } finally {
-      setLoading(false);
     }
   }
 
-  async function loadDuties() {
+  const loadDuties = useCallback(async () => {
     if (isEditingArchive) {
       // In edit mode, duties state is fully driven by opt1Assignments sync useEffect.
       return;
@@ -1367,9 +1402,9 @@ export default function RosterPage() {
     } catch (err) {
       console.error('Error loading duties:', err);
     }
-  }
+  }, [isEditingArchive, selectedMonths, selectedCell, isPrintMode, isArchived, orderRef]);
 
-  async function loadOfficeOrders() {
+  const loadOfficeOrders = useCallback(async () => {
     try {
       const res = await fetch('/api/office-orders');
       if (res.ok) {
@@ -1379,54 +1414,49 @@ export default function RosterPage() {
     } catch (err) {
       console.error('Error loading office orders:', err);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    async function loadProfile() {
+    async function init() {
       try {
         const res = await fetch('/api/auth');
         const data = await res.json();
         if (res.ok && data.authenticated) {
           setCurrentUser(data.user);
+          
+          const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          const hasEditRef = params ? !!params.get('edit_ref') : false;
+          
+          if (!hasEditRef && data.user.role !== 'ADMIN') {
+            if (data.user.cells && data.user.cells.length === 1) {
+              const pIdStr = data.user.cells[0].id.toString();
+              setSelectedCell(pIdStr);
+              setOpt1CellId(pIdStr);
+            } else {
+              setSelectedCell('all');
+              setOpt1CellId('all');
+            }
+          }
         }
       } catch (err) {
         console.error('Error loading auth profile:', err);
       }
+      
+      await loadData();
     }
-    loadProfile();
-    loadData();
+    init();
   }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('edit_ref')) {
-        return;
-      }
-    }
-    if (currentUser && currentUser.role !== 'ADMIN') {
-      if (currentUser.cells && currentUser.cells.length === 1) {
-        const pIdStr = currentUser.cells[0].id.toString();
-        setSelectedCell(pIdStr);
-        setOpt1CellId(pIdStr);
-      } else {
-        setSelectedCell('all');
-        setOpt1CellId('all');
-      }
-    }
-  }, [currentUser]);
 
   useEffect(() => {
     loadDuties();
     loadOfficeOrders();
-  }, [selectedMonths, selectedCell, isEditingArchive, orderRef]);
+  }, [selectedMonths, selectedCell, isEditingArchive, orderRef, loadDuties, loadOfficeOrders]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const editRef = params.get('edit_ref');
       if (editRef) {
-        setIsEditingArchive(true);
         console.log("Loading archived order for editing:", editRef);
         
         const loadArchivedDuties = async () => {
@@ -1446,28 +1476,29 @@ export default function RosterPage() {
             
             setEmployees(sortedLocalEmps);
             setCells(localCells);
+            if (Array.isArray(localCells) && localCells.length > 0) {
+              setOpt1CellId(localCells[0].id.toString());
+            }
             
-            const matchingOrder = orders.find((o: any) => o.orderRef === editRef);
+            const matchingOrder = orders.find((o: OfficeOrder) => o.orderRef === editRef);
             if (matchingOrder) {
               const orderDuties = matchingOrder.duties || [];
-              const category = matchingOrder.category;
-              
-              setPrintCategory(category);
+              setUserSelectedPrintCategory(matchingOrder.category as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT');
               
               const cleanName = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
               
               // Find payee representative id
-              const matchedRep = localEmps.find((e: any) => 
+              const matchedRep = localEmps.find((e: Employee) => 
                 cleanName(e.name) === cleanName(matchingOrder.employeeName) || 
                 (e.bankId && matchingOrder.employeeName.includes(e.bankId))
               );
               if (matchedRep) {
-                setPayeeEmployeeId(matchedRep.id.toString());
+                setUserSelectedPayeeId(matchedRep.id.toString());
               }
               
               // Find cell id
               if (matchingOrder.cellName) {
-                const matchedCell = localCells.find((c: any) => c.name === matchingOrder.cellName);
+                const matchedCell = localCells.find((c: Cell) => c.name === matchingOrder.cellName);
                 if (matchedCell) {
                   setSelectedCell(matchedCell.id.toString());
                 }
@@ -1475,7 +1506,7 @@ export default function RosterPage() {
               
               // Extract all unique months from orderDuties and set selectedMonths
               const orderMonthsSet = new Set<string>();
-              orderDuties.forEach((group: any) => {
+              orderDuties.forEach((group: OrderDuty) => {
                 if (Array.isArray(group.dates)) {
                   group.dates.forEach((date: string) => {
                     if (date && date.includes('-')) {
@@ -1491,18 +1522,18 @@ export default function RosterPage() {
               }
               
               // Set orderRef and date
-              setOrderRef(editRef);
+              setUserCustomOrderRef(editRef);
               setOriginalOrderRef(editRef);
               if (editRef && editRef.includes('/')) {
                 const parts = editRef.split('/');
                 const serial = parts[parts.length - 1] || '';
                 setArchiveSerial(serial);
               }
-              setOrderDate(matchingOrder.orderDate);
+              setUserCustomOrderDate(matchingOrder.orderDate);
               
               // Populate content
               if (matchingOrder.content) {
-                setOrderText(matchingOrder.content.orderText || '');
+                setUserCustomOrderText(matchingOrder.content.orderText || '');
                 setSigningOfficer(matchingOrder.content.signingOfficer || '');
                 setSigningDesignation(matchingOrder.content.signingDesignation || '');
                 if (Array.isArray(matchingOrder.content.copies)) {
@@ -1512,8 +1543,8 @@ export default function RosterPage() {
               
               // Pre-populate opt1Assignments (left-side checked boxes)
               const assignments: Record<number, string[]> = {};
-              orderDuties.forEach((group: any) => {
-                const matchedEmp = localEmps.find((e: any) => 
+              orderDuties.forEach((group: OrderDuty) => {
+                const matchedEmp = localEmps.find((e: Employee) => 
                   e.id.toString() === group.employeeId?.toString() || 
                   (e.bankId && group.employeeId && e.bankId.toString() === group.employeeId.toString()) || 
                   cleanName(e.name) === cleanName(group.employeeName || '')
@@ -1525,22 +1556,44 @@ export default function RosterPage() {
               setOpt1Assignments(assignments);
               
               // Reconstruct duties state
-              const reconstructedDuties: any[] = [];
-              orderDuties.forEach((group: any) => {
-                const matchedEmp = localEmps.find((e: any) => 
+              const reconstructedDuties: Duty[] = [];
+              orderDuties.forEach((group: OrderDuty) => {
+                const matchedEmp = localEmps.find((e: Employee) => 
                   e.id.toString() === group.employeeId?.toString() || 
                   (e.bankId && group.employeeId && e.bankId.toString() === group.employeeId.toString()) || 
                   cleanName(e.name) === cleanName(group.employeeName || '')
                 );
                 const finalEmpId = matchedEmp ? matchedEmp.id : Number(group.employeeId) || 0;
                 const finalDates = group.dates || [];
+                const category = matchingOrder.category as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+                
+                let allowance1 = 0;
+                let allowance2 = 0;
+                let totalBill = 0;
+                if (category === 'LATE_SITTING') {
+                  allowance1 = 100;
+                  allowance2 = 200;
+                  totalBill = 300;
+                } else if (category === 'HOLIDAY') {
+                  allowance1 = 250;
+                  allowance2 = 250;
+                  totalBill = 500;
+                } else if (category === 'NIGHT_SHIFT') {
+                  allowance1 = 600;
+                  allowance2 = 400;
+                  totalBill = 1000;
+                }
+
                 finalDates.forEach((date: string) => {
                   reconstructedDuties.push({
                     id: Math.random(),
                     employeeId: finalEmpId,
                     date: date,
                     type: category,
-                    description: group.description,
+                    description: group.description || null,
+                    allowance1,
+                    allowance2,
+                    totalBill,
                     employee: matchedEmp || {
                       id: finalEmpId,
                       name: group.employeeName,
@@ -1571,7 +1624,46 @@ export default function RosterPage() {
         loadArchivedDuties();
       }
     }
-  }, []);
+  }, [
+    employees,
+    cells,
+    selectedCell,
+    originalOrderRef,
+    payeeEmployeeId,
+    selectedMonths,
+    orderRef,
+    orderDate,
+    orderText,
+    signingOfficer,
+    signingDesignation,
+    copies,
+    headerMode,
+    opt1Assignments,
+    duties,
+    isEditingArchive,
+    isPrintMode,
+    isArchived,
+    setIsEditingArchive,
+    setEmployees,
+    setCells,
+    setOpt1CellId,
+    setUserSelectedPrintCategory,
+    setUserSelectedPayeeId,
+    setSelectedCell,
+    setSelectedMonths,
+    setUserCustomOrderRef,
+    setOriginalOrderRef,
+    setArchiveSerial,
+    setUserCustomOrderDate,
+    setUserCustomOrderText,
+    setSigningOfficer,
+    setSigningDesignation,
+    setCopies,
+    setOpt1Assignments,
+    setDuties,
+    setOrderGenerated,
+    setIsArchived
+  ]);
 
   const handleBackToRoster = () => {
     setIsPrintMode(false);
@@ -1588,12 +1680,29 @@ export default function RosterPage() {
   // Dynamic sync duties state from opt1Assignments when in edit mode
   useEffect(() => {
     if (isEditingArchive && employees.length > 0) {
-      const newDuties: any[] = [];
+      const newDuties: Duty[] = [];
       Object.entries(opt1Assignments).forEach(([empIdStr, dates]) => {
         const empId = Number(empIdStr);
         const emp = employees.find(e => e.id === empId);
         if (!emp) return;
         
+        let allowance1 = 0;
+        let allowance2 = 0;
+        let totalBill = 0;
+        if (printCategory === 'LATE_SITTING') {
+          allowance1 = 100;
+          allowance2 = 200;
+          totalBill = 300;
+        } else if (printCategory === 'HOLIDAY') {
+          allowance1 = 250;
+          allowance2 = 250;
+          totalBill = 500;
+        } else if (printCategory === 'NIGHT_SHIFT') {
+          allowance1 = 600;
+          allowance2 = 400;
+          totalBill = 1000;
+        }
+
         dates.forEach(date => {
           newDuties.push({
             id: Math.random(), // unique key for UI mapping
@@ -1601,11 +1710,16 @@ export default function RosterPage() {
             date: date,
             type: printCategory,
             description: `Customization এবং Development সংক্রান্ত কাজ (${emp.cell?.name || ''})`,
+            allowance1,
+            allowance2,
+            totalBill,
             employee: emp
           });
         });
       });
-      setDuties(newDuties);
+      queueMicrotask(() => {
+        setDuties(newDuties);
+      });
     }
   }, [opt1Assignments, isEditingArchive, printCategory, employees]);
 
@@ -1615,7 +1729,12 @@ export default function RosterPage() {
     e.preventDefault();
     setErrorMessage('');
     
-    let assignments: any[] = [];
+    let assignments: {
+      employeeId: number;
+      type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+      date: string;
+      description: string;
+    }[] = [];
 
     if (isEditingArchive) {
       if (duties.length === 0) {
@@ -1704,6 +1823,8 @@ export default function RosterPage() {
           setErrorMessage('ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।');
         } else if (err.error === 'holiday_duty_on_working_day') {
           setErrorMessage('কার্যদিবসে সরকারি ছুটির ডিউটি দেওয়া সম্ভব নয়।');
+        } else if (err.error === 'leave_conflict') {
+          setErrorMessage('সংশ্লিষ্ট কর্মকর্তা উক্ত তারিখে ছুটিতে আছেন। ছুটিতে থাকা অবস্থায় ডিউটি বরাদ্দ করা সম্ভব নয়।');
         } else {
           setErrorMessage(err.error || 'রোস্টার সংরক্ষণ করতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।');
         }
@@ -1804,34 +1925,23 @@ export default function RosterPage() {
       
       // Show success toast/alert
       alert('ডিউটি রোস্টার সফলভাবে সংরক্ষণ করা হয়েছে!');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error assigning roster:', err);
-      if (err.message === 'duplicate_duty_on_date') {
-        setErrorMessage('এই অর্ডার করা হয়েছে');
-        alert('এই অর্ডার করা হয়েছে');
-      } else if (err.message === 'late_sitting_on_holiday') {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      if (errorMsg === 'duplicate_duty_on_date') {
+        setErrorMessage('এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।');
+        alert('এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।');
+      } else if (errorMsg === 'late_sitting_on_holiday') {
         setErrorMessage('ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।');
-      } else if (err.message === 'holiday_duty_on_working_day') {
+      } else if (errorMsg === 'holiday_duty_on_working_day') {
         setErrorMessage('কার্যদিবসে সরকারি ছুটির ডিউটি দেওয়া সম্ভব নয়।');
+      } else if (errorMsg === 'leave_conflict') {
+        setErrorMessage('সংশ্লিষ্ট কর্মকর্তা উক্ত তারিখে ছুটিতে আছেন। ছুটিতে থাকা অবস্থায় ডিউটি বরাদ্দ করা সম্ভব নয়।');
       } else {
         setErrorMessage('রোস্টার সংরক্ষণ করতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।');
       }
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const deleteDuty = async (id: number) => {
-    if (!confirm('আপনি কি নিশ্চিতভাবে এই ডিউটি এন্ট্রিটি মুছে ফেলতে চান?')) return;
-    try {
-      const res = await fetch(`/api/duties/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        loadDuties();
-      } else {
-        alert('ডিউটি মুছতে ব্যর্থ হয়েছে।');
-      }
-    } catch (err) {
-      console.error('Error deleting duty:', err);
     }
   };
 
@@ -1884,6 +1994,8 @@ export default function RosterPage() {
           msg = 'কার্যদিবসে সরকারি ছুটির ডিউটি দেওয়া সম্ভব নয়।';
         } else if (err.error === 'duplicate_duty_on_date') {
           msg = 'এই কর্মকর্তার জন্য এই তারিখে ইতিমধ্যে অন্য ডিউটি বরাদ্দ রয়েছে।';
+        } else if (err.error === 'leave_conflict') {
+          msg = 'উক্ত কর্মকর্তা ওই তারিখে ছুটিতে আছেন। ছুটিতে থাকাকালীন ডিউটি বরাদ্দ করা সম্ভব নয়।';
         } else if (err.error === 'duty_not_found') {
           msg = 'ডিউটি রেকর্ডটি খুঁজে পাওয়া যায়নি।';
         }
@@ -1960,18 +2072,9 @@ export default function RosterPage() {
     return `${bnDay} ${bnMonth} ${bnYear}`;
   };
 
-  // Simple copy recipient additions
-  const addCopyRecipient = () => {
-    if (newCopyText.trim() === '') return;
-    setCopies([...copies, newCopyText.trim()]);
-    setNewCopyText('');
-  };
 
-  const removeCopyRecipient = (index: number) => {
-    setCopies(copies.filter((_, i) => i !== index));
-  };
 
-  const renderOfficeOrdersList = (ordersList: any[]) => {
+  const renderOfficeOrdersList = (ordersList: OfficeOrder[]) => {
     return (
       <div className="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-xl">
         <table className="w-full text-left border-collapse text-xs">
@@ -1994,7 +2097,7 @@ export default function RosterPage() {
               
               const bnDate = order.orderDate ? toBanglaDigits(order.orderDate.split('-').reverse().join('-')) : '';
               
-              const recordCount = (order.duties || []).reduce((sum: number, g: any) => sum + (g.dates ? g.dates.length : 0), 0);
+              const recordCount = (order.duties || []).reduce((sum: number, g: OrderDuty) => sum + (g.dates ? g.dates.length : 0), 0);
               const ratePerDay = order.category === 'HOLIDAY' ? 500 : order.category === 'NIGHT_SHIFT' ? 1000 : 300;
               const totalAmount = recordCount * ratePerDay;
 
@@ -2072,38 +2175,6 @@ export default function RosterPage() {
   });
 
   // Dynamic scaling parameters based on duties count
-  const dutiesCount = duties.length;
-  let printFontSize = 'text-[12px]';
-  let printTableFontSize = 'text-[11px]';
-  let printTablePadding = 'p-2';
-  let printHeaderSpacing = 'space-y-3';
-  let printBodySpacing = 'space-y-4 pt-4';
-  let printTitleSpacing = 'mb-2';
-  let printParaSpacing = 'leading-relaxed text-[12px]';
-  let printSigSpacing = 'pt-6';
-  let printLogoSize = 'w-12 h-12';
-
-  if (dutiesCount > 12) {
-    printFontSize = 'text-[10.5px]';
-    printTableFontSize = 'text-[10px]';
-    printTablePadding = 'p-1';
-    printHeaderSpacing = 'space-y-1.5';
-    printBodySpacing = 'space-y-2 pt-2';
-    printTitleSpacing = 'mb-1';
-    printParaSpacing = 'leading-normal text-[10.5px]';
-    printSigSpacing = 'pt-3';
-    printLogoSize = 'w-10 h-10';
-  } else if (dutiesCount > 7) {
-    printFontSize = 'text-[11px]';
-    printTableFontSize = 'text-[10.5px]';
-    printTablePadding = 'p-1.5';
-    printHeaderSpacing = 'space-y-2';
-    printBodySpacing = 'space-y-3 pt-3';
-    printTitleSpacing = 'mb-1.5';
-    printParaSpacing = 'leading-relaxed text-[11px]';
-    printSigSpacing = 'pt-4';
-    printLogoSize = 'w-11 h-11';
-  }
 
   const renderDutiesTable = (dutiesList: Duty[]) => {
     const groupedDuties = Object.entries(
@@ -2121,7 +2192,7 @@ export default function RosterPage() {
         acc[key].totalBill += duty.totalBill;
         return acc;
       }, {} as Record<string, { employee: Employee; type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'; duties: Duty[]; totalBill: number }>)
-    ).map(([_, val]) => val);
+    ).map(([, val]) => val);
 
     return (
       <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/30">
@@ -2244,7 +2315,7 @@ export default function RosterPage() {
               <button
                 onClick={() => {
                   setIsEditingArchive(false);
-                  setOrderRef('');
+                  setUserCustomOrderRef(null);
                   setArchiveSerial('');
                   window.history.pushState({}, '', '/roster');
                   loadDuties();
@@ -2313,7 +2384,7 @@ export default function RosterPage() {
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
                   <select
                     value={assignmentForm.type}
-                    onChange={(e) => setAssignmentForm({ ...assignmentForm, type: e.target.value as any })}
+                    onChange={(e) => setAssignmentForm({ ...assignmentForm, type: e.target.value as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' })}
                     className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
@@ -2343,7 +2414,7 @@ export default function RosterPage() {
                           <option value="all">সকল সেল (All Cells)</option>
                         )}
                         {cells
-                          .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: any) => uc.id === c.id))
+                          .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: Cell) => uc.id === c.id))
                           .map(c => (
                             <option key={c.id} value={c.id.toString()}>{c.name}</option>
                           ))
@@ -2360,7 +2431,7 @@ export default function RosterPage() {
                         {(() => {
                           const allowedCellIds = currentUser?.role === 'ADMIN'
                             ? cells.map(c => c.id)
-                            : currentUser?.cells?.map((c: any) => c.id) || [];
+                            : currentUser?.cells?.map((c: Cell) => c.id) || [];
                           
                           const listEmployees = employees.filter(emp => 
                             opt1CellId === 'all' 
@@ -2611,14 +2682,14 @@ export default function RosterPage() {
                   {/* Select Cell Filter */}
                   <select
                     value={selectedCell}
-                    onChange={(e) => setSelectedCell(e.target.value)}
+                    onChange={(e) => changeSelectedCell(e.target.value)}
                     className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"
                   >
                     {(currentUser?.role === 'ADMIN' || (currentUser?.cells && currentUser.cells.length > 1)) && (
                       <option value="all">সকল সেল (All Cells)</option>
                     )}
                     {cells
-                      .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: any) => uc.id === c.id))
+                      .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: Cell) => uc.id === c.id))
                       .map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)
                     }
                   </select>
@@ -2695,7 +2766,7 @@ export default function RosterPage() {
                                 type="button"
                                 key={ymStr}
                                 onClick={() => {
-                                  setSelectedMonths(prev => {
+                                  changeSelectedMonths(prev => {
                                     if (prev.includes(ymStr)) {
                                       if (prev.length === 1) return prev; // Don't allow empty selection
                                       return prev.filter(m => m !== ymStr);
@@ -2723,7 +2794,7 @@ export default function RosterPage() {
                             onClick={() => {
                               const today = new Date();
                               const mm = String(today.getMonth() + 1).padStart(2, '0');
-                              setSelectedMonths([`${today.getFullYear()}-${mm}`]);
+                              changeSelectedMonths([`${today.getFullYear()}-${mm}`]);
                             }}
                             className="text-[9px] font-bold text-indigo-500 hover:text-indigo-650 dark:hover:text-indigo-400 transition-colors"
                           >
@@ -2978,7 +3049,7 @@ export default function RosterPage() {
                   <label className="text-xs font-bold text-slate-500">১. ডিউটির ক্যাটাগরি (Category)</label>
                   <select
                     value={printCategory}
-                    onChange={(e) => setPrintCategory(e.target.value as any)}
+                    onChange={(e) => changePrintCategory(e.target.value as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT')}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
                   >
                     <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
@@ -2991,7 +3062,7 @@ export default function RosterPage() {
                   <label className="text-xs font-bold text-slate-500">২. বিল যার অনুকূলে হবে (Bill Favoring To)</label>
                   <select
                     value={payeeEmployeeId}
-                    onChange={(e) => setPayeeEmployeeId(e.target.value)}
+                    onChange={(e) => setUserSelectedPayeeId(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
                   >
                     <option value="">Select Employee (কর্মকর্তা নির্বাচন)</option>
@@ -3032,7 +3103,7 @@ export default function RosterPage() {
                   <input
                     type="text"
                     value={orderRef}
-                    onChange={(e) => setOrderRef(e.target.value)}
+                    onChange={(e) => setUserCustomOrderRef(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500"
                   />
                 </div>
@@ -3042,7 +3113,7 @@ export default function RosterPage() {
                   <input
                     type="date"
                     value={orderDate}
-                    onChange={(e) => setOrderDate(e.target.value)}
+                    onChange={(e) => setUserCustomOrderDate(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
                   />
                 </div>
@@ -3052,7 +3123,7 @@ export default function RosterPage() {
                   <textarea
                     rows={4}
                     value={orderText}
-                    onChange={(e) => setOrderText(e.target.value)}
+                    onChange={(e) => setUserCustomOrderText(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-xs font-semibold leading-relaxed focus:outline-none focus:border-indigo-500"
                   />
                 </div>
@@ -3061,7 +3132,7 @@ export default function RosterPage() {
                   <label className="text-xs font-bold text-slate-500">৭. হেডার প্রিন্ট অপশন (Header Option)</label>
                   <select
                     value={headerMode}
-                    onChange={(e) => setHeaderMode(e.target.value as any)}
+                    onChange={(e) => setHeaderMode(e.target.value as 'with_header' | 'without_header')}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
                   >
                     <option value="with_header">হেডার সহ (With Header - সাধারণ প্রিন্ট)</option>
@@ -3291,7 +3362,7 @@ export default function RosterPage() {
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
                 <select
                   value={editForm.type}
-                  onChange={(e) => setEditForm({ ...editForm, type: e.target.value as any })}
+                  onChange={(e) => setEditForm({ ...editForm, type: e.target.value as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' })}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
                 >
                   <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>

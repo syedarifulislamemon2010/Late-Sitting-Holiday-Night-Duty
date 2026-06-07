@@ -9,7 +9,6 @@ import { BANGLADESH_AREAS } from './bangladesh_areas';
 import { 
   CalendarCheck, 
   Printer, 
-  RefreshCw, 
   ArrowLeft, 
   FileText, 
   User, 
@@ -33,6 +32,37 @@ interface Employee {
     name: string;
     description: string | null;
   };
+}
+
+interface UserSession {
+  id: number;
+  name: string;
+  username: string;
+  role: string;
+  cells?: { id: number; name: string }[];
+}
+
+interface Leave {
+  id: number;
+  leaveType: 'CASUAL' | 'POST_FACTO' | 'STATION_LEAVE';
+  startDate: string;
+  endDate: string;
+  applicationDate: string;
+  applicantName: string;
+  designation: string;
+  bankId: string;
+  fileNo?: string | null;
+  cellName: string;
+  leaveLocation: string;
+  mobileNo: string;
+  selectedDistrict?: string | null;
+  delegateId?: string | null;
+  casualTotal: number;
+  casualUsed: number;
+  ordinaryTotal: number;
+  ordinaryUsed: number;
+  specialTotal: number;
+  specialUsed: number;
 }
 
 interface Holiday {
@@ -73,7 +103,7 @@ const DEFAULT_2026_HOLIDAYS = [
 ];
 
 export default function LeaveGeneratorPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [matchedEmp, setMatchedEmp] = useState<Employee | null>(null);
   const [selectedApplicantEmp, setSelectedApplicantEmp] = useState<Employee | null>(null);
   const [isProfileUnresolved, setIsProfileUnresolved] = useState(false);
@@ -98,8 +128,8 @@ export default function LeaveGeneratorPage() {
 
   // Leave Archive & CRUD States
   const [activeTab, setActiveTab] = useState<'NEW' | 'ARCHIVE'>('NEW');
-  const [archivedLeaves, setArchivedLeaves] = useState<any[]>([]);
-  const [latestLeave, setLatestLeave] = useState<any | null>(null);
+  const [archivedLeaves, setArchivedLeaves] = useState<Leave[]>([]);
+  const [latestLeave, setLatestLeave] = useState<Leave | null>(null);
   const [editingLeaveId, setEditingLeaveId] = useState<number | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -130,7 +160,31 @@ export default function LeaveGeneratorPage() {
   useEffect(() => {
     if (currentUser) {
       const activeBankId = selectedApplicantEmp?.bankId || (currentUser.role === 'ADMIN' ? '' : currentUser.username);
-      fetchArchivedLeaves(activeBankId);
+      let active = true;
+      const getLeavesOnMount = async () => {
+        try {
+          let url = '/api/leaves';
+          if (activeBankId) {
+            url += `?bankId=${encodeURIComponent(activeBankId)}`;
+          }
+          const res = await fetch(url);
+          if (res.ok && active) {
+            const data = await res.json();
+            setArchivedLeaves(data);
+            if (data.length > 0) {
+              setLatestLeave(data[0]);
+            } else {
+              setLatestLeave(null);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching archived leaves:', err);
+        }
+      };
+      getLeavesOnMount();
+      return () => {
+        active = false;
+      };
     }
   }, [currentUser, selectedApplicantEmp]);
 
@@ -181,7 +235,7 @@ export default function LeaveGeneratorPage() {
       }
 
       if (res.ok) {
-        const savedData = await res.json();
+        await res.json();
         setSuccessMsg(editingLeaveId ? 'আবেদনটি সফলভাবে আপডেট করা হয়েছে।' : 'আবেদনটি সফলভাবে আর্কাইভে সংরক্ষণ করা হয়েছে।');
         setErrorMsg('');
         
@@ -215,7 +269,7 @@ export default function LeaveGeneratorPage() {
   };
 
   // Load archived leave to form for editing
-  const handleEditLeave = (leave: any) => {
+  const handleEditLeave = (leave: Leave) => {
     setEditingLeaveId(leave.id);
     setLeaveType(leave.leaveType);
     setStartDate(leave.startDate);
@@ -244,8 +298,8 @@ export default function LeaveGeneratorPage() {
   };
 
   // Load archived leave details strictly for preview/print
-  const handleLoadLeavePreview = (leave: any) => {
-    setLeaveType(leave.leaveType as any);
+  const handleLoadLeavePreview = (leave: Leave) => {
+    setLeaveType(leave.leaveType);
     setStartDate(leave.startDate);
     setEndDate(leave.endDate);
     setApplicationDate(leave.applicationDate);
@@ -335,7 +389,10 @@ export default function LeaveGeneratorPage() {
   useEffect(() => {
     const today = new Date();
     const formatted = today.toISOString().split('T')[0];
-    setApplicationDate(formatted);
+    const timer = setTimeout(() => {
+      setApplicationDate(formatted);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Fetch initial profile & data
@@ -359,6 +416,7 @@ export default function LeaveGeneratorPage() {
               const empsData = await empsRes.json();
               setEmployees(Array.isArray(empsData) ? empsData : []);
               
+              let initialBankId = '';
               if (authData.user.role === 'ADMIN') {
                 // Admin: pre-select the first employee in the list who is NOT the admin themselves
                 if (Array.isArray(empsData) && empsData.length > 0) {
@@ -374,11 +432,13 @@ export default function LeaveGeneratorPage() {
                   if (firstNonAdminEmp.cell && firstNonAdminEmp.cell.name) {
                     setCellName(firstNonAdminEmp.cell.name);
                   }
+                  initialBankId = firstNonAdminEmp.bankId || '';
                 }
               } else {
                 // USER: load logged in user's profile details
                 setApplicantName((authData.user.name || '').replace(/^জনাব\s+/, ''));
                 setBankId(authData.user.username || '');
+                initialBankId = authData.user.username || '';
                 
                 // Find matching employee to load designation & file number automatically
                 const matchedEmp = empsData.find((e: Employee) => 
@@ -395,10 +455,15 @@ export default function LeaveGeneratorPage() {
                   if (matchedEmp.cell && matchedEmp.cell.name) {
                     setCellName(matchedEmp.cell.name);
                   }
+                  initialBankId = matchedEmp.bankId || authData.user.username || '';
                 } else {
                   setIsProfileUnresolved(true);
                   fetch('/api/leaves/log-resolve-failed', { method: 'POST' }).catch(err => console.error(err));
                 }
+              }
+
+              if (initialBankId) {
+                fetchArchivedLeaves(initialBankId);
               }
             }
           }
@@ -474,7 +539,7 @@ export default function LeaveGeneratorPage() {
   // Get contiguous holiday days starting from a specific date forward
   const getSucceedingContiguousHolidaysCount = (startDateStr: string): number => {
     let count = 0;
-    let current = new Date(startDateStr);
+    const current = new Date(startDateStr);
     
     while (true) {
       current.setDate(current.getDate() + 1);
@@ -523,8 +588,8 @@ export default function LeaveGeneratorPage() {
     const isSandwiched = isPrecedingHoliday && isSucceedingHoliday;
     const succeedingHolidaysCount = isSandwiched ? getSucceedingContiguousHolidaysCount(endDate) : 0;
 
-    let calendarDaysCount = allDates.length;
-    let workingDaysSelected = allDates.filter(d => !isNonWorkingDay(d)).length;
+    const calendarDaysCount = allDates.length;
+    const workingDaysSelected = allDates.filter(d => !isNonWorkingDay(d)).length;
 
     // Apply rule:
     // If sandwiched, count = total calendar days in block + succeeding holidays count.
@@ -556,16 +621,24 @@ export default function LeaveGeneratorPage() {
 
   // Automatically reset invalid dates when type changes
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
     if (startDate) {
       if (leaveType === 'POST_FACTO' && startDate > todayStr) {
-        setStartDate('');
-        setEndDate('');
+        timer = setTimeout(() => {
+          setStartDate('');
+          setEndDate('');
+        }, 0);
       } else if ((leaveType === 'CASUAL' || leaveType === 'STATION_LEAVE') && startDate < todayStr) {
-        setStartDate('');
-        setEndDate('');
+        timer = setTimeout(() => {
+          setStartDate('');
+          setEndDate('');
+        }, 0);
       }
     }
-  }, [leaveType]);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [leaveType, startDate, todayStr]);
 
   // Dynamically calculate remaining leaves
   const currentCasualUsed = casualUsed;
@@ -587,35 +660,9 @@ export default function LeaveGeneratorPage() {
   const delegateName = matchedDelegate ? matchedDelegate.name : 'আব্দুল্লাহ আল জোবায়ের';
   const delegateDesignation = matchedDelegate ? matchedDelegate.designation : 'এসও-আইটি';
 
-  // Get all districts in Bangladesh flatly
-  const allBangladeshDistricts = Object.keys(BANGLADESH_AREAS).flatMap(div => 
-    Object.keys(BANGLADESH_AREAS[div as keyof typeof BANGLADESH_AREAS].districts)
-  ).sort();
-
   // Single day validation and wording logic
   const isSingleDay = startDate && endDate && startDate === endDate;
   const displayDaysWord = isSingleDay ? getBanglaDayWord(1) : (leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '');
-
-  // Get dynamic year for the leaves balance table header
-  const getSelectedYear = (): string => {
-    let yearStr = '';
-    if (startDate) {
-      const parts = startDate.split('-');
-      if (parts.length === 3) {
-        yearStr = parts[0];
-      }
-    }
-    if (!yearStr && applicationDate) {
-      const parts = applicationDate.split('-');
-      if (parts.length === 3) {
-        yearStr = parts[0];
-      }
-    }
-    if (!yearStr) {
-      yearStr = new Date().getFullYear().toString();
-    }
-    return toBanglaDigits(yearStr);
-  };
 
   // Format stay location dynamic text
   const formatStayLocationText = () => {
@@ -823,6 +870,9 @@ export default function LeaveGeneratorPage() {
                               setCellName(emp.cell.name);
                             }
                             setDelegateId(''); // Reset covering officer dropdown selection
+                            if (emp.bankId) {
+                              fetchArchivedLeaves(emp.bankId);
+                            }
                           }
                         }}
                         className="w-full px-3 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-xl outline-none focus:border-indigo-550 font-bold cursor-pointer text-indigo-900 dark:text-indigo-300"
@@ -839,12 +889,12 @@ export default function LeaveGeneratorPage() {
                           const uniqueCells = Array.from(
                             new Map(
                               displayEmps
-                                .filter(emp => emp.cell)
+                                .filter((emp): emp is Employee & { cell: NonNullable<Employee['cell']> } => !!emp.cell)
                                 .map(emp => [emp.cellId, emp.cell])
                             ).values()
-                          ).sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+                          ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-                          return uniqueCells.map((cell: any) => {
+                          return uniqueCells.map((cell) => {
                             const cellEmps = sortEmployeesBySeniority(displayEmps.filter(emp => emp.cellId === cell.id));
                             if (cellEmps.length === 0) return null;
                             return (
@@ -977,7 +1027,7 @@ export default function LeaveGeneratorPage() {
                     <select
                       id="leaveType"
                       value={leaveType}
-                      onChange={(e) => setLeaveType(e.target.value as any)}
+                      onChange={(e) => setLeaveType(e.target.value as 'CASUAL' | 'POST_FACTO' | 'STATION_LEAVE')}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-bold"
                     >
                       <option value="CASUAL">ক) নৈমিত্তিক ছুটি</option>
@@ -1612,15 +1662,4 @@ export default function LeaveGeneratorPage() {
   );
 }
 
-// Utility to display a value or a dash if empty
-function toDisplayOrDash(val: number): string {
-  const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-  if (val === 0) return '--';
-  return val.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
-}
 
-// Helper to set original total value state (workaround for state setup check)
-let originalSpecialTotal = 47;
-function setOriginalSpecialTotal(val: number) {
-  originalSpecialTotal = val;
-}

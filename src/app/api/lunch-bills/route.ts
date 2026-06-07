@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { lunchBills, cells, users, userCells } from '@/db/schema';
-import { and, eq, inArray } from 'drizzle-orm';
+import { lunchBills, cells } from '@/db/schema';
+import { and, eq } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
+
+interface LunchBillRecord {
+  employeeId: number;
+  name: string;
+  designation: string;
+  cellId: number;
+  isExecutive: boolean;
+  dutiesCount?: number;
+}
 
 async function getOrCreateCombinedCell() {
   const combinedCellList = await db.select().from(cells).where(eq(cells.name, 'Combined Departmental Sheet'));
@@ -46,7 +55,7 @@ export async function GET(request: Request) {
 
     // Standard user cell privacy check
     if (!isAdmin) {
-      const userCellIds = currentUser.cells.map((c: any) => c.id);
+      const userCellIds = currentUser.cells.map((c: { id: number }) => c.id);
       if (targetCellId !== 0 && !userCellIds.includes(targetCellId)) {
         return NextResponse.json({ 
           error: 'forbidden', 
@@ -79,7 +88,7 @@ export async function GET(request: Request) {
 
     // For standard users (or if specific cell is queried), filter records dynamically
     const allRecords = JSON.parse(combinedBill.recordsJson);
-    const filteredRecords = allRecords.filter((r: any) => r.cellId === targetCellId && !r.isExecutive);
+    const filteredRecords = allRecords.filter((r: LunchBillRecord) => r.cellId === targetCellId && !r.isExecutive);
 
     // Return synthetic cell-specific LunchBill structure
     return NextResponse.json({
@@ -93,9 +102,9 @@ export async function GET(request: Request) {
       updatedAt: combinedBill.updatedAt
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in LunchBill GET:', error);
-    return NextResponse.json({ error: 'failed_to_fetch_lunch_bills', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_fetch_lunch_bills', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
@@ -119,7 +128,7 @@ export async function POST(request: Request) {
     }
 
     const isAdmin = currentUser.role === 'ADMIN';
-    const userCellIds = currentUser.cells?.map((c: any) => c.id) || [];
+    const userCellIds = currentUser.cells?.map((c: { id: number }) => c.id) || [];
 
     if (!isAdmin && userCellIds.length === 0) {
       return NextResponse.json({ 
@@ -143,7 +152,7 @@ export async function POST(request: Request) {
     let recordsToSave = Array.isArray(records) ? records : [];
     if (!isAdmin) {
       // Filter out any records that do not belong to the user's assigned cells, and also filter out executives
-      recordsToSave = recordsToSave.filter((r: any) => r && !r.isExecutive && userCellIds.includes(r.cellId));
+      recordsToSave = recordsToSave.filter((r: LunchBillRecord) => r && !r.isExecutive && userCellIds.includes(r.cellId));
     }
 
     let finalRecords = [];
@@ -152,7 +161,7 @@ export async function POST(request: Request) {
     } else {
       if (existingBill) {
         const existingRecords = JSON.parse(existingBill.recordsJson);
-        const otherRecords = existingRecords.filter((r: any) => r && (r.isExecutive || !userCellIds.includes(r.cellId)));
+        const otherRecords = existingRecords.filter((r: LunchBillRecord) => r && (r.isExecutive || !userCellIds.includes(r.cellId)));
         finalRecords = [...otherRecords, ...recordsToSave];
       } else {
         finalRecords = recordsToSave;
@@ -201,8 +210,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, lunchBill });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in LunchBill POST:', error);
-    return NextResponse.json({ error: 'failed_to_save_lunch_bill', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_save_lunch_bill', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

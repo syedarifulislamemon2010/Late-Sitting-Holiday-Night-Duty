@@ -2,25 +2,23 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import { 
-  LayoutDashboard, 
-  Users, 
-  UserCheck, 
-  CalendarRange, 
-  Receipt, 
-  FileText, 
   Settings,
-  LogOut,
-  User,
-  Utensils
+  LogOut
 } from 'lucide-react';
 
+interface UserSession {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells: { id: number; name: string }[];
+}
+
 export default function Navbar() {
-  const pathname = usePathname();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load user from localStorage
@@ -47,7 +45,6 @@ export default function Navbar() {
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark') || 
       localStorage.getItem('theme') === 'dark';
-    setDarkMode(isDark);
     
     // Explicitly clean and set variables to the requested light blue theme on initial load
     const root = document.documentElement;
@@ -61,24 +58,6 @@ export default function Navbar() {
       root.style.setProperty('--primary-hover', '#094d82');
     }
   }, []);
-
-  const toggleDarkMode = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent closing dropdown
-    const nextDark = !darkMode;
-    setDarkMode(nextDark);
-    const root = document.documentElement;
-    if (nextDark) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-      root.style.setProperty('--primary', '#38bdf8');
-      root.style.setProperty('--primary-hover', '#0ea5e9');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      root.style.setProperty('--primary', '#0b5e9e');
-      root.style.setProperty('--primary-hover', '#094d82');
-    }
-  };
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -105,18 +84,6 @@ export default function Navbar() {
     }
   };
 
-  // Middle Nav Tabs - Facebook style
-  const navTabs = [
-    { name: 'ড্যাশবোর্ড', href: '/', icon: LayoutDashboard },
-    { name: 'নির্বাহী প্যানেল', href: '/executive', icon: UserCheck },
-    { name: 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
-    { name: 'অফিস অর্ডার', href: '/roster', icon: CalendarRange },
-    { name: 'বিল', href: '/billing', icon: Receipt },
-    { name: 'লাঞ্চ বিল', href: '/lunch-bill', icon: Utensils },
-    { name: 'আর্কাইভ', href: '/documents', icon: FileText },
-    { name: 'সেটিংস', href: '/users', icon: Settings },
-  ];
-
   const userDisplayName = currentUser?.name || '';
 
   return (
@@ -124,7 +91,7 @@ export default function Navbar() {
       {/* Left section: Brand Logo & Title */}
       <div className="flex items-center gap-2 w-[320px] shrink-0">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <img src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" className="h-9 w-9 shrink-0 object-contain transition-transform group-hover:scale-105" />
+          <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={36} height={36} className="shrink-0 object-contain transition-transform group-hover:scale-105" />
           <div className="hidden sm:block leading-none">
             <h1 className="font-extrabold text-slate-950 dark:text-slate-100 text-[16px] sm:text-[18px] leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
             <p className="text-[11px] font-bold text-[#0b5e9e] dark:text-[#38bdf8] uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
@@ -140,7 +107,7 @@ export default function Navbar() {
             className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-slate-100 dark:border-slate-800/80 shadow-sm"
           >
             <div className="w-8 h-8 rounded-lg bg-blue-50/80 flex items-center justify-center overflow-hidden shrink-0 border border-blue-100">
-              <img src="/janata-bank-logo-real.svg" alt="JB Brand Avatar" className="h-6 w-6 object-contain" />
+              <Image src="/janata-bank-logo-real.svg" alt="JB Brand Avatar" width={24} height={24} className="object-contain" />
             </div>
             <span className="hidden md:inline text-xs font-bold text-slate-700 dark:text-slate-200 max-w-[120px] truncate">{userDisplayName}</span>
           </button>
@@ -151,7 +118,7 @@ export default function Navbar() {
               {/* Dropdown Profile Header */}
               <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-50/80 flex items-center justify-center overflow-hidden shrink-0 border border-blue-100">
-                  <img src="/janata-bank-logo-real.svg" alt="JB Brand Avatar" className="h-8 w-8 object-contain" />
+                  <Image src="/janata-bank-logo-real.svg" alt="JB Brand Avatar" width={32} height={32} className="object-contain" />
                 </div>
                 <div className="leading-tight flex-1 min-w-0">
                   <h4 className="font-extrabold text-slate-900 dark:text-slate-50 text-sm truncate">{userDisplayName}</h4>

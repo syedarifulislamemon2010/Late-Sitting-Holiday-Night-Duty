@@ -271,17 +271,37 @@ function DogPhotoWithInteractiveEyes({ focusField, usernameLength, isPasswordHid
   );
 }
 
+interface Cell {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
+interface UserProfile {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells?: Cell[];
+}
+
 // ===== MAIN AUTH GUARD COMPONENT =====
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [focusField, setFocusField] = useState<'none' | 'username' | 'password'>('none');
   const [showPassword, setShowPassword] = useState(false);
-  const [attempts, setAttempts] = useState(0);
+  const [attempts, setAttempts] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('login_attempts');
+      return saved ? parseInt(saved, 10) : 0;
+    }
+    return 0;
+  });
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
@@ -311,13 +331,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     checkAuth();
     const interval = setInterval(checkAuth, 4000);
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('login_attempts');
-    if (saved) {
-      setAttempts(parseInt(saved, 10));
-    }
   }, []);
 
   useEffect(() => {

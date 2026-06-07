@@ -23,7 +23,7 @@ export async function PUT(
 
     const updated = await ExecutiveService.updateExecutive(currentUser, execId, body, { ipAddress, userAgent });
     return NextResponse.json(updated);
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError(error);
   }
 }
@@ -46,7 +46,7 @@ export async function DELETE(
 
     const result = await ExecutiveService.deleteExecutive(currentUser, execId, { ipAddress, userAgent });
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError(error);
   }
 }

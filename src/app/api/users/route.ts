@@ -17,7 +17,7 @@ export async function GET() {
 
     // 2. Fetch all existing users' usernames
     const existingUsers = await db.select({ username: users.username }).from(users);
-    const existingUsernames = new Set(existingUsers.map((u: any) => u.username.trim().toLowerCase()));
+    const existingUsernames = new Set(existingUsers.map((u: { username: string }) => u.username.trim().toLowerCase()));
 
     // 3. Sync missing users
     for (const emp of emps) {
@@ -57,10 +57,10 @@ export async function GET() {
       .from(userCells)
       .innerJoin(cells, eq(userCells.A, cells.id));
 
-    const usersWithCells = allUsersList.map((u: any) => {
+    const usersWithCells = allUsersList.map((u: typeof users.$inferSelect) => {
       const assigned = allUserCells
-        .filter((uc: any) => uc.userId === u.id)
-        .map((uc: any) => ({
+        .filter((uc) => uc.userId === u.id)
+        .map((uc) => ({
           id: uc.cellId,
           name: uc.cellName
         }));
@@ -77,7 +77,7 @@ export async function GET() {
     });
 
     return NextResponse.json(usersWithCells);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching users and syncing:', error);
     return NextResponse.json({ error: 'failed_to_fetch_users' }, { status: 500 });
   }
@@ -122,8 +122,8 @@ export async function POST(request: Request) {
 
     if (Array.isArray(cellIds) && cellIds.length > 0) {
       await db.insert(userCells).values(
-        cellIds.map((cid: any) => ({
-          A: parseInt(cid, 10),
+        cellIds.map((cid: string | number) => ({
+          A: typeof cid === 'string' ? parseInt(cid, 10) : cid,
           B: user.id
         }))
       );
@@ -162,8 +162,8 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(userWithCells, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating user:', error);
-    return NextResponse.json({ error: 'failed_to_create_user', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_create_user', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const holidayList = await db.select().from(holidaysTable).orderBy(holidaysTable.date);
     return NextResponse.json(holidayList);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching holidays:', error);
     return NextResponse.json({ error: 'failed_to_fetch_holidays' }, { status: 500 });
   }
@@ -15,14 +15,19 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    interface HolidayInput {
+      date: string;
+      name: string;
+      isWorkingDay?: boolean;
+    }
     const body = await request.json();
-    const { holidays } = body; // Array of { date: 'YYYY-MM-DD', name: 'Name', isWorkingDay: boolean }
+    const { holidays } = body as { holidays: HolidayInput[] };
 
     if (!holidays || !Array.isArray(holidays)) {
       return NextResponse.json({ error: 'holidays_array_required' }, { status: 400 });
     }
 
-    const savedHolidays: any[] = [];
+    const savedHolidays: (typeof holidaysTable.$inferSelect)[] = [];
 
     for (const h of holidays) {
       if (!h.date || !h.name) continue;
@@ -53,7 +58,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, count: savedHolidays.length, data: savedHolidays });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error saving holidays:', error);
     return NextResponse.json({ error: 'failed_to_save_holidays' }, { status: 500 });
   }
@@ -71,7 +76,7 @@ export async function DELETE(request: Request) {
     await db.delete(holidaysTable).where(eq(holidaysTable.date, date));
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting holiday:', error);
     return NextResponse.json({ error: 'failed_to_delete_holiday' }, { status: 500 });
   }

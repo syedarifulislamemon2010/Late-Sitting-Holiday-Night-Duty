@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { documents, officeOrders } from '@/db/schema';
+import { officeOrders } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
+
+interface BillSummaryItem {
+  name: string;
+  designation: string;
+  datesFormatted: string;
+  days: number;
+  totalTransport: number;
+  totalApyaon: number;
+  grandTotal: number;
+}
 
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
@@ -28,7 +38,6 @@ export async function POST(request: Request) {
   try {
     const payload = await request.json();
     const {
-      billingMonth,
       openingParagraph,
       summaries,
       totalDays,
@@ -36,8 +45,6 @@ export async function POST(request: Request) {
       totalTransport,
       grandTotal,
       grandTotalInWords,
-      signingOfficer,
-      signingDesignation,
       representativeName,
       representativeDesignation,
       subjectText,
@@ -49,7 +56,7 @@ export async function POST(request: Request) {
       billRef
     } = payload;
 
-    const summariesHtml = summaries.map((s: any, index: number) => {
+    const summariesHtml = summaries.map((s: BillSummaryItem, index: number) => {
       return `
         <tr>
           <td>${toBnDigits(index + 1)}</td>
@@ -334,8 +341,8 @@ export async function POST(request: Request) {
       filePath: relativePath
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error generating bill memo document:', error);
-    return NextResponse.json({ error: 'failed_to_generate_bill_memo', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_generate_bill_memo', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

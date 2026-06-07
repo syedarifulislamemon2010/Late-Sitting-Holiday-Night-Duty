@@ -210,7 +210,14 @@ export class EmployeeService {
       throw new AppError('কর্মকর্তা পাওয়া যায়নি।', 404, 'employee_not_found');
     }
 
-    const updatedData: Partial<EmployeeInput> = {
+    const updatedData: {
+      name?: string;
+      designation?: string;
+      bankId?: string | null;
+      fileNo?: string | null;
+      mobile?: string | null;
+      cellId?: number;
+    } = {
       name: validated.name ? validated.name.trim() : existingEmployee.name,
       mobile: validated.mobile !== undefined ? (validated.mobile?.trim() || '') : existingEmployee.mobile
     };

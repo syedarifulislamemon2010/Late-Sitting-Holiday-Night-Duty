@@ -49,15 +49,20 @@ export async function PUT(
       await db.delete(userCells).where(eq(userCells.B, userId));
       if (Array.isArray(cellIds) && cellIds.length > 0) {
         await db.insert(userCells).values(
-          cellIds.map((cid: any) => ({
-            A: parseInt(cid, 10),
+          cellIds.map((cid: string | number) => ({
+            A: typeof cid === 'string' ? parseInt(cid, 10) : cid,
             B: userId
           }))
         );
       }
     }
 
-    let updatedFields: any = {
+    const updatedFields: {
+      name: string;
+      role: string;
+      mobile?: string | null;
+      password?: string;
+    } = {
       name: name.trim(),
       role: finalRole,
     };
@@ -119,9 +124,9 @@ export async function PUT(
     });
 
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating user:', error);
-    return NextResponse.json({ error: 'failed_to_update_user', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_update_user', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
@@ -175,8 +180,8 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true, message: 'User deleted successfully' });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting user:', error);
-    return NextResponse.json({ error: 'failed_to_delete_user', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_delete_user', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

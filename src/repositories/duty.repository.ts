@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { duties, employees, cells } from '@/db/schema';
-import { eq, and, ne, inArray, desc, asc } from 'drizzle-orm';
+import { eq, and, ne, inArray, desc, asc, SQL } from 'drizzle-orm';
 
 export class DutyRepository {
   static async findById(id: number) {
@@ -8,7 +8,7 @@ export class DutyRepository {
     return list[0] || null;
   }
 
-  static async listAllWithDetails(conditions?: any) {
+  static async listAllWithDetails(conditions?: SQL | undefined) {
     return db
       .select({
         id: duties.id,

@@ -8,7 +8,7 @@ export async function GET() {
     const currentUser = await getCurrentUser();
     const execs = await ExecutiveService.listExecutives(currentUser);
     return NextResponse.json(execs);
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError(error);
   }
 }
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
     const created = await ExecutiveService.createExecutive(currentUser, body, { ipAddress, userAgent });
     return NextResponse.json(created);
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError(error);
   }
 }

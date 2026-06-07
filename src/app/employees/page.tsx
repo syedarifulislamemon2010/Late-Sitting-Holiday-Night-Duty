@@ -31,6 +31,32 @@ interface Cell {
   };
 }
 
+interface User {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells?: { id: number; name: string }[];
+}
+
+interface Executive {
+  id: number;
+  name: string;
+  designation: string;
+  bankId: string | null;
+  fileNo: string | null;
+  phone: string | null;
+}
+
+interface BulkEmployeeInput {
+  name: string;
+  designation: string;
+  bankId: string | null;
+  fileNo: string | null;
+  mobile: string | null;
+  cellName: string;
+}
+
 interface Employee {
   id: number;
   name: string;
@@ -85,43 +111,7 @@ const extractNickname = (nameStr: string): string => {
   return parts[0] ? parts[0].substring(0, 10) : 'ইউ';
 };
 
-const parseCSVText = (text: string): string[][] => {
-  const lines: string[][] = [];
-  let row: string[] = [];
-  let col = '';
-  let inQuotes = false;
-  
-  const cleanText = text.trim().replace(/\r\n/g, '\n');
-  
-  for (let i = 0; i < cleanText.length; i++) {
-    const char = cleanText[i];
-    const nextChar = cleanText[i + 1];
-    
-    if (char === '"') {
-      if (inQuotes && nextChar === '"') {
-        col += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      row.push(col.trim());
-      col = '';
-    } else if (char === '\n' && !inQuotes) {
-      row.push(col.trim());
-      lines.push(row);
-      row = [];
-      col = '';
-    } else {
-      col += char;
-    }
-  }
-  if (col || row.length > 0) {
-    row.push(col.trim());
-    lines.push(row);
-  }
-  return lines;
-};
+
 
 const STRICT_DESIGNATIONS = [
   'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)',
@@ -131,11 +121,11 @@ const STRICT_DESIGNATIONS = [
 ];
 
 export default function EmployeesPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'employees' | 'cells'>('employees');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
-  const [executives, setExecutives] = useState<any[]>([]);
+  const [executives, setExecutives] = useState<Executive[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [cellFilter, setCellFilter] = useState('select');
@@ -253,13 +243,12 @@ export default function EmployeesPage() {
 
   // Image paste parsing states
   const [isImageImportLoading, setIsImageImportLoading] = useState(false);
-  const [customApiKey, setCustomApiKey] = useState(() => {
+  const [customApiKey] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('ai_api_key') || '';
     }
     return '';
   });
-  const [showKeyInput, setShowKeyInput] = useState(false);
 
   const ownEmployee = employees.find(emp => emp.bankId?.trim() === currentUser?.username?.trim());
   const ownCellId = ownEmployee ? ownEmployee.cellId : (currentUser?.cells?.[0]?.id || null);
@@ -302,7 +291,7 @@ export default function EmployeesPage() {
         setErrorMessage(data.message || 'কর্মকর্তা তালিকা প্রস্তুত করতে ব্যর্থ হয়েছে।');
         return null;
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error generating employee list:', err);
       setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
       return null;
@@ -387,13 +376,22 @@ export default function EmployeesPage() {
       }
     }
     getProfile();
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
     if (!isAdminOrAdminCell && ownCellId) {
-      setCellFilter(ownCellId.toString());
+      timer = setTimeout(() => {
+        setCellFilter(ownCellId.toString());
+      }, 0);
     }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [isAdminOrAdminCell, ownCellId]);
 
   // Handle Officer Form Submit
@@ -425,8 +423,9 @@ export default function EmployeesPage() {
       setEditingEmp(null);
       setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', mobile: '', cellId: '' });
       loadData();
-    } catch (err: any) {
-      setErrorMessage(err.message === 'cell_required' ? 'অনুগ্রহ করে সেল সিলেক্ট করুন।' : 'সার্ভার সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      setErrorMessage(msg === 'cell_required' ? 'অনুগ্রহ করে সেল সিলেক্ট করুন।' : 'সার্ভার সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
     }
   };
 
@@ -462,8 +461,9 @@ export default function EmployeesPage() {
       setEditingCell(null);
       setCellForm({ name: '', description: '' });
       loadData();
-    } catch (err: any) {
-      setErrorMessage(err.message);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'সেল সংরক্ষণ করতে সমস্যা হয়েছে।';
+      setErrorMessage(msg);
     }
   };
 
@@ -518,7 +518,7 @@ export default function EmployeesPage() {
     }
 
     const parseRow = (line: string): string[] => {
-      let row: string[] = [];
+      const row: string[] = [];
       let col = '';
       let inQuotes = false;
       for (let i = 0; i < line.length; i++) {
@@ -586,7 +586,7 @@ export default function EmployeesPage() {
     }
 
     const startRowIdx = hasHeader ? 1 : 0;
-    let parsed: any[] = [];
+    const parsed: BulkEmployeeInput[] = [];
 
     for (let idx = startRowIdx; idx < lines.length; idx++) {
       const line = lines[idx];
@@ -646,7 +646,7 @@ export default function EmployeesPage() {
 
         // 1. Resolve cell by name
         if (emp.cellName) {
-          let matchedCell = currentCells.find(c => c.name.trim().toLowerCase() === emp.cellName.trim().toLowerCase());
+          const matchedCell = currentCells.find(c => c.name.trim().toLowerCase() === emp.cellName.trim().toLowerCase());
           if (matchedCell) {
             cellId = matchedCell.id;
           } else if (currentUser?.role === 'ADMIN') {
@@ -714,8 +714,9 @@ export default function EmployeesPage() {
       setBulkEmpText('');
       setBulkError('');
       loadData();
-    } catch (err: any) {
-      setBulkError(err.message || 'আমদানিতে ত্রুটি হয়েছে। অনুগ্রহ করে ডেটা চেক করে পুনরায় চেষ্টা করুন।');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'আমদানিতে ত্রুটি হয়েছে। অনুগ্রহ করে ডেটা চেক করে পুনরায় চেষ্টা করুন।';
+      setBulkError(msg);
     } finally {
       setBulkImporting(false);
     }
@@ -763,8 +764,9 @@ export default function EmployeesPage() {
       setBulkCellText("");
       setBulkCellError("");
       loadData();
-    } catch (err: any) {
-      setBulkCellError(err.message || "সেল আমদানি করতে সমস্যা হয়েছে।");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'সেল আমদানি করতে সমস্যা হয়েছে।';
+      setBulkCellError(msg);
     } finally {
       setBulkCellImporting(false);
     }
@@ -791,11 +793,12 @@ export default function EmployeesPage() {
       }
 
       if (data.employees && Array.isArray(data.employees)) {
-        const textLines = data.employees.map((emp: any) => `${emp.name} - ${emp.designation}`).join('\n');
+        const textLines = data.employees.map((emp: { name: string; designation: string }) => `${emp.name} - ${emp.designation}`).join('\n');
         setBulkEmpText(prev => prev ? `${prev}\n${textLines}` : textLines);
       }
-    } catch (err: any) {
-      setBulkError(err.message || 'ছবি থেকে তথ্য বের করতে সমস্যা হয়েছে।');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'ছবি থেকে তথ্য বের করতে সমস্যা হয়েছে।';
+      setBulkError(msg);
     } finally {
       setIsImageImportLoading(false);
     }
@@ -822,11 +825,7 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleSaveApiKey = (key: string) => {
-    setCustomApiKey(key);
-    localStorage.setItem('ai_api_key', key);
-    setShowKeyInput(false);
-  };
+
 
   // Set forms for editing
   const startEditEmp = (emp: Employee) => {
@@ -918,7 +917,7 @@ export default function EmployeesPage() {
     return matchesSearch;
   });
 
-  const sortExecutives = (execs: any[]) => {
+  const sortExecutives = (execs: Executive[]) => {
     return [...execs].sort((a, b) => {
       const priority = (desig: string) => {
         const d = desig.toLowerCase();

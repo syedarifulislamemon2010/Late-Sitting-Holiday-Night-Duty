@@ -14,7 +14,7 @@ export async function GET() {
 
     const docs = await db.select().from(documents).orderBy(desc(documents.uploadedAt));
     return NextResponse.json(docs);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching documents:', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
@@ -42,7 +42,7 @@ export async function DELETE(request: Request) {
     }
 
     // Save to Trash (keep physical file for restoration support)
-    let deletedBy: string | null = user ? user.username : null;
+    const deletedBy: string | null = user ? user.username : null;
 
     await db.insert(trash).values({
       entityType: 'DOCUMENT',
@@ -68,8 +68,8 @@ export async function DELETE(request: Request) {
     });
 
     return NextResponse.json({ success: true, message: 'Document soft-deleted successfully' });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting document:', error);
-    return NextResponse.json({ error: 'internal_error', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

@@ -51,7 +51,7 @@ export async function PUT(
     const cell = updatedCellList[0];
     
     return NextResponse.json(cell);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating cell:', error);
     return NextResponse.json({ error: 'failed_to_update_cell' }, { status: 500 });
   }
@@ -104,7 +104,7 @@ export async function DELETE(
     await db.delete(cells).where(eq(cells.id, cellId));
     
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting cell:', error);
     return NextResponse.json({ error: 'failed_to_delete_cell' }, { status: 500 });
   }

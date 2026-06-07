@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import { db } from '@/lib/db';
+import { users, userCells, cells } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
-export async function getMacAddress(ip: string): Promise<string> {
+export async function getMacAddress(): Promise<string> {
   return 'Not Available';
 }
 
@@ -17,10 +20,32 @@ export async function logActivity(params: {
   details: string;
 }) {
   const timestamp = new Date().toISOString();
+  let cellName = 'Unknown';
+
+  try {
+    const userList = await db.select().from(users).where(eq(users.username, params.username));
+    const user = userList[0];
+    if (user) {
+      const associatedCells = await db.select({
+        name: cells.name
+      })
+      .from(userCells)
+      .innerJoin(cells, eq(userCells.A, cells.id))
+      .where(eq(userCells.B, user.id));
+
+      if (associatedCells.length > 0) {
+        cellName = associatedCells.map((c: { name: string }) => c.name).join(', ');
+      }
+    }
+  } catch (dbErr) {
+    console.error('Failed to resolve user cells in logActivity:', dbErr);
+  }
+
   const logEntry = {
     timestamp,
     userId: params.userId || 'Unknown',
     bankId: params.bankId || params.username || 'Unknown',
+    cell: cellName,
     recordId: params.entityId || 'Unknown',
     actionType: params.action,
     ipAddress: params.ipAddress || '127.0.0.1',
@@ -29,7 +54,7 @@ export async function logActivity(params: {
   };
 
   const logLine = JSON.stringify(logEntry) + '\n';
-  console.log(`[AUDIT LOG] [${timestamp}] User: ${logEntry.bankId} (ID: ${logEntry.userId}), Action: ${logEntry.actionType}, Record: ${logEntry.recordId}, Details: ${params.details}`);
+  console.log(`[AUDIT LOG] [${timestamp}] User: ${logEntry.bankId} (ID: ${logEntry.userId}), Cell: ${logEntry.cell}, Action: ${logEntry.actionType}, Record: ${logEntry.recordId}, Details: ${params.details}`);
 
   try {
     const logsDir = path.join(process.cwd(), 'logs');

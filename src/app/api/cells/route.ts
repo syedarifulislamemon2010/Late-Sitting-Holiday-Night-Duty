@@ -12,7 +12,7 @@ export async function GET() {
 
     if (user && user.role === 'USER') {
       isUserRestricted = true;
-      cellIds = user.cells.map((c: any) => c.id);
+      cellIds = user.cells.map((c: { id: number }) => c.id);
     }
 
     const conditions = [ne(cells.name, 'Combined Departmental Sheet')];
@@ -49,7 +49,7 @@ export async function GET() {
     }));
 
     return NextResponse.json(formattedCells);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching cells:', error);
     return NextResponse.json({ error: 'failed_to_fetch_cells' }, { status: 500 });
   }
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     const cell = newCellList[0];
     
     return NextResponse.json(cell, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating cell:', error);
     return NextResponse.json({ error: 'failed_to_create_cell' }, { status: 500 });
   }

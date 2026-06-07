@@ -4,6 +4,34 @@ import { documents } from '@/db/schema';
 import fs from 'fs';
 import path from 'path';
 
+interface ClosingBillRecord {
+  employeeName: string;
+  designation: string | null | undefined;
+  bankId: string | null | undefined;
+}
+
+interface ClosingBillGroup {
+  cellName: string;
+  records: ClosingBillRecord[];
+}
+
+interface ClosingBillPayload {
+  monthName: string;
+  groupedData: ClosingBillGroup[];
+  executivesData?: {
+    records: ClosingBillRecord[];
+    totalClaim?: number;
+    totalDeduction?: number;
+    grandTotal?: number;
+  };
+  totalEmployeesCount: number;
+  totalClaimAll: number;
+  totalStampAll: number;
+  grandTotalAll: number;
+  grandTotalInWords: string;
+  reportDate: string;
+}
+
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
   const bnChars = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
@@ -52,7 +80,7 @@ function abbreviateDesignation(desig: string | null | undefined): string {
 
 export async function POST(request: Request) {
   try {
-    const payload = await request.json();
+    const payload = (await request.json()) as ClosingBillPayload;
     const {
       monthName,
       groupedData, // Array of: { cellName, records, totalClaim, totalDeduction, grandTotal }
@@ -84,7 +112,7 @@ export async function POST(request: Request) {
 
     // 1. Render DGM & AGM Executives
     if (executivesData && executivesData.records && executivesData.records.length > 0) {
-      executivesData.records = [...executivesData.records].sort((a: any, b: any) => {
+      executivesData.records = [...executivesData.records].sort((a, b) => {
         const priority = (desig: string | null | undefined) => {
           if (!desig) return 3;
           const d = desig.toLowerCase();
@@ -105,7 +133,7 @@ export async function POST(request: Request) {
 
       let dgmCount = 0;
       let agmCount = 0;
-      executivesData.records.forEach((r: any) => {
+      executivesData.records.forEach((r) => {
         const lowerDesig = (r.designation || '').toLowerCase();
         if (lowerDesig.includes('ডিজিএম') || lowerDesig.includes('dgm') || lowerDesig.includes('উপ-মহাব্যবস্থাপক')) {
           dgmCount++;
@@ -117,7 +145,7 @@ export async function POST(request: Request) {
       });
       const totalExec = dgmCount + agmCount;
 
-      executivesData.records.forEach((r: any) => {
+      executivesData.records.forEach((r) => {
         execClaim += 2000;
         execStamp += 15;
         execGrand += 1985;
@@ -158,7 +186,7 @@ export async function POST(request: Request) {
 
     // 2. Render cell groupings
     if (groupedData && Array.isArray(groupedData)) {
-      groupedData.forEach((cellGroup: any) => {
+      groupedData.forEach((cellGroup) => {
         if (!cellGroup.records || cellGroup.records.length === 0) return;
 
         let cellClaim = 0;
@@ -166,7 +194,7 @@ export async function POST(request: Request) {
         let cellGrand = 0;
         let cellRows = '';
 
-        cellGroup.records.forEach((r: any) => {
+        cellGroup.records.forEach((r) => {
           cellClaim += 2000;
           cellStamp += 15;
           cellGrand += 1985;
@@ -403,8 +431,8 @@ export async function POST(request: Request) {
       filePath: relativePath,
       document: doc
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error generating closing bill document:', error);
-    return NextResponse.json({ error: 'failed_to_generate_closing_bill', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_generate_closing_bill', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

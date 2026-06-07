@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       }
 
       const trimmedUsername = username.trim();
-      let userList = await db.select().from(users).where(eq(sql`LOWER(${users.username})`, trimmedUsername.toLowerCase()));
+      const userList = await db.select().from(users).where(eq(sql`LOWER(${users.username})`, trimmedUsername.toLowerCase()));
       let user = userList[0];
 
       // If user doesn't exist, check if there's an employee with this bankId to auto-provision user
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: 'invalid_action' }, { status: 400 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Auth API Error:', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
@@ -138,7 +138,7 @@ export async function GET() {
         cells: assignedCells,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Auth GET Error:', error);
     return NextResponse.json({ authenticated: false, user: null });
   }

@@ -16,10 +16,16 @@ const MONTHS_MAP: { [key: string]: number } = {
   december: 11, dec: 11
 };
 
+interface ParsedHoliday {
+  date: string;
+  name: string;
+  isWorkingDay: boolean;
+}
+
 // High-performance regex parser for copy-pasted holiday strings
-function fallbackParseHolidays(text: string, defaultYear: number = 2026): any[] {
+function fallbackParseHolidays(text: string, defaultYear: number = 2026): ParsedHoliday[] {
   const lines = text.split('\n');
-  const results: any[] = [];
+  const results: ParsedHoliday[] = [];
 
   for (let line of lines) {
     line = line.trim();
@@ -42,7 +48,7 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): any[] 
       year = parseInt(yearMatch[1], 10);
     }
 
-    let parsedDates: string[] = [];
+    const parsedDates: string[] = [];
 
     // 1. Date Range: e.g. "19 March to 23 March" or "25 May to 31 May"
     const rangeMatch = datePart.match(/(\d+)\s+([A-Za-z]+)\s+to\s+(\d+)\s+([A-Za-z]+)/i);
@@ -61,7 +67,7 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): any[] 
       const endDateObj = new Date(year, endMonth, endDay);
 
       // Loop dates
-      let curr = new Date(startDateObj);
+      const curr = new Date(startDateObj);
       while (curr <= endDateObj) {
         const y = curr.getFullYear();
         const m = String(curr.getMonth() + 1).padStart(2, '0');
@@ -128,10 +134,10 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): any[] 
 
 export async function POST(request: Request) {
   try {
-    const { text, fileData, fileName, fileType, year } = await request.json();
+    const { text, fileData, fileType, year } = await request.json();
     const defaultYear = year ? parseInt(year, 10) : 2026;
     
-    let parsedHolidays: any[] = [];
+    let parsedHolidays: ParsedHoliday[] = [];
     
     const apiKey = process.env.AI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY;
 
@@ -144,7 +150,7 @@ export async function POST(request: Request) {
           generationConfig: { responseMimeType: 'application/json' }
         });
 
-        let prompt = `You are a professional calendar parser. Parse the provided list of government holidays for the year ${defaultYear}. 
+        const prompt = `You are a professional calendar parser. Parse the provided list of government holidays for the year ${defaultYear}. 
 Return a JSON array of holiday objects. Each object MUST have precisely these keys:
 - "date": string in YYYY-MM-DD format
 - "name": string containing the name of the holiday (in Bengali or English as provided)
@@ -196,8 +202,8 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
     }
 
     return NextResponse.json({ success: true, holidays: parsedHolidays });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error parsing holidays:', error);
-    return NextResponse.json({ error: 'failed_to_parse_holidays', message: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_parse_holidays', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

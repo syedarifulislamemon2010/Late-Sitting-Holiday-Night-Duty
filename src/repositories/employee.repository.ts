@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { employees, cells } from '@/db/schema';
-import { eq, and, inArray, sql } from 'drizzle-orm';
+import { eq, sql, SQL } from 'drizzle-orm';
 
 export class EmployeeRepository {
   static async findById(id: number) {
@@ -13,11 +13,11 @@ export class EmployeeRepository {
     return list[0] || null;
   }
 
-  static async listAll(conditions?: any) {
+  static async listAll(conditions?: SQL | undefined) {
     return db.select().from(employees).where(conditions);
   }
 
-  static async listAllWithCell(conditions?: any) {
+  static async listAllWithCell(conditions?: SQL | undefined) {
     return db
       .select({
         id: employees.id,

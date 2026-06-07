@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import { 
   Printer, 
   ChevronLeft, 
@@ -77,6 +78,8 @@ interface OfficeOrder {
     backingOrderId?: number | null;
     backingOrderRef?: string | null;
     backingOrderDate?: string | null;
+    orderText?: string;
+    copies?: string[];
   } | null;
 }
 
@@ -90,6 +93,7 @@ interface OrderDuty {
   totalTransport: number;
   grandTotal: number;
   datesFormatted: string;
+  dates?: string;
 }
 
 interface DutyListEntry {
@@ -637,10 +641,11 @@ export default function BillingPage() {
       });
 
       const hasUnbilledDutiesWithoutOrder = activeList.some((d: Duty) => {
-        if (d.orderRef && d.orderRef.endsWith('/বিল')) return false;
+        if (!d.orderRef) return true;
+        if (d.orderRef.endsWith('/বিল')) return false;
         const norm = getNormalizedRef(d.orderRef);
         if (archivedBillNormalizedRefs.has(norm)) return false;
-        return !d.orderRef || !printedOrderRefs.has(d.orderRef);
+        return !printedOrderRefs.has(d.orderRef);
       });
       setShowOrderWarning(activeList.length > 0 && hasUnbilledDutiesWithoutOrder && filteredDuties.length === 0);
 
@@ -2612,10 +2617,22 @@ export default function BillingPage() {
                                 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
                                 th, td { border: 1px solid #000; padding: 4px; font-size: 10px; line-height: 1.4; }
                                 th { font-weight: bold; background-color: #f8fafc; }
+                                ${!isBill ? `
+                                  #printable-order-sheet .bank-title { font-size: 20pt !important; font-weight: bold !important; color: #0b5e9e !important; }
+                                  #printable-order-sheet .dept-title { font-size: 15pt !important; font-weight: bold !important; color: #000000 !important; }
+                                  #printable-order-sheet .memo-line, #printable-order-sheet .memo-line * { font-size: 11pt !important; font-weight: bold !important; }
+                                  #printable-order-sheet .office-order-title { font-size: 16pt !important; font-weight: bold !important; text-decoration: underline !important; }
+                                  #printable-order-sheet .body-paragraph, #printable-order-sheet .body-paragraph * { font-size: 12pt !important; line-height: 1.6 !important; }
+                                  #printable-order-sheet table th { font-size: 12pt !important; font-weight: bold !important; }
+                                  #printable-order-sheet table td, #printable-order-sheet table td p, #printable-order-sheet table td span { font-size: 11pt !important; }
+                                  #printable-order-sheet .signature-name { font-size: 12pt !important; font-weight: bold !important; }
+                                  #printable-order-sheet .signature-designation { font-size: 11pt !important; }
+                                  #printable-order-sheet .footer-copy, #printable-order-sheet .footer-copy * { font-size: 10pt !important; }
+                                ` : ''}
                               </style>
                             </head>
                             <body>
-                              \${printContent.outerHTML}
+                              ${printContent.outerHTML}
                               <script>
                                 window.onload = function() {
                                   window.print();
@@ -2658,7 +2675,7 @@ export default function BillingPage() {
                         <div className="w-full flex justify-end text-right mb-4">
                           <div className="text-right leading-none">
                             <h2 className="text-[16px] font-bold text-black uppercase" style={{ fontFamily: 'Kalpurush', fontSize: '16px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                            <p className="text-[10px] font-bold text-black mt-1.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>তারিখ: \${toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\\//g, '-'))} ইং</p>
+                            <p className="text-[10px] font-bold text-black mt-1.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>তারিখ: \${toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                           </div>
                         </div>
 
@@ -2791,30 +2808,33 @@ export default function BillingPage() {
                       <div>
                         {/* Header */}
                         <div className="w-full flex justify-between items-start border-b-2 border-[#0b5e9e] pb-2">
-                          <img 
+                          <Image 
                             src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Janata_Bank_PLC_Logo.svg"
                             alt="Janata Bank Logo" 
+                            width={150}
+                            height={40}
                             className="h-10 shrink-0" 
+                            unoptimized
                           />
                           <div className="text-right leading-tight">
-                            <h2 className="text-[18px] font-extrabold text-[#0b5e9e]" style={{ fontFamily: 'Kalpurush', fontSize: '18px', lineHeight: '1.15' }}>জনতা ব্যাংক পিএলসি.</h2>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+                            <h2 className="text-[18px] font-extrabold text-[#0b5e9e] bank-title" style={{ fontFamily: 'Kalpurush', fontSize: '18px', lineHeight: '1.15' }}>জনতা ব্যাংক পিএলসি.</h2>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5 dept-title" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
                             <p className="text-[8px] font-medium text-slate-400 leading-none mt-1" style={{ fontFamily: 'Kalpurush', fontSize: '8px', lineHeight: '1.0' }}>প্রধান কার্যালয়, ঢাকা</p>
                           </div>
                         </div>
 
                         {/* Title and Memo details */}
-                        <div className="w-full flex justify-between items-start mt-4 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        <div className="w-full flex justify-between items-start mt-4 text-[10px] memo-line" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                           <p className="font-bold">স্মারক নং: \${viewingOrder.orderRef}</p>
-                          <p className="font-bold">তারিখ: \${toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\\//g, '-'))} ইং</p>
+                          <p className="font-bold">তারিখ: \${toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                         </div>
 
-                        <div className="text-center font-bold text-sm underline decoration-black underline-offset-4 mt-6 leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        <div className="text-center font-bold text-sm underline decoration-black underline-offset-4 mt-6 leading-none office-order-title" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
                           অফিস নির্দেশ
                         </div>
 
                         <div className="mt-6">
-                          <p className="text-justify leading-relaxed text-black text-[10px] text-indent-8" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6', textIndent: '0.5in', textAlign: 'justify' }}>
+                          <p className="text-justify leading-relaxed text-black text-[10px] text-indent-8 body-paragraph" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6', textIndent: '0.5in', textAlign: 'justify' }}>
                             \${viewingOrder.content?.openingParagraph || 'অনলাইন ব্যাংকিং ডিপার্টমেন্টের স্বাভাবিক কার্যক্রম পরিচালনার জন্য নিম্নলিখিত কর্মকর্তাদের দায়িত্ব অর্পণ করা হইলঃ'}
                           </p>
                         </div>
@@ -2866,7 +2886,7 @@ export default function BillingPage() {
 
                         {/* Signatures block */}
                         <div className="w-full flex justify-between items-start mt-8 pt-4 leading-normal text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6' }}>
-                          <div className="w-[50%]">
+                          <div className="w-[50%] footer-copy">
                             <p className="underline underline-offset-2">অনুলিপি জ্ঞাতার্থে ও কার্যার্থে প্রেরিত হইলোঃ</p>
                             <ol className="list-decimal pl-5 mt-2 space-y-1">
                               <li>উপ-মহাব্যবস্থাপক মহোদয়ের ব্যক্তিগত নথি, অনলাইন ব্যাংকিং ডিপার্টমেন্ট;</li>
@@ -2875,8 +2895,8 @@ export default function BillingPage() {
                             </ol>
                           </div>
                           <div className="w-[50%] text-right pr-2">
-                            <p className="font-extrabold">(\${viewingOrder.content?.signingOfficer || 'জনাব মোহাম্মদ সোহরাব হোসেন'})</p>
-                            <p className="text-slate-800 mt-1">\${viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>
+                            <p className="font-extrabold signature-name">(\${viewingOrder.content?.signingOfficer || 'জনাব মোহাম্মদ সোহরাব হোসেন'})</p>
+                            <p className="text-slate-800 mt-1 signature-designation">\${viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>
                           </div>
                         </div>
                       </div>

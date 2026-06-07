@@ -1,17 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Printer, 
-  Calendar, 
-  DollarSign, 
   Loader2, 
   CheckCircle, 
   AlertTriangle, 
   Lock, 
   Users, 
-  Settings, 
-  FileText,
   Eye,
   Sliders,
   ChevronDown,
@@ -68,6 +64,22 @@ interface Employee {
   mobile?: string | null;
 }
 
+interface User {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells?: { id: number; name: string }[];
+}
+
+interface LunchBill {
+  id: number;
+  month: string;
+  workingDays: number;
+  recordsJson: string;
+  cellId: number;
+}
+
 interface Executive {
   id: number;
   name: string;
@@ -75,6 +87,13 @@ interface Executive {
   bankId: string | null;
   fileNo: string | null;
   phone?: string | null;
+}
+
+interface Holiday {
+  id: number;
+  date: string;
+  name: string;
+  isWorkingDay: boolean;
 }
 
 interface LunchRecord {
@@ -95,7 +114,7 @@ interface LunchRecord {
 }
 
 export default function LunchBillPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeCellId, setActiveCellId] = useState<number | null>(null);
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -112,11 +131,11 @@ export default function LunchBillPage() {
   });
   
   const [workingDays, setWorkingDays] = useState<number>(17);
-  const [holidays, setHolidays] = useState<any[]>([]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   // Active records sheet state
   const [records, setRecords] = useState<LunchRecord[]>([]);
-  const [savedLunchBill, setSavedLunchBill] = useState<any>(null);
+  const [savedLunchBill, setSavedLunchBill] = useState<LunchBill | null>(null);
 
   // Additional Deduction Mode & Configuration
   const [deductionMode, setDeductionMode] = useState<'manual' | 'flat' | 'designation'>('manual');
@@ -220,7 +239,7 @@ export default function LunchBillPage() {
           if (data) {
             setSavedLunchBill(data);
             setWorkingDays(data.workingDays);
-            const parsed = JSON.parse(data.recordsJson).map((r: any) => {
+            const parsed = JSON.parse(data.recordsJson).map((r: LunchRecord) => {
               let bId = r.bankId;
               if (!bId) {
                 if (r.isExecutive) {
@@ -416,12 +435,7 @@ export default function LunchBillPage() {
     setDeductionMode('manual');
   };
 
-  const handleRemarksChange = (empId: number, isExec: boolean, val: string) => {
-    const updated = records.map(r => 
-      (r.employeeId === empId && r.isExecutive === isExec) ? { ...r, remarks: val } : r
-    );
-    setRecords(updated);
-  };
+
 
   const handleWorkingDaysChange = (daysStr: string) => {
     const val = parseInt(daysStr, 10) || 0;
@@ -500,7 +514,7 @@ export default function LunchBillPage() {
   };
 
   // Filter records by cell/executive for standard users
-  const getFilteredRecordsForUser = (primaryCellId: number | undefined) => {
+  const getFilteredRecordsForUser = (primaryCellId: number | null | undefined) => {
     if (isAdmin) return records;
     // Standard user gets only officers belonging to their specific cell (primary cell only)
     return records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
@@ -511,7 +525,6 @@ export default function LunchBillPage() {
 
   // Combined sums
   const totalEmployeesCount = activeRecords.length;
-  const totalPresentDaysAll = activeRecords.reduce((sum, r) => sum + r.presentDays, 0);
   const totalClaimAll = activeRecords.reduce((sum, r) => sum + r.totalBill, 0);
   
   const totalStampAll = totalEmployeesCount * 15;
@@ -521,7 +534,7 @@ export default function LunchBillPage() {
   const grandTotalAll = activeRecords.reduce((sum, r) => sum + r.netPayable, 0);
 
   // Save entire combined record
-  const saveLunchBill = async (): Promise<any> => {
+  const saveLunchBill = async (): Promise<LunchBill | null> => {
     setSaving(true);
     setSuccessMessage(null);
     setErrorMessage(null);
@@ -597,7 +610,7 @@ export default function LunchBillPage() {
     });
     const execsData = {
       records: execRecs,
-      totalDays: execRecs.reduce((sum, r) => sum + execRecs.reduce((s, o) => s + o.presentDays, 0), 0),
+      totalDays: execRecs.reduce((sum, o) => sum + o.presentDays, 0),
       totalClaim: execRecs.reduce((sum, r) => sum + r.totalBill, 0),
       totalDeduction: execRecs.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
       grandTotal: execRecs.reduce((sum, r) => sum + r.netPayable, 0)
@@ -644,9 +657,10 @@ export default function LunchBillPage() {
         setErrorMessage(data.message || 'প্রিন্ট মেমো প্রস্তুত করতে ব্যর্থ হয়েছে।');
         return null;
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error generating lunch bill:', err);
-      setErrorMessage(err.message || 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+      const msg = err instanceof Error ? err.message : 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।';
+      setErrorMessage(msg);
       return null;
     } finally {
       setGenerating(false);
@@ -755,7 +769,7 @@ export default function LunchBillPage() {
                   id="deductionMode"
                   value={deductionMode}
                   onChange={(e) => {
-                    const mode = e.target.value as any;
+                    const mode = e.target.value as 'manual' | 'flat' | 'designation';
                     setDeductionMode(mode);
                     applyDeductionRates(mode, flatDeductionRate, designationRates, workingDays, records);
                   }}
@@ -1286,7 +1300,7 @@ export default function LunchBillPage() {
                   }}
                   className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors shadow-md shadow-indigo-500/10"
                 >
-                  "না, অতিরিক্ত কর্তন নেই (প্রিন্ট করুন)"
+                  &quot;না, অতিরিক্ত কর্তন নেই (প্রিন্ট করুন)&quot;
                 </button>
               </div>
             </div>
