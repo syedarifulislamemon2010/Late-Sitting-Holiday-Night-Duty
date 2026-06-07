@@ -2675,7 +2675,7 @@ export default function BillingPage() {
                         <div className="w-full flex justify-end text-right mb-4">
                           <div className="text-right leading-none">
                             <h2 className="text-[16px] font-bold text-black uppercase" style={{ fontFamily: 'Kalpurush', fontSize: '16px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                            <p className="text-[10px] font-bold text-black mt-1.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>তারিখ: \${toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                            <p className="text-[10px] font-bold text-black mt-1.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                           </div>
                         </div>
 
@@ -2683,12 +2683,12 @@ export default function BillingPage() {
                         <div className="flex-1 flex flex-col justify-between mt-2">
                           <div>
                             <h2 className="text-left text-[10px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                              বিষয়: \${viewingOrder.content?.subjectText || 'যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।'}
+                              বিষয়: {viewingOrder.content?.subjectText || 'যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।'}
                             </h2>
                             
                             <div className="mt-2.5">
                               <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6', textIndent: '0.5in', textAlign: 'justify' }}>
-                                \${viewingOrder.content?.openingParagraph}
+                                {viewingOrder.content?.openingParagraph}
                               </p>
                             </div>
 
@@ -2714,32 +2714,32 @@ export default function BillingPage() {
                                   <tbody>
                                     {viewingOrder.duties.map((s: OrderDuty, idx: number) => (
                                       <tr key={idx} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                                        <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>\${toBanglaDigits(idx + 1)}</td>
+                                        <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(idx + 1)}</td>
                                         <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>
-                                          <p className="font-normal">\${s.employeeName}</p>
-                                          <p className="text-[9px] text-slate-800 font-normal mt-0.5">\${s.designation}</p>
+                                          <p className="font-normal">{s.employeeName}</p>
+                                          <p className="text-[9px] text-slate-800 font-normal mt-0.5">{s.designation}</p>
                                         </td>
                                         <td className="border border-black p-1.5 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '6px' }}>
-                                          <p className="break-words max-w-[200px] leading-snug">\${s.datesFormatted || s.dates || ''}</p>
-                                          <p className="text-[9px] text-slate-700 mt-1 font-semibold">মোট: \${toBanglaDigits(s.days)} দিন</p>
+                                          <p className="break-words max-w-[200px] leading-snug">{s.datesFormatted || s.dates || ''}</p>
+                                          <p className="text-[9px] text-slate-700 mt-1 font-semibold">মোট: {toBanglaDigits(s.days)} দিন</p>
                                         </td>
                                         <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '6px' }}>
-                                          (\${toBanglaDigits(transportRate)}x\${toBanglaDigits(s.days)}) = \${toBanglaDigits(s.totalTransport)}/-
+                                          ({toBanglaDigits(transportRate)}x{toBanglaDigits(s.days)}) = {toBanglaDigits(s.totalTransport)}/-
                                         </td>
                                         <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '6px' }}>
-                                          (\${toBanglaDigits(apyaonRate)}x\${toBanglaDigits(s.days)}) = \${toBanglaDigits(s.totalApyaon)}/-
+                                          ({toBanglaDigits(apyaonRate)}x{toBanglaDigits(s.days)}) = {toBanglaDigits(s.totalApyaon)}/-
                                         </td>
                                         <td className="border border-black p-1.5 font-extrabold text-center" style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>
-                                          \${toBanglaDigits(s.grandTotal)}/-
+                                          {toBanglaDigits(s.grandTotal)}/-
                                         </td>
                                       </tr>
                                     ))}
                                     <tr className="font-bold bg-slate-50/50 text-[10px]" style={{ border: '1px solid #000', fontWeight: 'bold' }}>
                                       <td colSpan={2} className="border border-black p-1.5 text-right pr-3" style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', paddingRight: '12px' }}>সর্বমোট:</td>
-                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>\${toBanglaDigits(viewingOrder.content?.totalDays)} দিন</td>
-                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>৳\${toBanglaDigits(viewingOrder.content?.totalTransport)}/-</td>
-                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>৳\${toBanglaDigits(viewingOrder.content?.totalApyaon)}/-</td>
-                                      <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>৳\${toBanglaDigits(viewingOrder.content?.grandTotal)}/-</td>
+                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(viewingOrder.content?.totalDays)} দিন</td>
+                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>৳{toBanglaDigits(viewingOrder.content?.totalTransport)}/-</td>
+                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>৳{toBanglaDigits(viewingOrder.content?.totalApyaon)}/-</td>
+                                      <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>৳{toBanglaDigits(viewingOrder.content?.grandTotal)}/-</td>
                                     </tr>
                                   </tbody>
                                 </table>
@@ -2748,15 +2748,15 @@ export default function BillingPage() {
 
                             {/* Words and paragraphs */}
                             <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6' }}>
-                              <p className="font-bold text-black">কথায়: \${viewingOrder.content?.grandTotalInWords || ''} মাত্র।</p>
+                              <p className="font-bold text-black">কথায়: {viewingOrder.content?.grandTotalInWords || ''} মাত্র।</p>
                               <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6', textAlign: 'justify' }}>
                                 ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                               </p>
                               <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6', textAlign: 'justify' }}>
-                                ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>\${toBanglaDigits(viewingOrder.content?.totalTransport)}/- (\${getBanglaNumberWords(viewingOrder.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>\${toBanglaDigits(viewingOrder.content?.totalApyaon)}/- (\${getBanglaNumberWords(viewingOrder.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                                ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport)}/- ({getBanglaNumberWords(viewingOrder.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/- ({getBanglaNumberWords(viewingOrder.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                               </p>
                               <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6', textAlign: 'justify' }}>
-                                ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>\${toBanglaDigits(viewingOrder.content?.grandTotal)}/- (\${getBanglaNumberWords(viewingOrder.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>\${viewingOrder.employeeName}, \${viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                                ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal)}/- ({getBanglaNumberWords(viewingOrder.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{viewingOrder.employeeName}, {viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                               </p>
                             </div>
                           </div>
@@ -2765,8 +2765,8 @@ export default function BillingPage() {
                         {/* Right-aligned payee signature block */}
                         <div className="w-full flex justify-end text-right" style={{ marginTop: '0.6in', marginBottom: '0.2in' }}>
                           <div className="text-right leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', paddingRight: '0.1in' }}>
-                            <p className="font-extrabold text-[10px]">(\${viewingOrder.employeeName})</p>
-                            <p className="text-[10px] font-bold text-slate-800 mt-1">\${viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</p>
+                            <p className="font-extrabold text-[10px]">({viewingOrder.employeeName})</p>
+                            <p className="text-[10px] font-bold text-slate-800 mt-1">{viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</p>
                           </div>
                         </div>
 
@@ -2825,8 +2825,8 @@ export default function BillingPage() {
 
                         {/* Title and Memo details */}
                         <div className="w-full flex justify-between items-start mt-4 text-[10px] memo-line" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                          <p className="font-bold">স্মারক নং: \${viewingOrder.orderRef}</p>
-                          <p className="font-bold">তারিখ: \${toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                          <p className="font-bold">স্মারক নং: {viewingOrder.orderRef}</p>
+                          <p className="font-bold">তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                         </div>
 
                         <div className="text-center font-bold text-sm underline decoration-black underline-offset-4 mt-6 leading-none office-order-title" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
@@ -2835,7 +2835,7 @@ export default function BillingPage() {
 
                         <div className="mt-6">
                           <p className="text-justify leading-relaxed text-black text-[10px] text-indent-8 body-paragraph" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.6', textIndent: '0.5in', textAlign: 'justify' }}>
-                            \${viewingOrder.content?.openingParagraph || 'অনলাইন ব্যাংকিং ডিপার্টমেন্টের স্বাভাবিক কার্যক্রম পরিচালনার জন্য নিম্নলিখিত কর্মকর্তাদের দায়িত্ব অর্পণ করা হইলঃ'}
+                            {viewingOrder.content?.openingParagraph || 'অনলাইন ব্যাংকিং ডিপার্টমেন্টের স্বাভাবিক কার্যক্রম পরিচালনার জন্য নিম্নলিখিত কর্মকর্তাদের দায়িত্ব অর্পণ করা হইলঃ'}
                           </p>
                         </div>
 
@@ -2861,21 +2861,21 @@ export default function BillingPage() {
                               <tbody>
                                 {dutiesList.map((d: DutyListEntry, idx: number) => (
                                   <tr key={idx} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
-                                    <td className="border border-black p-1 text-center" style={{ border: '1px solid #000', padding: '4px' }}>\${toBanglaDigits(idx + 1)}</td>
+                                    <td className="border border-black p-1 text-center" style={{ border: '1px solid #000', padding: '4px' }}>{toBanglaDigits(idx + 1)}</td>
                                     <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>
-                                      <p className="font-normal">\${d.employeeName || d.name}</p>
-                                      <p className="text-[9px] text-slate-800 font-normal mt-0.5">\${d.designation}</p>
+                                      <p className="font-normal">{d.employeeName || d.name}</p>
+                                      <p className="text-[9px] text-slate-800 font-normal mt-0.5">{d.designation}</p>
                                     </td>
                                     <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>
-                                      <p className="font-sans font-normal">\${d.bankId}</p>
+                                      <p className="font-sans font-normal">{d.bankId}</p>
                                     </td>
                                     <td className="border border-black p-1 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '4px' }}>
                                       <p className="break-words max-w-[200px] leading-snug">
-                                        \${d.datesFormatted || d.date || ''}
+                                        {d.datesFormatted || d.date || ''}
                                       </p>
                                     </td>
                                     <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '4px', textAlign: 'left', paddingLeft: '8px' }}>
-                                      \${d.description || ''}
+                                      {d.description || ''}
                                     </td>
                                   </tr>
                                 ))}
@@ -2895,8 +2895,8 @@ export default function BillingPage() {
                             </ol>
                           </div>
                           <div className="w-[50%] text-right pr-2">
-                            <p className="font-extrabold signature-name">(\${viewingOrder.content?.signingOfficer || 'জনাব মোহাম্মদ সোহরাব হোসেন'})</p>
-                            <p className="text-slate-800 mt-1 signature-designation">\${viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>
+                            <p className="font-extrabold signature-name">({viewingOrder.content?.signingOfficer || 'জনাব মোহাম্মদ সোহরাব হোসেন'})</p>
+                            <p className="text-slate-800 mt-1 signature-designation">{viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>
                           </div>
                         </div>
                       </div>
