@@ -1,257 +1,276 @@
 # Janata Bank Late-Sitting, Holiday, and Night Duty Portal (LHN Portal)
 
-An enterprise-grade utility management portal built to automate late-sitting, holiday, and night duty assignments, generate conveyance and entertainment bill reports, manage executive seniority directories, and handle official leave requests.
+An enterprise-grade utility management portal built to automate late-sitting, holiday, and night duty assignments, calculate conveyance and entertainment allowance bill reports, manage executive seniority directories, and handle official leave requests.
 
 ---
 
-## 2. Executive Summary
+## 1. Executive Summary & Functional Documentation
 
 The **Janata Bank LHN Portal** is a production-ready administrative utility designed to automate the scheduling, verification, and allowance computation processes for bank employees working non-standard operational shifts. Built primarily for the **Online Banking Department (CBS Integrated Development Cell)** of Janata Bank PLC, the portal's core business objective is to transition manual shift-roster compilation, allowance calculations, and office order generation into a transparent, secure, and audit-compliant digital workflow.
 
-The primary users of this application are:
-* **System Administrators:** Who configure security, manage system access, and oversee audit trails.
-* **Cell In-Charges / Operators:** Who coordinate team rosters, log shift logs, and initiate allowance billing.
-* **Executives (AGM, DGM):** Who review, authorize, and sign off on duty rosters and bills.
+### 1.1 Target User Roles
+* **System Administrators:** Who configure security settings, manage operator directories, assign roles, and oversee audit trails.
+* **Operators (Cell In-Charges):** Who coordinate rosters for their specific cells, log shift duties, generate billing memos, and input leave entries.
+* **Executives (AGM, DGM, GM):** Who review, authorize, and sign off on duty rosters and bill memos.
+
+### 1.2 Core Modules & Functionality
+1. **Duty Roster Management:** Dynamic assignment of late-sitting, holiday, and night shift duties. Restricts operator errors (e.g. duplicate duty assignments).
+2. **Bill Memo Generator:** Dynamically calculates conveyance and entertainment allowance bills based on validated duty hours and days. Generates official print-ready Legal-size billing memos.
+3. **Leave Processing Engine:** Casual, Station, and Special Leave management with sandwich-rule calculations and dates validation to prevent overlapping duty assignments.
+4. **Lunch Bill Module:** Generates monthly lunch bill records for employees within specific cells.
+5. **Executive Directory:** Seniority-ranked directory of executive members (AGM, DGM) with real-time status visibility.
+6. **Soft Deleted Items (Recycle Bin):** An audit-compliant soft-deletion bin that allows administrators to review and recover deleted records without database pollution.
+7. **Audit Log:** System-wide immutable logging tracking data modifications (insertions, updates, deletions).
 
 ---
 
-## 3. Key Features
+## 2. Directory & File Structure
 
-* **Duty Roster Management:** Dynamic assignment of late-sitting, holiday, and night shift duties using a responsive calendar scheduler.
-* **Bill Memo Generator:** Automated compilation of conveyance and entertainment allowance bills based on validated duty hours, preventing double-billing or calculation errors.
-* **Leave Processing Engine:** Automatic Casual, Station, and Special Leave management with sandwich-rule calendar offsets.
-* **Executive Directory:** Seniority-ranked directory of executive members (AGM, DGM) with real-time status visibility.
-* **Secure Chat System:** Dedicated real-time communication channel with server-side message encryption.
-* **Trash & Recovery:** Audit-compliant soft-deletion bin that enables administrators to review and recover deleted records without database pollution.
-
----
-
-## 4. Feature Matrix
-
-| Module | Primary Capabilities | Target User Roles | Audit Focus |
-| :--- | :--- | :--- | :--- |
-| **Duty Roster** | Calendar scheduling, duplicate check, holiday detection | Operator, Cell In-Charge | Double shift prevention |
-| **Billing** | Entertainment & conveyance calculations, PDF generator | Operator, Executive | Billing caps & limits |
-| **Leave Management** | Sandwich rule calculator, dates validation | All Employees | Overlapping leave check |
-| **Executive Directory** | Seniority indexing, in-charge assignments | Admin, Operator | Signatory authorization |
-| **User Directory** | Operator access control, role assignments | Admin | Access control (RBAC) |
-| **Secure Chat** | Real-time messages, cell channels | All Employees | Channel authorization |
-| **Audit Log** | DB change tracking, logging mutations | Admin | Immutable action logs |
-| **Recycle Bin** | Soft-deletes, restore points | Admin | Deletion accountability |
-
----
-
-## 5. Screenshots
-
-The following design mocks represent the refined production UI layout:
-* **Dashboard Overview:** `docs/images/dashboard.png` (High-contrast billing indicators and calendar view)
-* **Employee Directory:** `docs/images/employees.png` (Seniority-ordered grid with active statuses)
-* **Billing Memo Generator:** `docs/images/billing.png` (Form inputs linked to print-ready PDF previews)
-
----
-
-## 6. Technology Stack
-
-* **Core Framework:** Next.js (App Router, Server Components)
-* **Language:** TypeScript
-* **Authentication:** Auth.js (NextAuth.js)
-* **ORM:** Drizzle ORM
-* **Database:** Supabase PostgreSQL
-* **Realtime Synchronization:** Supabase Realtime
-* **Styling & Layout:** Tailwind CSS v4, Vanilla CSS
-* **Caching & Session Storage:** Dragonfly / Redis
-* **Icons:** Lucide React
-
----
-
-## 7. System Architecture
-
-### 7.1 Tier Architecture Flow
-```mermaid
-graph TD
-    Client[Client / Web Browser] -->|HTTP Requests| NextJS[Next.js App Router]
-    Client -->|WebSocket / Subscriptions| SupabaseRT[Supabase Realtime]
-    NextJS -->|API Endpoints| APIRoutes[API Routes]
-    APIRoutes -->|Business Logic| Services[Service Layer]
-    Services -->|Data Queries| Repositories[Repository Layer]
-    Repositories -->|Drizzle Queries| Drizzle[Drizzle ORM]
-    Drizzle -->|SQL Queries| PostgreSQL[(Supabase PostgreSQL)]
-```
-
-### 7.2 Authentication Flow
-```mermaid
-sequenceDiagram
-    participant User as Client Browser
-    participant App as Next.js / NextAuth
-    participant DB as PostgreSQL
-    User->>App: Submits credentials
-    App->>DB: Query user record & verify password hash
-    DB-->>App: Return user details & assigned role
-    App->>App: Generate Session Cookie / JWT
-    App-->>User: Set session cookie & redirect
-```
-
----
-
-## 8. Directory Structure
+The project follows a modular and clean folder layout separating concerns:
 
 ```text
 Late-Sitting-Holiday-Night-Duty/
-├── docs/                       # Comprehensive Architecture & Deployment Documentation
-│   ├── ARCHITECTURE.md
-│   └── DEPLOYMENT.md
+├── docs/                       # Architecture & deployment specifications
+│   ├── ARCHITECTURE.md         # Detailed system design
+│   └── DEPLOYMENT.md           # Production server configurations
 ├── public/                     # Static assets (Logos, Vector Icons, PDF Layout Fonts)
 ├── src/
 │   ├── app/                    # Next.js App Router (Pages, Layouts, API Routes)
-│   │   ├── api/                # Thin API Controllers
-│   │   ├── billing/            # Conveyance & entertainment allowance billing UI
+│   │   ├── api/                # API controllers (endpoint handling)
+│   │   ├── billing/            # Conveyance & entertainment billing ledger UI
 │   │   ├── closing-bill/       # Half-yearly closing allowances UI
-│   │   ├── documents/          # Memo and roster generation templates UI
-│   │   ├── employees/          # Employee directory UI
+│   │   ├── converter/          # Roster conversion & text processing UI
+│   │   ├── documents/          # Official memo templates & document archive UI
+│   │   ├── employees/          # Employee directory and profiles UI
 │   │   ├── executive/          # Executive directory UI
-│   │   ├── leave/              # Leave creation wizard UI
+│   │   ├── leave/              # Leave application manager UI
 │   │   ├── roster/             # Duty rosters scheduling UI
-│   │   ├── trash/              # Soft-deleted items recovery UI
-│   │   └── users/              # Operator user directories UI
-│   ├── components/             # Reusable UI Controls (shadcn primitives)
-│   ├── db/                     # Drizzle config and schema declarations
-│   ├── hooks/                  # Custom React hooks (realtime state, window sizing)
-│   ├── lib/                    # Shared helper engines (audit logging, errors, AES encryption)
+│   │   ├── trash/              # Soft-deleted items recovery (Recycle Bin) UI
+│   │   └── users/              # Operator directories and access control UI
+│   ├── components/             # Reusable UI controls
+│   ├── db/                     # Database setup, migrations, and table schemas
+│   │   ├── schema.ts           # Drizzle table schemas
+│   │   ├── seed.ts             # Initial data seeder script
+│   │   └── dump.ts             # Data exporter utility script
+│   ├── hooks/                  # Custom React hooks (realtime state, sizing)
+│   ├── lib/                    # Shared helper engines (audit logging, errors)
 │   ├── permissions/            # RBAC role mapper (ADMIN, USER)
 │   ├── repositories/           # Repository data access layers (Drizzle wrappers)
 │   ├── services/               # Service layers (Business logic & calculations)
 │   └── validations/            # Zod validation schemas
-├── .env.example                # Template configuration file for development setups
-├── drizzle.config.ts           # Drizzle compiler settings
+├── drizzle.config.ts           # Drizzle compiler and migration settings
 ├── next.config.ts              # Next.js build parameters
 ├── package.json                # Project dependencies
 ├── postgres_dump.json          # DB restore backup file (Git ignored)
-└── tsconfig.json               # TypeScript compiler config
+└── tsconfig.json               # TypeScript compiler configurations
 ```
 
 ---
 
-## 9. Prerequisites
+## 3. Technology Stack
 
+* **Core Framework:** Next.js 16.2.6 (App Router, Server Components)
+* **Language:** TypeScript 5+
+* **Authentication:** NextAuth.js v4 (Session-based custom credentials validation)
+* **ORM:** Drizzle ORM v0.45
+* **Database:** PostgreSQL (using `postgres` client library)
+* **AI Tool Integration:** Google Gemini Generative AI SDK (`@google/generative-ai`) for image-based bulk imports
+* **Styling & Layout:** Tailwind CSS v4, Vanilla CSS
+* **Icons:** Lucide React
+
+---
+
+## 4. System Architecture
+
+The application adopts a **Tiered Service-Repository Architecture** inside Next.js to cleanly separate data modeling, business rules, and presentation:
+
+```mermaid
+graph TD
+    Client[Client Browser / Tailwind CSS UI] -->|HTTP Requests| NextJS[Next.js App Router]
+    NextJS -->|API Endpoints| APIRoutes[src/app/api/*]
+    APIRoutes -->|Service Calls| Services[src/services/* (Business Logic)]
+    Services -->|Data Mutations| Repositories[src/repositories/* (Data Access)]
+    Repositories -->|Queries/Mutations| Drizzle[Drizzle ORM]
+    Drizzle -->|SQL Commands| PostgreSQL[(PostgreSQL Database)]
+```
+
+### 4.1 Tier Architecture Breakdown
+1. **Presentation Layer (Next.js Pages & Components):** Built using React and styled with Tailwind CSS v4. Includes a simulated print rendering module for A4 (Roster/Office Orders) and Legal-size (Billing Memo) documents using Kalpurush and Noto Sans Bengali typography.
+2. **Controller Layer (API Routes):** Exposes JSON endpoints under `src/app/api/` and handles request deserialization, error wrapping, and authentication checks.
+3. **Service Layer (Business Logic):** Handles core calculations like sandwich-rule check, allowance calculations (Late Sitting = ৳300, Holiday = ৳500, Night Shift = ৳1000), and PDF template mapping.
+4. **Repository Layer (Data Access):** Encapsulates Drizzle database calls to isolate queries, enabling easy modifications of queries without altering business rules.
+5. **Database Layer:** A PostgreSQL instance storing tables synchronized using Drizzle migrations.
+
+---
+
+## 5. API Endpoint Documentation
+
+The portal exposes several API routes for asynchronous operations:
+
+| Endpoint | Method | Description |
+| :--- | :---: | :--- |
+| `/api/auth/[...nextauth]` | POST/GET | Handles user credentials validation and session persistence. |
+| `/api/cells` | GET/POST | Lists or creates operational cells. |
+| `/api/employees` | GET/POST | Manages employee directory records. |
+| `/api/duties` | GET/POST | Logs and retrieves duty assignments. |
+| `/api/office-orders` | GET/POST | Manages official office orders (Rosters). |
+| `/api/executives` | GET/POST | Manages executive lists (GM, DGM, AGM). |
+| `/api/holidays` | GET/POST | Manages government holiday calendars. |
+| `/api/leaves` | GET/POST | Manages employee leave applications. |
+| `/api/lunch-bills` | GET/POST | Manages monthly lunch bills. |
+| `/api/trash` | GET/POST | Handles soft-deleted items recovery and permanent deletion. |
+| `/api/documents/generate-bill-memo` | POST | Exposes PDF generation payload for billing memos. |
+| `/api/documents/generate-office-order` | POST | Exposes PDF generation payload for office orders. |
+
+---
+
+## 6. Design Patterns
+
+The portal employs several proven software design patterns:
+* **Repository Pattern:** Implemented in `src/repositories/` to separate the SQL execution logic from the business logic services.
+* **Service Layer Pattern:** Encapsulated in `src/services/` where calculations (e.g., duty allowance aggregation) and transaction safety rules are enforced.
+* **Schema-Driven Validation:** Implemented using **Zod** to validate both incoming HTTP request payloads and service arguments before they reach repositories.
+* **Soft Delete Pattern:** Implemented via a separate `Trash` model and repository to ensure deletion accountability and recovery.
+* **Implicit Many-to-Many Association:** Used via `_UserCells` table to map users to multiple cells without database overhead.
+
+---
+
+## 7. Code Quality & Formatting
+
+The portal ensures a high standard of code safety and maintainability:
+* **TypeScript Strict Mode:** The project compiles with strict type checks. You can verify compilation safety using:
+  ```bash
+  npx tsc --noEmit
+  ```
+* **Linting:** Static analysis is enforced using ESLint to guarantee coding style consistency.
+* **Separation of Concerns:** Business logic, database interactions, Zod validations, and styling declarations are strictly separated into distinct modules.
+
+---
+
+## 8. Security Controls
+
+Security is designed into the portal at every layer:
+* **Authentication:** Handled through NextAuth.js, utilizing cryptographically secure session cookies.
+* **Role-Based Access Control (RBAC):** Users are assigned roles (`ADMIN` or `USER`). The API layer and page navigation enforce strict guards ensuring `USER` role cannot execute admin mutations (e.g. creating/deleting employees or restoring items).
+* **SQL Injection Mitigation:** Parameterized queries are automatically generated via **Drizzle ORM** to neutralize SQL injection vulnerabilities.
+* **Data Validation:** Zod schemas validate data inputs to block malformed parameters or illegal type casting at runtime.
+* **Audit Logging:** System-wide mutations (Insert, Update, and Soft-Deletion) are recorded in an immutable `AuditLog` table containing timestamps, target records, action type, and user session details.
+
+---
+
+## 9. Agile & Scrum Practices
+
+The project has been planned and executed following standard Agile methodologies:
+* **Iterative Sprints:** Development is structured into bi-weekly sprints focused on functional deliverables.
+* **User Stories:** Requirements are formulated around user scenarios (e.g. "As an Operator, I want to assign holiday duties so that I can automatically calculate entertainment allowances").
+* **Continuous Integration:** Regular local compilation checks and database script testing ensure code remains always stable.
+
+---
+
+## 10. Git & Version Control
+
+To maintain repository cleanlines, the following Git guidelines are implemented:
+* **Branching Strategy:** 
+  * `main` is always stable and ready for production.
+  * Feature development occurs in isolated feature branches (`feature/roster-modifications`, `feature/billing-ledger-redesign`).
+* **Commit Conventions:** Commits use semantic labels (e.g., `feat:`, `fix:`, `refactor:`, `docs:`) to facilitate quick changelog generation.
+* **Workspace Cleanliness:** Temporary scratch files and diagnostic scripts are excluded from repository commits using `.gitignore`.
+
+---
+
+## 11. Testing & Verification
+
+Testing is executed using manual validation and compilation checks:
+* **TypeScript Compilation:** Verification that the static analyzer compiles the Next.js routes correctly:
+  ```bash
+  npm run build
+  ```
+* **Page Pre-rendering Validation:** Verification that Next.js static pages collect and pre-render correct data schemas under various routes.
+* **Manual Verification:** Developers run the application locally on the dev server (`npm run dev`) and test key flows (roster creation, leave overlaps, bill calculations, and document generation) manually to ensure the user interface is visual, interactive, and aligned with client specifications.
+
+---
+
+## 12. Setup & Installation
+
+### 12.1 Prerequisites
 Before installing the project, verify that your environment contains the following tools:
 * **Node.js:** v18.0.0 or higher (LTS v20+ recommended)
 * **npm:** v9.0.0 or higher
 * **PostgreSQL:** v15+ (Local or Managed Instance)
 
----
-
-## 10. Quick Start
-
+### 12.2 Quick Start
 Initialize your local environment using the following steps:
 
-### Step 1: Clone the Repository
+#### Step 1: Clone the Repository
 ```bash
 git clone https://github.com/SyedArifulIslamEmon/Late-Sitting-Holiday-Night-Duty.git
 cd Late-Sitting-Holiday-Night-Duty
 ```
 
-### Step 2: Install NPM Dependencies
+#### Step 2: Install Dependencies
 ```bash
 npm install
 ```
 
-### Step 3: Configure Environment
-Copy `.env.example` to `.env` and fill in your connection variables:
+#### Step 3: Configure Environment
+Copy `.env.example` to `.env` and configure your database parameters:
 ```bash
 cp .env.example .env
 ```
 
-### Step 4: Synchronize Database
-Push the local schema structure to your database instance:
+#### Step 4: Synchronize Database Schema
+Push the schemas to your local database:
 ```bash
 npx drizzle-kit push
 ```
 
-### Step 5: Seed Local Data
-Seed initial configurations, standard cells, and default login credentials:
+#### Step 5: Seed the Database
+Seed standard cells, holidays, and initial operator profiles:
 ```bash
 npm run db:seed
 ```
 
-### Step 6: Start Server
+#### Step 6: Start Server
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to view the portal. 
-
-*Note: Local seed development credentials are generated during the seed step and should be verified in the terminal console. Default development access is configured only for local debugging.*
+Open [http://localhost:3000](http://localhost:3000) to view the portal.
 
 ---
 
-## 11. Environment Variables
+## 13. Environment Variables
 
-| Variable | Required | Default | Description |
-| :--- | :---: | :---: | :--- |
-| `DATABASE_URL` | Yes | - | PostgreSQL connection string with SSL configurations |
-| `NEXTAUTH_SECRET` | Yes | - | Secret key used to encrypt Session cookies |
-| `NEXTAUTH_URL` | Yes | `http://localhost:3000` | Fully qualified domain URL of the deployed application |
-| `GEMINI_API_KEY` | Yes | - | Google Gemini AI key used to run image-based bulk imports |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | - | Supabase project API URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`| Yes | - | Supabase anonymous API key for websocket events |
+| Variable | Required | Description |
+| :--- | :---: | :--- |
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `NEXTAUTH_SECRET` | Yes | Secret key used to encrypt session cookies |
+| `NEXTAUTH_URL` | Yes | Deployed application domain URL (e.g. `http://localhost:3000` for development) |
+| `GEMINI_API_KEY` | Yes | Google Gemini API Key for OCR and bulk uploads |
 
 ---
 
-## 12. Database Setup
+## 14. Database Backups & Exporter
 
-Database modifications are managed using Drizzle ORM:
-* **Schema Synchronization:** Push current TypeScript schema structures directly to the database:
+* **Export Database (Dump):** Export all records to `postgres_dump.json`:
   ```bash
-  npx drizzle-kit push
+  npm run db:dump
   ```
-* **Generate Migrations:** Compare local schemas with previous migrations and generate new SQL files:
+* **Import Database (Restore):** Wipe the target database clean and seed records from `postgres_dump.json`:
   ```bash
-  npx drizzle-kit generate
-  ```
-* **Execute Migrations:** Run all unapplied SQL migration files against the target database:
-  ```bash
-  npx drizzle-kit migrate
+  npm run db:seed
   ```
 
 ---
 
-## 13. Database Backup & Restore
+## 15. Production Deployment
 
-The application includes automated backup scripts to preserve and restore data states:
-
-### 13.1 Export Database (Dump)
-Export all records to `postgres_dump.json` (saved locally in the root folder):
-```bash
-npm run db:dump
-```
-
-### 13.2 Import Database (Restore)
-Wipe the target database clean and seed records from `postgres_dump.json` while matching primary key constraints:
-```bash
-npm run db:seed
-```
-
----
-
-## 14. Development Workflow
-
-1. **Feature Branching:** Always create a new feature branch from `main` before writing code.
-2. **Schema updates:** Update files under `src/db/schema/` and run `npx drizzle-kit push` to synchronize schemas.
-3. **Typechecking:** Always run type checks locally using `npx tsc --noEmit` before proposing merges.
-4. **Linting:** Ensure code cleanups are run using `npm run lint`.
-
----
-
-## 15. Build & Production Deployment
-
-To prepare the portal for deployment in a production environment:
-
-### Step 1: Package Code
-Compile the static build package:
+### Compile Static Package
+To prepare the portal for deployment in a production environment, build the static package:
 ```bash
 npm run build
 ```
 
-### Step 2: Start Service
+### Start Server
 Start the optimized Node.js server:
 ```bash
 npm run start
@@ -259,148 +278,9 @@ npm run start
 
 ---
 
-## 16. Linux Deployment Guide
-
-Follow these steps to deploy and run the LHN Portal on **RHEL 8/9**, **Rocky Linux**, or **AlmaLinux**:
-
-### Step 1: Install Node.js & Git
-```bash
-# Enable Node.js repository (v20 LTS)
-curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
-sudo dnf install -y nodejs git
-```
-
-### Step 2: Configure Application Directory
-```bash
-cd /var/www
-sudo git clone https://github.com/SyedArifulIslamEmon/Late-Sitting-Holiday-Night-Duty.git lhn-portal
-cd lhn-portal
-sudo npm install --omit=dev
-```
-
-### Step 3: Setup Environment & Process Manager
-Install PM2 globally to run the node service in the background:
-```bash
-sudo npm install -y pm2 -g
-```
-Create a production `.env` file and configure server settings.
-
-### Step 4: Build & Launch with PM2
-```bash
-# Compile code
-npm run build
-
-# Start PM2 process
-pm2 start npm --name "lhn-portal" -- start
-
-# Save PM2 state & enable launch on system reboot
-pm2 save
-pm2 startup
-```
-
-### Step 5: Nginx Reverse Proxy Setup
-Install and configure Nginx to proxy requests from Port 80/443 to the local Port 3000:
-```bash
-sudo dnf install -y nginx
-```
-Create `/etc/nginx/conf.d/lhn-portal.conf`:
-```nginx
-server {
-    listen 80;
-    server_name lhn.janatabank.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-Enable and start Nginx:
-```bash
-sudo systemctl enable --now nginx
-```
-
-### Step 6: Configure Firewall
-Open HTTP and HTTPS ports in the system firewall:
-```bash
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --permanent --add-service=https
-sudo firewall-cmd --reload
-```
-
----
-
-## 17. Security Architecture
-
-* **Authentication (Auth.js):** Custom credentials provider mapping login credentials against cryptographically-hashed database records.
-* **Role-Based Access Control (RBAC):** Strict view and mutation barriers checking user sessions against roles (`ADMIN`, `USER`).
-* **Audit Logging:** System-wide logging tracking data modifications (adds, edits, deletes).
-* **Encryption:** Cryptographic parameters secure sensitive system fields.
-* **Secrets management:** Production secrets are isolated using secure system variables.
-* **Database Backups:** Daily backup exports scheduled to prevent data loss.
-
----
-
-## 18. Realtime Architecture
-
-Real-time notification feeds, online operator statuses, and updates are synchronized using **Supabase Realtime WebSockets**.
-* Roster modifications published on client actions instantly trigger interface updates for other users without page reloads.
-* System events are secured and scoped within client-side listener subscriptions.
-
----
-
-## 19. Audit Logging
-
-Every data mutation (Insertion, Update, and Soft-Deletion) is logged in an immutable system table.
-* **Traceability:** Logs capture operator usernames, target identifiers, action types (`CREATE`, `UPDATE`, `DELETE`), and timestamps.
-* **Recovery:** Enables audit compliance and direct traceability to recover system operations or investigate changes.
-
----
-
-## 20. Troubleshooting
-
-* **Database Connection Failures:** Ensure `sslmode=require` is present in the connection string and check if the database host is accessible.
-* **Missing Environment Variables:** Verify that all variables outlined in `.env.example` are populated in the system `.env` file.
-* **Realtime Synchronization Failures:** Verify that `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are correct and check your browser's console for WebSocket connection failures.
-* **Build Failures:** Run `npx tsc --noEmit` and check for code type mismatch issues prior to building.
-
----
-
-## 21. Maintenance Procedures
-
-* **System Updates:** Pull updates from the main git branch, run `npm install`, compile the build via `npm run build`, and restart the service using `pm2 restart lhn-portal`.
-* **Database Backups:** Schedule a nightly cron job to execute `npm run db:dump` and archive the generated `postgres_dump.json` to secure secondary storage.
-
----
-
-## 22. Version History
-
-* **v1.0.0 (Current Release):** Core Portal deployment, featuring automated duty rosters, entertainment conveyance calculators, leaf engine, and audit logs.
-
----
-
-## 23. Production Readiness Checklist
-
-- [ ] Environment variables configured securely
-- [ ] Database backed up and schema initialized
-- [ ] SSL certificates configured in Nginx configuration
-- [ ] PM2 process manager configured for autostart
-- [ ] Real-time websocket endpoints validated
-- [ ] Audit logs write paths verified
-
----
-
-## 24. Contributors
+## 16. Contributors & Licensing
 
 * **Syed Ariful Islam Emon** (Lead Developer)
 * **Online Banking Department, Janata Bank PLC.**
 
----
-
-## 25. License
-
-Proprietary Software | Online Banking Department, Janata Bank PLC. All rights reserved.
+**License:** Proprietary Software | Online Banking Department, Janata Bank PLC. All rights reserved.

@@ -555,18 +555,24 @@ export default function BillingPage() {
                 }
               }
               
-              // Extract month from dutiesJson
-              let dutiesList: DutyListEntry[] = [];
-              try {
-                dutiesList = JSON.parse(matchedOrder.dutiesJson || '[]');
-              } catch (e) {
-                console.error('Failed to parse dutiesJson:', e);
+              // Extract month from duties/dutiesJson
+              let dutiesList: DutyListEntry[] = (matchedOrder.duties as any) || [];
+              if (dutiesList.length === 0 && matchedOrder.dutiesJson) {
+                try {
+                  dutiesList = JSON.parse(matchedOrder.dutiesJson);
+                } catch (e) {
+                  console.error('Failed to parse dutiesJson:', e);
+                }
               }
               
               let yearMonth = '';
-              if (dutiesList.length > 0 && dutiesList[0].date) {
-                const parts = dutiesList[0].date.split('-');
-                if (parts.length >= 2) yearMonth = `${parts[0]}-${parts[1]}`;
+              if (dutiesList.length > 0) {
+                const firstDuty = dutiesList[0] as any;
+                const firstDate = firstDuty?.date || (Array.isArray(firstDuty?.dates) && firstDuty.dates[0]) || '';
+                if (firstDate) {
+                  const parts = firstDate.split('-');
+                  if (parts.length >= 2) yearMonth = `${parts[0]}-${parts[1]}`;
+                }
               }
               if (!yearMonth && matchedOrder.orderDate) {
                 const parts = matchedOrder.orderDate.split('-');
@@ -1339,27 +1345,44 @@ export default function BillingPage() {
 
     pendingBillingOfficeOrders.forEach(order => {
       if (selectedCategory !== 'all' && order.category !== selectedCategory) return;
-      let dutiesList = [];
-      try {
-        dutiesList = JSON.parse(order.dutiesJson || '[]');
-      } catch (e) {
-        console.error(e);
+      let dutiesList = (order.duties as any) || [];
+      if (dutiesList.length === 0 && order.dutiesJson) {
+        try {
+          dutiesList = JSON.parse(order.dutiesJson);
+        } catch (e) {
+          console.error(e);
+        }
       }
       
       dutiesList.forEach((d: any) => {
-        grandTotal += (d.grandTotal || 0);
-        if (order.category === 'LATE_SITTING') {
-          totalLateSittingBill += (d.grandTotal || 0);
-          totalLateAllowance1 += (d.totalApyaon || 0);
-          totalLateAllowance2 += (d.totalTransport || 0);
-        } else if (order.category === 'HOLIDAY') {
-          totalHolidayBill += (d.grandTotal || 0);
-          totalHolidayAllowance1 += (d.totalApyaon || 0);
-          totalHolidayAllowance2 += (d.totalTransport || 0);
+        const days = Array.isArray(d.dates) ? d.dates.length : (d.days || 0);
+        let transportRate = 200;
+        let apyaonRate = 100;
+        if (order.category === 'HOLIDAY') {
+          transportRate = 250;
+          apyaonRate = 250;
         } else if (order.category === 'NIGHT_SHIFT') {
-          totalNightBill += (d.grandTotal || 0);
-          totalNightAllowance1 += (d.totalApyaon || 0);
-          totalNightAllowance2 += (d.totalTransport || 0);
+          transportRate = 400;
+          apyaonRate = 600;
+        }
+
+        const totalApyaon = d.totalApyaon !== undefined && d.totalApyaon > 0 ? d.totalApyaon : (days * apyaonRate);
+        const totalTransport = d.totalTransport !== undefined && d.totalTransport > 0 ? d.totalTransport : (days * transportRate);
+        const itemGrandTotal = d.grandTotal !== undefined && d.grandTotal > 0 ? d.grandTotal : (totalApyaon + totalTransport);
+
+        grandTotal += itemGrandTotal;
+        if (order.category === 'LATE_SITTING') {
+          totalLateSittingBill += itemGrandTotal;
+          totalLateAllowance1 += totalApyaon;
+          totalLateAllowance2 += totalTransport;
+        } else if (order.category === 'HOLIDAY') {
+          totalHolidayBill += itemGrandTotal;
+          totalHolidayAllowance1 += totalApyaon;
+          totalHolidayAllowance2 += totalTransport;
+        } else if (order.category === 'NIGHT_SHIFT') {
+          totalNightBill += itemGrandTotal;
+          totalNightAllowance1 += totalApyaon;
+          totalNightAllowance2 += totalTransport;
         }
       });
     });
@@ -1404,18 +1427,24 @@ export default function BillingPage() {
       }
     }
     
-    // Extract month from dutiesJson
-    let dutiesList: DutyListEntry[] = [];
-    try {
-      dutiesList = JSON.parse(order.dutiesJson || '[]');
-    } catch (e) {
-      console.error('Failed to parse dutiesJson:', e);
+    // Extract month from duties/dutiesJson
+    let dutiesList: DutyListEntry[] = (order.duties as any) || [];
+    if (dutiesList.length === 0 && order.dutiesJson) {
+      try {
+        dutiesList = JSON.parse(order.dutiesJson);
+      } catch (e) {
+        console.error('Failed to parse dutiesJson:', e);
+      }
     }
     
     let yearMonth = '';
-    if (dutiesList.length > 0 && dutiesList[0].date) {
-      const parts = dutiesList[0].date.split('-');
-      if (parts.length >= 2) yearMonth = `${parts[0]}-${parts[1]}`;
+    if (dutiesList.length > 0) {
+      const firstDuty = dutiesList[0] as any;
+      const firstDate = firstDuty?.date || (Array.isArray(firstDuty?.dates) && firstDuty.dates[0]) || '';
+      if (firstDate) {
+        const parts = firstDate.split('-');
+        if (parts.length >= 2) yearMonth = `${parts[0]}-${parts[1]}`;
+      }
     }
     if (!yearMonth && order.orderDate) {
       const parts = order.orderDate.split('-');
@@ -1957,14 +1986,15 @@ export default function BillingPage() {
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium">
                         {pendingBillingOfficeOrders.map((order) => {
-                          let dutiesList = [];
-                          try {
-                            dutiesList = JSON.parse(order.dutiesJson || '[]');
-                          } catch (e) {
-                            console.error(e);
+                          let dutiesList = order.duties || [];
+                          if (dutiesList.length === 0 && order.dutiesJson) {
+                            try {
+                              dutiesList = JSON.parse(order.dutiesJson);
+                            } catch (e) {
+                              console.error(e);
+                            }
                           }
-                          const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (d.days || 0), 0);
-                          const grandTotal = dutiesList.reduce((sum: number, d: any) => sum + (d.grandTotal || 0), 0);
+                          const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
                           
                           return (
                             <tr key={order.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-950/20 text-slate-600 dark:text-slate-300">
@@ -1993,42 +2023,17 @@ export default function BillingPage() {
                               </td>
                               <td className="px-5 py-4 text-center font-sans">
                                 <span className="font-bold text-slate-800 dark:text-slate-200">{toBanglaDigits(totalDays)} দিন</span>
-                                <span className="text-[10px] text-slate-400 block mt-0.5">৳{toBanglaDigits(grandTotal)}/-</span>
                               </td>
                               <td className="px-5 py-4 text-right">
                                 <div className="flex items-center justify-end gap-1.5">
                                   <button 
-                                    onClick={() => setViewingOrder(order)}
-                                    className="p-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg transition-all cursor-pointer"
-                                    title="ভিউ করুন"
-                                  >
-                                    <Eye size={13} />
-                                  </button>
-                                  <button 
                                     onClick={() => handleGenerateBillFromOrder(order)}
-                                    className="p-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg transition-all border border-amber-100 dark:border-amber-950/30 cursor-pointer"
-                                    title="বিল প্রস্তুত করুন"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-bold transition-all border border-amber-100 dark:border-amber-950/30 cursor-pointer font-sans"
+                                    title="বিল জেনারেট করুন"
                                   >
                                     <Receipt size={13} />
+                                    <span>বিল জেনারেট করুন</span>
                                   </button>
-                                  {hasEditPermission(order) && (
-                                    <button 
-                                      onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`}
-                                      className="p-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-350 rounded-lg transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
-                                      title="সম্পাদনা করুন"
-                                    >
-                                      <FileSignature size={13} />
-                                    </button>
-                                  )}
-                                  {hasDeletePermission(order) && (
-                                    <button 
-                                      onClick={() => handleDeleteOrder(order.id)}
-                                      className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all cursor-pointer"
-                                      title="মুছে ফেলুন"
-                                    >
-                                      <Trash2 size={13} />
-                                    </button>
-                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -2967,11 +2972,13 @@ export default function BillingPage() {
 
                         {/* Table */}
                         {(() => {
-                          let dutiesList: DutyListEntry[] = [];
-                          try {
-                            dutiesList = JSON.parse(viewingOrder.dutiesJson || '[]');
-                          } catch (e) {
-                            console.error(e);
+                          let dutiesList: DutyListEntry[] = (viewingOrder.duties as any) || [];
+                          if (dutiesList.length === 0 && viewingOrder.dutiesJson) {
+                            try {
+                              dutiesList = JSON.parse(viewingOrder.dutiesJson);
+                            } catch (e) {
+                              console.error(e);
+                            }
                           }
                           return dutiesList.length > 0 ? (
                             <table className="w-full border-collapse border border-black text-center mt-4 text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
