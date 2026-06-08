@@ -1,13 +1,21 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from '../db/schema';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set in the environment variables');
 }
 
-// Set up the Neon serverless HTTP client connection
-const sql = neon(process.env.DATABASE_URL);
+// Prevent multiple connections during hot reloading in development
+const globalForPostgres = global as unknown as {
+  postgresClient: postgres.Sql | undefined;
+};
+
+export const client = globalForPostgres.postgresClient ?? postgres(process.env.DATABASE_URL);
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPostgres.postgresClient = client;
+}
 
 // Export the Drizzle client initialized with schema relationships
-export const db = drizzle(sql, { schema });
+export const db = drizzle(client, { schema });
