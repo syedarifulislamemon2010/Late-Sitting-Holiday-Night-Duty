@@ -46,7 +46,7 @@ Late-Sitting-Holiday-Night-Duty/
 │   │   ├── leave/              # Leave application manager UI
 │   │   ├── roster/             # Duty rosters scheduling UI
 │   │   ├── trash/              # Soft-deleted items recovery (Recycle Bin) UI
-│   │   └── users/              # Operator directories and access control UI
+│   │   └── users/              # Operator user directories UI
 │   ├── components/             # Reusable UI controls
 │   ├── db/                     # Database setup, migrations, and table schemas
 │   │   ├── schema.ts           # Drizzle table schemas
@@ -86,12 +86,12 @@ The application adopts a **Tiered Service-Repository Architecture** inside Next.
 
 ```mermaid
 graph TD
-    Client[Client Browser / Tailwind CSS UI] -->|HTTP Requests| NextJS[Next.js App Router]
-    NextJS -->|API Endpoints| APIRoutes[src/app/api/*]
-    APIRoutes -->|Service Calls| Services[src/services/* (Business Logic)]
-    Services -->|Data Mutations| Repositories[src/repositories/* (Data Access)]
-    Repositories -->|Queries/Mutations| Drizzle[Drizzle ORM]
-    Drizzle -->|SQL Commands| PostgreSQL[(PostgreSQL Database)]
+    Client["Client Browser / Tailwind CSS UI"] -->|HTTP Requests| NextJS["Next.js App Router"]
+    NextJS -->|API Endpoints| APIRoutes["src/app/api/*"]
+    APIRoutes -->|Service Calls| Services["src/services/* (Business Logic)"]
+    Services -->|Data Mutations| Repositories["src/repositories/* (Data Access)"]
+    Repositories -->|Queries/Mutations| Drizzle["Drizzle ORM"]
+    Drizzle -->|SQL Commands| PostgreSQL[("PostgreSQL Database")]
 ```
 
 ### 4.1 Tier Architecture Breakdown
@@ -169,7 +169,7 @@ The project has been planned and executed following standard Agile methodologies
 
 ## 10. Git & Version Control
 
-To maintain repository cleanlines, the following Git guidelines are implemented:
+To maintain repository cleanliness, the following Git guidelines are implemented:
 * **Branching Strategy:** 
   * `main` is always stable and ready for production.
   * Feature development occurs in isolated feature branches (`feature/roster-modifications`, `feature/billing-ledger-redesign`).
@@ -249,36 +249,144 @@ Open [http://localhost:3000](http://localhost:3000) to view the portal.
 
 ---
 
-## 14. Database Backups & Exporter
+## 14. Database Setup & Configurations
 
-* **Export Database (Dump):** Export all records to `postgres_dump.json`:
+Database structures and modifications are managed using Drizzle ORM:
+* **Schema Synchronization:** Push current TypeScript schema structures directly to the database:
   ```bash
-  npm run db:dump
+  npx drizzle-kit push
   ```
-* **Import Database (Restore):** Wipe the target database clean and seed records from `postgres_dump.json`:
+* **Generate Migrations:** Compare local schemas with previous migrations and generate new SQL files:
   ```bash
-  npm run db:seed
+  npx drizzle-kit generate
+  ```
+* **Execute Migrations:** Run all unapplied SQL migration files against the target database:
+  ```bash
+  npx drizzle-kit migrate
   ```
 
 ---
 
-## 15. Production Deployment
+## 15. Database Backup & Restore
 
-### Compile Static Package
-To prepare the portal for deployment in a production environment, build the static package:
+The application includes automated backup scripts to preserve and restore data states:
+
+### 15.1 Export Database (Dump)
+Export all records to `postgres_dump.json` (saved locally in the root folder):
 ```bash
+npm run db:dump
+```
+
+### 15.2 Import Database (Restore)
+Wipe the target database clean and seed records from `postgres_dump.json` while matching primary key constraints:
+```bash
+npm run db:seed
+```
+
+---
+
+## 16. Linux Deployment Guide
+
+Follow these steps to deploy and run the LHN Portal on **RHEL 8/9**, **Rocky Linux**, or **AlmaLinux**:
+
+### Step 1: Install Node.js & Git
+```bash
+# Enable Node.js repository (v20 LTS)
+curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+sudo dnf install -y nodejs git
+```
+
+### Step 2: Configure Application Directory
+```bash
+cd /var/www
+sudo git clone https://github.com/SyedArifulIslamEmon/Late-Sitting-Holiday-Night-Duty.git lhn-portal
+cd lhn-portal
+sudo npm install --omit=dev
+```
+
+### Step 3: Setup Environment & Process Manager
+Install PM2 globally to run the node service in the background:
+```bash
+sudo npm install -y pm2 -g
+```
+Create a production `.env` file and configure server settings.
+
+### Step 4: Build & Launch with PM2
+```bash
+# Compile code
 npm run build
+
+# Start PM2 process
+pm2 start npm --name "lhn-portal" -- start
+
+# Save PM2 state & enable launch on system reboot
+pm2 save
+pm2 startup
 ```
 
-### Start Server
-Start the optimized Node.js server:
+### Step 5: Nginx Reverse Proxy Setup
+Install and configure Nginx to proxy requests from Port 80/443 to the local Port 3000:
 ```bash
-npm run start
+sudo dnf install -y nginx
+```
+Create `/etc/nginx/conf.d/lhn-portal.conf`:
+```nginx
+server {
+    listen 80;
+    server_name lhn.janatabank.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+Enable and start Nginx:
+```bash
+sudo systemctl enable --now nginx
+```
+
+### Step 6: Configure Firewall
+Open HTTP and HTTPS ports in the system firewall:
+```bash
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --reload
 ```
 
 ---
 
-## 16. Contributors & Licensing
+## 17. Troubleshooting
+
+* **Database Connection Failures:** Ensure `sslmode=require` is present in the connection string and check if the database host is accessible.
+* **Missing Environment Variables:** Verify that all variables outlined in `.env.example` are populated in the system `.env` file.
+* **Gemini API Errors:** Verify that the `GEMINI_API_KEY` is active and correct.
+* **Build Failures:** Run `npx tsc --noEmit` and check for code type mismatch issues prior to building.
+
+---
+
+## 18. Maintenance Procedures
+
+* **System Updates:** Pull updates from the main git branch, run `npm install`, compile the build via `npm run build`, and restart the service using `pm2 restart lhn-portal`.
+* **Database Backups:** Schedule a nightly cron job to execute `npm run db:dump` and archive the generated `postgres_dump.json` to secure secondary storage.
+
+---
+
+## 19. Production Readiness Checklist
+
+- [ ] Environment variables configured securely
+- [ ] Database backed up and schema initialized
+- [ ] SSL certificates configured in Nginx configuration
+- [ ] PM2 process manager configured for autostart
+- [ ] Audit logs write paths verified
+
+---
+
+## 20. Contributors & Licensing
 
 * **Syed Ariful Islam Emon** (Lead Developer)
 * **Online Banking Department, Janata Bank PLC.**
