@@ -301,7 +301,7 @@ export async function POST(request: Request) {
     // Save to HTML file
     let filename = `bill_memo_${Math.floor(Date.now() / 1000)}.html`;
     if (billRef) {
-      const safeRef = billRef.replace(/\//g, "_").replace(/[^a-zA-Z0-9_\-]/g, "");
+      const safeRef = billRef.replace(/\//g, "_").replace(/[^a-zA-Z0-9_\-\u0980-\u09FF]/g, "");
       filename = `bill_memo_${safeRef}.html`;
     }
     const filePathDisk = path.join(uploadsDir, filename);

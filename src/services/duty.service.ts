@@ -44,7 +44,17 @@ export class DutyService {
     return isWeekend;
   }
 
-  static async listDuties(currentUser: UserSession | null | undefined, filters: { cellId: string | null, startDate: string | null, endDate: string | null, orderRef: string | null }) {
+  static async listDuties(
+    currentUser: UserSession | null | undefined,
+    filters: {
+      cellId: string | null;
+      startDate: string | null;
+      endDate: string | null;
+      orderRef: string | null;
+      employeeId?: string | null;
+      type?: string | null;
+    }
+  ) {
     let userCellIds: number[] = [];
     let isUserRestricted = false;
 
@@ -74,6 +84,13 @@ export class DutyService {
       if (filters.cellId && filters.cellId !== 'all') {
         conditions.push(eq(employeesCellIdHelper(), parseInt(filters.cellId, 10)));
       }
+    }
+
+    if (filters.employeeId) {
+      conditions.push(eq(duties.employeeId, parseInt(filters.employeeId, 10)));
+    }
+    if (filters.type) {
+      conditions.push(eq(duties.type, filters.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'));
     }
     
     if (!filters.orderRef) {
@@ -180,7 +197,22 @@ export class DutyService {
     };
 
     const uniqueEmployeeIds = Array.from(new Set(validated.assignments.map((a: { employeeId: number }) => a.employeeId)));
-    const allExistingDuties = await DutyRepository.findExistingDuties(uniqueEmployeeIds, uniqueDates);
+    const allExistingDutiesFromDb = await DutyRepository.findExistingDuties(uniqueEmployeeIds, uniqueDates);
+    
+    const dutiesToDeleteSet = new Set(validated.dutiesToDelete || []);
+    const isUpdateMode = validated.dutiesToDelete !== undefined;
+    
+    if (isUpdateMode) {
+      for (const assignment of validated.assignments) {
+        const conflicts = allExistingDutiesFromDb.filter(d =>
+          d.employeeId === assignment.employeeId &&
+          d.date === assignment.date
+        );
+        conflicts.forEach(c => dutiesToDeleteSet.add(c.id));
+      }
+    }
+
+    const allExistingDuties = allExistingDutiesFromDb.filter(d => !dutiesToDeleteSet.has(d.id));
 
     const employeesList = await db.select().from(employees).where(inArray(employees.id, uniqueEmployeeIds));
     const employeeMap = new Map(employeesList.map(e => [e.id, e]));
@@ -189,6 +221,26 @@ export class DutyService {
     let leaves: (typeof leaveApplications.$inferSelect)[] = [];
     if (employeeBankIds.length > 0) {
       leaves = await db.select().from(leaveApplications).where(inArray(leaveApplications.bankId, employeeBankIds));
+    }
+
+    const duplicateConflicts: string[] = [];
+    for (const assignment of validated.assignments) {
+      const duplicate = allExistingDuties.find(d => 
+        d.employeeId === assignment.employeeId && 
+        d.date === assignment.date && 
+        d.type === assignment.type
+      );
+      if (duplicate) {
+        const emp = employeeMap.get(assignment.employeeId);
+        const empName = emp ? emp.name : 'কর্মকর্তা';
+        const dutyTypeBn = assignment.type === 'LATE_SITTING' ? 'লেট সিটিং' : assignment.type === 'HOLIDAY' ? 'হলিডে' : 'নাইট শিফট';
+        const formattedDate = assignment.date.split('-').reverse().join('-');
+        duplicateConflicts.push(`${empName} (${formattedDate} - ${dutyTypeBn})`);
+      }
+    }
+    if (duplicateConflicts.length > 0) {
+      const uniqueConflicts = Array.from(new Set(duplicateConflicts));
+      throw new AppError(`এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।\n\nবিস্তারিত:\n` + uniqueConflicts.map(c => `- ${c}`).join('\n'), 400, 'duplicate_duty_on_date');
     }
 
     const dutiesToInsert: {
@@ -242,15 +294,6 @@ export class DutyService {
         }
       }
 
-      const duplicate = allExistingDuties.find(d => 
-        d.employeeId === assignment.employeeId && 
-        d.date === assignment.date && 
-        d.type === assignment.type
-      );
-      if (duplicate) {
-        throw new AppError('duplicate_duty_on_date', 400, 'duplicate_duty_on_date');
-      }
-
       const { allowance1, allowance2, totalBill } = this.calculateAllowances(assignment.type);
 
       dutiesToInsert.push({
@@ -263,6 +306,30 @@ export class DutyService {
         totalBill,
         orderRef: validated.orderRef || null
       });
+    }
+
+    if (dutiesToDeleteSet.size > 0) {
+      for (const dutyId of dutiesToDeleteSet) {
+        const dutyRecord = await DutyRepository.findById(dutyId);
+        if (dutyRecord) {
+          const emp = await EmployeeRepository.findById(dutyRecord.employeeId);
+          const duty = { ...dutyRecord, employee: emp };
+          const typeMapBangla: Record<string, string> = {
+            'LATE_SITTING': 'লেট সিটিং',
+            'HOLIDAY': 'ছুটির দিন',
+            'NIGHT_SHIFT': 'নাইট শিফট'
+          };
+          const deletedBy = currentUser ? currentUser.username : null;
+          await db.insert(trash).values({
+            entityType: 'DUTY',
+            entityId: dutyId,
+            name: `${duty.employee?.name || 'Unknown'} - ${typeMapBangla[duty.type] || duty.type} (${duty.date})`,
+            data: JSON.stringify(duty),
+            deletedBy
+          });
+          await DutyRepository.delete(dutyId);
+        }
+      }
     }
 
     const inserted = await DutyRepository.createBulk(dutiesToInsert);
@@ -298,10 +365,18 @@ export class DutyService {
     }
 
     const emp = await EmployeeRepository.findById(currentDuty.employeeId);
+    const targetEmployeeId = validated.employeeId || currentDuty.employeeId;
+    const targetEmp = await EmployeeRepository.findById(targetEmployeeId);
+    if (!targetEmp) {
+      throw new AppError('employee_not_found', 404, 'employee_not_found');
+    }
 
     if (currentUser.role !== 'ADMIN') {
       const userCellIds = currentUser.cells.map((c: { id: number }) => c.id);
       if (!emp || !userCellIds.includes(emp.cellId)) {
+        throw new AuthError('অন্য সেলের কর্মকর্তা আপডেট করার অনুমতি নেই।', 403, 'forbidden');
+      }
+      if (!userCellIds.includes(targetEmp.cellId)) {
         throw new AuthError('অন্য সেলের কর্মকর্তা আপডেট করার অনুমতি নেই।', 403, 'forbidden');
       }
     }
@@ -317,8 +392,8 @@ export class DutyService {
       throw new AppError('holiday_duty_on_working_day', 400, 'holiday_duty_on_working_day');
     }
 
-    if (emp && emp.bankId) {
-      const leaves = await db.select().from(leaveApplications).where(eq(leaveApplications.bankId, emp.bankId));
+    if (targetEmp && targetEmp.bankId) {
+      const leaves = await db.select().from(leaveApplications).where(eq(leaveApplications.bankId, targetEmp.bankId));
       const hasLeaveConflict = leaves.some(l => 
         l.startDate <= targetDate && 
         l.endDate >= targetDate
@@ -330,22 +405,26 @@ export class DutyService {
 
     if (targetType === 'LATE_SITTING' || targetType === 'NIGHT_SHIFT') {
       const conflictingType = targetType === 'LATE_SITTING' ? 'NIGHT_SHIFT' : 'LATE_SITTING';
-      const conflictList = await DutyRepository.findDuplicateDutyForEmployee(currentDuty.employeeId, targetDate, id);
+      const conflictList = await DutyRepository.findDuplicateDutyForEmployee(targetEmployeeId, targetDate, id);
       const hasConflict = conflictList.some(d => d.type === conflictingType);
       if (hasConflict) {
         throw new AppError('late_sitting_night_shift_conflict', 400, 'late_sitting_night_shift_conflict');
       }
     }
 
-    const duplicateList = await DutyRepository.findDuplicateDutyForEmployee(currentDuty.employeeId, targetDate, id);
+    const duplicateList = await DutyRepository.findDuplicateDutyForEmployee(targetEmployeeId, targetDate, id);
     const duplicate = duplicateList.find(d => d.type === targetType);
     if (duplicate) {
-      throw new AppError('duplicate_duty_on_date', 400, 'duplicate_duty_on_date');
+      const empName = targetEmp ? targetEmp.name : 'কর্মকর্তা';
+      const dutyTypeBn = targetType === 'LATE_SITTING' ? 'লেট সিটিং' : targetType === 'HOLIDAY' ? 'হলিডে' : 'নাইট শিফট';
+      const formattedDate = targetDate.split('-').reverse().join('-');
+      throw new AppError(`উক্ত কর্মকর্তার জন্য ইতিমধ্যে এই তারিখে ডিউটি বরাদ্দ রয়েছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।\n\nবিস্তারিত:\n- ${empName} (${formattedDate} - ${dutyTypeBn})`, 400, 'duplicate_duty_on_date');
     }
 
     const { allowance1, allowance2, totalBill } = this.calculateAllowances(targetType);
 
     const updatedDuty = await DutyRepository.update(id, {
+      employeeId: targetEmployeeId,
       type: targetType,
       date: targetDate,
       description: validated.description !== undefined ? (validated.description || null) : currentDuty.description,
@@ -383,6 +462,9 @@ export class DutyService {
 
     return updated;
   }
+
+
+
 
   static async deleteDuty(currentUser: UserSession | null | undefined, id: number) {
     const dutyRecord = await DutyRepository.findById(id);

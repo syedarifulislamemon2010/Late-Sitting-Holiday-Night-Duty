@@ -123,6 +123,21 @@ const getBanglaMonthYearLabel = (ym: string) => {
   return `${banglaMonths[month - 1]} ${toBanglaDigits(yearStr)}`;
 };
 
+const getDefaultDescription = (empName: string | null | undefined, category: string, cellName?: string | null) => {
+  const name = empName || '';
+  const cleanName = name.replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim();
+  const matchesName = cleanName.includes('মোঃ বাহার উদ্দিন') || cleanName.includes('দেবাশীষ কুমার দে');
+  const matchesCategory = category === 'HOLIDAY' || category === 'NIGHT_SHIFT';
+  
+  if (matchesName && matchesCategory) {
+    return 'Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)';
+  }
+  return cellName 
+    ? `Customization এবং Development সংক্রান্ত কাজ (${cellName})` 
+    : 'Customization এবং Development সংক্রান্ত কাজ';
+};
+
+
 const getBanglaNumberWords = (num: number) => {
   if (num === 0) return 'শূন্য';
   
@@ -239,13 +254,7 @@ export default function RosterPage() {
   
   // Edit/Update Duty states
   const [editingDuty, setEditingDuty] = useState<Duty | null>(null);
-  const [editForm, setEditForm] = useState({
-    type: 'LATE_SITTING' as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT',
-    date: '',
-    description: ''
-  });
-  const [editError, setEditError] = useState('');
-  const [updating, setUpdating] = useState(false);
+  const [editingDuties, setEditingDuties] = useState<Duty[]>([]);
 
   // Filters state
   const [selectedCell, setSelectedCell] = useState('all');
@@ -336,10 +345,15 @@ export default function RosterPage() {
   const handleOpt1EmployeeToggle = (empId: number) => {
     setOpt1Assignments(prev => {
       const next = { ...prev };
-      if (empId in next) {
-        delete next[empId];
-      } else {
+      if (editingDuty) {
+        Object.keys(next).forEach(k => delete next[Number(k)]);
         next[empId] = [];
+      } else {
+        if (empId in next) {
+          delete next[empId];
+        } else {
+          next[empId] = [];
+        }
       }
       return next;
     });
@@ -643,10 +657,10 @@ export default function RosterPage() {
     const filtered = duties.filter(d => {
       const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
       const matchesCategory = d.type === printCategory;
-      const matchesOrderRef = (isEditingArchive || isPrintMode)
-        ? (d.orderRef === originalOrderRef || !d.orderRef)
-        : !d.orderRef;
-      return matchesCell && matchesCategory && matchesOrderRef;
+      if (isArchived && !isEditingArchive) {
+        return matchesCell && matchesCategory && d.orderRef === originalOrderRef;
+      }
+      return matchesCell && matchesCategory && !d.orderRef;
     });
 
     const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
@@ -663,18 +677,29 @@ export default function RosterPage() {
     const groupedMap = new Map<number, { employee: Employee; dates: string[]; description: string }>();
     activeDuties.forEach(d => {
       const empId = d.employee.id;
+      
+      const cleanName = (d.employee.name || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim();
+      const isSpecialEmployee = cleanName.includes('মোঃ বাহার উদ্দিন') || cleanName.includes('দেবাশীষ কুমার দে');
+      const isSpecialCategory = d.type === 'HOLIDAY' || d.type === 'NIGHT_SHIFT';
+      
+      const targetDescription = (isSpecialEmployee && isSpecialCategory)
+        ? 'Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)'
+        : (d.description || getDefaultDescription(d.employee.name, d.type, d.employee.cell?.name));
+
       if (!groupedMap.has(empId)) {
         groupedMap.set(empId, {
           employee: d.employee,
           dates: [],
-          description: d.description || `Customization এবং Development সংক্রান্ত কাজ (${d.employee.cell?.name || ''})`
+          description: targetDescription
         });
       }
       const group = groupedMap.get(empId)!;
       if (!group.dates.includes(d.date)) {
         group.dates.push(d.date);
       }
-      if (d.description && d.description.trim() !== '') {
+      if (isSpecialEmployee && isSpecialCategory) {
+        group.description = 'Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)';
+      } else if (d.description && d.description.trim() !== '') {
         group.description = d.description;
       }
     });
@@ -771,18 +796,6 @@ export default function RosterPage() {
   const orderRef = useMemo(() => {
     if (userCustomOrderRef !== null) return userCustomOrderRef;
     if (isArchived) return '';
-
-    const tableGroups = getGroupedDuties();
-    const tableDates = tableGroups.flatMap(g => g.dates);
-    const activeDuties = duties.filter(d => {
-      const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
-      const matchesCategory = d.type === printCategory;
-      return matchesCell && matchesCategory && tableDates.includes(d.date);
-    });
-    const firstArchivedDuty = activeDuties.find(d => d.orderRef);
-    if (firstArchivedDuty && firstArchivedDuty.orderRef) {
-      return firstArchivedDuty.orderRef;
-    }
 
     let empName = 'ইমন';
     if (payeeEmployeeId) {
@@ -1340,23 +1353,27 @@ export default function RosterPage() {
     }
     try {
       let queryUrl = `/api/duties?`;
-      if (selectedMonths.length > 0) {
-        const sortedMonths = [...selectedMonths].sort();
-        const startYrMn = sortedMonths[0];
-        const endYrMn = sortedMonths[sortedMonths.length - 1];
+      if (isArchived && orderRef) {
+        queryUrl += `orderRef=${encodeURIComponent(orderRef)}&includeArchived=true`;
+      } else {
+        if (selectedMonths.length > 0) {
+          const sortedMonths = [...selectedMonths].sort();
+          const startYrMn = sortedMonths[0];
+          const endYrMn = sortedMonths[sortedMonths.length - 1];
+          
+          const [startY, startM] = startYrMn.split('-');
+          const [endY, endM] = endYrMn.split('-');
+          
+          const startDate = `${startY}-${startM}-01`;
+          const lastDay = new Date(parseInt(endY, 10), parseInt(endM, 10), 0).getDate();
+          const endDate = `${endY}-${endM}-${String(lastDay).padStart(2, '0')}`;
+          
+          queryUrl += `startDate=${startDate}&endDate=${endDate}&`;
+        }
         
-        const [startY, startM] = startYrMn.split('-');
-        const [endY, endM] = endYrMn.split('-');
-        
-        const startDate = `${startY}-${startM}-01`;
-        const lastDay = new Date(parseInt(endY, 10), parseInt(endM, 10), 0).getDate();
-        const endDate = `${endY}-${endM}-${String(lastDay).padStart(2, '0')}`;
-        
-        queryUrl += `startDate=${startDate}&endDate=${endDate}&`;
-      }
-      
-      if (selectedCell !== 'all') {
-        queryUrl += `cellId=${selectedCell}`;
+        if (selectedCell !== 'all') {
+          queryUrl += `cellId=${selectedCell}`;
+        }
       }
       
       const res = await fetch(queryUrl);
@@ -1372,24 +1389,6 @@ export default function RosterPage() {
           const ym = d.date.substring(0, 7);
           return selectedMonths.includes(ym);
         });
-      }
-
-      // Merge with archived duties if editing
-      if (isEditingArchive && orderRef) {
-        const archRes = await fetch(`/api/duties?orderRef=${encodeURIComponent(orderRef)}&includeArchived=true`);
-        if (archRes.ok) {
-          const archData = await archRes.json();
-          const archList = Array.isArray(archData) ? archData : [];
-          
-          const merged = [...archList];
-          filteredList.forEach(d => {
-            if (!merged.some(m => m.id === d.id)) {
-              merged.push(d);
-            }
-          });
-          setDuties(merged);
-          return;
-        }
       }
       
       setDuties(filteredList);
@@ -1696,7 +1695,7 @@ export default function RosterPage() {
             employeeId: empId,
             date: date,
             type: printCategory,
-            description: `Customization এবং Development সংক্রান্ত কাজ (${emp.cell?.name || ''})`,
+            description: getDefaultDescription(emp.name, printCategory, emp.cell?.name),
             allowance1,
             allowance2,
             totalBill,
@@ -1716,6 +1715,103 @@ export default function RosterPage() {
     e.preventDefault();
     setErrorMessage('');
     
+    if (editingDuty) {
+      let assignments: {
+        employeeId: number;
+        type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+        date: string;
+        description: string;
+      }[] = [];
+
+      if (entryMode === 'EMPLOYEE_WISE') {
+        const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+        for (const empId of activeEmployeeIds) {
+          const empDates = opt1Assignments[empId] || [];
+          if (empDates.length > 0) {
+            const emp = employees.find(e => e.id === empId);
+            const cellName = emp?.cell?.name || '';
+            empDates.forEach(dateStr => {
+              assignments.push({
+                employeeId: empId,
+                type: assignmentForm.type,
+                date: dateStr,
+                description: assignmentForm.description.trim() || getDefaultDescription(emp?.name, assignmentForm.type, cellName)
+              });
+            });
+          }
+        }
+      } else {
+        const employeeId = assignmentForm.selectedEmployeeIds[0];
+        const emp = employees.find(e => e.id === employeeId);
+        const cellName = emp?.cell?.name || '';
+        assignments = [{
+          employeeId,
+          type: assignmentForm.type,
+          date: assignmentForm.date,
+          description: assignmentForm.description.trim() || getDefaultDescription(emp?.name, assignmentForm.type, cellName)
+        }];
+      }
+
+      const preservedOrderRef = editingDuties.find(d => d.orderRef)?.orderRef || null;
+
+      try {
+        setSubmitting(true);
+
+        const res = await fetch('/api/duties', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            assignments,
+            dutiesToDelete: editingDuties.map(d => d.id),
+            orderRef: preservedOrderRef || undefined
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          let msg = 'ডিউটি আপডেট করতে ব্যর্থ হয়েছে।';
+          if (err.error === 'late_sitting_on_holiday') {
+            msg = 'ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।';
+          } else if (err.error === 'holiday_duty_on_working_day') {
+            msg = 'কার্যদিবসে সরকারি ছুটির ডিউটি দেওয়া সম্ভব নয়।';
+          } else if (err.error === 'late_sitting_night_shift_conflict') {
+            msg = 'একই কার্যদিবসে লেট সিটিং ও নাইট শিফট ডিউটি একসাথে বরাদ্দ করা সম্ভব নয়।';
+          } else if (err.error === 'duplicate_duty_on_date') {
+            msg = err.message || 'এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।';
+          } else if (err.error === 'leave_conflict') {
+            msg = 'উক্ত কর্মকর্তা ওই তারিখে ছুটিতে আছেন। ছুটিতে থাকাকালীন ডিউটি বরাদ্দ করা সম্ভব নয়।';
+          } else if (err.error === 'duty_not_found') {
+            msg = 'ডিউটি রেকর্ডটি খুঁজে পাওয়া যায়নি।';
+          }
+          setErrorMessage(msg);
+          setSubmitting(false);
+          return;
+        }
+
+        // Automatically expand month filter to include the months of all updated/assigned dates
+        const submittedMonths = Array.from(new Set(assignments.map(a => a.date.substring(0, 7))));
+        setSelectedMonths(prev => {
+          const next = [...prev];
+          submittedMonths.forEach(m => {
+            if (!next.includes(m)) {
+              next.push(m);
+            }
+          });
+          return next;
+        });
+
+        handleCancelEdit();
+        loadDuties();
+        alert('ডিউটি সফলভাবে আপডেট করা হয়েছে!');
+      } catch (err) {
+        console.error('Error updating duty:', err);
+        setErrorMessage('সার্ভার কানেকশন ব্যর্থ হয়েছে।');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+    
     let assignments: {
       employeeId: number;
       type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
@@ -1732,7 +1828,7 @@ export default function RosterPage() {
         employeeId: d.employeeId,
         type: printCategory,
         date: d.date,
-        description: d.description || `Customization এবং Development সংক্রান্ত কাজ`
+        description: d.description || getDefaultDescription(d.employee?.name, printCategory, d.employee?.cell?.name)
       }));
     } else {
       if (entryMode === 'EMPLOYEE_WISE') {
@@ -1754,7 +1850,7 @@ export default function RosterPage() {
                 employeeId: empId,
                 type: assignmentForm.type,
                 date: dateStr,
-                description: `Customization এবং Development সংক্রান্ত কাজ (${cellName})`
+                description: getDefaultDescription(emp?.name, assignmentForm.type, cellName)
               });
             });
           }
@@ -1783,7 +1879,7 @@ export default function RosterPage() {
             employeeId: empId,
             type: assignmentForm.type,
             date: assignmentForm.date,
-            description: `Customization এবং Development সংক্রান্ত কাজ (${cellName})`
+            description: getDefaultDescription(emp?.name, assignmentForm.type, cellName)
           };
         });
       }
@@ -1805,7 +1901,7 @@ export default function RosterPage() {
       if (!res.ok) {
         const err = await res.json();
         if (err.error === 'duplicate_duty_on_date') {
-          setErrorMessage('এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।');
+          setErrorMessage(err.message || 'এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।');
         } else if (err.error === 'late_sitting_on_holiday') {
           setErrorMessage('ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।');
         } else if (err.error === 'holiday_duty_on_working_day') {
@@ -1898,6 +1994,18 @@ export default function RosterPage() {
         return;
       }
 
+      // Automatically expand month filter to include the months of all updated/assigned dates
+      const submittedMonths = Array.from(new Set(assignments.map(a => a.date.substring(0, 7))));
+      setSelectedMonths(prev => {
+        const next = [...prev];
+        submittedMonths.forEach(m => {
+          if (!next.includes(m)) {
+            next.push(m);
+          }
+        });
+        return next;
+      });
+
       // Normal mode reset logic
       if (entryMode === 'EMPLOYEE_WISE') {
         setOpt1Assignments({});
@@ -1948,62 +2056,101 @@ export default function RosterPage() {
     }
   };
 
-  const handleStartEdit = (duty: Duty) => {
-    setEditingDuty(duty);
-    setEditForm({
-      type: duty.type,
-      date: duty.date,
-      description: duty.description || ''
-    });
-    setEditError('');
+  const handleStartEdit = async (dutiesList: Duty[]) => {
+    if (!dutiesList || dutiesList.length === 0) return;
+    const representative = dutiesList[0];
+    setEditingDuty(representative);
+    
+    try {
+      const res = await fetch(`/api/duties?employeeId=${representative.employeeId}&type=${representative.type}`);
+      const fetchedDuties = await res.json();
+      const pendingDutiesOfEmp = Array.isArray(fetchedDuties)
+        ? fetchedDuties.filter((d: Duty) => !d.orderRef)
+        : [];
+      
+      const dutiesToUse = pendingDutiesOfEmp.length > 0 ? pendingDutiesOfEmp : dutiesList;
+      setEditingDuties(dutiesToUse);
+      
+      // Set common form values
+      setAssignmentForm(prev => ({
+        ...prev,
+        type: representative.type,
+        date: representative.date,
+        selectedEmployeeIds: [representative.employeeId],
+        description: representative.description || ''
+      }));
+
+      // Switch entry mode to Option 1: Cell & Employee Wise
+      setEntryMode('EMPLOYEE_WISE');
+
+      // Option 1 (Employee Wise) states
+      setOpt1CellId(representative.employee.cellId.toString());
+      const allDates = dutiesToUse.map(d => d.date);
+      setOpt1Assignments({
+        [representative.employeeId]: allDates
+      });
+      // Align calendar month with the first duty's date
+      const ym = representative.date.substring(0, 7);
+      setOpt1ViewedMonths({
+        [representative.employeeId]: ym
+      });
+    } catch (err) {
+      console.error('Error loading edit duties:', err);
+      setEditingDuties(dutiesList);
+      
+      // Set common form values
+      setAssignmentForm(prev => ({
+        ...prev,
+        type: representative.type,
+        date: representative.date,
+        selectedEmployeeIds: [representative.employeeId],
+        description: representative.description || ''
+      }));
+
+      // Switch entry mode to Option 1: Cell & Employee Wise
+      setEntryMode('EMPLOYEE_WISE');
+
+      // Option 1 (Employee Wise) states
+      setOpt1CellId(representative.employee.cellId.toString());
+      const allDates = dutiesList.map(d => d.date);
+      setOpt1Assignments({
+        [representative.employeeId]: allDates
+      });
+      // Align calendar month with the first duty's date
+      const ym = representative.date.substring(0, 7);
+      setOpt1ViewedMonths({
+        [representative.employeeId]: ym
+      });
+    }
+
+    // Option 2 (Date Wise) states to ensure the employee shows up
+    setFormCellFilter(representative.employee.cellId.toString());
+    setFormSearchQuery('');
+
+    setErrorMessage('');
+
+    // Smoothly scroll to the top of the page (Duty Assignment Panel)
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingDuty) return;
-    setEditError('');
-    setUpdating(true);
-    try {
-      const res = await fetch(`/api/duties/${editingDuty.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: editForm.type,
-          date: editForm.date,
-          description: 'Customization এবং Development সংক্রান্ত'
-        })
-      });
-      
-      if (!res.ok) {
-        const err = await res.json();
-        let msg = 'ডিউটি আপডেট করতে ব্যর্থ হয়েছে।';
-        if (err.error === 'late_sitting_on_holiday') {
-          msg = 'ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।';
-        } else if (err.error === 'holiday_duty_on_working_day') {
-          msg = 'কার্যদিবসে সরকারি ছুটির ডিউটি দেওয়া সম্ভব নয়।';
-        } else if (err.error === 'late_sitting_night_shift_conflict') {
-          msg = 'একই কার্যদিবসে লেট সিটিং ও নাইট শিফট ডিউটি একসাথে বরাদ্দ করা সম্ভব নয়।';
-        } else if (err.error === 'duplicate_duty_on_date') {
-          msg = 'এই কর্মকর্তার জন্য এই তারিখে ইতিমধ্যে অন্য ডিউটি বরাদ্দ রয়েছে।';
-        } else if (err.error === 'leave_conflict') {
-          msg = 'উক্ত কর্মকর্তা ওই তারিখে ছুটিতে আছেন। ছুটিতে থাকাকালীন ডিউটি বরাদ্দ করা সম্ভব নয়।';
-        } else if (err.error === 'duty_not_found') {
-          msg = 'ডিউটি রেকর্ডটি খুঁজে পাওয়া যায়নি।';
-        }
-        setEditError(msg);
-        return;
-      }
-      
-      setEditingDuty(null);
-      loadDuties();
-      alert('ডিউটি সফলভাবে আপডেট করা হয়েছে!');
-    } catch (err) {
-      console.error('Error updating duty:', err);
-      setEditError('সার্ভার কানেকশন ব্যর্থ হয়েছে।');
-    } finally {
-      setUpdating(false);
-    }
+  const handleCancelEdit = () => {
+    setEditingDuty(null);
+    setEditingDuties([]);
+    setErrorMessage('');
+    
+    // Reset form states to default
+    setAssignmentForm({
+      selectedEmployeeIds: [],
+      type: 'LATE_SITTING',
+      date: new Date().toISOString().split('T')[0],
+      description: ''
+    });
+    setOpt1Assignments({});
+    setOpt1ViewedMonths({});
+    setFormCellFilter('all');
+    setFormSearchQuery('');
   };
+
 
   // Checkbox group handlers for Officer multi-selection
   const handleEmployeeToggle = (empId: number) => {
@@ -2236,7 +2383,7 @@ export default function RosterPage() {
                   </td>
                   <td className="px-5 py-3.5 no-print flex items-center gap-1.5">
                     <button
-                      onClick={() => handleStartEdit(group.duties[0])}
+                      onClick={() => handleStartEdit(group.duties)}
                       className="p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-400 hover:text-indigo-500 transition-colors"
                       title="সম্পাদনা (Edit)"
                     >
@@ -2260,6 +2407,70 @@ export default function RosterPage() {
   };
 
 
+
+  const isSubmitDisabled = () => {
+    if (editingDuty) {
+      if (entryMode === 'EMPLOYEE_WISE') {
+        const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+        if (activeEmployeeIds.length === 0) return true;
+        
+        let hasDates = false;
+        const isLateSitting = assignmentForm.type === 'LATE_SITTING';
+        const isHoliday = assignmentForm.type === 'HOLIDAY';
+        for (const empId of activeEmployeeIds) {
+          const empDates = opt1Assignments[empId] || [];
+          if (empDates.length > 0) {
+            hasDates = true;
+            for (const date of empDates) {
+              const isWorking = checkIsWorkingDay(date, holidays);
+              if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
+                return true;
+              }
+            }
+          }
+        }
+        return !hasDates;
+      } else {
+        if (!assignmentForm.date) return true;
+        if (assignmentForm.selectedEmployeeIds.length === 0) return true;
+        
+        // Also validate date eligibility for the type
+        const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
+        const isLateSitting = assignmentForm.type === 'LATE_SITTING';
+        const isHoliday = assignmentForm.type === 'HOLIDAY';
+        if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Normal mode check
+    if (entryMode === 'EMPLOYEE_WISE') {
+      const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+      if (activeEmployeeIds.length === 0) return true;
+      let hasDates = false;
+      for (const empId of activeEmployeeIds) {
+        if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
+          hasDates = true;
+          break;
+        }
+      }
+      return !hasDates;
+    } else {
+      if (!assignmentForm.date) return true;
+      const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
+      const isLateSitting = assignmentForm.type === 'LATE_SITTING';
+      const isHoliday = assignmentForm.type === 'HOLIDAY';
+      if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
+        return true;
+      }
+      if (assignmentForm.selectedEmployeeIds.length === 0) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   return (
     <div className="space-y-6 min-h-screen bg-slate-50/50 -m-4 lg:-m-8 p-4 lg:p-8">
@@ -2395,8 +2606,6 @@ export default function RosterPage() {
                         value={opt1CellId}
                         onChange={(e) => {
                           setOpt1CellId(e.target.value);
-                          setOpt1Assignments({}); // Reset assignments when cell changes to keep it clean
-                          setOpt1ViewedMonths({});
                         }}
                         className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
@@ -2624,38 +2833,32 @@ export default function RosterPage() {
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={submitting || (() => {
-                    if (entryMode === 'EMPLOYEE_WISE') {
-                      const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
-                      if (activeEmployeeIds.length === 0) return true;
-                      let hasDates = false;
-                      for (const empId of activeEmployeeIds) {
-                        if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
-                          hasDates = true;
-                          break;
-                        }
-                      }
-                      return !hasDates;
-                    } else {
-                      if (!assignmentForm.date) return true;
-                      const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
-                      const isLateSitting = assignmentForm.type === 'LATE_SITTING';
-                      const isHoliday = assignmentForm.type === 'HOLIDAY';
-                      if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
-                        return true;
-                      }
-                      if (assignmentForm.selectedEmployeeIds.length === 0) {
-                        return true;
-                      }
-                    }
-                    return false;
-                  })()}
-                  className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-semibold transition-all shadow-md mt-4 cursor-pointer disabled:cursor-not-allowed"
-                >
-                  {isEditingArchive ? (submitting ? 'সম্পাদনা ও আপডেট হচ্ছে...' : 'অফিস আদেশ সম্পাদন ও আপডেট করুন') : (submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন')}
-                </button>
+                {editingDuty ? (
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-all shadow-sm cursor-pointer"
+                    >
+                      বাতিল
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting || isSubmitDisabled()}
+                      className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-semibold transition-all shadow-md cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {submitting ? 'আপডেট হচ্ছে...' : 'ডিউটি আপডেট করুন'}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={submitting || isSubmitDisabled()}
+                    className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-semibold transition-all shadow-md mt-4 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {isEditingArchive ? (submitting ? 'সম্পাদনা ও আপডেট হচ্ছে...' : 'অফিস আদেশ সম্পাদন ও আপডেট করুন') : (submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন')}
+                  </button>
+                )}
               </form>
             </div>
 
@@ -2810,12 +3013,7 @@ export default function RosterPage() {
                 const pendingDuties = duties
                   .filter(d => !d.orderRef)
                   .filter(d => selectedCategory === 'all' || d.type === selectedCategory)
-                  .filter(d => selectedCell === 'all' || d.employee.cellId.toString() === selectedCell)
-                  .filter(d => {
-                    if (selectedMonths.length === 0) return true;
-                    const ym = d.date.substring(0, 7);
-                    return selectedMonths.includes(ym);
-                  });
+                  .filter(d => selectedCell === 'all' || d.employee.cellId.toString() === selectedCell);
                 
                 const activeCellObj = cells.find(c => c.id.toString() === selectedCell);
                 const activeCellName = activeCellObj ? activeCellObj.name : null;
@@ -3158,7 +3356,10 @@ export default function RosterPage() {
             const filtered = duties.filter(d => {
               const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
               const matchesCategory = d.type === printCategory;
-              return matchesCell && matchesCategory;
+              if (isArchived && !isEditingArchive) {
+                return matchesCell && matchesCategory && d.orderRef === originalOrderRef;
+              }
+              return matchesCell && matchesCategory && !d.orderRef;
             });
             const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
             const totalApyaon = filtered.length * apyaonRate;
@@ -3180,11 +3381,12 @@ export default function RosterPage() {
                     তাই নীতিগত সিদ্ধান্ত অনুযায়ী আদেশটি সমান <strong>{toBanglaDigits(numParts)}টি আলাদা অফিস আদেশে</strong> বিভক্ত করা হয়েছে। 
                     অনুগ্রহ করে প্রতিটি অংশ আলাদাভাবে প্রিভিউ করে প্রিন্ট/ডাউনলোড করুন (প্রতিটি অংশের জন্য আলাদা ধারাবাহিক স্মারক সূত্র তৈরি হবে):
                   </p>
-                  <div className="mt-2.5 flex flex-wrap gap-2 text-[10px] font-bold">
+                  <div className="mt-3.5 space-y-2 text-xs font-bold font-sans">
                     {parts.map((p, idx) => (
-                      <span key={idx} className="px-2 py-1 rounded bg-amber-100 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-800/40">
-                        অংশ {toBanglaDigits(idx + 1)}: {toBanglaDigits(p.length * apyaonRate)}/- টাকা ({toBanglaDigits(p.length)}টি ডিউটি)
-                      </span>
+                      <div key={idx} className="flex items-center gap-2 text-amber-900 dark:text-amber-250">
+                        <span>অংশ {toBanglaDigits(idx + 1)}:</span>
+                        <span className="font-normal">{toBanglaDigits(p.length * apyaonRate)}/- টাকা ({toBanglaDigits(p.length)}টি ডিউটি)</span>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -3324,78 +3526,6 @@ export default function RosterPage() {
               </div>
 
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit/Update Duty Modal */}
-      {editingDuty && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-slate-800 dark:text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 mb-4">
-              <div>
-                <h3 className="font-bold text-base">ডিউটি তথ্য সংশোধন</h3>
-                <p className="text-xs text-slate-400 font-sans mt-0.5">{editingDuty.employee.name} ({editingDuty.employee.designation})</p>
-              </div>
-              <button
-                onClick={() => setEditingDuty(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors font-sans text-xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              {editError && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-950/30 rounded-xl text-xs flex items-center gap-2">
-                  <AlertCircle size={14} />
-                  {editError}
-                </div>
-              )}
-
-              {/* Edit Category */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
-                <select
-                  value={editForm.type}
-                  onChange={(e) => setEditForm({ ...editForm, type: e.target.value as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
-                  <option value="HOLIDAY">Holiday Duty (ছুটির দিনে)</option>
-                  <option value="NIGHT_SHIFT">Night Shift (রাত্রীকালীন ডিউটি)</option>
-                </select>
-              </div>
-
-              {/* Edit Date */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">২. ডিউটির তারিখ</label>
-                <input
-                  type="date"
-                  required
-                  value={editForm.date}
-                  onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingDuty(null)}
-                  className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold transition-colors"
-                >
-                  বাতিল
-                </button>
-                <button
-                  type="submit"
-                  disabled={updating}
-                  className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-xs font-semibold transition-colors shadow-md"
-                >
-                  {updating ? 'আপডেট হচ্ছে...' : 'সংরক্ষণ করুন'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

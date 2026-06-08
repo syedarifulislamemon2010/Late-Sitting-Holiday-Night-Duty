@@ -10,6 +10,8 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const orderRef = searchParams.get('orderRef');
+    const employeeId = searchParams.get('employeeId');
+    const type = searchParams.get('type');
 
     const user = await getCurrentUser();
 
@@ -17,7 +19,9 @@ export async function GET(request: Request) {
       cellId,
       startDate,
       endDate,
-      orderRef
+      orderRef,
+      employeeId,
+      type
     });
     return NextResponse.json(result);
   } catch (error) {

@@ -18,6 +18,7 @@ export const singleAssignmentSchema = z.object({
 
 export const dutiesBulkCreateSchema = z.object({
   assignments: z.array(singleAssignmentSchema).min(1, { message: 'assignments_required' }),
+  dutiesToDelete: z.array(z.number()).optional(),
   orderRef: z.string().nullable().optional(),
   originalOrderRef: z.string().nullable().optional()
 });

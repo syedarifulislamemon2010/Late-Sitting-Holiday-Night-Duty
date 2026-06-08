@@ -254,3 +254,23 @@ textarea:focus-visible {
   outline: 2px solid var(--primary) !important;
   outline-offset: 2px !important;
 }
+
+/* Fix date picker text color and calendar indicator visibility in light and dark mode */
+input[type="date"] {
+  color: #0f172a !important;
+}
+.dark input[type="date"] {
+  color: #f8fafc !important;
+}
+input[type="date"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: inherit !important;
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) !important;
+}
+

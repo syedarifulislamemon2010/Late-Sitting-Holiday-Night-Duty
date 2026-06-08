@@ -82,7 +82,7 @@ export async function POST(request: Request) {
   }
   body {
     font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
-    font-size: 12px;
+    font-size: 10px;
     line-height: 1.6;
     color: #000;
     background: #fff;
@@ -108,21 +108,21 @@ export async function POST(request: Request) {
     text-align: right;
   }
   .bank-title {
-    font-size: 20pt;
+    font-size: 24px;
     font-weight: bold;
     color: #0b5e9e;
     margin: 0;
     line-height: 1.0;
   }
   .bank-tagline {
-    font-size: 10pt;
+    font-size: 10px;
     font-weight: bold;
     color: #555555;
     margin: 4px 0 0 0;
     line-height: 1.0;
   }
   .dept-title {
-    font-size: 15pt;
+    font-size: 18px;
     font-weight: bold;
     color: #000000;
     margin: 8px 0 0 0;
@@ -135,7 +135,7 @@ export async function POST(request: Request) {
     padding-bottom: 5px;
     margin-bottom: 15px;
     margin-top: 5px;
-    font-size: 11pt;
+    font-size: 10px;
     font-weight: bold;
   }
   .ref-date-table td {
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
   }
   .title-content {
     text-align: center;
-    font-size: 16pt;
+    font-size: 12px;
     font-weight: bold;
     text-decoration: underline;
     margin-bottom: 10px;
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
   }
   .body-content {
     text-align: justify;
-    font-size: 12pt;
+    font-size: 10px;
     line-height: 1.6;
     margin-bottom: 15px;
     text-indent: 0.5in;
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
     border-collapse: collapse;
     margin-top: 10px;
     margin-bottom: 15px;
-    font-size: 11pt;
+    font-size: 10px;
   }
   table.duty-table th, table.duty-table td {
     border: 1px solid #000;
@@ -171,12 +171,12 @@ export async function POST(request: Request) {
   }
   table.duty-table th {
     background-color: #f8fafc;
-    font-size: 12pt;
+    font-size: 10px;
     font-weight: bold;
     text-align: center;
   }
   table.duty-table td {
-    font-size: 11pt;
+    font-size: 10px;
   }
   table.duty-table td.text-center {
     text-align: center;
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
   .signature-container {
     width: 100%;
     margin-top: 1.0in;
-    font-size: 11pt;
+    font-size: 10px;
     overflow: hidden;
   }
   .signature-block {
@@ -198,12 +198,12 @@ export async function POST(request: Request) {
     line-height: 1.2;
   }
   .sig-name {
-    font-size: 12pt;
+    font-size: 10px;
     font-weight: bold;
   }
   .footer-copy {
     margin-top: 40px;
-    font-size: 10pt;
+    font-size: 10px;
     color: #333;
     border-top: 1px dashed #ccc;
     padding-top: 10px;
@@ -311,7 +311,7 @@ export async function POST(request: Request) {
     }
 
     // Save to HTML file
-    const safeRef = orderRef.replace(/\//g, "_").replace(/[^a-zA-Z0-9_\-]/g, "");
+    const safeRef = orderRef.replace(/\//g, "_").replace(/[^a-zA-Z0-9_\-\u0980-\u09FF]/g, "");
     const filename = `office_order_${safeRef}.html`;
     const filePathDisk = path.join(uploadsDir, filename);
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');

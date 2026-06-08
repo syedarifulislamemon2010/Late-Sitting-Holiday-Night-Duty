@@ -83,6 +83,7 @@ export class DutyRepository {
   }
 
   static async update(id: number, data: {
+    employeeId?: number;
     type?: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
     date?: string;
     description?: string | null;
