@@ -2517,6 +2517,30 @@ export default function RosterPage() {
     return false;
   };
 
+  const pendingDuties = useMemo(() => {
+    return duties
+      .filter(d => !d.orderRef)
+      .filter(d => selectedCategory === 'all' || d.type === selectedCategory)
+      .filter(d => selectedCell === 'all' || d.employee.cellId.toString() === selectedCell);
+  }, [duties, selectedCategory, selectedCell]);
+
+  const activeCellObj = useMemo(() => {
+    return cells.find(c => c.id.toString() === selectedCell);
+  }, [cells, selectedCell]);
+  
+  const activeCellName = activeCellObj ? activeCellObj.name : null;
+
+  const filteredOfficeOrders = useMemo(() => {
+    return officeOrders
+      .filter(o => o.status !== 'Deleted' && !o.category?.startsWith('BILL_'))
+      .filter(o => {
+        const cellMatches = selectedCell === 'all' || o.cellName === activeCellName || o.cellName === 'All Cells' || o.cellName === 'সকল সেল';
+        const categoryMatches = selectedCategory === 'all' || o.category === selectedCategory;
+        return cellMatches && categoryMatches;
+      })
+      .sort((a, b) => b.id - a.id);
+  }, [officeOrders, selectedCell, activeCellName, selectedCategory]);
+
   return (
     <div className="space-y-6 min-h-screen bg-slate-50/50 -m-4 lg:-m-8 p-4 lg:p-8">
       {/* ----------------------------------------------------
@@ -2533,9 +2557,9 @@ export default function RosterPage() {
             
             <button
               onClick={() => setIsPrintMode(true)}
-              disabled={duties.length === 0}
+              disabled={pendingDuties.length === 0}
               className={`flex items-center justify-center gap-2 text-sm transition-all cursor-pointer ${
-                duties.length > 0 
+                pendingDuties.length > 0 
                   ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-semibold px-4 py-2 rounded-xl' 
                   : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed px-4 py-2 rounded-xl'
               }`}
@@ -3055,23 +3079,6 @@ export default function RosterPage() {
 
               {/* Roster Table Grid */}
               {(() => {
-                const pendingDuties = duties
-                  .filter(d => !d.orderRef)
-                  .filter(d => selectedCategory === 'all' || d.type === selectedCategory)
-                  .filter(d => selectedCell === 'all' || d.employee.cellId.toString() === selectedCell);
-                
-                const activeCellObj = cells.find(c => c.id.toString() === selectedCell);
-                const activeCellName = activeCellObj ? activeCellObj.name : null;
-                
-                const filteredOfficeOrders = officeOrders
-                  .filter(o => o.status !== 'Deleted' && !o.category?.startsWith('BILL_'))
-                  .filter(o => {
-                    const cellMatches = selectedCell === 'all' || o.cellName === activeCellName || o.cellName === 'All Cells' || o.cellName === 'সকল সেল';
-                    const categoryMatches = selectedCategory === 'all' || o.category === selectedCategory;
-                    return cellMatches && categoryMatches;
-                  })
-                  .sort((a, b) => b.id - a.id);
-
                 if (pendingDuties.length === 0 && filteredOfficeOrders.length === 0) {
                   return (
                     <div className="py-16 text-center flex flex-col items-center justify-center max-w-md mx-auto">
