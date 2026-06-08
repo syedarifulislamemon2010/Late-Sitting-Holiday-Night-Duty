@@ -3022,13 +3022,8 @@ export default function RosterPage() {
                   .filter(o => o.status !== 'Deleted' && !o.category?.startsWith('BILL_'))
                   .filter(o => {
                     const cellMatches = selectedCell === 'all' || o.cellName === activeCellName;
-                    let monthMatches = true;
-                    if (selectedMonths.length > 0 && o.orderDate) {
-                      const orderYM = o.orderDate.substring(0, 7);
-                      monthMatches = selectedMonths.includes(orderYM);
-                    }
                     const categoryMatches = selectedCategory === 'all' || o.category === selectedCategory;
-                    return cellMatches && monthMatches && categoryMatches;
+                    return cellMatches && categoryMatches;
                   })
                   .sort((a, b) => b.id - a.id);
 

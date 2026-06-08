@@ -1349,25 +1349,9 @@ export default function BillingPage() {
         }
       }
       
-      // Month filter
-      if (selectedMonth) {
-        let matchesMonth = order.orderDate?.startsWith(selectedMonth);
-        if (!matchesMonth) {
-          try {
-            const dutiesList = JSON.parse(order.dutiesJson || '[]');
-            if (dutiesList.some((d: DutyListEntry) => d.date && d.date.startsWith(selectedMonth))) {
-              matchesMonth = true;
-            }
-          } catch {
-            // ignore
-          }
-        }
-        if (!matchesMonth) return false;
-      }
-      
       return true;
     });
-  }, [archivedOrders, selectedCell, selectedCategory, selectedMonth, cells]);
+  }, [archivedOrders, selectedCell, selectedCategory, cells]);
 
   const filteredOrdersList = useMemo(() => getFilteredOrders('orders'), [getFilteredOrders]);
   const pendingBillingOfficeOrders = useMemo(() => filteredOrdersList.filter(o => !archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))), [filteredOrdersList, archivedBillNormalizedRefs, getNormalizedRef]);
@@ -1796,7 +1780,7 @@ export default function BillingPage() {
           <div className="flex border-b border-slate-200 dark:border-slate-800 mb-6 mt-4">
             <button
               onClick={() => setActiveTab('ledger')}
-              className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all relative ${
+              className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 relative cursor-pointer ${
                 activeTab === 'ledger'
                   ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
@@ -1806,23 +1790,37 @@ export default function BillingPage() {
             </button>
             <button
               onClick={() => setActiveTab('orders')}
-              className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all relative ${
+              className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 relative cursor-pointer ${
                 activeTab === 'orders'
                   ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
             >
-              অফিস আদেশ আর্কাইভ (Office Orders)
+              অপেক্ষমান বিল জেনারেট করুন
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === 'orders'
+                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400'
+                  : 'bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400'
+              }`}>
+                {toBanglaDigits(pendingBillingOfficeOrders.length)}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('bills')}
-              className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all relative ${
+              className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 relative cursor-pointer ${
                 activeTab === 'bills'
                   ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
             >
-              বিল মেমো আর্কাইভ (Bill Memos)
+              জেনারেটেড এবং প্রিন্টেড সেকশন
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === 'bills'
+                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400'
+                  : 'bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400'
+              }`}>
+                {toBanglaDigits(filteredBillMemos.length)}
+              </span>
             </button>
           </div>
 
@@ -2000,15 +1998,15 @@ export default function BillingPage() {
                   <Loader2 size={36} className="text-indigo-500 animate-spin" />
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
                 </div>
-              ) : pendingBillingOfficeOrders.length === 0 && billedOfficeOrders.length === 0 ? (
+              ) : pendingBillingOfficeOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
                   <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
                     <AlertCircle size={28} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">কোন সূত্র সংরক্ষিত নেই</h3>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">কোনো অপেক্ষমাণ বিল অফিস আদেশ নেই</h3>
                     <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
-                      নির্বাচিত ফিল্টারের অধীনে কোনো অফিস আদেশ পাওয়া যায়নি।
+                      নির্বাচিত ফিল্টারের অধীনে কোনো বিল অপেক্ষমাণ অফিস আদেশ পাওয়া যায়নি।
                     </p>
                   </div>
                 </div>
@@ -2018,28 +2016,13 @@ export default function BillingPage() {
                   <div className="space-y-4">
                     <h3 className="text-sm font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-2 border-b border-amber-200/30 pb-2 font-sans">
                       <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                      বিল প্রস্তুত করা হয়নি এমন অফিস আদেশ (Pending Billing) - {pendingBillingOfficeOrders.length} টি
+                      বিল অপেক্ষমাণ অফিস আদেশ - {toBanglaDigits(pendingBillingOfficeOrders.length)} টি
                     </h3>
                     {pendingBillingOfficeOrders.length > 0 ? (
                       renderOrdersGrid(pendingBillingOfficeOrders)
                     ) : (
                       <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs font-sans">
                         কোনো বিল অপেক্ষমাণ অফিস আদেশ নেই।
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Section 2: Already Billed */}
-                  <div className="space-y-4 pt-4">
-                    <h3 className="text-sm font-extrabold text-teal-600 dark:text-teal-400 flex items-center gap-2 border-b border-teal-200/30 pb-2 font-sans">
-                      <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
-                      ইতিমধ্যেই বিল প্রস্তুত সম্পন্ন হয়েছে (Already Billed) - {billedOfficeOrders.length} টি
-                    </h3>
-                    {billedOfficeOrders.length > 0 ? (
-                      renderOrdersGrid(billedOfficeOrders)
-                    ) : (
-                      <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs font-sans">
-                        কোনো বিল প্রস্তুতকৃত অফিস আদেশ নেই।
                       </div>
                     )}
                   </div>
