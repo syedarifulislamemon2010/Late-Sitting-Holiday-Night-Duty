@@ -3066,7 +3066,7 @@ export default function RosterPage() {
                 const filteredOfficeOrders = officeOrders
                   .filter(o => o.status !== 'Deleted' && !o.category?.startsWith('BILL_'))
                   .filter(o => {
-                    const cellMatches = selectedCell === 'all' || o.cellName === activeCellName;
+                    const cellMatches = selectedCell === 'all' || o.cellName === activeCellName || o.cellName === 'All Cells' || o.cellName === 'সকল সেল';
                     const categoryMatches = selectedCategory === 'all' || o.category === selectedCategory;
                     return cellMatches && categoryMatches;
                   })

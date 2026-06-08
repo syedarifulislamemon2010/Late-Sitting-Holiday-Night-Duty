@@ -1291,7 +1291,7 @@ export default function BillingPage() {
       // Cell filter
       if (selectedCell !== 'all') {
         const targetCellObj = cells.find(c => c.id.toString() === selectedCell);
-        if (targetCellObj && order.cellName !== targetCellObj.name) {
+        if (targetCellObj && order.cellName !== targetCellObj.name && order.cellName !== 'All Cells' && order.cellName !== 'সকল সেল') {
           return false;
         }
       }
@@ -1311,14 +1311,14 @@ export default function BillingPage() {
   const filteredOrdersList = useMemo(() => getFilteredOrders('orders'), [getFilteredOrders]);
   const pendingBillingOfficeOrders = useMemo(() => {
     return filteredOrdersList.filter(o => 
-      (o.status === 'Generated & Printed' || o.status === 'Printed') &&
+      o.status !== 'Deleted' &&
       !archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))
     );
   }, [filteredOrdersList, archivedBillNormalizedRefs, getNormalizedRef]);
 
   const billedOfficeOrders = useMemo(() => {
     return filteredOrdersList.filter(o => 
-      (o.status === 'Generated & Printed' || o.status === 'Printed') &&
+      o.status !== 'Deleted' &&
       archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))
     );
   }, [filteredOrdersList, archivedBillNormalizedRefs, getNormalizedRef]);
