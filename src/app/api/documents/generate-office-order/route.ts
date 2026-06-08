@@ -162,7 +162,7 @@ export async function POST(request: Request) {
   }
   table.duty-table {
     width: 100% !important;
-    table-layout: fixed;
+    min-width: 100% !important;
     border-collapse: collapse;
     margin-top: 8px;
     margin-bottom: 10px;
@@ -268,7 +268,7 @@ export async function POST(request: Request) {
     ${orderText}
   </div>
   
-  <table class="duty-table" style="width: 100%; table-layout: fixed;">
+  <table class="duty-table" style="width: 100%; min-width: 100%;">
     <thead>
       <tr>
         <th style="width: 8%;" class="text-center">ক্রমিক নং</th>
