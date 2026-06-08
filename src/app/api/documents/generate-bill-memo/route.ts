@@ -96,7 +96,7 @@ export async function POST(request: Request) {
   }
   body {
     font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
-    font-size: 12px;
+    font-size: 8.5px;
     line-height: 1.0;
     color: #000;
     background-color: #fff;
@@ -108,19 +108,19 @@ export async function POST(request: Request) {
     line-height: 1.0;
   }
   .header-title {
-    font-size: 20px;
+    font-size: 15px;
     font-weight: bold;
     margin: 0;
     line-height: 1.0;
   }
   .header-date {
-    font-size: 12px;
+    font-size: 8.5px;
     font-weight: bold;
     margin-top: 6px;
     line-height: 1.0;
   }
   .subject {
-    font-size: 12px;
+    font-size: 9px;
     font-weight: bold;
     text-decoration: underline;
     margin-bottom: 10px;
@@ -136,12 +136,12 @@ export async function POST(request: Request) {
     width: 100%;
     border-collapse: collapse;
     margin: 12px 0;
-    font-size: 12px;
+    font-size: 8px;
     line-height: 1.0;
   }
   th, td {
     border: 1px solid #000;
-    padding: 6px 6px;
+    padding: 4px 4px;
     text-align: center;
     vertical-align: middle;
     line-height: 1.0;
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
   }
   .signature-container {
     width: 100%;
-    margin-top: 0.6in;
+    margin-top: 0.5in;
     margin-bottom: 0.2in;
     text-align: right;
     line-height: 1.0;
@@ -186,10 +186,10 @@ export async function POST(request: Request) {
     margin-top: 24px;
     text-align: left;
     line-height: 1.0;
-    font-size: 12px;
+    font-size: 8px;
   }
   .routing-item {
-    margin-bottom: 0.85in;
+    margin-bottom: 0.5in;
     line-height: 1.0;
   }
   .routing-text {

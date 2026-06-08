@@ -328,11 +328,18 @@ export class OfficeOrderService {
     // Hard delete in database
     await OfficeOrderRepository.delete(id);
 
-    // Free the duties associated with this office order by setting orderRef to null
+    // Free the duties associated with this office order by setting orderRef to null, or restore to original order ref if deleting a bill
     if (order.orderRef) {
-      await db.update(duties)
-        .set({ orderRef: null })
-        .where(eq(duties.orderRef, order.orderRef));
+      if (order.orderRef.endsWith('/বিল')) {
+        const originalOrderRef = order.orderRef.slice(0, -5);
+        await db.update(duties)
+          .set({ orderRef: originalOrderRef })
+          .where(eq(duties.orderRef, order.orderRef));
+      } else {
+        await db.update(duties)
+          .set({ orderRef: null })
+          .where(eq(duties.orderRef, order.orderRef));
+      }
     }
 
     // Insert into trash table for restore support

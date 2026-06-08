@@ -430,7 +430,7 @@ export default function DocumentsPage() {
                 margin: 0;
                 padding: 0;
                 font-family: 'Kalpurush', 'Noto Sans Bengali', sans-serif;
-                font-size: 10px;
+                font-size: 12px;
                 color: #000;
                 background-color: #fff;
                 line-height: 1.6;
@@ -451,7 +451,7 @@ export default function DocumentsPage() {
                 flex-direction: column !important;
                 justify-content: space-between !important;
                 font-family: 'Kalpurush', 'Noto Sans Bengali', sans-serif !important;
-                font-size: 10px !important;
+                font-size: 12px !important;
                 color: #000 !important;
                 background-color: #fff !important;
                 line-height: 1.5 !important;
@@ -473,8 +473,8 @@ export default function DocumentsPage() {
               .font-bold { font-weight: bold; }
               .font-extrabold { font-weight: 800; }
               .text-center { text-align: center; }
-              .text-xs { font-size: 10px; }
-              .text-sm { font-size: 10px; }
+              .text-xs { font-size: 12px; }
+              .text-sm { font-size: 12px; }
               .text-base { font-size: 18px; }
               .leading-tight { line-height: 1.15; }
               .leading-relaxed { line-height: 1.5; }
@@ -519,19 +519,19 @@ export default function DocumentsPage() {
               .space-y-1 > * + * { margin-top: 4px; }
               .space-y-0.5 > * + * { margin-top: 2px; }
               table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-              th, td { border: 1px solid #000; padding: 4px; font-size: 10px; line-height: 1.4; }
+              th, td { border: 1px solid #000; padding: 4.5px; font-size: 11px; line-height: 1.4; }
               th { font-weight: bold; background-color: #f8fafc; }
               ${!isBill ? `
-                #printable-order-sheet .bank-title { font-size: 14pt !important; font-weight: bold !important; color: #0b5e9e !important; }
-                #printable-order-sheet .dept-title { font-size: 11pt !important; font-weight: bold !important; color: #000000 !important; }
-                #printable-order-sheet .memo-line, #printable-order-sheet .memo-line * { font-size: 9.5pt !important; font-weight: bold !important; }
-                #printable-order-sheet .office-order-title { font-size: 13pt !important; font-weight: bold !important; text-decoration: underline !important; }
-                #printable-order-sheet .body-paragraph, #printable-order-sheet .body-paragraph * { font-size: 10pt !important; line-height: 1.5 !important; }
-                #printable-order-sheet table th { font-size: 9.5pt !important; font-weight: bold !important; }
-                #printable-order-sheet table td, #printable-order-sheet table td p, #printable-order-sheet table td span { font-size: 9pt !important; }
-                #printable-order-sheet .signature-name { font-size: 10pt !important; font-weight: bold !important; }
-                #printable-order-sheet .signature-designation { font-size: 9.5pt !important; }
-                #printable-order-sheet .footer-copy, #printable-order-sheet .footer-copy * { font-size: 8.5pt !important; }
+                #printable-order-sheet .bank-title { font-size: 15.5pt !important; font-weight: bold !important; color: #0b5e9e !important; }
+                #printable-order-sheet .dept-title { font-size: 12.5pt !important; font-weight: bold !important; color: #000000 !important; }
+                #printable-order-sheet .memo-line, #printable-order-sheet .memo-line * { font-size: 11pt !important; font-weight: bold !important; }
+                #printable-order-sheet .office-order-title { font-size: 14.5pt !important; font-weight: bold !important; text-decoration: underline !important; }
+                #printable-order-sheet .body-paragraph, #printable-order-sheet .body-paragraph * { font-size: 11.5pt !important; line-height: 1.5 !important; }
+                #printable-order-sheet table th { font-size: 11px !important; font-weight: bold !important; }
+                #printable-order-sheet table td, #printable-order-sheet table td p, #printable-order-sheet table td span { font-size: 11px !important; }
+                #printable-order-sheet .signature-name { font-size: 11.5pt !important; font-weight: bold !important; }
+                #printable-order-sheet .signature-designation { font-size: 11pt !important; }
+                #printable-order-sheet .footer-copy, #printable-order-sheet .footer-copy * { font-size: 10.5pt !important; }
               ` : ''}
             </style>
           </head>
