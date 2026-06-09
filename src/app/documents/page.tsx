@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   UploadCloud, 
   FileText, 
@@ -17,7 +17,12 @@ import {
   Printer,
   X,
   FileSignature,
-  Receipt
+  Receipt,
+  Filter,
+  Image,
+  FileSpreadsheet,
+  Archive,
+  RefreshCw
 } from 'lucide-react';
 
 interface DocumentFile {
@@ -82,7 +87,7 @@ interface OfficeOrder {
 
 export default function DocumentsPage() {
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
-  const [activeTab, setActiveTab] = useState<'files' | 'orders' | 'bills'>('files');
+  const [activeTab, setActiveTab] = useState<'files' | 'manual-docs' | 'orders' | 'bills'>('files');
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [officeOrders, setOfficeOrders] = useState<OfficeOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,10 +101,54 @@ export default function DocumentsPage() {
   const [customName, setCustomName] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   
-  // Search & Filter states
+  // Search & Filter states (Tab 1)
   const [searchQuery, setSearchQuery] = useState('');
-  const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'size-desc' | 'size-asc'>('date-desc');
+  const [showFilesFilters, setShowFilesFilters] = useState(false);
+  const [filesFilterOrigin, setFilesFilterOrigin] = useState<string>('ALL'); // 'ALL', 'generated_bill', 'lunch_bill', 'employee_list', 'manual_pdf'
+  const [filesFilterSize, setFilesFilterSize] = useState<string>('ALL'); // 'ALL', 'small', 'medium', 'large'
+
+  // Manual Documents States (Tab 2)
+  interface ManualDoc {
+    id: number;
+    name: string;
+    filePath: string;
+    fileSize: number;
+    fileType: string;
+    uploadedAt: string;
+  }
+  const [manualDocs, setManualDocs] = useState<ManualDoc[]>([]);
+  const [loadingManualDocs, setLoadingManualDocs] = useState(false);
+  const [manualDocsSearchQuery, setManualDocsSearchQuery] = useState('');
+  
+  // Advanced search filters for manual documents
+  const [showManualFilters, setShowManualFilters] = useState(false);
+  const [filterFileType, setFilterFileType] = useState<string>('ALL'); // 'ALL', 'pdf', 'word', 'excel', 'image', 'other'
+  const [filterDateRange, setFilterDateRange] = useState<string>('ALL'); // 'ALL', 'today', 'week', 'month'
+  const [filterSize, setFilterSize] = useState<string>('ALL'); // 'ALL', 'small' (<1MB), 'medium' (1-5MB), 'large' (>5MB)
+  const [sortByManual, setSortByManual] = useState<'date-desc' | 'date-asc' | 'size-desc' | 'size-asc'>('date-desc');
+
+  // File upload states for manual documents
+  const [manualSelectedFile, setManualSelectedFile] = useState<File | null>(null);
+  const [manualCustomName, setManualCustomName] = useState('');
+  const [manualUploading, setManualUploading] = useState(false);
+  const [manualDragActive, setManualDragActive] = useState(false);
+  const manualFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Edit / Rename Modal state for manual documents
+  const [editingManualDoc, setEditingManualDoc] = useState<ManualDoc | null>(null);
+  const [editDocName, setEditDocName] = useState('');
+
+  // Tab 3 & 4 Search & Filters
+  const [orderSearchQuery, setOrderSearchQuery] = useState('');
+  const [showOrdersFilters, setShowOrdersFilters] = useState(false);
+  const [ordersFilterCategory, setOrdersFilterCategory] = useState<string>('ALL'); // 'ALL', 'LATE_SITTING', 'HOLIDAY', 'NIGHT_SHIFT'
+  const [ordersFilterStatus, setOrdersFilterStatus] = useState<string>('ALL'); // 'ALL', 'billed', 'pending'
+  const [ordersFilterCell, setOrdersFilterCell] = useState<string>('ALL');
+
+  const [showBillsFilters, setShowBillsFilters] = useState(false);
+  const [billsFilterCategory, setBillsFilterCategory] = useState<string>('ALL'); // 'ALL', 'BILL_LATE_SITTING', 'BILL_HOLIDAY', 'BILL_NIGHT_SHIFT'
+  const [billsFilterCell, setBillsFilterCell] = useState<string>('ALL');
 
   // Viewing Modal
   const [viewingOrder, setViewingOrder] = useState<OfficeOrder | null>(null);
@@ -225,6 +274,24 @@ export default function DocumentsPage() {
     }
   };
 
+  // Fetch all manual documents
+  const fetchManualDocs = async () => {
+    try {
+      setLoadingManualDocs(true);
+      const res = await fetch('/api/manual-documents');
+      if (res.ok) {
+        const data = await res.json();
+        setManualDocs(data);
+      } else {
+        setError('ম্যানুয়াল নথিপত্র লোড করতে ব্যর্থ হয়েছে।');
+      }
+    } catch {
+      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    } finally {
+      setLoadingManualDocs(false);
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (activeTab === 'files') {
@@ -232,12 +299,183 @@ export default function DocumentsPage() {
           return;
         }
         fetchDocuments();
+      } else if (activeTab === 'manual-docs') {
+        if (currentUser && currentUser.role === 'USER') {
+          return;
+        }
+        fetchManualDocs();
       } else {
         fetchOfficeOrders();
       }
     }, 0);
     return () => clearTimeout(timer);
   }, [activeTab, currentUser]);
+
+  // Drag Handlers for Manual Docs
+  const handleManualDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setManualDragActive(true);
+    } else if (e.type === "dragleave") {
+      setManualDragActive(false);
+    }
+  };
+
+  const validateAndSetManualFile = (file: File) => {
+    setError('');
+    setSuccessMsg('');
+    
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.gif', '.txt', '.csv', '.zip'];
+    const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    
+    if (!allowedExtensions.includes(fileExt)) {
+      setError('অসমর্থিত ফাইল ফরম্যাট। শুধুমাত্র PDF, Word, Excel, JPG, PNG, GIF, TXT, CSV, ZIP ফাইল আপলোড করা যাবে।');
+      setManualSelectedFile(null);
+      return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+      setError('ফাইল সাইজ ১০ মেগাবাইটের বেশি হতে পারবে না।');
+      setManualSelectedFile(null);
+      return;
+    }
+    
+    setManualSelectedFile(file);
+    const baseName = file.name.substring(0, file.name.lastIndexOf('.'));
+    setManualCustomName(baseName);
+  };
+
+  const handleManualDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setManualDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      validateAndSetManualFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleManualFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      validateAndSetManualFile(e.target.files[0]);
+    }
+  };
+
+  // Upload Manual Document
+  const handleManualUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualSelectedFile) return;
+
+    setManualUploading(true);
+    setError('');
+    setSuccessMsg('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', manualSelectedFile);
+      formData.append('name', manualCustomName.trim());
+
+      const res = await fetch('/api/manual-documents', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setSuccessMsg('ফাইলটি সফলভাবে আপলোড এবং সংরক্ষণ করা হয়েছে!');
+        setManualSelectedFile(null);
+        setManualCustomName('');
+        if (manualFileInputRef.current) manualFileInputRef.current.value = '';
+        fetchManualDocs();
+      } else {
+        setError(data.message || 'ফাইল আপলোড করতে ব্যর্থ হয়েছে।');
+      }
+    } catch {
+      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।');
+    } finally {
+      setManualUploading(false);
+    }
+  };
+
+  // Delete Manual Document
+  const handleDeleteManualDoc = async (id: number) => {
+    const doc = manualDocs.find(d => d.id === id);
+    if (!doc) return;
+
+    if (!confirm(`⚠️ সতর্কবার্তা!\n\nআপনি কি নিশ্চিত যে এই ফাইলটি (${doc.name}) আর্কাইভ থেকে মুছে ফেলতে চান?\n\nএটি ডিলিট করলে ফাইলটি রিসাইকেল বিনে স্থানান্তরিত হবে। এটি স্থায়ীভাবে মুছে ফেলা হবে না এবং পরবর্তীতে পুনরুদ্ধার (Restore) করা সম্ভব।`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/manual-documents', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      if (res.ok) {
+        setSuccessMsg('ফাইলটি সফলভাবে মুছে ফেলা হয়েছে ও রিসাইকেল বিনে পাঠানো হয়েছে।');
+        fetchManualDocs();
+      } else {
+        const data = await res.json();
+        setError(data.message || 'ফাইলটি মুছে ফেলা সম্ভব হয়নি।');
+      }
+    } catch {
+      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    }
+  };
+
+  // Rename Manual Document
+  const handleRenameManualDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingManualDoc || !editDocName.trim()) return;
+
+    setError('');
+    setSuccessMsg('');
+
+    try {
+      const res = await fetch('/api/manual-documents', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingManualDoc.id, name: editDocName.trim() }),
+      });
+
+      if (res.ok) {
+        setSuccessMsg('ফাইলের নাম সফলভাবে পরিবর্তন করা হয়েছে।');
+        setEditingManualDoc(null);
+        setEditDocName('');
+        fetchManualDocs();
+      } else {
+        const data = await res.json();
+        setError(data.message || 'ফাইলের নাম পরিবর্তন করতে ব্যর্থ হয়েছে।');
+      }
+    } catch {
+      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    }
+  };
+
+  // Resolve File Icon
+  const getFileIcon = (fileType: string) => {
+    const type = fileType.toLowerCase();
+    if (type === 'pdf') {
+      return <FileText size={20} className="text-red-500" />;
+    }
+    if (['doc', 'docx'].includes(type)) {
+      return <FileText size={20} className="text-blue-500" />;
+    }
+    if (['xls', 'xlsx', 'csv'].includes(type)) {
+      return <FileSpreadsheet size={20} className="text-emerald-500" />;
+    }
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(type)) {
+      return <Image size={20} className="text-purple-500" />;
+    }
+    if (['zip', 'rar'].includes(type)) {
+      return <Archive size={20} className="text-amber-500" />;
+    }
+    return <FileText size={20} className="text-slate-500" />;
+  };
 
   // Format File Size
   const formatFileSize = (bytes: number) => {
@@ -550,9 +788,39 @@ export default function DocumentsPage() {
     }
   };
 
-  // Filtered & Sorted Documents
+  // Filtered & Sorted Documents (Tab 1: Central PDF Archive)
   const filteredDocuments = documents
-    .filter(doc => doc.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(doc => {
+      const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      let matchesOrigin = true;
+      if (filesFilterOrigin !== 'ALL') {
+        const name = doc.name.toLowerCase();
+        if (filesFilterOrigin === 'generated_bill') {
+          matchesOrigin = name.includes('বিল') && !name.includes('লাঞ্চ');
+        } else if (filesFilterOrigin === 'lunch_bill') {
+          matchesOrigin = name.includes('লাঞ্চ বিল');
+        } else if (filesFilterOrigin === 'employee_list') {
+          matchesOrigin = name.includes('কর্মকর্তা তালিকা') || name.includes('কর্মকর্তা');
+        } else if (filesFilterOrigin === 'manual_pdf') {
+          matchesOrigin = doc.filePath.includes('/uploads/') && !doc.filePath.includes('/uploads/manual/') && !doc.name.includes('লাঞ্চ বিল') && !doc.name.includes('কর্মকর্তা');
+        }
+      }
+
+      let matchesSize = true;
+      if (filesFilterSize !== 'ALL') {
+        const sizeInKB = doc.fileSize / 1024;
+        if (filesFilterSize === 'small') {
+          matchesSize = sizeInKB < 150; // < 150 KB
+        } else if (filesFilterSize === 'medium') {
+          matchesSize = sizeInKB >= 150 && sizeInKB <= 1024; // 150 KB - 1 MB
+        } else if (filesFilterSize === 'large') {
+          matchesSize = sizeInKB > 1024; // > 1 MB
+        }
+      }
+
+      return matchesSearch && matchesOrigin && matchesSize;
+    })
     .sort((a, b) => {
       if (sortBy === 'date-desc') {
         return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
@@ -564,6 +832,73 @@ export default function DocumentsPage() {
         return b.fileSize - a.fileSize;
       }
       if (sortBy === 'size-asc') {
+        return a.fileSize - b.fileSize;
+      }
+      return 0;
+    });
+
+  // Filtered & Sorted Manual Documents (Tab 2: Manual Documents Storage)
+  const filteredManualDocs = manualDocs
+    .filter(doc => {
+      const matchesSearch = doc.name.toLowerCase().includes(manualDocsSearchQuery.toLowerCase());
+      
+      let matchesType = true;
+      if (filterFileType !== 'ALL') {
+        const ext = doc.fileType.toLowerCase();
+        if (filterFileType === 'pdf') {
+          matchesType = ext === 'pdf';
+        } else if (filterFileType === 'word') {
+          matchesType = ['doc', 'docx'].includes(ext);
+        } else if (filterFileType === 'excel') {
+          matchesType = ['xls', 'xlsx', 'csv'].includes(ext);
+        } else if (filterFileType === 'image') {
+          matchesType = ['jpg', 'jpeg', 'png', 'gif'].includes(ext);
+        } else if (filterFileType === 'other') {
+          matchesType = !['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'jpg', 'jpeg', 'png', 'gif'].includes(ext);
+        }
+      }
+      
+      let matchesDate = true;
+      if (filterDateRange !== 'ALL') {
+        const uploadDate = new Date(doc.uploadedAt);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - uploadDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (filterDateRange === 'today') {
+          matchesDate = uploadDate.toDateString() === now.toDateString();
+        } else if (filterDateRange === 'week') {
+          matchesDate = diffDays <= 7;
+        } else if (filterDateRange === 'month') {
+          matchesDate = diffDays <= 30;
+        }
+      }
+      
+      let matchesSize = true;
+      if (filterSize !== 'ALL') {
+        const sizeInMB = doc.fileSize / (1024 * 1024);
+        if (filterSize === 'small') {
+          matchesSize = sizeInMB < 1; // < 1MB
+        } else if (filterSize === 'medium') {
+          matchesSize = sizeInMB >= 1 && sizeInMB <= 5; // 1MB - 5MB
+        } else if (filterSize === 'large') {
+          matchesSize = sizeInMB > 5; // > 5MB
+        }
+      }
+      
+      return matchesSearch && matchesType && matchesDate && matchesSize;
+    })
+    .sort((a, b) => {
+      if (sortByManual === 'date-desc') {
+        return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+      }
+      if (sortByManual === 'date-asc') {
+        return new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime();
+      }
+      if (sortByManual === 'size-desc') {
+        return b.fileSize - a.fileSize;
+      }
+      if (sortByManual === 'size-asc') {
         return a.fileSize - b.fileSize;
       }
       return 0;
@@ -588,12 +923,39 @@ export default function DocumentsPage() {
       .map((o: OfficeOrder) => getNormalizedRef(o.orderRef))
   );
 
+  // Dynamic unique list of Cells in office orders for dropdowns
+  const uniqueCellsInOrders = Array.from(new Set(officeOrders.map(o => o.cellName).filter(Boolean))) as string[];
+
   // Filtered Office Orders (Only categories NOT starting with BILL_)
   const officeOrdersList = officeOrders.filter((order: OfficeOrder) => !order.category?.startsWith('BILL_') && order.status !== 'Deleted');
-  const filteredOfficeOrders = officeOrdersList.filter((order: OfficeOrder) => 
-    order.orderRef.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
-    order.employeeName.toLowerCase().includes(orderSearchQuery.toLowerCase())
-  );
+  const filteredOfficeOrders = officeOrdersList.filter((order: OfficeOrder) => {
+    const matchesSearch = 
+      order.orderRef.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
+      order.employeeName.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
+      (order.cellName || '').toLowerCase().includes(orderSearchQuery.toLowerCase());
+
+    let matchesCategory = true;
+    if (ordersFilterCategory !== 'ALL') {
+      matchesCategory = order.category === ordersFilterCategory;
+    }
+
+    let matchesStatus = true;
+    if (ordersFilterStatus !== 'ALL') {
+      const isOrderBilled = archivedBillNormalizedRefs.has(getNormalizedRef(order.orderRef));
+      if (ordersFilterStatus === 'billed') {
+        matchesStatus = isOrderBilled;
+      } else if (ordersFilterStatus === 'pending') {
+        matchesStatus = !isOrderBilled;
+      }
+    }
+
+    let matchesCell = true;
+    if (ordersFilterCell !== 'ALL') {
+      matchesCell = order.cellName === ordersFilterCell;
+    }
+
+    return matchesSearch && matchesCategory && matchesStatus && matchesCell;
+  });
 
   const pendingBillingOfficeOrders = filteredOfficeOrders.filter(
     (o: OfficeOrder) => !archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))
@@ -605,10 +967,24 @@ export default function DocumentsPage() {
 
   // Filtered Bill Memos (Only categories starting with BILL_)
   const billMemosList = officeOrders.filter(order => order.category?.startsWith('BILL_') && order.status !== 'Deleted');
-  const filteredBillMemos = billMemosList.filter(order => 
-    order.orderRef.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
-    order.employeeName.toLowerCase().includes(orderSearchQuery.toLowerCase())
-  );
+  const filteredBillMemos = billMemosList.filter(order => {
+    const matchesSearch = 
+      order.orderRef.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
+      order.employeeName.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
+      (order.cellName || '').toLowerCase().includes(orderSearchQuery.toLowerCase());
+
+    let matchesCategory = true;
+    if (billsFilterCategory !== 'ALL') {
+      matchesCategory = order.category === billsFilterCategory;
+    }
+
+    let matchesCell = true;
+    if (billsFilterCell !== 'ALL') {
+      matchesCell = order.cellName === billsFilterCell;
+    }
+
+    return matchesSearch && matchesCategory && matchesCell;
+  });
 
   const renderOrdersGrid = (ordersList: OfficeOrder[]) => {
     return (
@@ -746,7 +1122,12 @@ export default function DocumentsPage() {
         <div className="flex items-center gap-2.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100/80 dark:border-indigo-950/30 rounded-2xl w-fit">
           <HardDrive size={16} className="text-indigo-500" />
           <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400">
-            সংরক্ষিত আইটেম: {activeTab === 'files' ? documents.length : (activeTab === 'orders' ? officeOrdersList.length : billMemosList.length)} টি
+            সংরক্ষিত আইটেম: {
+              activeTab === 'files' ? documents.length :
+              activeTab === 'manual-docs' ? manualDocs.length :
+              activeTab === 'orders' ? officeOrdersList.length :
+              billMemosList.length
+            } টি
           </span>
         </div>
       </div>
@@ -754,20 +1135,36 @@ export default function DocumentsPage() {
       {/* Tabs */}
       <div className="flex border-b border-slate-200 dark:border-slate-800">
         {currentUser?.role !== 'USER' && (
-          <button
-            onClick={() => {
-              setActiveTab('files');
-              setError('');
-              setSuccessMsg('');
-            }}
-            className={`px-6 py-3.5 text-sm font-semibold border-b-2 transition-all relative ${
-              activeTab === 'files'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
-            }`}
-          >
-            ম্যানুয়াল ফাইল আর্কাইভ
-          </button>
+          <>
+            <button
+              onClick={() => {
+                setActiveTab('files');
+                setError('');
+                setSuccessMsg('');
+              }}
+              className={`px-6 py-3.5 text-sm font-semibold border-b-2 transition-all relative ${
+                activeTab === 'files'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
+              }`}
+            >
+              ম্যানুয়াল ফাইল আর্কাইভ
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('manual-docs');
+                setError('');
+                setSuccessMsg('');
+              }}
+              className={`px-6 py-3.5 text-sm font-semibold border-b-2 transition-all relative ${
+                activeTab === 'manual-docs'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
+              }`}
+            >
+              ডকুমেন্ট স্টোরেজ
+            </button>
+          </>
         )}
         <button
           onClick={() => {
@@ -793,7 +1190,7 @@ export default function DocumentsPage() {
             activeTab === 'bills'
               ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
               : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
-          }`}
+            }`}
         >
           বিল মেমো আর্কাইভ (স্মারক সূত্র)
         </button>
@@ -944,31 +1341,82 @@ export default function DocumentsPage() {
             <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl min-h-[500px] flex flex-col justify-between">
               <div className="space-y-6">
                 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                    <input
-                      type="text"
-                      placeholder="নথির নাম দিয়ে অনুসন্ধান করুন..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
-                    />
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                      <input
+                        type="text"
+                        placeholder="নথির নাম দিয়ে অনুসন্ধান করুন..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/45 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowFilesFilters(!showFilesFilters)}
+                        className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          showFilesFilters || filesFilterOrigin !== 'ALL' || filesFilterSize !== 'ALL'
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400 font-bold'
+                            : 'bg-white/40 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-300'
+                        }`}
+                      >
+                        <Filter size={14} />
+                        <span>ফিল্টারসমূহ</span>
+                        {(filesFilterOrigin !== 'ALL' || filesFilterSize !== 'ALL') && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
+                        )}
+                      </button>
+
+                      <ArrowUpDown size={14} className="text-slate-400" />
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as 'date-desc' | 'date-asc' | 'size-desc' | 'size-asc')}
+                        className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer"
+                      >
+                        <option value="date-desc">আপলোড তারিখ (নতুন আগে)</option>
+                        <option value="date-asc">আপলোড তারিখ (পুরাতন আগে)</option>
+                        <option value="size-desc">সাইজ (বড় আগে)</option>
+                        <option value="size-asc">সাইজ (ছোট আগে)</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <ArrowUpDown size={14} className="text-slate-400" />
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as 'date-desc' | 'date-asc' | 'size-desc' | 'size-asc')}
-                      className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer"
-                    >
-                      <option value="date-desc">আপলোড তারিখ (নতুন আগে)</option>
-                      <option value="date-asc">আপলোড তারিখ (পুরাতন আগে)</option>
-                      <option value="size-desc">সাইজ (বড় আগে)</option>
-                      <option value="size-asc">সাইজ (ছোট আগে)</option>
-                    </select>
-                  </div>
+                  {showFilesFilters && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 animate-fadeIn">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">নথির উৎস</label>
+                        <select
+                          value={filesFilterOrigin}
+                          onChange={(e) => setFilesFilterOrigin(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          <option value="ALL">সকল উৎস (All)</option>
+                          <option value="generated_bill">সিস্টেম জেনারেটেড বিল</option>
+                          <option value="lunch_bill">লাঞ্চ বিল</option>
+                          <option value="employee_list">কর্মকর্তা তালিকা</option>
+                          <option value="manual_pdf">ম্যানুয়াল আপলোডকৃত পিডিএফ</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ফাইলের সাইজ</label>
+                        <select
+                          value={filesFilterSize}
+                          onChange={(e) => setFilesFilterSize(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          <option value="ALL">সকল সাইজ (All)</option>
+                          <option value="small">ছোট (&lt; ১৫০ KB)</option>
+                          <option value="medium">মাঝারি (১৫০ KB - ১ MB)</option>
+                          <option value="large">বড় (&gt; ১ MB)</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {loading ? (
@@ -1078,24 +1526,440 @@ export default function DocumentsPage() {
             </div>
           </div>
         </div>
+      ) : activeTab === 'manual-docs' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Side: Upload Panel */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500" />
+              
+              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-4">
+                <UploadCloud size={20} className="text-indigo-500" />
+                নতুন ডকুমেন্ট আপলোড
+              </h2>
+
+              {/* Banners */}
+              {error && (
+                <div className="mb-4 p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-2xl text-xs text-red-600 dark:text-red-400 flex items-center gap-2.5">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span className="font-medium">{error}</span>
+                </div>
+              )}
+
+              {successMsg && (
+                <div className="mb-4 p-3.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 rounded-2xl text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2.5">
+                  <CheckCircle size={16} className="shrink-0" />
+                  <span className="font-medium">{successMsg}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleManualUploadSubmit} className="space-y-4">
+                <div 
+                  onDragEnter={handleManualDrag}
+                  onDragOver={handleManualDrag}
+                  onDragLeave={handleManualDrag}
+                  onDrop={handleManualDrop}
+                  onClick={() => manualFileInputRef.current?.click()}
+                  className={`relative border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[180px] group ${
+                    manualDragActive 
+                      ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20 scale-[1.01]' 
+                      : manualSelectedFile 
+                        ? 'border-emerald-500/50 bg-emerald-50/10 dark:bg-emerald-950/10' 
+                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30'
+                  }`}
+                >
+                  <input 
+                    ref={manualFileInputRef}
+                    type="file" 
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.txt,.csv,.zip" 
+                    className="hidden" 
+                    onChange={handleManualFileSelect}
+                  />
+
+                  {manualSelectedFile ? (
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center mx-auto text-emerald-500 border border-emerald-500/20 animate-pulse">
+                        <FileText size={24} />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-100 max-w-[200px] truncate mx-auto">
+                          {manualSelectedFile.name}
+                        </p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium font-sans">
+                          সাইজ: {formatFileSize(manualSelectedFile.size)}
+                        </p>
+                      </div>
+                      <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        সংযুক্ত করা হয়েছে
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center mx-auto text-indigo-500 border border-indigo-500/20 group-hover:scale-110 transition-transform">
+                        <UploadCloud size={24} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                          এখানে ড্রাগ করে ফাইলটি ফেলুন অথবা
+                        </p>
+                        <p className="text-[11px] text-indigo-500 font-semibold mt-1">
+                          কম্পিউটার থেকে ব্রাউজ করুন
+                        </p>
+                      </div>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                        PDF, Word, Excel, JPG, PNG, GIF, ZIP (সর্বোচ্চ ১০ এমবি)
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {manualSelectedFile && (
+                  <div className="space-y-1.5 animate-fadeIn">
+                    <label htmlFor="manualCustomName" className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      ফাইলের নাম (ঐচ্ছিক)
+                    </label>
+                    <input
+                      id="manualCustomName"
+                      type="text"
+                      placeholder="নথির টাইটেল লিখুন"
+                      value={manualCustomName}
+                      onChange={(e) => setManualCustomName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 text-sm focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500 transition-all"
+                    />
+                  </div>
+                )}
+
+                {manualSelectedFile && (
+                  <div className="flex gap-2.5 pt-2">
+                    <button
+                      type="submit"
+                      disabled={manualUploading}
+                      className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+                    >
+                      {manualUploading ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>আপলোড হচ্ছে...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud size={14} />
+                          <span>আর্কাইভে যুক্ত করুন</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualSelectedFile(null);
+                        setManualCustomName('');
+                        if (manualFileInputRef.current) manualFileInputRef.current.value = '';
+                      }}
+                      className="px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all border border-slate-200 dark:border-slate-700"
+                    >
+                      বাতিল
+                    </button>
+                  </div>
+                )}
+              </form>
+            </div>
+          </div>
+
+          {/* Document list */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl min-h-[500px] flex flex-col justify-between">
+              <div className="space-y-6">
+                
+                {/* Advanced Search Options */}
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                      <input
+                        type="text"
+                        placeholder="নথির নাম দিয়ে অনুসন্ধান করুন..."
+                        value={manualDocsSearchQuery}
+                        onChange={(e) => setManualDocsSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-555"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowManualFilters(!showManualFilters)}
+                        className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          showManualFilters || filterFileType !== 'ALL' || filterDateRange !== 'ALL' || filterSize !== 'ALL'
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400 font-bold'
+                            : 'bg-white/40 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-300'
+                        }`}
+                      >
+                        <Filter size={14} />
+                        <span>ফিল্টারসমূহ</span>
+                        {(filterFileType !== 'ALL' || filterDateRange !== 'ALL' || filterSize !== 'ALL') && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
+                        )}
+                      </button>
+
+                      <ArrowUpDown size={14} className="text-slate-400" />
+                      <select
+                        value={sortByManual}
+                        onChange={(e) => setSortByManual(e.target.value as any)}
+                        className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer"
+                      >
+                        <option value="date-desc">আপলোড তারিখ (নতুন আগে)</option>
+                        <option value="date-asc">আপলোড তারিখ (পুরাতন আগে)</option>
+                        <option value="size-desc">সাইজ (বড় আগে)</option>
+                        <option value="size-asc">সাইজ (ছোট আগে)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Expandable Advanced Filters Box */}
+                  {showManualFilters && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 animate-fadeIn">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ফাইলের ধরণ</label>
+                        <select
+                          value={filterFileType}
+                          onChange={(e) => setFilterFileType(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          <option value="ALL">সকল ফরম্যাট (All)</option>
+                          <option value="pdf">PDF (.pdf)</option>
+                          <option value="word">Word Document (.docx, .doc)</option>
+                          <option value="excel">Excel Spreadsheet (.xlsx, .xls, .csv)</option>
+                          <option value="image">ছবি / Images (.png, .jpg, .jpeg, .gif)</option>
+                          <option value="other">অন্যান্য / Others</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">আপলোডের সময়</label>
+                        <select
+                          value={filterDateRange}
+                          onChange={(e) => setFilterDateRange(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          <option value="ALL">সকল সময় (All Time)</option>
+                          <option value="today">আজকে (Today)</option>
+                          <option value="week">গত ৭ দিন (Last 7 Days)</option>
+                          <option value="month">গত ৩০ দিন (Last 30 Days)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ফাইলের সাইজ</label>
+                        <select
+                          value={filterSize}
+                          onChange={(e) => setFilterSize(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          <option value="ALL">সকল সাইজ (All)</option>
+                          <option value="small">ছোট (&lt; ১ MB)</option>
+                          <option value="medium">মাঝারি (১ MB - ৫ MB)</option>
+                          <option value="large">বড় (&gt; ৫ MB)</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {loadingManualDocs ? (
+                  <div className="flex flex-col items-center justify-center py-20 space-y-3">
+                    <Loader2 size={36} className="text-indigo-500 animate-spin" />
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
+                  </div>
+                ) : filteredManualDocs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
+                      <AlertCircle size={28} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">কোন ফাইল পাওয়া যায়নি</h3>
+                      <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
+                        {manualDocsSearchQuery || filterFileType !== 'ALL' || filterDateRange !== 'ALL' || filterSize !== 'ALL' 
+                          ? 'আপনার ফিল্টার বা অনুসন্ধানকৃত নাম অনুযায়ী কোনো ফাইল খুঁজে পাওয়া যায়নি।' 
+                          : 'সংরক্ষণাগারটিতে এখনও কোনো ফাইল আপলোড করে যুক্ত করা হয়নি।'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredManualDocs.map((doc) => (
+                      <div 
+                        key={doc.id}
+                        className="group border border-slate-200/60 dark:border-slate-800/80 rounded-2xl p-4 bg-white/30 dark:bg-slate-900/20 hover:bg-white dark:hover:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 flex flex-col justify-between gap-4 shadow-sm"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-500/5 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0 border border-slate-100 dark:border-slate-800">
+                            {getFileIcon(doc.fileType)}
+                          </div>
+                          <div className="min-w-0 space-y-1">
+                            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-snug group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors truncate" title={doc.name}>
+                              {doc.name}
+                            </h4>
+                            
+                            <div className="flex flex-col gap-1 text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                              <span className="flex items-center gap-1">
+                                <Calendar size={11} />
+                                {formatDateBengali(doc.uploadedAt)}
+                              </span>
+                              <span className="flex items-center gap-1 font-sans">
+                                <HardDrive size={11} />
+                                {formatFileSize(doc.fileSize)} ({doc.fileType.toUpperCase()})
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-3">
+                          <div className="flex items-center gap-1.5">
+                            <a 
+                              href={doc.filePath} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-bold transition-all"
+                              title="ভিউ করুন"
+                            >
+                              <Eye size={12} />
+                              <span>দেখুন</span>
+                            </a>
+                            
+                            <a 
+                              href={doc.filePath} 
+                              download={`${doc.name}.${doc.fileType}`}
+                              className="flex items-center justify-center p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 rounded-lg transition-all"
+                              title="ডাউনলোড করুন"
+                            >
+                              <FileDown size={12} />
+                            </a>
+
+                            {currentUser?.role !== 'USER' && (
+                              <button 
+                                onClick={() => {
+                                  setEditingManualDoc(doc);
+                                  setEditDocName(doc.name);
+                                }}
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
+                                title="রিনেইম করুন"
+                              >
+                                <FileSignature size={12} />
+                                <span>রিনেইম</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {currentUser?.role !== 'USER' && (
+                            <button 
+                              onClick={() => handleDeleteManualDoc(doc.id)}
+                              className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
+                              title="মুছে ফেলুন"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {!loadingManualDocs && filteredManualDocs.length > 0 && (
+                <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4 mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-slate-400">
+                  <span className="font-semibold">ডিউটি বিল ও অফিস আদেশ নথি সংরক্ষণাগার</span>
+                  <span className="bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">
+                    নিরাপদ স্টোরেজ
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       ) : activeTab === 'orders' ? (
-        /* Tab 2: Office Order Reference Archive */
+        /* Tab 3: Office Order Reference Archive */
         <div className="space-y-6">
           <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl min-h-[500px]">
             <div className="space-y-6">
               
-              {/* Search Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                  <input
-                    type="text"
-                    placeholder="স্মারক সূত্র নম্বর বা কর্মকর্তার নাম দিয়ে অনুসন্ধান করুন..."
-                    value={orderSearchQuery}
-                    onChange={(e) => setOrderSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
-                  />
+              {/* Search Bar & Advanced Filters for Orders */}
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input
+                      type="text"
+                      placeholder="স্মারক সূত্র নম্বর বা কর্মকর্তার নাম দিয়ে অনুসন্ধান করুন..."
+                      value={orderSearchQuery}
+                      onChange={(e) => setOrderSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowOrdersFilters(!showOrdersFilters)}
+                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                        showOrdersFilters || ordersFilterCategory !== 'ALL' || ordersFilterStatus !== 'ALL' || ordersFilterCell !== 'ALL'
+                          ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400 font-bold'
+                          : 'bg-white/40 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 text-slate-655 dark:text-slate-300'
+                      }`}
+                    >
+                      <Filter size={14} />
+                      <span>ফিল্টারসমূহ</span>
+                      {(ordersFilterCategory !== 'ALL' || ordersFilterStatus !== 'ALL' || ordersFilterCell !== 'ALL') && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
+                      )}
+                    </button>
+                  </div>
                 </div>
+
+                {showOrdersFilters && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 animate-fadeIn">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ডিউটি টাইপ</label>
+                      <select
+                        value={ordersFilterCategory}
+                        onChange={(e) => setOrdersFilterCategory(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                      >
+                        <option value="ALL">সকল ক্যাটাগরি (All)</option>
+                        <option value="LATE_SITTING">লেট সিটিং (Late Sitting)</option>
+                        <option value="HOLIDAY">सरकारी ছুটি (Holiday)</option>
+                        <option value="NIGHT_SHIFT">রাত্রীকালীন (Night Shift)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">বিল স্ট্যাটাস</label>
+                      <select
+                        value={ordersFilterStatus}
+                        onChange={(e) => setOrdersFilterStatus(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                      >
+                        <option value="ALL">সকল স্ট্যাটাস (All)</option>
+                        <option value="pending">বিল অপেক্ষমাণ (Pending)</option>
+                        <option value="billed">বিল সম্পন্ন (Billed)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">শাখা/সেল</label>
+                      <select
+                        value={ordersFilterCell}
+                        onChange={(e) => setOrdersFilterCell(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                      >
+                        <option value="ALL">সকল সেল (All)</option>
+                        {uniqueCellsInOrders.map((cell) => (
+                          <option key={cell} value={cell}>{cell}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {successMsg && (
@@ -1165,18 +2029,70 @@ export default function DocumentsPage() {
           <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl min-h-[500px]">
             <div className="space-y-6">
               
-              {/* Search Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                  <input
-                    type="text"
-                    placeholder="স্মারক সূত্র নম্বর বা কর্মকর্তার নাম দিয়ে অনুসন্ধান করুন..."
-                    value={orderSearchQuery}
-                    onChange={(e) => setOrderSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
-                  />
+              {/* Search Bar & Advanced Filters for Bills */}
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input
+                      type="text"
+                      placeholder="স্মারক সূত্র নম্বর বা কর্মকর্তার নাম দিয়ে অনুসন্ধান করুন..."
+                      value={orderSearchQuery}
+                      onChange={(e) => setOrderSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-555"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowBillsFilters(!showBillsFilters)}
+                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                        showBillsFilters || billsFilterCategory !== 'ALL' || billsFilterCell !== 'ALL'
+                          ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400 font-bold'
+                          : 'bg-white/40 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-300'
+                      }`}
+                    >
+                      <Filter size={14} />
+                      <span>ফিল্টারসমূহ</span>
+                      {(billsFilterCategory !== 'ALL' || billsFilterCell !== 'ALL') && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
+                      )}
+                    </button>
+                  </div>
                 </div>
+
+                {showBillsFilters && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 animate-fadeIn">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">বিল টাইপ</label>
+                      <select
+                        value={billsFilterCategory}
+                        onChange={(e) => setBillsFilterCategory(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                      >
+                        <option value="ALL">সকল বিল টাইপ (All)</option>
+                        <option value="BILL_LATE_SITTING">লেট সিটিং বিল (Late Sitting Bill)</option>
+                        <option value="BILL_HOLIDAY">সরকারি ছুটি বিল (Holiday Bill)</option>
+                        <option value="BILL_NIGHT_SHIFT">রাত্রীকালীন বিল (Night Shift Bill)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">শাখা/সেল</label>
+                      <select
+                        value={billsFilterCell}
+                        onChange={(e) => setBillsFilterCell(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                      >
+                        <option value="ALL">সকল সেল (All)</option>
+                        {uniqueCellsInOrders.map((cell) => (
+                          <option key={cell} value={cell}>{cell}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {successMsg && (
@@ -1592,6 +2508,64 @@ export default function DocumentsPage() {
           </div>
         );
       })()}
+
+      {/* Edit / Rename Manual Document Modal */}
+      {editingManualDoc && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-md font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <FileSignature size={18} className="text-indigo-500" />
+                ফাইলের নাম পরিবর্তন করুন
+              </h3>
+              <button 
+                onClick={() => setEditingManualDoc(null)}
+                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-850 dark:text-slate-400 dark:hover:text-slate-100 transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleRenameManualDoc} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">ফাইলের বর্তমান নাম</label>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate font-mono bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-900">
+                  {editingManualDoc.name}.{editingManualDoc.fileType}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="renameInput" className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">নতুন নাম</label>
+                <input
+                  id="renameInput"
+                  type="text"
+                  required
+                  placeholder="ফাইলের নতুন নাম লিখুন"
+                  value={editDocName}
+                  onChange={(e) => setEditDocName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-slate-850 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20"
+                >
+                  সংরক্ষণ করুন
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingManualDoc(null)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all border border-slate-200 dark:border-slate-700"
+                >
+                  বাতিল
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

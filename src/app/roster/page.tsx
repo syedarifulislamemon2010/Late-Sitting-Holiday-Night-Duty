@@ -287,7 +287,7 @@ export default function RosterPage() {
   // Duty assignment form state
   const [assignmentForm, setAssignmentForm] = useState({
     selectedEmployeeIds: [] as number[],
-    type: 'LATE_SITTING' as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT',
+    type: '' as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | '',
     date: new Date().toISOString().split('T')[0],
     description: ''
   });
@@ -428,6 +428,7 @@ export default function RosterPage() {
 
   // Check if a date should be disabled based on selected duty category
   const isDateDisabledForType = (isWorking: boolean, type: string) => {
+    if (!type) return true; // Disable all dates if no type is selected
     if (type === 'LATE_SITTING') {
       return !isWorking; // Disable holidays/weekends for Late Sitting
     }
@@ -1736,9 +1737,9 @@ export default function RosterPage() {
             empDates.forEach(dateStr => {
               assignments.push({
                 employeeId: empId,
-                type: assignmentForm.type,
+                type: assignmentForm.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT',
                 date: dateStr,
-                description: assignmentForm.description.trim() || getDefaultDescription(emp?.name, assignmentForm.type, cellName)
+                description: assignmentForm.description.trim() || getDefaultDescription(emp?.name, assignmentForm.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT', cellName)
               });
             });
           }
@@ -1749,9 +1750,9 @@ export default function RosterPage() {
         const cellName = emp?.cell?.name || '';
         assignments = [{
           employeeId,
-          type: assignmentForm.type,
+          type: assignmentForm.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT',
           date: assignmentForm.date,
-          description: assignmentForm.description.trim() || getDefaultDescription(emp?.name, assignmentForm.type, cellName)
+          description: assignmentForm.description.trim() || getDefaultDescription(emp?.name, assignmentForm.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT', cellName)
         }];
       }
 
@@ -1851,9 +1852,9 @@ export default function RosterPage() {
             opt1Assignments[empId].forEach(dateStr => {
               assignments.push({
                 employeeId: empId,
-                type: assignmentForm.type,
+                type: assignmentForm.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT',
                 date: dateStr,
-                description: getDefaultDescription(emp?.name, assignmentForm.type, cellName)
+                description: getDefaultDescription(emp?.name, assignmentForm.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT', cellName)
               });
             });
           }
@@ -1880,9 +1881,9 @@ export default function RosterPage() {
           const cellName = emp?.cell?.name || '';
           return {
             employeeId: empId,
-            type: assignmentForm.type,
+            type: assignmentForm.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT',
             date: assignmentForm.date,
-            description: getDefaultDescription(emp?.name, assignmentForm.type, cellName)
+            description: getDefaultDescription(emp?.name, assignmentForm.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT', cellName)
           };
         });
       }
@@ -2454,6 +2455,7 @@ export default function RosterPage() {
 
 
   const isSubmitDisabled = () => {
+    if (!assignmentForm.type) return true;
     if (editingDuty) {
       if (entryMode === 'EMPLOYEE_WISE') {
         const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
@@ -2654,9 +2656,10 @@ export default function RosterPage() {
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
                   <select
                     value={assignmentForm.type}
-                    onChange={(e) => setAssignmentForm({ ...assignmentForm, type: e.target.value as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' })}
+                    onChange={(e) => setAssignmentForm({ ...assignmentForm, type: e.target.value as any })}
                     className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
+                    <option value="">সিলেক্ট করুন</option>
                     <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
                     <option value="HOLIDAY">Holiday Duty (ছুটির দিনে)</option>
                     <option value="NIGHT_SHIFT">Night Shift (রাত্রীকালীন ডিউটি)</option>

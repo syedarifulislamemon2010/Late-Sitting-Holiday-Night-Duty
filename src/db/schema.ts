@@ -195,6 +195,19 @@ export const lunchBills = pgTable('LunchBill', {
 
 
 // ==========================================
+// 12. MANUAL DOCUMENT MODEL
+// ==========================================
+export const manualDocuments = pgTable('ManualDocument', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  filePath: text('filePath').notNull(),
+  fileSize: integer('fileSize').notNull(),
+  fileType: text('fileType').notNull(), // 'pdf', 'docx', 'xlsx', 'png', etc.
+  uploadedAt: timestamp('uploadedAt', { mode: 'date' }).defaultNow().notNull(),
+});
+
+
+// ==========================================
 // DRIZZLE RELATIONSHIPS
 // ==========================================
 

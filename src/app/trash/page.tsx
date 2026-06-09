@@ -158,7 +158,8 @@ export default function TrashPage() {
     { id: 'CELL', label: 'সেলসমূহ', icon: Layers },
     { id: 'DUTY', label: 'ডিউটি রোস্টার', icon: CalendarDays },
     { id: 'EXECUTIVE', label: 'নির্বাহী প্যানেল', icon: UserCheck },
-    { id: 'DOCUMENT', label: 'পিডিএফ আর্কাইভ', icon: FileText }
+    { id: 'DOCUMENT', label: 'পিডিএফ আর্কাইভ', icon: FileText },
+    { id: 'MANUAL_DOCUMENT', label: 'ম্যানুয়াল ডকুমেন্ট', icon: FileText }
   ];
 
   const filteredItems = trashItems.filter(item => {
@@ -175,6 +176,7 @@ export default function TrashPage() {
       case 'DUTY': return 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30';
       case 'EXECUTIVE': return 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400 border border-purple-100 dark:border-purple-900/30';
       case 'DOCUMENT': return 'bg-pink-50 text-pink-600 dark:bg-pink-950/40 dark:text-pink-400 border border-pink-100 dark:border-pink-900/30';
+      case 'MANUAL_DOCUMENT': return 'bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30';
       case 'OFFICE_ORDER': return 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30';
       default: return 'bg-slate-50 text-slate-600 dark:bg-slate-950/40 dark:text-slate-400';
     }
@@ -187,6 +189,7 @@ export default function TrashPage() {
       case 'DUTY': return 'ডিউটি';
       case 'EXECUTIVE': return 'নির্বাহী';
       case 'DOCUMENT': return 'ডকুমেন্ট';
+      case 'MANUAL_DOCUMENT': return 'ম্যানুয়াল ডকুমেন্ট';
       case 'OFFICE_ORDER': return 'অফিস আদেশ/বিল';
       default: return type;
     }

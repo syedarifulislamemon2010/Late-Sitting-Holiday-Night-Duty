@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { trash as trashTable, cells, employees, duties, executives, documents, officeOrders } from '@/db/schema';
-import { and, eq, lt, ne, desc } from 'drizzle-orm';
+import { trash as trashTable, cells, employees, duties, executives, documents, officeOrders, manualDocuments } from '@/db/schema';
+import { and, eq, lt, ne, desc, or } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { logActivity } from '@/lib/audit';
@@ -20,7 +20,10 @@ export async function GET() {
     // 1. Find all expired documents so we can delete their physical files
     const expiredDocs = await db.select().from(trashTable).where(
       and(
-        eq(trashTable.entityType, 'DOCUMENT'),
+        or(
+          eq(trashTable.entityType, 'DOCUMENT'),
+          eq(trashTable.entityType, 'MANUAL_DOCUMENT')
+        ),
         lt(trashTable.deletedAt, thirtyDaysAgo)
       )
     );
@@ -235,6 +238,25 @@ export async function POST(request: Request) {
                 name: parsed.name,
                 filePath: parsed.filePath,
                 fileSize: parsed.fileSize,
+                uploadedAt: new Date(parsed.uploadedAt)
+              });
+              break;
+            }
+
+            case 'MANUAL_DOCUMENT': {
+              const docExistsList = await db.select().from(manualDocuments).where(eq(manualDocuments.filePath, parsed.filePath));
+              const docExists = docExistsList[0];
+              if (docExists) {
+                failCount++;
+                lastErrorMessage = `"${parsed.name}" ফাইলটি ইতিমধ্যে আর্কাইভে সচল রয়েছে।`;
+                continue;
+              }
+
+              await db.insert(manualDocuments).values({
+                name: parsed.name,
+                filePath: parsed.filePath,
+                fileSize: parsed.fileSize,
+                fileType: parsed.fileType,
                 uploadedAt: new Date(parsed.uploadedAt)
               });
               break;
