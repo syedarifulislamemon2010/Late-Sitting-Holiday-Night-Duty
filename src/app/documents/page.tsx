@@ -732,6 +732,7 @@ export default function DocumentsPage() {
               .w-full { width: 100%; }
               .flex { display: flex; }
               .justify-between { justify-content: space-between; }
+              .justify-end { justify-content: flex-end; }
               .items-start { align-items: flex-start; }
               .border-b-2 { border-bottom: 2px solid #0b5e9e; }
               .border-b { border-bottom: 1px solid #e2e8f0; }

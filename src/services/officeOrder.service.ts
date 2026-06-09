@@ -87,7 +87,7 @@ export class OfficeOrderService {
     }
 
     const orderRefs = ordersList.map((o) => o.orderRef);
-    let linkedDuties: { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null } }[] = [];
+    let linkedDuties: { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null; designation: string } }[] = [];
     if (orderRefs.length > 0) {
       linkedDuties = await db.select({
         id: dutiesIdHelper(),
@@ -96,12 +96,13 @@ export class OfficeOrderService {
         employee: {
           id: employeesIdHelper(),
           name: employeesNameHelper(),
-          bankId: employeesBankIdHelper()
+          bankId: employeesBankIdHelper(),
+          designation: employeesDesignationHelper()
         }
       })
       .from(dutiesTableHelper())
       .innerJoin(employeesTableHelper(), eq(dutiesEmployeeIdHelper(), employeesIdHelper()))
-      .where(inArray(dutiesOrderRefHelper(), orderRefs)) as unknown as { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null } }[];
+      .where(inArray(dutiesOrderRefHelper(), orderRefs)) as unknown as { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null; designation: string } }[];
     }
 
     const toBanglaDigits = (num: string | number): string => {
@@ -113,23 +114,83 @@ export class OfficeOrderService {
       let parsedDuties: OrderDutyInput[] = order.dutiesJson ? JSON.parse(order.dutiesJson) : [];
       
       if (order.category.startsWith('BILL_')) {
-        parsedDuties = parsedDuties.map((s) => {
-          if (!s.datesFormatted) {
-            const matches = linkedDuties.filter((d) => 
-              d.orderRef === order.orderRef && 
-              (d.employee.bankId === s.employeeId || d.employee.id.toString() === s.employeeId || d.employee.name === s.employeeName)
-            );
-            if (matches.length > 0) {
-              const uniqueDates = Array.from(new Set(matches.map((m) => m.date))).sort();
-              const formatted = uniqueDates.map((dStr) => {
+        if (parsedDuties.length === 0) {
+          const matches = linkedDuties.filter((d) => {
+            if (!d.orderRef) return false;
+            return d.orderRef.replace(/\/বিল$/, '') === order.orderRef.replace(/\/বিল$/, '');
+          });
+          if (matches.length > 0) {
+            const cat = order.category;
+            const isHoliday = cat.includes('HOLIDAY');
+            const isNight = cat.includes('NIGHT_SHIFT');
+            const apyaonRate = isHoliday ? 250 : isNight ? 600 : 100;
+            const transportRate = cat.includes('LATE_SITTING') ? 150 : isNight ? 400 : isHoliday ? 250 : 0;
+
+            const groups = new Map<string, {
+              employeeId: string;
+              employeeName: string;
+              designation: string;
+              dates: string[];
+            }>();
+
+            for (const d of matches) {
+              const key = d.employee.bankId || d.employee.name;
+              if (!groups.has(key)) {
+                groups.set(key, {
+                  employeeId: d.employee.bankId || String(d.employee.id),
+                  employeeName: d.employee.name,
+                  designation: d.employee.designation,
+                  dates: []
+                });
+              }
+              groups.get(key)!.dates.push(d.date);
+            }
+
+            parsedDuties = Array.from(groups.values()).map(g => {
+              const days = g.dates.length;
+              const totalApyaon = days * apyaonRate;
+              const totalTransport = days * transportRate;
+              const grandTotal = totalApyaon + totalTransport;
+
+              const sortedDates = g.dates.sort();
+              const formatted = sortedDates.map((dStr) => {
                 const [year, month, day] = dStr.split('-');
                 return toBanglaDigits(`${day}-${month}-${year}`);
               }).join(', ');
-              return { ...s, datesFormatted: formatted };
-            }
+
+              return {
+                employeeId: g.employeeId,
+                employeeName: g.employeeName,
+                designation: g.designation,
+                days,
+                apyaonRate,
+                totalApyaon,
+                totalTransport,
+                grandTotal,
+                datesFormatted: formatted
+              };
+            });
           }
-          return s;
-        });
+        } else {
+          parsedDuties = parsedDuties.map((s) => {
+            if (!s.datesFormatted) {
+              const matches = linkedDuties.filter((d) => {
+                if (!d.orderRef) return false;
+                return d.orderRef.replace(/\/বিল$/, '') === order.orderRef.replace(/\/বিল$/, '') && 
+                (d.employee.bankId === s.employeeId || d.employee.id.toString() === s.employeeId || d.employee.name === s.employeeName);
+              });
+              if (matches.length > 0) {
+                const uniqueDates = Array.from(new Set(matches.map((m) => m.date))).sort();
+                const formatted = uniqueDates.map((dStr) => {
+                  const [year, month, day] = dStr.split('-');
+                  return toBanglaDigits(`${day}-${month}-${year}`);
+                }).join(', ');
+                return { ...s, datesFormatted: formatted };
+              }
+            }
+            return s;
+          });
+        }
       }
 
       return {
@@ -385,4 +446,7 @@ function employeesNameHelper() {
 }
 function employeesBankIdHelper() {
   return employees.bankId;
+}
+function employeesDesignationHelper() {
+  return employees.designation;
 }

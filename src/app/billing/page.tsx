@@ -810,7 +810,10 @@ export default function BillingPage() {
     const map = new Map<number, EmployeeBillingSummary>();
     
     let activeDuties = selectedOrderRef
-      ? duties.filter(d => d.orderRef === selectedOrderRef)
+      ? duties.filter(d => {
+          if (!d.orderRef) return false;
+          return d.orderRef.replace(/\/বিল$/, '') === selectedOrderRef.replace(/\/বিল$/, '');
+        })
       : duties;
       
     if (selectedCategory !== 'all') {
@@ -875,7 +878,10 @@ export default function BillingPage() {
   // Automatically select representative payee by default (based on selected office order payee name, falling back to first employee)
   useEffect(() => {
     if (selectedOrderRef && archivedOrders.length > 0) {
-      const matchedOrder = archivedOrders.find(o => o.orderRef === selectedOrderRef);
+      const matchedOrder = archivedOrders.find(o => {
+        if (!o.orderRef) return false;
+        return o.orderRef.replace(/\/বিল$/, '') === selectedOrderRef.replace(/\/বিল$/, '');
+      });
       if (matchedOrder && matchedOrder.employeeName) {
         const nameVal = matchedOrder.employeeName;
         const matchedEmp = employees.find(e => e.name === nameVal);
@@ -1021,7 +1027,12 @@ export default function BillingPage() {
       const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
       const cellName = matchedCellObj ? matchedCellObj.name : (selectedCell === 'all' ? 'All Cells' : 'IT Department');
 
-      const backingOrder = archivedOrders.find(o => o.orderRef === selectedOrderRef);
+      const backingOrder = archivedOrders.find(o => {
+        if (!o.orderRef) return false;
+        const cleanO = o.orderRef.replace(/\/বিল$/, '');
+        const cleanS = selectedOrderRef.replace(/\/বিল$/, '');
+        return cleanO === cleanS && !o.category?.startsWith('BILL_');
+      });
 
       const archivePayload = {
         orderRef: billRef,
@@ -1043,15 +1054,20 @@ export default function BillingPage() {
           datesFormatted: s.datesFormatted
         })),
         dutyIds: duties
-          .filter(d => 
-            (d.orderRef === selectedOrderRef || 
-             d.orderRef === baseOrderRef || 
-             d.orderRef === billRef || 
-             d.orderRef === (isEditingArchive ? originalBillRef : '') ||
-             (d.orderRef && baseOrderRef && d.orderRef.replace(/\/বিল$/, '') === baseOrderRef.replace(/\/বিল$/, ''))
-            ) && 
-            d.type === printCategory
-          )
+          .filter(d => {
+            if (!d.orderRef || d.type !== printCategory) return false;
+            const cleanD = d.orderRef.replace(/\/বিল$/, '');
+            const cleanSel = selectedOrderRef.replace(/\/বিল$/, '');
+            const cleanBase = baseOrderRef.replace(/\/বিল$/, '');
+            const cleanBill = billRef.replace(/\/বিল$/, '');
+            const cleanOrig = (isEditingArchive ? originalBillRef : '').replace(/\/বিল$/, '');
+            return (
+              cleanD === cleanSel ||
+              cleanD === cleanBase ||
+              cleanD === cleanBill ||
+              (cleanOrig && cleanD === cleanOrig)
+            );
+          })
           .map(d => d.id),
         content: {
           openingParagraph: openingParagraph,
@@ -2679,6 +2695,7 @@ export default function BillingPage() {
                                 .w-full { width: 100%; }
                                 .flex { display: flex; }
                                 .justify-between { justify-content: space-between; }
+                                .justify-end { justify-content: flex-end; }
                                 .items-start { align-items: flex-start; }
                                 .border-b-2 { border-bottom: 2px solid #0b5e9e; }
                                 .border-b { border-bottom: 1px solid #e2e8f0; }
