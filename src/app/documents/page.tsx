@@ -484,9 +484,174 @@ export default function DocumentsPage() {
     }
   };
 
-  // View PDF in Print Preview (opens directly to leverage native browser PDF rendering and print controls)
-  const handleViewPDF = (filePath: string, name: string) => {
-    window.open(filePath, '_blank');
+  // Render document in a new tab for Print Preview
+  const handlePrintPreview = (filePath: string, name: string, fileType: string) => {
+    const cleanType = fileType.trim().toLowerCase().replace(/^\./, '');
+    const isPDF = cleanType === 'pdf';
+    const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(cleanType);
+    
+    // Construct absolute file path so that relative URLs resolve correctly in about:blank
+    const absoluteFilePath = window.location.origin + filePath;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    if (isPDF) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>${name} - প্রিন্ট প্রিভিউ</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f5;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              }
+              .page-container {
+                margin: 20px 0;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                background-color: #ffffff;
+                display: block;
+                max-width: 800px;
+                width: 90%;
+              }
+              img.pdf-page-img {
+                width: 100%;
+                display: block;
+                height: auto;
+              }
+              #loading {
+                margin-top: 50px;
+                font-size: 16px;
+                font-weight: bold;
+                color: #4f46e5;
+              }
+              @media print {
+                body {
+                  background-color: #ffffff;
+                  margin: 0;
+                  padding: 0;
+                }
+                .page-container {
+                  margin: 0;
+                  padding: 0;
+                  box-shadow: none;
+                  page-break-after: always;
+                  width: 100%;
+                  max-width: 100%;
+                  display: block;
+                }
+                img.pdf-page-img {
+                  width: 100% !important;
+                  height: auto !important;
+                }
+                #loading {
+                  display: none;
+                }
+              }
+            </style>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+          </head>
+          <body>
+            <div id="loading">নথি লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...</div>
+            
+            <script>
+              pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+              const url = '${absoluteFilePath}';
+              
+              async function renderPDF() {
+                try {
+                  const loadingTask = pdfjsLib.getDocument(url);
+                  const pdf = await loadingTask.promise;
+                  
+                  document.getElementById('loading').style.display = 'none';
+                  
+                  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    
+                    const renderContext = {
+                      canvasContext: context,
+                      viewport: viewport
+                    };
+                    
+                    await page.render(renderContext).promise;
+                    
+                    // Convert canvas to image for extremely robust scaling/printing
+                    const img = document.createElement('img');
+                    img.src = canvas.toDataURL('image/png');
+                    img.className = 'pdf-page-img';
+                    
+                    const container = document.createElement('div');
+                    container.className = 'page-container';
+                    container.appendChild(img);
+                    
+                    document.body.appendChild(container);
+                  }
+                  
+                  // Wait a short moment to ensure images are loaded
+                  setTimeout(() => {
+                    window.print();
+                  }, 500);
+                  
+                } catch (error) {
+                  console.error('Error rendering PDF:', error);
+                  document.getElementById('loading').innerText = 'নথি লোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে ফাইলটি ডাউনলোড করে প্রিন্ট করুন।';
+                }
+              }
+              renderPDF();
+            </script>
+          </body>
+        </html>
+      `);
+    } else if (isImage) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>${name} - প্রিন্ট প্রিভিউ</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f5;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+              }
+              img {
+                max-width: 100%;
+                max-height: 100%;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              }
+              @media print {
+                body {
+                  background-color: #ffffff;
+                }
+                img {
+                  box-shadow: none;
+                  max-width: 100%;
+                  max-height: 100%;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <img src="${absoluteFilePath}" onload="window.print()" />
+          </body>
+        </html>
+      `);
+    }
+    printWindow.document.close();
   };
 
   // Resolve File Icon
@@ -1894,9 +2059,10 @@ export default function DocumentsPage() {
 
                         <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-3">
                           <div className="flex items-center gap-1.5">
-                            {doc.fileType.toLowerCase() === 'pdf' ? (
+                            {['pdf', 'jpg', 'jpeg', 'png', 'gif'].includes(doc.fileType.trim().toLowerCase().replace(/^\./, '')) ? (
                               <button 
-                                onClick={() => handleViewPDF(doc.filePath, doc.name)}
+                                type="button"
+                                onClick={() => handlePrintPreview(doc.filePath, doc.name, doc.fileType)}
                                 className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-bold transition-all cursor-pointer border border-indigo-100/50 dark:border-indigo-950/30"
                                 title="প্রিন্ট প্রিভিউ"
                               >
