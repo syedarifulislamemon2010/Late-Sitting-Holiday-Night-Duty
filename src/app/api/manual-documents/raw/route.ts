@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const idStr = searchParams.get('id');
     
     if (!idStr) {
-      return new Response('Missing ID parameter', { status: 400 });
+      return NextResponse.json({ error: 'missing_id', message: 'Missing ID parameter' }, { status: 400 });
     }
 
     const docId = Number(idStr);
@@ -19,37 +19,38 @@ export async function GET(request: Request) {
     const doc = docs[0];
 
     if (!doc) {
-      return new Response('Document not found in database', { status: 404 });
+      return NextResponse.json({ error: 'not_found', message: 'Document not found in database' }, { status: 404 });
     }
 
     const absolutePath = path.join(process.cwd(), 'public', doc.filePath);
     if (!fs.existsSync(absolutePath)) {
-      return new Response('File not found on disk', { status: 404 });
+      return NextResponse.json({ error: 'file_not_found', message: 'File not found on disk' }, { status: 404 });
     }
 
     const fileBuffer = fs.readFileSync(absolutePath);
+    const base64Data = fileBuffer.toString('base64');
     
-    // Resolve content type
-    let contentType = 'application/octet-stream';
+    // Resolve mime type
+    let mimeType = 'application/octet-stream';
     const ext = doc.fileType.toLowerCase().replace(/^\./, '');
     if (ext === 'pdf') {
-      contentType = 'application/pdf';
+      mimeType = 'application/pdf';
     } else if (['jpg', 'jpeg'].includes(ext)) {
-      contentType = 'image/jpeg';
+      mimeType = 'image/jpeg';
     } else if (ext === 'png') {
-      contentType = 'image/png';
+      mimeType = 'image/png';
     } else if (ext === 'gif') {
-      contentType = 'image/gif';
+      mimeType = 'image/gif';
     }
 
-    return new Response(fileBuffer, {
-      headers: {
-        'Content-Type': contentType,
-        'Content-Disposition': 'inline', // Ensure the browser serves it inline
-      },
+    return NextResponse.json({
+      success: true,
+      data: base64Data,
+      mimeType: mimeType,
+      name: doc.name
     });
   } catch (error) {
     console.error('Error serving raw manual document:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    return NextResponse.json({ error: 'internal_error', message: 'Internal Server Error' }, { status: 500 });
   }
 }

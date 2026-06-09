@@ -13,94 +13,141 @@ function PreviewContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pages, setPages] = useState<string[]>([]);
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
   const pdfjsLoaded = useRef(false);
 
   useEffect(() => {
-    const loadTarget = id ? `/api/manual-documents/raw?id=${id}` : file;
-
-    if (!loadTarget) {
-      setError('ফাইলের পাথ পাওয়া যায়নি।');
-      setLoading(false);
-      return;
-    }
-
     const cleanType = type.trim().toLowerCase().replace(/^\./, '');
-    if (cleanType !== 'pdf') {
-      // Images are handled directly in render
-      return;
-    }
+    const isPDF = cleanType === 'pdf';
 
-    if (pdfjsLoaded.current) return;
-    pdfjsLoaded.current = true;
+    if (isPDF) {
+      if (pdfjsLoaded.current) return;
+      pdfjsLoaded.current = true;
 
-    // Dynamically load PDF.js CDN
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
-    script.async = true;
-    script.onload = async () => {
-      try {
-        // @ts-ignore
-        const pdfjsLib = window.pdfjsLib;
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+      // Dynamically load PDF.js CDN
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
+      script.async = true;
+      script.onload = async () => {
+        try {
+          // @ts-ignore
+          const pdfjsLib = window.pdfjsLib;
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        const loadingTask = pdfjsLib.getDocument({
-          url: loadTarget,
-          disableRange: true,
-          disableStream: true
-        });
-        const pdf = await loadingTask.promise;
+          let bytes: Uint8Array;
 
-        const renderedPages: string[] = [];
+          if (id) {
+            // Load base64 encoded PDF via JSON endpoint (bypasses IDM completely)
+            const res = await fetch(`/api/manual-documents/raw?id=${id}`);
+            if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+            
+            const json = await res.json();
+            if (!json.success || !json.data) {
+              throw new Error(json.message || 'Failed to retrieve file contents');
+            }
 
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({ scale: 1.5 });
+            const binaryString = window.atob(json.data);
+            const len = binaryString.length;
+            bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+          } else if (file) {
+            // Fallback: fetch raw PDF file as arrayBuffer
+            const res = await fetch(file);
+            if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+            const buffer = await res.arrayBuffer();
+            bytes = new Uint8Array(buffer);
+          } else {
+            throw new Error('No valid file source provided');
+          }
 
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          if (!context) continue;
+          const loadingTask = pdfjsLib.getDocument({
+            data: bytes,
+            disableRange: true,
+            disableStream: true
+          });
+          
+          const pdf = await loadingTask.promise;
+          const renderedPages: string[] = [];
 
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 1.5 });
 
-          const renderContext = {
-            canvasContext: context,
-            viewport: viewport,
-          };
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            if (!context) continue;
 
-          await page.render(renderContext).promise;
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
 
-          // Convert to base64 image data URL
-          renderedPages.push(canvas.toDataURL('image/png'));
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport,
+            };
+
+            await page.render(renderContext).promise;
+
+            // Convert to base64 image data URL
+            renderedPages.push(canvas.toDataURL('image/png'));
+          }
+
+          setPages(renderedPages);
+          setLoading(false);
+
+          // Wait for rendering to settle, then open print dialog
+          setTimeout(() => {
+            window.print();
+          }, 500);
+        } catch (err) {
+          console.error('Error rendering PDF:', err);
+          setError('নথি লোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে ফাইলটি ডাউনলোড করে প্রিন্ট করুন।');
+          setLoading(false);
         }
+      };
 
-        setPages(renderedPages);
+      script.onerror = () => {
+        setError('PDF.js লাইব্রেরি লোড করতে ব্যর্থ হয়েছে।');
         setLoading(false);
+      };
 
-        // Wait for rendering to complete, then open print dialog
-        setTimeout(() => {
-          window.print();
-        }, 500);
-      } catch (err) {
-        console.error('Error rendering PDF:', err);
-        setError('নথি লোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে ফাইলটি ডাউনলোড করে প্রিন্ট করুন।');
-        setLoading(false);
-      }
-    };
+      document.head.appendChild(script);
 
-    script.onerror = () => {
-      setError('PDF.js লাইব্রেরি লোড করতে ব্যর্থ হয়েছে।');
-      setLoading(false);
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
-    };
-  }, [file, type]);
+      return () => {
+        if (document.head.contains(script)) {
+          document.head.removeChild(script);
+        }
+      };
+    } else {
+      // Handle Image previews
+      const loadImage = async () => {
+        try {
+          if (id) {
+            const res = await fetch(`/api/manual-documents/raw?id=${id}`);
+            if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+            
+            const json = await res.json();
+            if (!json.success || !json.data) {
+              throw new Error(json.message || 'Failed to retrieve image contents');
+            }
+            
+            setImgSrc(`data:${json.mimeType || 'image/jpeg'};base64,${json.data}`);
+          } else if (file) {
+            setImgSrc(file);
+          } else {
+            throw new Error('No valid file source provided');
+          }
+        } catch (err) {
+          console.error('Error loading image:', err);
+          setError('ছবিটি লোড করতে ব্যর্থ হয়েছে।');
+          setLoading(false);
+        }
+      };
+      
+      loadImage();
+    }
+  }, [file, id, type]);
 
   // Error layout
   if (error) {
@@ -115,7 +162,7 @@ function PreviewContent() {
   }
 
   // Loading layout
-  if (loading && pages.length === 0) {
+  if (loading && pages.length === 0 && !imgSrc) {
     const isPDF = type.trim().toLowerCase().replace(/^\./, '') === 'pdf';
     return (
       <div style={{ textAlign: 'center', marginTop: '150px', fontFamily: 'sans-serif', color: '#4f46e5' }}>
@@ -146,7 +193,6 @@ function PreviewContent() {
   // Render Image directly
   const cleanType = type.trim().toLowerCase().replace(/^\./, '');
   if (cleanType !== 'pdf') {
-    const imgTarget = id ? `/api/manual-documents/raw?id=${id}` : (file || '');
     return (
       <div className="image-preview-container">
         <style>{`
@@ -175,18 +221,20 @@ function PreviewContent() {
             }
           }
         `}</style>
-        <img
-          src={imgTarget}
-          alt={name}
-          onLoad={() => {
-            setLoading(false);
-            setTimeout(() => window.print(), 300);
-          }}
-          onError={() => {
-            setLoading(false);
-            setError('ছবিটি লোড করতে ব্যর্থ হয়েছে।');
-          }}
-        />
+        {imgSrc && (
+          <img
+            src={imgSrc}
+            alt={name}
+            onLoad={() => {
+              setLoading(false);
+              setTimeout(() => window.print(), 300);
+            }}
+            onError={() => {
+              setLoading(false);
+              setError('ছবিটি লোড করতে ব্যর্থ হয়েছে।');
+            }}
+          />
+        )}
       </div>
     );
   }
