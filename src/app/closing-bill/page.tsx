@@ -12,7 +12,9 @@ import {
   Eye,
   ChevronDown,
   ChevronUp,
-  X
+  X,
+  Filter,
+  Search
 } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 
@@ -111,6 +113,11 @@ export default function ClosingBillPage() {
 
   const [records, setRecords] = useState<ClosingRecord[]>([]);
   const [savedBill, setSavedBill] = useState<SavedBill | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterCell, setFilterCell] = useState('ALL');
+  const [filterType, setFilterType] = useState('ALL');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -338,7 +345,26 @@ export default function ClosingBillPage() {
   };
 
   const primaryCellId = isAdmin ? (activeCellId || null) : resolvedPrimaryCellId;
-  const activeRecords = getFilteredRecordsForUser(primaryCellId);
+  const userBaseRecords = getFilteredRecordsForUser(primaryCellId);
+
+  // Apply Search Query & Advanced Filters to activeRecords
+  const activeRecords = userBaseRecords.filter(r => {
+    // 1. Search Query Match
+    const matchesSearch = searchQuery === '' || 
+      r.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (r.bankId || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+    // 2. Cell Filter Match
+    const matchesCell = filterCell === 'ALL' || r.cellId.toString() === filterCell || (filterCell === '0' && r.isExecutive);
+
+    // 3. Type Filter Match
+    const matchesType = filterType === 'ALL' || 
+      (filterType === 'officer' && !r.isExecutive) || 
+      (filterType === 'executive' && r.isExecutive);
+
+    return matchesSearch && matchesCell && matchesType;
+  });
 
   const totalEmployeesCount = activeRecords.length;
   const totalClaimAll = activeRecords.reduce((sum, r) => sum + r.totalBill, 0);
@@ -356,7 +382,7 @@ export default function ClosingBillPage() {
         body: JSON.stringify({
           month: `closing-${selectedMonth}`,
           workingDays: 1,
-          records: isAdmin ? records : activeRecords // Send only activeRecords for coordinators
+          records: isAdmin ? records : userBaseRecords // Send only complete cell records for coordinators
         })
       });
       const data = await res.json();
@@ -539,6 +565,78 @@ export default function ClosingBillPage() {
 
             {/* Cell Selection removed under governance rules */}
           </div>
+        </div>
+
+        {/* Search & Filters */}
+        <div className="glass-card p-6 rounded-2xl space-y-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            {/* Search Bar */}
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                placeholder="কর্মকর্তার নাম, পদবী বা ব্যাংক আইডি দিয়ে খুঁজুন..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
+              />
+            </div>
+            
+            {/* Toggle Panel Button */}
+            <button
+              type="button"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={`w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                showAdvancedFilters || filterCell !== 'ALL' || filterType !== 'ALL'
+                  ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400 font-bold'
+                  : 'bg-white/40 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 text-slate-655 dark:text-slate-350'
+              }`}
+            >
+              <Filter size={14} />
+              <span>ফিল্টারসমূহ</span>
+              {(filterCell !== 'ALL' || filterType !== 'ALL') && (
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
+              )}
+            </button>
+          </div>
+
+          {/* Advanced Filter Options Panel */}
+          {showAdvancedFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 animate-fadeIn">
+              
+              {/* Cell Filter */}
+              {isAdmin && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">শাখা/সেল</label>
+                  <select
+                    value={filterCell}
+                    onChange={(e) => setFilterCell(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                  >
+                    <option value="ALL">সকল সেল (All)</option>
+                    <option value="0">নির্বাহী প্যানেল (Executives)</option>
+                    {cells.map(c => (
+                      <option key={c.id} value={c.id.toString()}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Type Filter */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ধরণ</label>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                >
+                  <option value="ALL">সবাই (All)</option>
+                  <option value="officer">কর্মকর্তা (Cell Officers)</option>
+                  <option value="executive">নির্বাহী (Executives)</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Alert Notifications */}

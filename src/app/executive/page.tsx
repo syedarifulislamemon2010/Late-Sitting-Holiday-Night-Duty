@@ -13,7 +13,8 @@ import {
   Eye,
   Printer,
   Loader2,
-  X
+  X,
+  Filter
 } from 'lucide-react';
 
 interface Executive {
@@ -75,6 +76,11 @@ export default function ExecutivesPage() {
   const [executives, setExecutives] = useState<Executive[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterDesignation, setFilterDesignation] = useState('ALL');
+  const [filterPhoneStatus, setFilterPhoneStatus] = useState('ALL');
+  const [filterBankIdStatus, setFilterBankIdStatus] = useState('ALL');
+  const [filterFileNoStatus, setFilterFileNoStatus] = useState('ALL');
   
   // Printing states
   const [generating, setGenerating] = useState(false);
@@ -569,8 +575,22 @@ export default function ExecutivesPage() {
 
   const filteredExecutives = executives.filter(exec => {
     const matchesSearch = exec.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          exec.designation.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+                          exec.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (exec.bankId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (exec.fileNo || '').toLowerCase().includes(searchQuery.toLowerCase());
+                          
+    const matchesDesignation = filterDesignation === 'ALL' || exec.designation === filterDesignation;
+    const matchesPhone = filterPhoneStatus === 'ALL' || 
+      (filterPhoneStatus === 'has_phone' && exec.phone && exec.phone.trim().length > 0) ||
+      (filterPhoneStatus === 'no_phone' && (!exec.phone || exec.phone.trim().length === 0));
+    const matchesBankId = filterBankIdStatus === 'ALL' || 
+      (filterBankIdStatus === 'has_bank_id' && exec.bankId && exec.bankId.trim().length > 0) ||
+      (filterBankIdStatus === 'no_bank_id' && (!exec.bankId || exec.bankId.trim().length === 0));
+    const matchesFileNo = filterFileNoStatus === 'ALL' || 
+      (filterFileNoStatus === 'has_file_no' && exec.fileNo && exec.fileNo.trim().length > 0) ||
+      (filterFileNoStatus === 'no_file_no' && (!exec.fileNo || exec.fileNo.trim().length === 0));
+
+    return matchesSearch && matchesDesignation && matchesPhone && matchesBankId && matchesFileNo;
   }).sort((a, b) => {
     const prioA = desigPriority[a.designation] || 99;
     const prioB = desigPriority[b.designation] || 99;
@@ -621,6 +641,22 @@ export default function ExecutivesPage() {
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
+              {/* Advanced Filter Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                  showAdvancedFilters || filterDesignation !== 'ALL' || filterPhoneStatus !== 'ALL' || filterBankIdStatus !== 'ALL' || filterFileNoStatus !== 'ALL'
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400 font-bold'
+                    : 'bg-white/40 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-350'
+                }`}
+              >
+                <Filter size={14} />
+                <span>ফিল্টারসমূহ</span>
+                {(filterDesignation !== 'ALL' || filterPhoneStatus !== 'ALL' || filterBankIdStatus !== 'ALL' || filterFileNoStatus !== 'ALL') && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
+                )}
+              </button>
             </div>
 
             <div className="flex gap-2">
@@ -694,6 +730,64 @@ export default function ExecutivesPage() {
               )}
             </div>
           </div>
+
+          {/* Advanced Filters Panel */}
+          {showAdvancedFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 animate-fadeIn">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">পদবী (Designation)</label>
+                <select
+                  value={filterDesignation}
+                  onChange={(e) => setFilterDesignation(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-755 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                >
+                  <option value="ALL">সকল পদবী (All)</option>
+                  {STRICT_DESIGNATIONS.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মোবাইল নম্বর</label>
+                <select
+                  value={filterPhoneStatus}
+                  onChange={(e) => setFilterPhoneStatus(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-755 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                >
+                  <option value="ALL">সবাই (All)</option>
+                  <option value="has_phone">মোবাইল নম্বর আছে</option>
+                  <option value="no_phone">মোবাইল নম্বর নেই</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ব্যাংক আইডি</label>
+                <select
+                  value={filterBankIdStatus}
+                  onChange={(e) => setFilterBankIdStatus(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-855 bg-white dark:bg-slate-955 text-xs font-semibold text-slate-755 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                >
+                  <option value="ALL">সবাই (All)</option>
+                  <option value="has_bank_id">ব্যাংক আইডি আছে</option>
+                  <option value="no_bank_id">ব্যাংক আইডি নেই</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">নথি নম্বর</label>
+                <select
+                  value={filterFileNoStatus}
+                  onChange={(e) => setFilterFileNoStatus(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-755 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                >
+                  <option value="ALL">সবাই (All)</option>
+                  <option value="has_file_no">নথি নম্বর আছে</option>
+                  <option value="no_file_no">নথি নম্বর নেই</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           {/* Executives Grid */}
           {filteredExecutives.length > 0 ? (
