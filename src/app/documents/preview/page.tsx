@@ -222,8 +222,10 @@ function PreviewContent() {
             }
             img {
               box-shadow: none;
-              max-width: 100%;
-              max-height: 100vh;
+              max-width: 100% !important;
+              max-height: 95vh !important;
+              width: auto !important;
+              height: auto !important;
               display: block;
               margin: 0 auto;
             }
@@ -293,8 +295,12 @@ function PreviewContent() {
             display: block;
           }
           img.pdf-page-img {
-            width: 100% !important;
+            max-width: 100% !important;
+            max-height: 95vh !important;
+            width: auto !important;
             height: auto !important;
+            display: block;
+            margin: 0 auto;
           }
         }
       `}</style>
