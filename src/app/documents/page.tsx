@@ -493,26 +493,75 @@ export default function DocumentsPage() {
           <head>
             <title>${name} - প্রিন্ট প্রিভিউ</title>
             <style>
-              body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f4f4f5; }
-              iframe { width: 100%; height: 100%; border: none; }
+              body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5; }
+              #header {
+                height: 55px;
+                background: #ffffff;
+                border-bottom: 1px solid #e4e4e7;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 24px;
+                box-sizing: border-box;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+              }
+              #title {
+                font-size: 14px;
+                font-weight: 700;
+                color: #18181b;
+              }
+              #printBtn {
+                padding: 9px 20px;
+                background: #4f46e5;
+                color: #ffffff;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: 700;
+                transition: all 0.2s;
+                box-shadow: 0 2px 4px rgba(79, 70, 229, 0.15);
+              }
+              #printBtn:hover {
+                background: #4338ca;
+                box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+              }
+              #container {
+                height: calc(100% - 55px);
+                width: 100%;
+                background: #525659;
+              }
+              iframe {
+                width: 100%;
+                height: 100%;
+                border: none;
+              }
             </style>
           </head>
           <body>
-            <iframe id="pdfFrame" src="${filePath}"></iframe>
+            <div id="header">
+              <div id="title">${name} (পিডিএফ প্রিন্ট প্রিভিউ)</div>
+              <button id="printBtn" onclick="printPDF()">প্রিন্ট করুন</button>
+            </div>
+            <div id="container">
+              <iframe id="pdfFrame" src="${filePath}"></iframe>
+            </div>
             <script>
-              const frame = document.getElementById('pdfFrame');
-              function triggerPrint() {
+              function printPDF() {
+                const frame = document.getElementById('pdfFrame');
                 try {
                   frame.contentWindow.focus();
                   frame.contentWindow.print();
                 } catch (e) {
-                  console.error("Failed to print iframe natively, falling back to window.print", e);
+                  console.error("Iframe native print failed, falling back to window.print()", e);
                   window.print();
                 }
               }
-              frame.onload = triggerPrint;
-              // Fallback for some browsers where onload might not trigger for PDF iframe
-              setTimeout(triggerPrint, 1000);
+              
+              // Automatically trigger print preview after a short delay to allow PDF render engine initialization
+              window.onload = function() {
+                setTimeout(printPDF, 1500);
+              };
             </script>
           </body>
         </html>
@@ -1929,18 +1978,18 @@ export default function DocumentsPage() {
                             {doc.fileType.toLowerCase() === 'pdf' ? (
                               <button 
                                 onClick={() => handleViewPDF(doc.filePath, doc.name)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-bold transition-all cursor-pointer border-0"
-                                title="ভিউ করুন"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-bold transition-all cursor-pointer border border-indigo-100/50 dark:border-indigo-950/30"
+                                title="প্রিন্ট প্রিভিউ"
                               >
-                                <Eye size={12} />
-                                <span>দেখুন</span>
+                                <Printer size={12} />
+                                <span>প্রিন্ট প্রিভিউ</span>
                               </button>
                             ) : (
                               <a 
                                 href={doc.filePath} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-bold transition-all"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-bold transition-all border border-indigo-100/50"
                                 title="ভিউ করুন"
                               >
                                 <Eye size={12} />
@@ -1951,10 +2000,11 @@ export default function DocumentsPage() {
                             <a 
                               href={doc.filePath} 
                               download={`${doc.name}.${doc.fileType}`}
-                              className="flex items-center justify-center p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 rounded-lg transition-all"
+                              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-xl text-[10px] font-bold transition-all border border-slate-200/50 dark:border-slate-700"
                               title="ডাউনলোড করুন"
                             >
                               <FileDown size={12} />
+                              <span>ডাউনলোড</span>
                             </a>
 
                             {(currentUser?.role === 'ADMIN' || doc.uploadedBy === currentUser?.username) && (
