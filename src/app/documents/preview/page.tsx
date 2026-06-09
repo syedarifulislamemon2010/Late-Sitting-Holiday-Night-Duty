@@ -211,13 +211,21 @@ function PreviewContent() {
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
           }
           @media print {
+            @page {
+              size: A4 landscape;
+              margin: 0;
+            }
             body {
               background-color: #ffffff;
+              margin: 0;
+              padding: 0;
             }
             img {
               box-shadow: none;
               max-width: 100%;
-              max-height: 100%;
+              max-height: 100vh;
+              display: block;
+              margin: 0 auto;
             }
           }
         `}</style>
@@ -266,6 +274,10 @@ function PreviewContent() {
           height: auto;
         }
         @media print {
+          @page {
+            size: A4 landscape;
+            margin: 0;
+          }
           body {
             background-color: #ffffff;
             margin: 0;
