@@ -203,6 +203,8 @@ export const manualDocuments = pgTable('ManualDocument', {
   filePath: text('filePath').notNull(),
   fileSize: integer('fileSize').notNull(),
   fileType: text('fileType').notNull(), // 'pdf', 'docx', 'xlsx', 'png', etc.
+  uploadedBy: text('uploadedBy'),
+  isVisibleToUsers: boolean('isVisibleToUsers').default(false).notNull(),
   uploadedAt: timestamp('uploadedAt', { mode: 'date' }).defaultNow().notNull(),
 });
 

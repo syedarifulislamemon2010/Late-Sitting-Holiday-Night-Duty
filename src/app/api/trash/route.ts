@@ -257,7 +257,9 @@ export async function POST(request: Request) {
                 filePath: parsed.filePath,
                 fileSize: parsed.fileSize,
                 fileType: parsed.fileType,
-                uploadedAt: new Date(parsed.uploadedAt)
+                uploadedAt: new Date(parsed.uploadedAt),
+                uploadedBy: parsed.uploadedBy || null,
+                isVisibleToUsers: parsed.isVisibleToUsers ?? false,
               });
               break;
             }

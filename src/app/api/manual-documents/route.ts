@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { manualDocuments, trash } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, or, and } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import fs from 'fs';
 import path from 'path';
@@ -11,11 +11,24 @@ import path from 'path';
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (!user || user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইল দেখতে পারবেন।' }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
 
-    const docs = await db.select().from(manualDocuments).orderBy(desc(manualDocuments.uploadedAt));
+    let docs;
+    if (user.role === 'ADMIN') {
+      docs = await db.select().from(manualDocuments).orderBy(desc(manualDocuments.uploadedAt));
+    } else {
+      docs = await db.select()
+        .from(manualDocuments)
+        .where(
+          or(
+            eq(manualDocuments.uploadedBy, user.username),
+            eq(manualDocuments.isVisibleToUsers, true)
+          )
+        )
+        .orderBy(desc(manualDocuments.uploadedAt));
+    }
     return NextResponse.json(docs);
   } catch (error) {
     console.error('Error fetching manual documents:', error);
@@ -27,13 +40,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইল আপলোড করতে পারবেন।' }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const name = formData.get('name') as string | null;
+    const isVisibleToUsersVal = user.role === 'ADMIN' ? (formData.get('isVisibleToUsers') === 'true') : false;
 
     if (!file) {
       return NextResponse.json({ error: 'file_required', message: 'অনুগ্রহ করে ফাইল নির্বাচন করুন।' }, { status: 400 });
@@ -74,6 +88,8 @@ export async function POST(request: Request) {
       filePath: relativePath,
       fileSize: file.size,
       fileType: fileExt.substring(1), // e.g. 'docx', 'pdf'
+      uploadedBy: user.username,
+      isVisibleToUsers: isVisibleToUsersVal,
     }).returning();
     const doc = docList[0];
 
@@ -97,18 +113,19 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT: Rename manual document name
+// PUT: Rename manual document or toggle visibility
 export async function PUT(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইলের নাম পরিবর্তন করতে পারবেন।' }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
 
-    const { id, name } = await request.json();
+    const body = await request.json();
+    const { id, name, isVisibleToUsers } = body;
 
-    if (!id || !name) {
-      return NextResponse.json({ error: 'missing_parameters', message: 'আইডি এবং নতুন নাম আবশ্যক।' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'missing_parameters', message: 'আইডি আবশ্যক।' }, { status: 400 });
     }
 
     const docId = Number(id);
@@ -119,11 +136,30 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'not_found', message: 'ফাইলটি খুঁজে পাওয়া যায়নি।' }, { status: 404 });
     }
 
-    const oldName = doc.name;
+    // Check permissions: Admin can modify any file. User can only modify their own.
+    if (user.role !== 'ADMIN' && doc.uploadedBy !== user.username) {
+      return NextResponse.json({ error: 'forbidden', message: 'এই ফাইলটি পরিবর্তন করার অনুমতি আপনার নেই।' }, { status: 403 });
+    }
 
-    // Update name
+    const updateFields: any = {};
+    let details = '';
+
+    if (name !== undefined) {
+      updateFields.name = name;
+      details += `ম্যানুয়াল ফাইলের নাম পরিবর্তন করা হয়েছে: "${doc.name}" থেকে "${name}"। `;
+    }
+
+    if (isVisibleToUsers !== undefined && user.role === 'ADMIN') {
+      updateFields.isVisibleToUsers = isVisibleToUsers;
+      details += `ম্যানুয়াল ফাইলের ইউজার দেখার পারমিশন পরিবর্তন করা হয়েছে: ${isVisibleToUsers ? 'দৃশ্যমান' : 'অদৃশ্যমান'}। `;
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return NextResponse.json({ error: 'missing_parameters', message: 'কোনো পরিবর্তনযোগ্য প্যারামিটার দেওয়া হয়নি।' }, { status: 400 });
+    }
+
     await db.update(manualDocuments)
-      .set({ name })
+      .set(updateFields)
       .where(eq(manualDocuments.id, docId));
 
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
@@ -136,12 +172,12 @@ export async function PUT(request: Request) {
       entityId: String(docId),
       ipAddress,
       userAgent,
-      details: `${user.name} (@${user.username}) ম্যানুয়াল ফাইলের নাম পরিবর্তন করেছেন: "${oldName}" থেকে "${name}"।`
+      details: `${user.name} (@${user.username}) ${details}`
     });
 
-    return NextResponse.json({ success: true, message: 'Document renamed successfully' });
+    return NextResponse.json({ success: true, message: 'Document updated successfully' });
   } catch (error) {
-    console.error('Error renaming manual document:', error);
+    console.error('Error updating manual document:', error);
     return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
@@ -150,8 +186,8 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইল মুছে ফেলতে পারবেন।' }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
 
     const { id } = await request.json();
@@ -166,6 +202,11 @@ export async function DELETE(request: Request) {
 
     if (!doc) {
       return NextResponse.json({ error: 'not_found', message: 'ফাইলটি খুঁজে পাওয়া যায়নি।' }, { status: 404 });
+    }
+
+    // Check permissions: Admin can delete any file. User can only delete their own.
+    if (user.role !== 'ADMIN' && doc.uploadedBy !== user.username) {
+      return NextResponse.json({ error: 'forbidden', message: 'এই ফাইলটি ডিলিট করার অনুমতি আপনার নেই।' }, { status: 403 });
     }
 
     // Save metadata to Trash (keeping physical file intact for 30 days retention / restore support)

@@ -115,6 +115,8 @@ export default function DocumentsPage() {
     filePath: string;
     fileSize: number;
     fileType: string;
+    uploadedBy?: string | null;
+    isVisibleToUsers?: boolean;
     uploadedAt: string;
   }
   const [manualDocs, setManualDocs] = useState<ManualDoc[]>([]);
@@ -133,6 +135,7 @@ export default function DocumentsPage() {
   const [manualCustomName, setManualCustomName] = useState('');
   const [manualUploading, setManualUploading] = useState(false);
   const [manualDragActive, setManualDragActive] = useState(false);
+  const [manualIsVisibleToUsers, setManualIsVisibleToUsers] = useState(false);
   const manualFileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit / Rename Modal state for manual documents
@@ -300,9 +303,6 @@ export default function DocumentsPage() {
         }
         fetchDocuments();
       } else if (activeTab === 'manual-docs') {
-        if (currentUser && currentUser.role === 'USER') {
-          return;
-        }
         fetchManualDocs();
       } else {
         fetchOfficeOrders();
@@ -375,6 +375,9 @@ export default function DocumentsPage() {
       const formData = new FormData();
       formData.append('file', manualSelectedFile);
       formData.append('name', manualCustomName.trim());
+      if (currentUser?.role === 'ADMIN') {
+        formData.append('isVisibleToUsers', String(manualIsVisibleToUsers));
+      }
 
       const res = await fetch('/api/manual-documents', {
         method: 'POST',
@@ -387,6 +390,7 @@ export default function DocumentsPage() {
         setSuccessMsg('ফাইলটি সফলভাবে আপলোড এবং সংরক্ষণ করা হয়েছে!');
         setManualSelectedFile(null);
         setManualCustomName('');
+        setManualIsVisibleToUsers(false);
         if (manualFileInputRef.current) manualFileInputRef.current.value = '';
         fetchManualDocs();
       } else {
@@ -450,6 +454,30 @@ export default function DocumentsPage() {
       } else {
         const data = await res.json();
         setError(data.message || 'ফাইলের নাম পরিবর্তন করতে ব্যর্থ হয়েছে।');
+      }
+    } catch {
+      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    }
+  };
+
+  // Toggle Visibility for Admin Uploaded Documents
+  const handleToggleVisibility = async (id: number, isVisibleToUsers: boolean) => {
+    setError('');
+    setSuccessMsg('');
+
+    try {
+      const res = await fetch('/api/manual-documents', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, isVisibleToUsers }),
+      });
+
+      if (res.ok) {
+        setSuccessMsg(isVisibleToUsers ? 'ফাইলটি সফলভাবে সকলের জন্য উন্মুক্ত করা হয়েছে।' : 'ফাইলটির দেখার অনুমতি শুধুমাত্র নিজের মধ্যে সীমাবদ্ধ করা হয়েছে।');
+        fetchManualDocs();
+      } else {
+        const data = await res.json();
+        setError(data.message || 'দৃশ্যমানতা পরিবর্তন করতে ব্যর্থ হয়েছে।');
       }
     } catch {
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
@@ -1135,37 +1163,35 @@ export default function DocumentsPage() {
       {/* Tabs */}
       <div className="flex border-b border-slate-200 dark:border-slate-800">
         {currentUser?.role !== 'USER' && (
-          <>
-            <button
-              onClick={() => {
-                setActiveTab('files');
-                setError('');
-                setSuccessMsg('');
-              }}
-              className={`px-6 py-3.5 text-sm font-semibold border-b-2 transition-all relative ${
-                activeTab === 'files'
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
-              }`}
-            >
-              ম্যানুয়াল ফাইল আর্কাইভ
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('manual-docs');
-                setError('');
-                setSuccessMsg('');
-              }}
-              className={`px-6 py-3.5 text-sm font-semibold border-b-2 transition-all relative ${
-                activeTab === 'manual-docs'
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
-              }`}
-            >
-              ডকুমেন্ট স্টোরেজ
-            </button>
-          </>
+          <button
+            onClick={() => {
+              setActiveTab('files');
+              setError('');
+              setSuccessMsg('');
+            }}
+            className={`px-6 py-3.5 text-sm font-semibold border-b-2 transition-all relative ${
+              activeTab === 'files'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
+            }`}
+          >
+            ম্যানুয়াল ফাইল আর্কাইভ
+          </button>
         )}
+        <button
+          onClick={() => {
+            setActiveTab('manual-docs');
+            setError('');
+            setSuccessMsg('');
+          }}
+          className={`px-6 py-3.5 text-sm font-semibold border-b-2 transition-all relative ${
+            activeTab === 'manual-docs'
+              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
+          }`}
+        >
+          ডকুমেন্ট স্টোরেজ
+        </button>
         <button
           onClick={() => {
             setActiveTab('orders');
@@ -1629,6 +1655,21 @@ export default function DocumentsPage() {
                   </div>
                 )}
 
+                {currentUser?.role === 'ADMIN' && manualSelectedFile && (
+                  <div className="flex items-center gap-2 py-1 bg-slate-50 dark:bg-slate-900/40 px-3.5 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800 animate-fadeIn">
+                    <input
+                      id="manualIsVisibleToUsers"
+                      type="checkbox"
+                      checked={manualIsVisibleToUsers}
+                      onChange={(e) => setManualIsVisibleToUsers(e.target.checked)}
+                      className="rounded border-slate-350 text-indigo-650 focus:ring-indigo-500 cursor-pointer h-4 w-4"
+                    />
+                    <label htmlFor="manualIsVisibleToUsers" className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                      অন্যান্য ইউজারদের দেখার অনুমতি দিন
+                    </label>
+                  </div>
+                )}
+
                 {manualSelectedFile && (
                   <div className="flex gap-2.5 pt-2">
                     <button
@@ -1691,7 +1732,7 @@ export default function DocumentsPage() {
                         className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                           showManualFilters || filterFileType !== 'ALL' || filterDateRange !== 'ALL' || filterSize !== 'ALL'
                             ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400 font-bold'
-                            : 'bg-white/40 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-300'
+                            : 'bg-white/40 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 text-slate-655 dark:text-slate-300'
                         }`}
                       >
                         <Filter size={14} />
@@ -1795,7 +1836,7 @@ export default function DocumentsPage() {
                           <div className="w-10 h-10 rounded-xl bg-indigo-500/5 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0 border border-slate-100 dark:border-slate-800">
                             {getFileIcon(doc.fileType)}
                           </div>
-                          <div className="min-w-0 space-y-1">
+                          <div className="min-w-0 space-y-1 flex-1">
                             <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-snug group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors truncate" title={doc.name}>
                               {doc.name}
                             </h4>
@@ -1809,6 +1850,39 @@ export default function DocumentsPage() {
                                 <HardDrive size={11} />
                                 {formatFileSize(doc.fileSize)} ({doc.fileType.toUpperCase()})
                               </span>
+                              {doc.uploadedBy && (
+                                <span className="flex items-center gap-1">
+                                  <span className="font-bold">আপলোডকারী:</span>
+                                  <span className="bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md text-[9px] font-sans">
+                                    @{doc.uploadedBy}
+                                  </span>
+                                </span>
+                              )}
+                              
+                              {/* Visibility status */}
+                              {currentUser?.role === 'ADMIN' && (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="font-bold text-slate-400">দৃশ্যমানতা:</span>
+                                  <button
+                                    onClick={() => handleToggleVisibility(doc.id, !doc.isVisibleToUsers)}
+                                    className={`px-2 py-0.5 rounded-full text-[9px] font-bold transition-all border cursor-pointer ${
+                                      doc.isVisibleToUsers
+                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30'
+                                        : 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800'
+                                    }`}
+                                    title="দৃশ্যমানতা পরিবর্তন করতে ক্লিক করুন"
+                                  >
+                                    {doc.isVisibleToUsers ? 'সকলের জন্য উন্মুক্ত' : 'ব্যক্তিগত'}
+                                  </button>
+                                </div>
+                              )}
+                              {currentUser?.role !== 'ADMIN' && doc.isVisibleToUsers && (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 px-2 py-0.5 rounded-full text-[9px] font-bold">
+                                    অ্যাডমিন কর্তৃক শেয়ারকৃত
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1835,7 +1909,7 @@ export default function DocumentsPage() {
                               <FileDown size={12} />
                             </a>
 
-                            {currentUser?.role !== 'USER' && (
+                            {(currentUser?.role === 'ADMIN' || doc.uploadedBy === currentUser?.username) && (
                               <button 
                                 onClick={() => {
                                   setEditingManualDoc(doc);
@@ -1850,7 +1924,7 @@ export default function DocumentsPage() {
                             )}
                           </div>
 
-                          {currentUser?.role !== 'USER' && (
+                          {(currentUser?.role === 'ADMIN' || doc.uploadedBy === currentUser?.username) && (
                             <button 
                               onClick={() => handleDeleteManualDoc(doc.id)}
                               className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all"
