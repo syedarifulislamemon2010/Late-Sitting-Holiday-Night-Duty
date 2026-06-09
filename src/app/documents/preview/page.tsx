@@ -40,7 +40,11 @@ function PreviewContent() {
         const pdfjsLib = window.pdfjsLib;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        const loadingTask = pdfjsLib.getDocument(file);
+        const loadingTask = pdfjsLib.getDocument({
+          url: file,
+          disableRange: true,
+          disableStream: true
+        });
         const pdf = await loadingTask.promise;
 
         const renderedPages: string[] = [];
