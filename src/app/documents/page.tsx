@@ -484,6 +484,43 @@ export default function DocumentsPage() {
     }
   };
 
+  // View PDF in Print Preview
+  const handleViewPDF = (filePath: string, name: string) => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>${name} - প্রিন্ট প্রিভিউ</title>
+            <style>
+              body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f4f4f5; }
+              iframe { width: 100%; height: 100%; border: none; }
+            </style>
+          </head>
+          <body>
+            <iframe id="pdfFrame" src="${filePath}"></iframe>
+            <script>
+              const frame = document.getElementById('pdfFrame');
+              function triggerPrint() {
+                try {
+                  frame.contentWindow.focus();
+                  frame.contentWindow.print();
+                } catch (e) {
+                  console.error("Failed to print iframe natively, falling back to window.print", e);
+                  window.print();
+                }
+              }
+              frame.onload = triggerPrint;
+              // Fallback for some browsers where onload might not trigger for PDF iframe
+              setTimeout(triggerPrint, 1000);
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
   // Resolve File Icon
   const getFileIcon = (fileType: string) => {
     const type = fileType.toLowerCase();
@@ -1889,16 +1926,27 @@ export default function DocumentsPage() {
 
                         <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-3">
                           <div className="flex items-center gap-1.5">
-                            <a 
-                              href={doc.filePath} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-bold transition-all"
-                              title="ভিউ করুন"
-                            >
-                              <Eye size={12} />
-                              <span>দেখুন</span>
-                            </a>
+                            {doc.fileType.toLowerCase() === 'pdf' ? (
+                              <button 
+                                onClick={() => handleViewPDF(doc.filePath, doc.name)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-bold transition-all cursor-pointer border-0"
+                                title="ভিউ করুন"
+                              >
+                                <Eye size={12} />
+                                <span>দেখুন</span>
+                              </button>
+                            ) : (
+                              <a 
+                                href={doc.filePath} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-bold transition-all"
+                                title="ভিউ করুন"
+                              >
+                                <Eye size={12} />
+                                <span>দেখুন</span>
+                              </a>
+                            )}
                             
                             <a 
                               href={doc.filePath} 
