@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 function PreviewContent() {
   const searchParams = useSearchParams();
   const file = searchParams.get('file');
+  const id = searchParams.get('id');
   const name = searchParams.get('name') || 'নথি';
   const type = searchParams.get('type') || '';
 
@@ -15,7 +16,9 @@ function PreviewContent() {
   const pdfjsLoaded = useRef(false);
 
   useEffect(() => {
-    if (!file) {
+    const loadTarget = id ? `/api/manual-documents/raw?id=${id}` : file;
+
+    if (!loadTarget) {
       setError('ফাইলের পাথ পাওয়া যায়নি।');
       setLoading(false);
       return;
@@ -41,7 +44,7 @@ function PreviewContent() {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         const loadingTask = pdfjsLib.getDocument({
-          url: file,
+          url: loadTarget,
           disableRange: true,
           disableStream: true
         });
@@ -143,6 +146,7 @@ function PreviewContent() {
   // Render Image directly
   const cleanType = type.trim().toLowerCase().replace(/^\./, '');
   if (cleanType !== 'pdf') {
+    const imgTarget = id ? `/api/manual-documents/raw?id=${id}` : (file || '');
     return (
       <div className="image-preview-container">
         <style>{`
@@ -172,7 +176,7 @@ function PreviewContent() {
           }
         `}</style>
         <img
-          src={file || ''}
+          src={imgTarget}
           alt={name}
           onLoad={() => {
             setLoading(false);

@@ -485,9 +485,9 @@ export default function DocumentsPage() {
   };
 
   // Render document in a new tab for Print Preview
-  const handlePrintPreview = (filePath: string, name: string, fileType: string) => {
+  const handlePrintPreview = (id: number, filePath: string, name: string, fileType: string) => {
     const cleanType = fileType.trim().toLowerCase().replace(/^\./, '');
-    const previewUrl = `/documents/preview?file=${encodeURIComponent(filePath)}&name=${encodeURIComponent(name)}&type=${cleanType}`;
+    const previewUrl = `/documents/preview?id=${id}&file=${encodeURIComponent(filePath)}&name=${encodeURIComponent(name)}&type=${cleanType}`;
     window.open(previewUrl, '_blank');
   };
 
@@ -1899,7 +1899,7 @@ export default function DocumentsPage() {
                             {['pdf', 'jpg', 'jpeg', 'png', 'gif'].includes(doc.fileType.trim().toLowerCase().replace(/^\./, '')) ? (
                               <button 
                                 type="button"
-                                onClick={() => handlePrintPreview(doc.filePath, doc.name, doc.fileType)}
+                                onClick={() => handlePrintPreview(doc.id, doc.filePath, doc.name, doc.fileType)}
                                 className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-bold transition-all cursor-pointer border border-indigo-100/50 dark:border-indigo-950/30"
                                 title="প্রিন্ট প্রিভিউ"
                               >
