@@ -484,90 +484,9 @@ export default function DocumentsPage() {
     }
   };
 
-  // View PDF in Print Preview
+  // View PDF in Print Preview (opens directly to leverage native browser PDF rendering and print controls)
   const handleViewPDF = (filePath: string, name: string) => {
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>${name} - প্রিন্ট প্রিভিউ</title>
-            <style>
-              body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5; }
-              #header {
-                height: 55px;
-                background: #ffffff;
-                border-bottom: 1px solid #e4e4e7;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 0 24px;
-                box-sizing: border-box;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-              }
-              #title {
-                font-size: 14px;
-                font-weight: 700;
-                color: #18181b;
-              }
-              #printBtn {
-                padding: 9px 20px;
-                background: #4f46e5;
-                color: #ffffff;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 12px;
-                font-weight: 700;
-                transition: all 0.2s;
-                box-shadow: 0 2px 4px rgba(79, 70, 229, 0.15);
-              }
-              #printBtn:hover {
-                background: #4338ca;
-                box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
-              }
-              #container {
-                height: calc(100% - 55px);
-                width: 100%;
-                background: #525659;
-              }
-              iframe {
-                width: 100%;
-                height: 100%;
-                border: none;
-              }
-            </style>
-          </head>
-          <body>
-            <div id="header">
-              <div id="title">${name} (পিডিএফ প্রিন্ট প্রিভিউ)</div>
-              <button id="printBtn" onclick="printPDF()">প্রিন্ট করুন</button>
-            </div>
-            <div id="container">
-              <iframe id="pdfFrame" src="${filePath}"></iframe>
-            </div>
-            <script>
-              function printPDF() {
-                const frame = document.getElementById('pdfFrame');
-                try {
-                  frame.contentWindow.focus();
-                  frame.contentWindow.print();
-                } catch (e) {
-                  console.error("Iframe native print failed, falling back to window.print()", e);
-                  window.print();
-                }
-              }
-              
-              // Automatically trigger print preview after a short delay to allow PDF render engine initialization
-              window.onload = function() {
-                setTimeout(printPDF, 1500);
-              };
-            </script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-    }
+    window.open(filePath, '_blank');
   };
 
   // Resolve File Icon
