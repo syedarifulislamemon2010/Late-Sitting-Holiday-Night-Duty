@@ -944,7 +944,7 @@ export default function DocumentsPage() {
     if (!ref) return '';
     let clean = ref;
     if (clean.endsWith('/বিল')) {
-      clean = clean.slice(0, -5);
+      clean = clean.replace(/\/বিল$/, '');
     }
     const parts = clean.split('/');
     if (parts.length >= 3) {

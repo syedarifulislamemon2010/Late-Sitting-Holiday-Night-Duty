@@ -664,6 +664,17 @@ export default function LeaveGeneratorPage() {
   const isSingleDay = startDate && endDate && startDate === endDate;
   const displayDaysWord = isSingleDay ? getBanglaDayWord(1) : (leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '');
 
+  const appYear = applicationDate ? applicationDate.split('-')[0] : new Date().getFullYear().toString();
+
+  // Format delegate name and designation
+  const renderDelegateInfo = () => {
+    const cleanName = delegateName.replace(/^জনাব\s+/, '').trim();
+    if (cleanName.includes('কিবরিয়া') || cleanName.includes('কিবর')) {
+      return <span className="italic" style={{ fontStyle: 'italic' }}>জনাব জি.এস.কিবরিয়া, সিনিয়র অফিসার-আইটি</span>;
+    }
+    return <span>জনাব {cleanName}, {delegateDesignation}</span>;
+  };
+
   // Format stay location dynamic text
   const formatStayLocationText = () => {
     return selectedDistrict || leaveLocation;
@@ -1388,7 +1399,9 @@ export default function LeaveGeneratorPage() {
                     <table className="w-full text-center border-collapse border border-black">
                       <thead>
                         <tr className="border border-black font-bold text-center">
-                          <th colSpan={5} className="border border-black px-1.5 py-1 text-center bg-slate-50 text-xs">ছুটির বিবরণ</th>
+                          <th colSpan={5} className="border border-black px-1.5 py-1 text-center bg-slate-50 text-xs">
+                            {toBanglaDigits(appYear)} সালের ছুটির বিবরণ
+                          </th>
                         </tr>
                         <tr className="bg-slate-50 font-bold border-b border-black">
                           <th className="border border-black px-1.5 py-0.5 w-[12mm]">ক্র.নং</th>
@@ -1426,7 +1439,7 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 2. SUBJECT */}
-                <div style={{ marginTop: '0.55in', marginBottom: '0.55in' }}>
+                <div style={{ marginTop: '0.55in', marginBottom: '0.25in' }}>
                   <p className="text-black text-xs pb-0.5 w-fit bold-text">
                     {leaveDetails.actualDeducted > 0 || isSingleDay ? formatSubject() : 'বিষয়ঃ নৈমিত্তিক ছুটি মঞ্জুরির আবেদন।'}
                   </p>
@@ -1438,53 +1451,88 @@ export default function LeaveGeneratorPage() {
                   
                   {leaveType === 'POST_FACTO' ? (
                     <>
-                      <p className="text-black text-xs">
+                      <p className="text-black text-xs text-justify">
                         {isSingleDay ? (
-                          `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখে ০১ (এক) দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত ০১ (এক) দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।`
+                          <>
+                            যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত{' '}
+                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখে{' '}
+                            <strong>০১ (এক)</strong> দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত{' '}
+                            <strong>০১ (এক)</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।
+                          </>
                         ) : (
-                          `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে ${endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট ${displayDaysWord} দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত ${displayDaysWord} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।`
+                          <>
+                            যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত{' '}
+                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখ হতে{' '}
+                            <strong>{endDate ? `${toDisplayDateStr(endDate)} ইং` : ''}</strong> তারিখ পর্যন্ত মোট{' '}
+                            <strong>{displayDaysWord}</strong> দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত{' '}
+                            <strong>{displayDaysWord}</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।
+                          </>
                         )}
-                        {` উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব ${delegateName}, ${delegateDesignation} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করছেন।`}
+                        {' '}উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের{' '}
+                        {renderDelegateInfo()} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করছেন।
                       </p>
 
-                      <p className="text-black text-xs leading-relaxed">
-                        অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত {displayDaysWord} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
+                      <p className="text-black text-xs leading-relaxed text-justify">
+                        অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত{' '}
+                        <strong>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
                       </p>
                     </>
                   ) : leaveType === 'STATION_LEAVE' ? (
                     <>
-                      <p className="text-black text-xs">
+                      <p className="text-black text-xs text-justify">
                         {isSingleDay ? (
-                          `যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখে ০১ (এক) দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।`
+                          <>
+                            যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী{' '}
+                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখে{' '}
+                            <strong>০১ (এক)</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।
+                          </>
                         ) : (
-                          `যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে ${endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত ${displayDaysWord} দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।`
+                          <>
+                            যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী{' '}
+                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখ হতে{' '}
+                            <strong>{endDate ? `${toDisplayDateStr(endDate)} ইং` : ''}</strong> তারিখ পর্যন্ত{' '}
+                            <strong>{displayDaysWord}</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।
+                          </>
                         )}
                       </p>
 
-                      <p className="text-black text-xs leading-relaxed">
-                        উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন অত্র ডিপার্টমেন্টের জনাব {delegateName}, {delegateDesignation} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
+                      <p className="text-black text-xs leading-relaxed text-justify">
+                        উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন অত্র ডিপার্টমেন্টের{' '}
+                        {renderDelegateInfo()} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
                       </p>
 
-                      <p className="text-black text-xs leading-relaxed">
-                        অতএব, মহোদয় সমীপে আবেদন এই যে, আমার অনুকূলে উক্ত {displayDaysWord} দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরপূর্বক বাধিত করবেন।
+                      <p className="text-black text-xs leading-relaxed text-justify">
+                        অতএব, মহোদয় সমীপে আবেদন এই যে, আমার অনুকূলে উক্ত{' '}
+                        <strong>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরপূর্বক বাধিত করবেন।
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="text-black text-xs">
+                      <p className="text-black text-xs text-justify">
                         {isSingleDay ? (
-                          `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখে ০১ (এক) দিনের নৈমিত্তিক ছুটির প্রয়োজন।`
+                          <>
+                            যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী{' '}
+                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখে{' '}
+                            <strong>০১ (এক)</strong> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
+                          </>
                         ) : (
-                          `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী ${startDate ? `${toDisplayDateStr(startDate)} ইং` : ''} তারিখ হতে ${endDate ? `${toDisplayDateStr(endDate)} ইং` : ''} তারিখ পর্যন্ত মোট ${displayDaysWord} দিনের নৈমিত্তিক ছুটির প্রয়োজন।`
+                          <>
+                            যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী{' '}
+                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখ হতে{' '}
+                            <strong>{endDate ? `${toDisplayDateStr(endDate)} ইং` : ''}</strong> তারিখ পর্যন্ত মোট{' '}
+                            <strong>{displayDaysWord}</strong> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
+                          </>
                         )}
                       </p>
 
-                      <p className="text-black text-xs leading-relaxed">
-                        উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের জনাব {delegateName}, {delegateDesignation} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
+                      <p className="text-black text-xs leading-relaxed text-justify">
+                        উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের{' '}
+                        {renderDelegateInfo()} তার নিজ দায়িত্বের অতিরিক্ত হিসেবে আমার দায়িত্ব পালন করবেন।
                       </p>
 
-                      <p className="text-black text-xs leading-relaxed">
-                        অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত {displayDaysWord} দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
+                      <p className="text-black text-xs leading-relaxed text-justify">
+                        অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত{' '}
+                        <strong>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
                       </p>
                     </>
                   )}
@@ -1528,7 +1576,7 @@ export default function LeaveGeneratorPage() {
                   {/* Recommendation signatures */}
                   <div 
                     className="flex justify-between items-center text-xs text-black"
-                    style={{ paddingTop: '1.1in', paddingBottom: '0.55in' }}
+                    style={{ paddingTop: '0.5in', paddingBottom: '0.75in' }}
                   >
                     <div className="text-left leading-normal">
                       <span>সেল ইনচার্জ</span>
@@ -1540,16 +1588,16 @@ export default function LeaveGeneratorPage() {
                   </div>
 
                   {/* AGM/DGM/SPO routing lines */}
-                  <div className="text-left" style={{ paddingBottom: '0.55in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.75in' }}>
                     <span>এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
-                  <div className="text-left" style={{ paddingBottom: '0.55in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.75in' }}>
                     <span>ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
-                  <div className="text-left" style={{ paddingBottom: '0.55in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.75in' }}>
                     <span>এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
-                  <div className="text-left" style={{ paddingBottom: '0.55in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.75in' }}>
                     <span>এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                 </div>

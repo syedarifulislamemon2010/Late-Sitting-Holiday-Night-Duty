@@ -124,7 +124,7 @@ export class OfficeOrderService {
             const isHoliday = cat.includes('HOLIDAY');
             const isNight = cat.includes('NIGHT_SHIFT');
             const apyaonRate = isHoliday ? 250 : isNight ? 600 : 100;
-            const transportRate = cat.includes('LATE_SITTING') ? 150 : isNight ? 400 : isHoliday ? 250 : 0;
+            const transportRate = cat.includes('LATE_SITTING') ? 200 : isNight ? 400 : isHoliday ? 250 : 0;
 
             const groups = new Map<string, {
               employeeId: string;
@@ -392,7 +392,7 @@ export class OfficeOrderService {
     // Free the duties associated with this office order by setting orderRef to null, or restore to original order ref if deleting a bill
     if (order.orderRef) {
       if (order.orderRef.endsWith('/বিল')) {
-        const originalOrderRef = order.orderRef.slice(0, -5);
+        const originalOrderRef = order.orderRef.replace(/\/বিল$/, '');
         await db.update(duties)
           .set({ orderRef: originalOrderRef })
           .where(eq(duties.orderRef, order.orderRef));

@@ -130,7 +130,7 @@ export class DutyService {
 
       const orConditions = [eq(dutiesOrderRefHelper(), filters.orderRef)];
       if (isBill) {
-        orConditions.push(eq(dutiesOrderRefHelper(), filters.orderRef.slice(0, -5)));
+        orConditions.push(eq(dutiesOrderRefHelper(), filters.orderRef.replace(/\/বিল$/, '')));
       } else {
         orConditions.push(eq(dutiesOrderRefHelper(), filters.orderRef + '/বিল'));
       }

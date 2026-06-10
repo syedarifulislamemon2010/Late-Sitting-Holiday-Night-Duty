@@ -113,6 +113,16 @@ interface Duty {
   orderRef?: string | null;
 }
 
+const getNormalizedRef = (ref: string | null | undefined): string => {
+  if (!ref) return '';
+  let clean = ref.replace(/\/বিল$/, '').trim();
+  const parts = clean.split('/');
+  if (parts.length >= 3) {
+    parts.splice(2, 1); // remove payee name component
+  }
+  return parts.join('/').toLowerCase();
+};
+
 const toBanglaDigits = (num: number | string) => {
   const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   return num.toString().replace(/\d/g, d => bn[parseInt(d, 10)]);
@@ -247,6 +257,13 @@ export default function RosterPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [orderGenerated, setOrderGenerated] = useState(false);
   const [isArchived, setIsArchived] = useState(false);
+  const [isEditingArchive, setIsEditingArchive] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return !!params.get('edit_ref');
+    }
+    return false;
+  });
   const [officeOrders, setOfficeOrders] = useState<OfficeOrder[]>([]);
   const isInitializingArchiveRef = useRef(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -298,6 +315,19 @@ export default function RosterPage() {
   // Option 1 states
   const [opt1CellId, setOpt1CellId] = useState<string>('all');
   const [opt1Assignments, setOpt1Assignments] = useState<Record<number, string[]>>({});
+
+  // Unsaved Changes Tracking for Sidebar Warning
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hasUnsavedAssignments = (entryMode === 'EMPLOYEE_WISE' && Object.keys(opt1Assignments).length > 0) || (entryMode === 'DATE_WISE' && (assignmentForm.selectedEmployeeIds.length > 0 || assignmentForm.date));
+      (window as any).__unsavedChanges = isEditingArchive || !!editingDuty || !!hasUnsavedAssignments;
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        (window as any).__unsavedChanges = false;
+      }
+    };
+  }, [isEditingArchive, editingDuty, opt1Assignments, assignmentForm.selectedEmployeeIds, assignmentForm.date, entryMode]);
   const [opt1ViewedMonths, setOpt1ViewedMonths] = useState<Record<number, string>>({});
 
   const getEmployeeViewedMonth = (empId: number) => {
@@ -386,13 +416,6 @@ export default function RosterPage() {
 
   // Office Order (জিও) custom edit fields
   const [isPrintMode, setIsPrintMode] = useState(false);
-  const [isEditingArchive, setIsEditingArchive] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      return !!params.get('edit_ref');
-    }
-    return false;
-  });
 
   const [originalOrderRef, setOriginalOrderRef] = useState('');
   const [activePartIdx, setActivePartIdx] = useState(0);
@@ -659,11 +682,11 @@ export default function RosterPage() {
 
   const getGroupedDuties = useCallback(() => {
     const filtered = duties.filter(d => {
-      const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
       const matchesCategory = d.type === printCategory;
       if (isArchived && !isEditingArchive) {
-        return matchesCell && matchesCategory && d.orderRef === originalOrderRef;
+        return matchesCategory && getNormalizedRef(d.orderRef) === getNormalizedRef(originalOrderRef);
       }
+      const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
       return matchesCell && matchesCategory && !d.orderRef;
     });
 
@@ -1010,7 +1033,7 @@ export default function RosterPage() {
         console.log('Office order saved to archive successfully!');
         setIsArchived(true);
         
-        await updateAssociatedBill(orderRef);
+        await updateAssociatedBill(orderRef, isEditingArchive ? originalOrderRef : undefined);
         
         alert(isEditingArchive ? 'আর্কাইভটি সফলভাবে আপডেট করা হয়েছে!' : 'অফিস আদেশটি সফলভাবে আর্কাইভে সংরক্ষণ করা হয়েছে!');
         
@@ -1021,7 +1044,7 @@ export default function RosterPage() {
           setIsEditingArchive(false);
           window.location.assign('/documents');
         } else {
-          window.location.assign('/billing?orderRef=' + encodeURIComponent(orderRef));
+          window.location.assign('/');
         }
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -1053,7 +1076,11 @@ export default function RosterPage() {
       const matchedCell = cells.find((c: Cell) => c.name === order.cellName);
       if (matchedCell) {
         setSelectedCell(matchedCell.id.toString());
+      } else {
+        setSelectedCell('all');
       }
+    } else {
+      setSelectedCell('all');
     }
     
     setUserSelectedPrintCategory(order.category as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT');
@@ -1149,13 +1176,14 @@ export default function RosterPage() {
       .join(', ');
   };
 
-  const updateAssociatedBill = async (baseOrderRef: string) => {
+  const updateAssociatedBill = async (baseOrderRef: string, oldOrderRef?: string) => {
     try {
       const billRef = baseOrderRef + '/বিল';
+      const oldBillRef = oldOrderRef ? (oldOrderRef + '/বিল') : billRef;
       const ordersRes = await fetch('/api/office-orders');
       if (!ordersRes.ok) return;
       const orders = await ordersRes.json();
-      const existingBill = orders.find((o: OfficeOrder) => o.orderRef === billRef);
+      const existingBill = orders.find((o: OfficeOrder) => o.orderRef === billRef || (oldBillRef && o.orderRef === oldBillRef));
       if (!existingBill) {
         console.log("No existing bill found for this office order. Skipping bill update.");
         return;
@@ -1214,6 +1242,7 @@ export default function RosterPage() {
       
       const billPayload = {
         orderRef: billRef,
+        originalOrderRef: oldBillRef !== billRef ? oldBillRef : undefined,
         orderDate: orderDate,
         category: "BILL_" + printCategory,
         employeeName: payeeName,
@@ -1228,9 +1257,9 @@ export default function RosterPage() {
           totalTransport: s.totalTransport,
           grandTotal: s.grandTotal
         })),
-        dutyIds: [],
+        dutyIds: activeDuties.map(d => d.id), // Pass actual dutyIds!
         content: {
-          openingParagraph: `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে অত্র ডিপার্টমেন্টের কর্মকর্তাদের নামের পাশে বর্ণিত তারিখে অতিরিক্ত কাজ সম্পন্ন করায় বিধি মোতাবেক আপ্যায়ন ও যাতায়াত ভাতা প্রদানের বিল মঞ্জুর করা হলো।`,
+          openingParagraph: `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে অत्र ডিপার্টমেন্টের কর্মকর্তাদের নামের পাশে বর্ণিত তারিখে অতিরিক্ত কাজ সম্পন্ন করায় বিধি মোতাবেক আপ্যায়ন ও যাতায়াত ভাতা প্রদানের বিল মঞ্জুর করা হলো।`,
           totalDays: totalDaysAll,
           totalApyaon: totalApyaonAll,
           totalTransport: totalTransportAll,
@@ -1990,7 +2019,7 @@ export default function RosterPage() {
         }
 
         // 3. Update the associated bill!
-        await updateAssociatedBill(orderRef);
+        await updateAssociatedBill(orderRef, originalOrderRef);
 
         // Exit edit mode and redirect to documents archive page!
         setIsEditingArchive(false);
@@ -2923,13 +2952,37 @@ export default function RosterPage() {
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="submit"
-                    disabled={submitting || isSubmitDisabled()}
-                    className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-semibold transition-all shadow-md mt-4 cursor-pointer disabled:cursor-not-allowed"
-                  >
-                    {isEditingArchive ? (submitting ? 'সম্পাদনা ও আপডেট হচ্ছে...' : 'অফিস আদেশ সম্পাদন ও আপডেট করুন') : (submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন')}
-                  </button>
+                  isEditingArchive ? (
+                    <div className="flex gap-3 mt-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingArchive(false);
+                          setUserCustomOrderRef(null);
+                          window.history.pushState({}, '', '/roster');
+                          loadDuties();
+                        }}
+                        className="flex-1 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-all shadow-sm cursor-pointer"
+                      >
+                        বাতিল
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submitting || isSubmitDisabled()}
+                        className="flex-1 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-semibold transition-all shadow-md cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        {submitting ? 'সম্পাদনা ও আপডেট হচ্ছে...' : 'অফিস আদেশ সম্পাদন ও আপডেট করুন'}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={submitting || isSubmitDisabled()}
+                      className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-semibold transition-all shadow-md mt-4 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন'}
+                    </button>
+                  )
                 )}
               </form>
             </div>
@@ -3404,11 +3457,11 @@ export default function RosterPage() {
           {/* DGM 7500 Tk Apyaon split alert and tabs switchers */}
           {(() => {
             const filtered = duties.filter(d => {
-              const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
               const matchesCategory = d.type === printCategory;
               if (isArchived && !isEditingArchive) {
-                return matchesCell && matchesCategory && d.orderRef === originalOrderRef;
+                return matchesCategory && getNormalizedRef(d.orderRef) === getNormalizedRef(originalOrderRef);
               }
+              const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
               return matchesCell && matchesCategory && !d.orderRef;
             });
             const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;

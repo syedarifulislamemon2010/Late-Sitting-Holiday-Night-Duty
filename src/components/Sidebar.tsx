@@ -18,7 +18,8 @@ import {
   Languages,
   ChevronLeft,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  AlertCircle
 } from 'lucide-react';
 
 interface UserSession {
@@ -35,6 +36,8 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [targetHref, setTargetHref] = useState('');
 
   useEffect(() => {
     setTimeout(() => {
@@ -132,7 +135,17 @@ export default function Sidebar() {
     <>
       {/* Mobile Top Navigation */}
       <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <Link href="/" className="flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] rounded-lg">
+        <Link 
+          href="/" 
+          onClick={(e) => {
+            if (typeof window !== 'undefined' && (window as any).__unsavedChanges) {
+              e.preventDefault();
+              setTargetHref('/');
+              setShowWarningModal(true);
+            }
+          }}
+          className="flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] rounded-lg"
+        >
           <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={32} height={32} className="shrink-0 object-contain" />
           <h1 className="font-semibold text-slate-950 text-sm leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
         </Link>
@@ -167,6 +180,13 @@ export default function Sidebar() {
         }`}>
           <Link 
             href="/" 
+            onClick={(e) => {
+              if (typeof window !== 'undefined' && (window as any).__unsavedChanges) {
+                e.preventDefault();
+                setTargetHref('/');
+                setShowWarningModal(true);
+              }
+            }}
             className="flex items-center gap-3 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] focus:ring-offset-2 rounded-lg"
           >
             <Image 
@@ -238,7 +258,14 @@ export default function Sidebar() {
                     <Link 
                       key={item.name}
                       href={item.href}
-                      onClick={() => setIsOpen(false)}
+                      onClick={(e) => {
+                        setIsOpen(false);
+                        if (typeof window !== 'undefined' && (window as any).__unsavedChanges) {
+                          e.preventDefault();
+                          setTargetHref(item.href);
+                          setShowWarningModal(true);
+                        }
+                      }}
                       className={`flex items-center transition-all duration-200 group relative border-l-4 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] ${
                         isMounted && isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'
                       } ${
@@ -279,6 +306,49 @@ export default function Sidebar() {
           ))}
         </nav>
       </aside>
+
+      {/* Styled Unsaved Changes Warning Modal */}
+      {showWarningModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-6 text-center transform scale-100 transition-all font-sans">
+            <div className="mx-auto w-16 h-16 bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center">
+              <AlertCircle size={32} />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-base font-bold text-slate-800">
+                আপনি যে পেইজে আছেন, সেখানে থাকতে চান?
+              </h3>
+              <p className="text-xs text-slate-500">
+                আপনার কোনো পরিবর্তন অসংরক্ষিত থাকতে পারে। পেজ পরিবর্তন করলে পরিবর্তনগুলো মুছে যাবে।
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowWarningModal(false);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer border border-transparent"
+              >
+                হ্যাঁ
+              </button>
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    (window as any).__unsavedChanges = false;
+                  }
+                  setShowWarningModal(false);
+                  window.location.href = targetHref;
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-all border border-red-100 cursor-pointer"
+              >
+                না
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
