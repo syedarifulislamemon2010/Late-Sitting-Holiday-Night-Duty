@@ -2449,9 +2449,9 @@ export default function BillingPage() {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
                   >
                     <option value="">Select Payee (সিলেক্ট করুন)</option>
-                    {employees.slice().sort((a, b) => a.name.localeCompare(b.name, 'bn')).map(emp => (
-                      <option key={emp.id} value={emp.name}>
-                        {emp.name} ({getShortDesignation(emp.designation)})
+                    {printFilteredSummaries.map(summary => (
+                      <option key={summary.employeeId} value={summary.name}>
+                        {summary.name} ({getShortDesignation(summary.designation)})
                       </option>
                     ))}
                   </select>
