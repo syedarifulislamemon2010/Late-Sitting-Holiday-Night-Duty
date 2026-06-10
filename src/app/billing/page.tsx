@@ -2248,19 +2248,7 @@ export default function BillingPage() {
           </table>
         </div>
 
-        {/* Footer Signature Blocks */}
-        <div className="grid grid-cols-2 gap-4 pt-12 text-xs">
-          <div className="text-center">
-            <div className="w-40 border-t border-black mx-auto mb-1"></div>
-            <p className="font-semibold">প্রতিবেদন প্রস্তুতকারী</p>
-            <p className="text-[10px] text-slate-500">আইটিডি এডমিন সেল</p>
-          </div>
-          <div className="text-center">
-            <div className="w-40 border-t border-black mx-auto mb-1"></div>
-            <p className="font-semibold">বিভাগীয় প্রধান (আইটিডি)</p>
-            <p className="text-[10px] text-slate-500">অনুমোদনকারী কর্তৃপক্ষ</p>
-          </div>
-        </div>
+
       </div>
     );
   };
