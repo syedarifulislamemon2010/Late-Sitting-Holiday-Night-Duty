@@ -3,7 +3,7 @@ import { EmployeeRepository } from '@/repositories/employee.repository';
 import { HolidayRepository } from '@/repositories/holiday.repository';
 import { db } from '@/lib/db';
 import { trash, cells, employees, duties, leaveApplications } from '@/db/schema';
-import { eq, inArray, and, or, isNull, gte, lte, SQL } from 'drizzle-orm';
+import { eq, inArray, and, or, isNull, gte, lte, SQL, like } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { AppError, AuthError } from '@/lib/errors';
 import { dutiesBulkCreateSchema, dutyUpdateSchema } from '@/validations/duty.schema';
@@ -113,12 +113,36 @@ export class DutyService {
       }
     } else {
       const refs = [filters.orderRef];
-      if (filters.orderRef.endsWith('/বিল')) {
-        refs.push(filters.orderRef.slice(0, -5));
-      } else {
-        refs.push(filters.orderRef + '/বিল');
+      const isBill = filters.orderRef.endsWith('/বিল');
+      let likePattern = '';
+
+      const parts = filters.orderRef.split('/');
+      if (parts.length >= 3) {
+        if (isBill) {
+          const cleanParts = parts.slice(0, -1);
+          cleanParts[2] = '%';
+          likePattern = cleanParts.join('/');
+        } else {
+          parts[2] = '%';
+          likePattern = parts.join('/') + '/বিল';
+        }
       }
-      conditions.push(inArray(dutiesOrderRefHelper(), refs));
+
+      const orConditions = [eq(dutiesOrderRefHelper(), filters.orderRef)];
+      if (isBill) {
+        orConditions.push(eq(dutiesOrderRefHelper(), filters.orderRef.slice(0, -5)));
+      } else {
+        orConditions.push(eq(dutiesOrderRefHelper(), filters.orderRef + '/বিল'));
+      }
+
+      if (likePattern) {
+        orConditions.push(like(dutiesOrderRefHelper(), likePattern));
+      }
+
+      const orCond = or(...orConditions);
+      if (orCond) {
+        conditions.push(orCond);
+      }
     }
 
     const dutiesList = await DutyRepository.listAllWithDetails(

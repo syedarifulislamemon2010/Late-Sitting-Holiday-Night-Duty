@@ -211,6 +211,34 @@ const getBanglaNumberWords = (num: number) => {
   return wordStr.trim() + ' টাকা মাত্র';
 };
 
+const getNormalizedRef = (ref: string) => {
+  if (!ref) return '';
+  let clean = ref;
+  if (clean.endsWith('/বিল')) {
+    clean = clean.slice(0, -5);
+  }
+  const parts = clean.split('/');
+  if (parts.length >= 3) {
+    parts.splice(2, 1); // remove name component
+  }
+  return parts.join('/');
+};
+
+const getSeniorityRank = (designation: string): number => {
+  if (!designation) return 99;
+  const d = designation.toUpperCase();
+  if (d.includes('এসপিও') || d.includes('SPO') || d.includes('সিনিয়র প্রিন্সিপাল') || d.includes('SENIOR PRINCIPAL')) {
+    return 1;
+  }
+  if (d.includes('পিও') || d.includes('PO') || d.includes('প্রিন্সিপাল') || d.includes('PRINCIPAL')) {
+    return 2;
+  }
+  if (d.includes('এসও-আইটি') || d.includes('SO-IT') || d.includes('সিনিয়র অফিসার') || d.includes('SENIOR OFFICER')) {
+    return 3;
+  }
+  return 4; // default fallback
+};
+
 export default function BillingPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'ledger' | 'orders' | 'bills'>('ledger');
@@ -642,18 +670,7 @@ export default function BillingPage() {
       const archivedOrdersList: OfficeOrder[] = Array.isArray(ordersData) ? ordersData : [];
       setArchivedOrders(archivedOrdersList);
 
-      const getNormalizedRef = (ref: string) => {
-        if (!ref) return '';
-        let clean = ref;
-        if (clean.endsWith('/বিল')) {
-          clean = clean.slice(0, -5);
-        }
-        const parts = clean.split('/');
-        if (parts.length >= 3) {
-          parts.splice(2, 1); // remove name component
-        }
-        return parts.join('/');
-      };
+
 
       const archivedBillNormalizedRefs = new Set(
         archivedOrdersList
@@ -819,7 +836,7 @@ export default function BillingPage() {
     let activeDuties = selectedOrderRef
       ? duties.filter(d => {
           if (!d.orderRef) return false;
-          return d.orderRef.replace(/\/বিল$/, '') === selectedOrderRef.replace(/\/বিল$/, '');
+          return getNormalizedRef(d.orderRef) === getNormalizedRef(selectedOrderRef);
         })
       : duties;
       
@@ -869,7 +886,14 @@ export default function BillingPage() {
       summary.grandTotal += duty.totalBill;
     });
     
-    return Array.from(map.values()).sort((a, b) => b.grandTotal - a.grandTotal);
+    return Array.from(map.values()).sort((a, b) => {
+      const rankA = getSeniorityRank(a.designation);
+      const rankB = getSeniorityRank(b.designation);
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+      return b.grandTotal - a.grandTotal;
+    });
   };
 
   const billingSummaries = getBillingSummaries();
@@ -1268,18 +1292,7 @@ export default function BillingPage() {
     return order.cellName === 'All Cells' || order.cellName === 'all' || !order.cellName || userCellNames.includes(order.cellName);
   };
 
-  const getNormalizedRef = useCallback((ref: string) => {
-    if (!ref) return '';
-    let clean = ref;
-    if (clean.endsWith('/বিল')) {
-      clean = clean.slice(0, -5);
-    }
-    const parts = clean.split('/');
-    if (parts.length >= 3) {
-      parts.splice(2, 1); // remove name component
-    }
-    return parts.join('/');
-  }, []);
+
 
   const archivedBillNormalizedRefs = useMemo(() => {
     return new Set(
@@ -2389,18 +2402,7 @@ export default function BillingPage() {
                       
                       // Check if already billed
                       if (billedOrderRefs.includes(val)) {
-                        const getNormalizedRef = (ref: string) => {
-                          if (!ref) return '';
-                          let clean = ref;
-                          if (clean.endsWith('/বিল')) {
-                            clean = clean.slice(0, -5);
-                          }
-                          const parts = clean.split('/');
-                          if (parts.length >= 3) {
-                            parts.splice(2, 1); // remove name component
-                          }
-                          return parts.join('/');
-                        };
+
                         const norm = getNormalizedRef(val);
                         const existingBill = archivedOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
                         if (existingBill) {
@@ -2866,6 +2868,14 @@ export default function BillingPage() {
                                 console.error(e);
                               }
                               if (!dutiesList || dutiesList.length === 0) return null;
+
+                              const sortedDutiesList = [...dutiesList].sort((a, b) => {
+                                const rankA = getSeniorityRank(a.designation);
+                                const rankB = getSeniorityRank(b.designation);
+                                if (rankA !== rankB) return rankA - rankB;
+                                return (b.grandTotal || 0) - (a.grandTotal || 0);
+                              });
+
                               const cat = viewingOrder.category || '';
                               const isHoliday = cat.includes('HOLIDAY');
                               const isNight = cat.includes('NIGHT_SHIFT');
@@ -2884,7 +2894,7 @@ export default function BillingPage() {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {dutiesList.map((s: OrderDuty, idx: number) => (
+                                    {sortedDutiesList.map((s: OrderDuty, idx: number) => (
                                       <tr key={idx} className="text-black text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
                                         <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(idx + 1)}</td>
                                         <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>
