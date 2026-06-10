@@ -444,11 +444,12 @@ export default function BillingPage() {
           setBillDate(archivedBill.orderDate || new Date().toISOString().split('T')[0]);
           setRepresentativeName(archivedBill.employeeName || '');
           
-          let baseRef = editRefVal;
+           let baseRef = editRefVal;
           if (baseRef.endsWith('/বিল')) {
             baseRef = baseRef.slice(0, -5);
           }
           setBaseOrderRef(baseRef);
+          setSelectedOrderRef(baseRef);
 
           if (archivedBill.content) {
             if (archivedBill.content.openingParagraph) {
@@ -609,7 +610,7 @@ export default function BillingPage() {
       if (urlEditRef) {
         backingRef = urlEditRef.endsWith('/বিল') ? urlEditRef.slice(0, -5) : urlEditRef;
       }
-      const orderRefToFetch = urlOrderRef || backingRef;
+      const orderRefToFetch = selectedOrderRef || urlOrderRef || backingRef;
 
       let activeList: Duty[] = [];
       if (orderRefToFetch) {
@@ -739,7 +740,7 @@ export default function BillingPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth, selectedCell, printCategory]);
+  }, [selectedMonth, selectedCell, printCategory, selectedOrderRef]);
 
   const handleBackToLedger = () => {
     setIsPrintMode(false);
@@ -757,6 +758,12 @@ export default function BillingPage() {
       fetchDutiesForBilling();
     }, 0);
   }, [fetchDutiesForBilling]);
+
+  useEffect(() => {
+    if (!isPrintMode) {
+      setSelectedOrderRef('');
+    }
+  }, [isPrintMode]);
 
   // Reset billGenerated to false if inputs change (excluding initial load)
   useEffect(() => {
