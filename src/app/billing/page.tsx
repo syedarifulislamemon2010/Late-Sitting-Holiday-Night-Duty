@@ -1096,6 +1096,15 @@ export default function BillingPage() {
       return b.grandTotal - a.grandTotal;
     });
 
+    const totalLateDays = employeesBreakdown.reduce((sum, r) => sum + r.lateSittingDays, 0);
+    const totalLateAmount = employeesBreakdown.reduce((sum, r) => sum + r.lateSittingAmount, 0);
+    const totalHolidayDays = employeesBreakdown.reduce((sum, r) => sum + r.holidayDays, 0);
+    const totalHolidayAmount = employeesBreakdown.reduce((sum, r) => sum + r.holidayAmount, 0);
+    const totalNightDays = employeesBreakdown.reduce((sum, r) => sum + r.nightShiftDays, 0);
+    const totalNightAmount = employeesBreakdown.reduce((sum, r) => sum + r.nightShiftAmount, 0);
+    const totalDaysSum = employeesBreakdown.reduce((sum, r) => sum + r.totalDays, 0);
+    const grandTotalSum = employeesBreakdown.reduce((sum, r) => sum + r.grandTotal, 0);
+
     return {
       targetBills,
       totalBillsCount,
@@ -1106,7 +1115,15 @@ export default function BillingPage() {
       lateSittingAmount,
       holidayAmount,
       nightShiftAmount,
-      employeesBreakdown
+      employeesBreakdown,
+      totalLateDays,
+      totalLateAmount,
+      totalHolidayDays,
+      totalHolidayAmount,
+      totalNightDays,
+      totalNightAmount,
+      totalDaysSum,
+      grandTotalSum
     };
   }, [reportDate, archivedOrders]);
 
@@ -1930,7 +1947,26 @@ export default function BillingPage() {
   const { transportRate, apyaonRate } = getPrintCategoryRates(printCategory);
 
   const renderPrintableReport = () => {
-    const { targetBills, totalBillsCount, totalDays, totalTransport, totalApyaon, grandTotal, lateSittingAmount, holidayAmount, nightShiftAmount, employeesBreakdown } = reportData;
+    const { 
+      targetBills, 
+      totalBillsCount, 
+      totalDays, 
+      totalTransport, 
+      totalApyaon, 
+      grandTotal, 
+      lateSittingAmount, 
+      holidayAmount, 
+      nightShiftAmount, 
+      employeesBreakdown,
+      totalLateDays,
+      totalLateAmount,
+      totalHolidayDays,
+      totalHolidayAmount,
+      totalNightDays,
+      totalNightAmount,
+      totalDaysSum,
+      grandTotalSum
+    } = reportData;
 
     return (
       <div className="print-report-layout max-w-4xl mx-auto bg-white p-8 border border-slate-200 shadow-md font-sans text-black" style={{ fontFamily: 'Kalpurush', color: '#000', lineHeight: '1.4' }}>
@@ -2001,49 +2037,9 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* Table 1: Bill List for Print */}
-        <div className="mb-6">
-          <h3 className="text-xs font-bold mb-2">১. জেনারেটকৃত বিল সমূহের তালিকা (Bill-wise List):</h3>
-          <table className="w-full text-[11px] border-collapse" style={{ border: '1px solid #000' }}>
-            <thead>
-              <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
-                <th className="p-1 border-r border-black w-8" style={{ borderRight: '1px solid #000' }}>#</th>
-                <th className="p-1 border-r border-black" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>বিল রেফারেন্স</th>
-                <th className="p-1 border-r border-black w-24" style={{ borderRight: '1px solid #000' }}>ডিউটি ধরণ</th>
-                <th className="p-1 border-r border-black w-36" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>প্রতিনিধি কর্মকর্তা</th>
-                <th className="p-1 w-24 text-right pr-2">মোট বিল (টাকা)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {targetBills.map((bill, idx) => {
-                const isLate = bill.category === 'BILL_LATE_SITTING';
-                const isHol = bill.category === 'BILL_HOLIDAY';
-                
-                let billTotal = Number(bill.content?.grandTotal || 0);
-                if (billTotal === 0) {
-                  try {
-                    const duties = JSON.parse(bill.dutiesJson || '[]');
-                    billTotal = duties.reduce((sum: number, d: any) => sum + Number(d.grandTotal || 0), 0);
-                  } catch(err) {}
-                }
-
-                return (
-                  <tr key={bill.id} style={{ borderTop: '1px solid #000' }}>
-                    <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(idx + 1)}</td>
-                    <td className="p-1 border-r border-black font-mono text-[9px]" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>{bill.orderRef}</td>
-                    <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{isLate ? 'লেট-সিটিং' : isHol ? 'ছুটির দিন' : 'রাত্রিকালীন'}</td>
-                    <td className="p-1 border-r border-black" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>{bill.employeeName}</td>
-                    <td className="p-1 text-right pr-2 font-bold">{toBanglaDigits(billTotal)}/-</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Table 2: Employee Breakdown for Print */}
+        {/* Table: Employee Breakdown for Print */}
         <div className="mb-8">
-          <h3 className="text-xs font-bold mb-2">২. কর্মকর্তা ভিত্তিক সমন্বিত প্রাপ্তির বিবরণী (Payee Statement):</h3>
+          <h3 className="text-xs font-bold mb-2">১. কর্মকর্তা ভিত্তিক সমন্বিত প্রাপ্তির বিবরণী (Payee Statement):</h3>
           <table className="w-full text-[10px] border-collapse" style={{ border: '1px solid #000' }}>
             <thead>
               <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
@@ -2076,6 +2072,21 @@ export default function BillingPage() {
                   <td className="p-1 text-right pr-2 font-bold">{toBanglaDigits(record.grandTotal)}/-</td>
                 </tr>
               ))}
+              <tr style={{ borderTop: '2px solid #000', fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
+                <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}></td>
+                <td className="p-1 border-r border-black text-left font-bold" style={{ borderRight: '1px solid #000', paddingLeft: '4px' }} colSpan={2}>সর্বমোট</td>
+                <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
+                  {totalLateDays > 0 ? `${toBanglaDigits(totalLateDays)} (${toBanglaDigits(totalLateAmount)}/-)` : '-'}
+                </td>
+                <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
+                  {totalHolidayDays > 0 ? `${toBanglaDigits(totalHolidayDays)} (${toBanglaDigits(totalHolidayAmount)}/-)` : '-'}
+                </td>
+                <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
+                  {totalNightDays > 0 ? `${toBanglaDigits(totalNightDays)} (${toBanglaDigits(totalNightAmount)}/-)` : '-'}
+                </td>
+                <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(totalDaysSum)}</td>
+                <td className="p-1 text-right pr-2 font-bold">{toBanglaDigits(grandTotalSum)}/-</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -2720,69 +2731,12 @@ export default function BillingPage() {
                     </div>
                   </div>
 
-                  {/* Table 1: Bill-wise Breakdown */}
-                  <div className="glass-card rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800/85">
-                    <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/80">
-                      <h4 className="text-xs font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
-                        <FileText size={14} className="text-indigo-500" />
-                        ১. জেনারেটকৃত বিলের তালিকা (Bill-wise Details)
-                      </h4>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse font-sans">
-                        <thead>
-                          <tr className="bg-slate-100/50 dark:bg-slate-900/80 text-[10px] font-bold text-slate-600 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
-                            <th className="p-3 text-center w-12">#</th>
-                            <th className="p-3">বিল রেফারেন্স</th>
-                            <th className="p-3">বিল টাইপ</th>
-                            <th className="p-3">প্রতিনিধি কর্মকর্তা</th>
-                            <th className="p-3">সেলের নাম</th>
-                            <th className="p-3 text-right pr-6">মোট বিল (টাকা)</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs font-medium">
-                          {reportData.targetBills.map((bill, idx) => {
-                            const isLate = bill.category === 'BILL_LATE_SITTING';
-                            const isHol = bill.category === 'BILL_HOLIDAY';
-                            
-                            let billTotal = Number(bill.content?.grandTotal || 0);
-                            if (billTotal === 0) {
-                              try {
-                                const duties = JSON.parse(bill.dutiesJson || '[]');
-                                billTotal = duties.reduce((sum: number, d: any) => sum + Number(d.grandTotal || 0), 0);
-                              } catch(err) {}
-                            }
-
-                            return (
-                              <tr key={bill.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 text-slate-600 dark:text-slate-300">
-                                <td className="p-3 text-center font-mono text-[10px] text-slate-400">{toBanglaDigits(idx + 1)}</td>
-                                <td className="p-3 font-mono text-[10px]">{bill.orderRef}</td>
-                                <td className="p-3">
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                    isLate ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400' :
-                                    isHol ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400' :
-                                    'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400'
-                                  }`}>
-                                    {isLate ? 'লেট-সিটিং' : isHol ? 'ছুটির দিন' : 'রাত্রিকালীন'}
-                                  </span>
-                                </td>
-                                <td className="p-3">{bill.employeeName}</td>
-                                <td className="p-3 text-slate-400 text-[10px]">{bill.cellName}</td>
-                                <td className="p-3 text-right pr-6 font-extrabold text-slate-700 dark:text-slate-200">{toBanglaDigits(billTotal)}/-</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Table 2: Consolidated Payee Statement */}
+                  {/* Table: Consolidated Payee Statement */}
                   <div className="glass-card rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800/80">
                     <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/80">
                       <h4 className="text-xs font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
                         <Users size={14} className="text-indigo-500" />
-                        ২. কর্মকর্তা ভিত্তিক সমন্বিত বিবরণী (Consolidated Payee Details)
+                        ১. কর্মকর্তা ভিত্তিক সমন্বিত বিবরণী (Consolidated Payee Details)
                       </h4>
                     </div>
                     <div className="overflow-x-auto">
@@ -2830,6 +2784,33 @@ export default function BillingPage() {
                               <td className="p-3 text-right pr-6 font-extrabold text-slate-800 dark:text-slate-200">{toBanglaDigits(record.grandTotal)}/-</td>
                             </tr>
                           ))}
+                          <tr className="bg-slate-100/50 dark:bg-slate-900/60 font-bold text-slate-800 dark:text-slate-200 border-t-2 border-slate-300 dark:border-slate-700">
+                            <td className="p-3 text-center"></td>
+                            <td className="p-3 text-left font-extrabold" colSpan={2}>সর্বমোট</td>
+                            <td className="p-3 text-center font-bold">
+                              {reportData.totalLateDays > 0 ? (
+                                <span>{toBanglaDigits(reportData.totalLateDays)} দিন ({toBanglaDigits(reportData.totalLateAmount)}/-)</span>
+                              ) : (
+                                <span className="text-slate-350 dark:text-slate-650">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center font-bold">
+                              {reportData.totalHolidayDays > 0 ? (
+                                <span>{toBanglaDigits(reportData.totalHolidayDays)} দিন ({toBanglaDigits(reportData.totalHolidayAmount)}/-)</span>
+                              ) : (
+                                <span className="text-slate-350 dark:text-slate-650">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center font-bold">
+                              {reportData.totalNightDays > 0 ? (
+                                <span>{toBanglaDigits(reportData.totalNightDays)} দিন ({toBanglaDigits(reportData.totalNightAmount)}/-)</span>
+                              ) : (
+                                <span className="text-slate-350 dark:text-slate-650">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center font-bold">{toBanglaDigits(reportData.totalDaysSum)}</td>
+                            <td className="p-3 text-right pr-6 font-extrabold text-slate-950 dark:text-slate-100">{toBanglaDigits(reportData.grandTotalSum)}/-</td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
