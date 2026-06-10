@@ -386,7 +386,18 @@ sudo firewall-cmd --reload
 
 ---
 
-## 20. Contributors & Licensing
+## 20. Recent Updates (June 2026)
+
+The LHN Portal was updated with the following features and fixes in June 2026:
+* **Office Order Preview Mismatch Resolution:** Implemented a robust payee reference normalizer to bridge differences in payee names and `/বিল` suffixes across rosters and bills, resolving empty duty table displays.
+* **Monthly Billing Ledger Redesign:** Streamlined the ledger table by removing the "Cell/Branch" column and adding a footer row showing the grand total of all active bills in Bangla digits.
+* **Allowance Breakdown KPI:** Expanded the "ভাতার বিভাজন" card on the reports dashboard to display distinct sums for Late Sitting, Holiday, and Night Shift allocations.
+* **Print PDF Typography & Header Updates:** Replaced `"Kalpurush"` with `'Hind Siliguri'` and `'Noto Sans Bengali'` Google web fonts to fix broken conjunct characters (e.g., "সং ক্ষিप्त" -> "সংক্ষিপ্ত"). Renamed report headers to "অনлайн ব্যাংকিং ডিপার্টমেন্ট" and "লেট সিটিং হলিডে নাইট বিল স্টেটমেন্ট", and removed signature blocks from the PDF.
+* **Payee Row Consolidation:** Grouped employee listings by their normalized name, merging multi-shift assignments into a single consolidated row with summed day counts and amounts.
+
+---
+
+## 21. Contributors & Licensing
 
 * **Syed Ariful Islam Emon** (Lead Developer)
 * **Online Banking Department, Janata Bank PLC.**
