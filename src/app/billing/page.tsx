@@ -240,6 +240,20 @@ const getSeniorityRank = (designation: string): number => {
   return 4; // default fallback
 };
 
+// Rates configuration strictly for calculations
+const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT') => {
+  let transportRate = 200;
+  let apyaonRate = 100;
+  if (printCategory === 'HOLIDAY') {
+    transportRate = 250;
+    apyaonRate = 250;
+  } else if (printCategory === 'NIGHT_SHIFT') {
+    transportRate = 400;
+    apyaonRate = 600;
+  }
+  return { transportRate, apyaonRate };
+};
+
 export default function BillingPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'ledger' | 'orders' | 'bills'>('ledger');
@@ -864,7 +878,7 @@ export default function BillingPage() {
           }
         }
 
-        const { transportRate: tRate, apyaonRate: aRate } = getPrintCategoryRates();
+        const { transportRate: tRate, apyaonRate: aRate } = getPrintCategoryRates(printCategory);
 
         orderDutiesList.forEach((od, idx) => {
           const empId = Number(od.employeeId) || idx + 10000;
@@ -1037,19 +1051,7 @@ export default function BillingPage() {
 
   // Removed old monthly-based aggregateMetrics; metrics are now computed reactively below.
 
-  // Rates configuration strictly for calculations
-  const getPrintCategoryRates = () => {
-    let transportRate = 200;
-    let apyaonRate = 100;
-    if (printCategory === 'HOLIDAY') {
-      transportRate = 250;
-      apyaonRate = 250;
-    } else if (printCategory === 'NIGHT_SHIFT') {
-      transportRate = 400;
-      apyaonRate = 600;
-    }
-    return { transportRate, apyaonRate };
-  };
+
 
 
   // Helper to extract category duties for formatting
@@ -1103,13 +1105,13 @@ export default function BillingPage() {
 
   // Category based printed totals
   const totalTransportAll = printFilteredSummaries.reduce((sum, s) => {
-    const { transportRate } = getPrintCategoryRates();
+    const { transportRate } = getPrintCategoryRates(printCategory);
     const days = printCategory === 'LATE_SITTING' ? s.lateDays : printCategory === 'HOLIDAY' ? s.holidayDays : s.nightDays;
     return sum + (days * transportRate);
   }, 0);
 
   const totalApyaonAll = printFilteredSummaries.reduce((sum, s) => {
-    const { apyaonRate } = getPrintCategoryRates();
+    const { apyaonRate } = getPrintCategoryRates(printCategory);
     const days = printCategory === 'LATE_SITTING' ? s.lateDays : printCategory === 'HOLIDAY' ? s.holidayDays : s.nightDays;
     return sum + (days * apyaonRate);
   }, 0);
@@ -1795,7 +1797,7 @@ export default function BillingPage() {
     );
   };
 
-  const { transportRate, apyaonRate } = getPrintCategoryRates();
+  const { transportRate, apyaonRate } = getPrintCategoryRates(printCategory);
 
   return (
     <div className="space-y-6">
