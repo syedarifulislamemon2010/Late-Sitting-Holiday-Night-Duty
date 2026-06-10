@@ -883,38 +883,55 @@ export default function BillingPage() {
   });
 
   // Automatically select representative payee by default (based on selected office order payee name, falling back to first employee)
+  const lastSelectedOrderRefForPayee = useRef<string | null>(null);
+  const lastPrintCategoryForPayee = useRef<string | null>(null);
+
   useEffect(() => {
-    if (selectedOrderRef && archivedOrders.length > 0) {
-      const matchedOrder = archivedOrders.find(o => {
-        if (!o.orderRef) return false;
-        return o.orderRef.replace(/\/বিল$/, '') === selectedOrderRef.replace(/\/বিল$/, '');
-      });
-      if (matchedOrder && matchedOrder.employeeName) {
-        const nameVal = matchedOrder.employeeName;
-        const matchedEmp = employees.find(e => e.name === nameVal);
-        const desigVal = matchedEmp ? getShortDesignation(matchedEmp.designation) : 'এসও-আইটি';
+    if (isEditingArchive) {
+      lastSelectedOrderRefForPayee.current = selectedOrderRef;
+      lastPrintCategoryForPayee.current = printCategory;
+      return;
+    }
+
+    const hasOrderRefChanged = lastSelectedOrderRefForPayee.current !== selectedOrderRef;
+    const hasCategoryChanged = lastPrintCategoryForPayee.current !== printCategory;
+    
+    if (hasOrderRefChanged || hasCategoryChanged) {
+      lastSelectedOrderRefForPayee.current = selectedOrderRef;
+      lastPrintCategoryForPayee.current = printCategory;
+
+      if (selectedOrderRef && archivedOrders.length > 0) {
+        const matchedOrder = archivedOrders.find(o => {
+          if (!o.orderRef) return false;
+          return o.orderRef.replace(/\/বিল$/, '') === selectedOrderRef.replace(/\/বিল$/, '');
+        });
+        if (matchedOrder && matchedOrder.employeeName) {
+          const nameVal = matchedOrder.employeeName;
+          const matchedEmp = employees.find(e => e.name === nameVal);
+          const desigVal = matchedEmp ? getShortDesignation(matchedEmp.designation) : 'এসও-আইটি';
+          setTimeout(() => {
+            setRepresentativeName(nameVal);
+            setRepresentativeDesignation(desigVal);
+          }, 0);
+          return;
+        }
+      }
+
+      if (printFilteredSummaries.length > 0) {
+        const nameVal = printFilteredSummaries[0].name;
+        const desigVal = getShortDesignation(printFilteredSummaries[0].designation);
         setTimeout(() => {
           setRepresentativeName(nameVal);
           setRepresentativeDesignation(desigVal);
         }, 0);
-        return;
+      } else {
+        setTimeout(() => {
+          setRepresentativeName('');
+          setRepresentativeDesignation('');
+        }, 0);
       }
     }
-
-    if (printFilteredSummaries.length > 0) {
-      const nameVal = printFilteredSummaries[0].name;
-      const desigVal = getShortDesignation(printFilteredSummaries[0].designation);
-      setTimeout(() => {
-        setRepresentativeName(nameVal);
-        setRepresentativeDesignation(desigVal);
-      }, 0);
-    } else {
-      setTimeout(() => {
-        setRepresentativeName('');
-        setRepresentativeDesignation('');
-      }, 0);
-    }
-  }, [duties, printCategory, selectedOrderRef, archivedOrders, employees, printFilteredSummaries]);
+  }, [duties, printCategory, selectedOrderRef, archivedOrders, employees, printFilteredSummaries, isEditingArchive]);
 
   // Removed old monthly-based aggregateMetrics; metrics are now computed reactively below.
 
@@ -2432,9 +2449,9 @@ export default function BillingPage() {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-bold"
                   >
                     <option value="">Select Payee (সিলেক্ট করুন)</option>
-                    {printFilteredSummaries.map(summary => (
-                      <option key={summary.employeeId} value={summary.name}>
-                        {summary.name} ({getShortDesignation(summary.designation)})
+                    {employees.slice().sort((a, b) => a.name.localeCompare(b.name, 'bn')).map(emp => (
+                      <option key={emp.id} value={emp.name}>
+                        {emp.name} ({getShortDesignation(emp.designation)})
                       </option>
                     ))}
                   </select>
