@@ -19,7 +19,9 @@ import {
   Receipt,
   Trash2,
   X,
-  FileText
+  FileText,
+  Users,
+  Banknote
 } from 'lucide-react';
 
 
@@ -256,8 +258,10 @@ const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGH
 
 export default function BillingPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<'ledger' | 'orders' | 'bills'>('ledger');
+  const [activeTab, setActiveTab] = useState<'ledger' | 'orders' | 'bills' | 'reports'>('ledger');
   const [viewingOrder, setViewingOrder] = useState<OfficeOrder | null>(null);
+  const [reportDate, setReportDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [isReportPrintMode, setIsReportPrintMode] = useState(false);
   const [billGenerated, setBillGenerated] = useState(false);
   const isFirstLoadRef = useRef(true);
   const isInitializingArchiveRef = useRef(false);
@@ -989,6 +993,132 @@ export default function BillingPage() {
   };
 
   const billingSummaries = getBillingSummaries();
+
+  // Consolidated Daily Report Calculations
+  const reportData = useMemo(() => {
+    const targetBills = archivedOrders.filter(o => 
+      o.category?.startsWith('BILL_') && 
+      o.orderDate === reportDate &&
+      o.status !== 'Deleted'
+    );
+
+    let totalBillsCount = targetBills.length;
+    let totalDays = 0;
+    let totalTransport = 0;
+    let totalApyaon = 0;
+    let grandTotal = 0;
+
+    let lateSittingAmount = 0;
+    let holidayAmount = 0;
+    let nightShiftAmount = 0;
+
+    const empMap = new Map<string, {
+      employeeName: string;
+      designation: string;
+      lateSittingDays: number;
+      lateSittingAmount: number;
+      holidayDays: number;
+      holidayAmount: number;
+      nightShiftDays: number;
+      nightShiftAmount: number;
+      totalDays: number;
+      grandTotal: number;
+    }>();
+
+    targetBills.forEach(bill => {
+      let dutiesList: any[] = [];
+      if (bill.dutiesJson) {
+        try {
+          dutiesList = JSON.parse(bill.dutiesJson);
+        } catch (e) {
+          console.error('Failed to parse bill dutiesJson in report:', e);
+        }
+      }
+
+      const isLateSitting = bill.category === 'BILL_LATE_SITTING';
+      const isHoliday = bill.category === 'BILL_HOLIDAY';
+      const isNight = bill.category === 'BILL_NIGHT_SHIFT';
+
+      dutiesList.forEach(duty => {
+        const empId = String(duty.employeeId || duty.bankId || '');
+        const name = duty.employeeName || duty.name || '';
+        const designation = duty.designation || '';
+        const days = Number(duty.days || (duty.dates && duty.dates.length) || 0);
+        const transport = Number(duty.totalTransport || 0);
+        const apyaon = Number(duty.totalApyaon || 0);
+        const total = Number(duty.grandTotal || (transport + apyaon) || 0);
+
+        totalDays += days;
+        totalTransport += transport;
+        totalApyaon += apyaon;
+        grandTotal += total;
+
+        if (isLateSitting) lateSittingAmount += total;
+        if (isHoliday) holidayAmount += total;
+        if (isNight) nightShiftAmount += total;
+
+        if (!empMap.has(empId)) {
+          empMap.set(empId, {
+            employeeName: name,
+            designation: designation,
+            lateSittingDays: 0,
+            lateSittingAmount: 0,
+            holidayDays: 0,
+            holidayAmount: 0,
+            nightShiftDays: 0,
+            nightShiftAmount: 0,
+            totalDays: 0,
+            grandTotal: 0
+          });
+        }
+
+        const record = empMap.get(empId)!;
+        record.totalDays += days;
+        record.grandTotal += total;
+
+        if (isLateSitting) {
+          record.lateSittingDays += days;
+          record.lateSittingAmount += total;
+        } else if (isHoliday) {
+          record.holidayDays += days;
+          record.holidayAmount += total;
+        } else if (isNight) {
+          record.nightShiftDays += days;
+          record.nightShiftAmount += total;
+        }
+      });
+    });
+
+    const employeesBreakdown = Array.from(empMap.values()).sort((a, b) => {
+      const rankA = getSeniorityRank(a.designation);
+      const rankB = getSeniorityRank(b.designation);
+      if (rankA !== rankB) return rankA - rankB;
+      return b.grandTotal - a.grandTotal;
+    });
+
+    return {
+      targetBills,
+      totalBillsCount,
+      totalDays,
+      totalTransport,
+      totalApyaon,
+      grandTotal,
+      lateSittingAmount,
+      holidayAmount,
+      nightShiftAmount,
+      employeesBreakdown
+    };
+  }, [reportDate, archivedOrders]);
+
+  useEffect(() => {
+    if (isReportPrintMode) {
+      const timer = setTimeout(() => {
+        window.print();
+        setIsReportPrintMode(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isReportPrintMode]);
 
   // Filter summaries for print based on selected printCategory
   const printFilteredSummaries = billingSummaries.filter(s => {
@@ -1799,6 +1929,178 @@ export default function BillingPage() {
 
   const { transportRate, apyaonRate } = getPrintCategoryRates(printCategory);
 
+  const renderPrintableReport = () => {
+    const { targetBills, totalBillsCount, totalDays, totalTransport, totalApyaon, grandTotal, lateSittingAmount, holidayAmount, nightShiftAmount, employeesBreakdown } = reportData;
+
+    return (
+      <div className="print-report-layout max-w-4xl mx-auto bg-white p-8 border border-slate-200 shadow-md font-sans text-black" style={{ fontFamily: 'Kalpurush', color: '#000', lineHeight: '1.4' }}>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            @page {
+              size: A4 !important;
+              margin: 1.5cm !important;
+            }
+            .no-print { display: none !important; }
+            body {
+              background: #fff !important;
+              color: #000 !important;
+              font-family: "Kalpurush", sans-serif !important;
+            }
+            .print-report-layout {
+              border: none !important;
+              box-shadow: none !important;
+              padding: 0 !important;
+              max-width: 100% !important;
+            }
+          }
+        `}} />
+
+        {/* Back Controls (No-print) */}
+        <div className="no-print flex items-center justify-between mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+          <button
+            onClick={() => setIsReportPrintMode(false)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
+          >
+            <ChevronLeft size={16} />
+            প্রতিবেদন ভিউতে ফিরে যান
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors cursor-pointer"
+          >
+            <Printer size={14} />
+            প্রিন্ট করুন (Print)
+          </button>
+        </div>
+
+        {/* Report Header */}
+        <div className="text-center space-y-1 mb-6">
+          <h1 className="text-xl font-bold tracking-wide">জনতা ব্যাংক পিএলসি.</h1>
+          <p className="text-sm font-semibold">ইনফরমেশন টেকনোলজি ডিপার্টমেন্ট (আইটিডি)</p>
+          <p className="text-xs text-slate-500 font-bold uppercase mt-1">কন্সোলিডেটেড ডেইলি বিল স্টেটমেন্ট</p>
+          <div className="w-full border-t border-double border-black my-2"></div>
+          <div className="flex justify-between items-center text-xs font-bold px-2 pt-1">
+            <span>প্রতিবেদনের তারিখ: {getBanglaDate(reportDate)}</span>
+            <span>প্রস্তুতকাল: {new Date().toLocaleDateString('bn-BD')}</span>
+          </div>
+        </div>
+
+        {/* KPI Summary Block for Print */}
+        <div className="mb-6 p-4 border border-black rounded-lg">
+          <h3 className="text-xs font-bold border-b border-black pb-1 mb-2">সংक्षिप्त সারসংক্ষেপ (KPI Summary):</h3>
+          <div className="grid grid-cols-2 gap-y-2 text-xs">
+            <div><strong>মোট জেনারেটকৃত বিলের সংখ্যা:</strong> {toBanglaDigits(totalBillsCount)} টি</div>
+            <div><strong>সর্বমোট প্রদেয় বিলের পরিমাণ:</strong> {toBanglaDigits(grandTotal)}/- টাকা</div>
+            <div><strong>মোট ডিউটি কার্যদিবস:</strong> {toBanglaDigits(totalDays)} দিন</div>
+            <div><strong>সর্বমোট প্রদেয় (কথায়):</strong> {getBanglaNumberWords(grandTotal)}</div>
+            <div><strong>মোট যাতায়াত ভাতা:</strong> {toBanglaDigits(totalTransport)}/- টাকা</div>
+            <div><strong>লেট-সিটিং বিল বাবদ:</strong> {toBanglaDigits(lateSittingAmount)}/- টাকা</div>
+            <div><strong>মোট আপ্যায়ন ভাতা:</strong> {toBanglaDigits(totalApyaon)}/- টাকা</div>
+            <div><strong>ছুটির দিনের বিল বাবদ:</strong> {toBanglaDigits(holidayAmount)}/- টাকা</div>
+            <div><strong>রাত্রিকালীন শিফট বিল বাবদ:</strong> {toBanglaDigits(nightShiftAmount)}/- টাকা</div>
+          </div>
+        </div>
+
+        {/* Table 1: Bill List for Print */}
+        <div className="mb-6">
+          <h3 className="text-xs font-bold mb-2">১. জেনারেটকৃত বিল সমূহের তালিকা (Bill-wise List):</h3>
+          <table className="w-full text-[11px] border-collapse" style={{ border: '1px solid #000' }}>
+            <thead>
+              <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
+                <th className="p-1 border-r border-black w-8" style={{ borderRight: '1px solid #000' }}>#</th>
+                <th className="p-1 border-r border-black" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>বিল রেফারেন্স</th>
+                <th className="p-1 border-r border-black w-24" style={{ borderRight: '1px solid #000' }}>ডিউটি ধরণ</th>
+                <th className="p-1 border-r border-black w-36" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>প্রতিনিধি কর্মকর্তা</th>
+                <th className="p-1 w-24 text-right pr-2">মোট বিল (টাকা)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {targetBills.map((bill, idx) => {
+                const isLate = bill.category === 'BILL_LATE_SITTING';
+                const isHol = bill.category === 'BILL_HOLIDAY';
+                
+                let billTotal = Number(bill.content?.grandTotal || 0);
+                if (billTotal === 0) {
+                  try {
+                    const duties = JSON.parse(bill.dutiesJson || '[]');
+                    billTotal = duties.reduce((sum: number, d: any) => sum + Number(d.grandTotal || 0), 0);
+                  } catch(err) {}
+                }
+
+                return (
+                  <tr key={bill.id} style={{ borderTop: '1px solid #000' }}>
+                    <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(idx + 1)}</td>
+                    <td className="p-1 border-r border-black font-mono text-[9px]" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>{bill.orderRef}</td>
+                    <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{isLate ? 'লেট-সিটিং' : isHol ? 'ছুটির দিন' : 'রাত্রিকালীন'}</td>
+                    <td className="p-1 border-r border-black" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>{bill.employeeName}</td>
+                    <td className="p-1 text-right pr-2 font-bold">{toBanglaDigits(billTotal)}/-</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Table 2: Employee Breakdown for Print */}
+        <div className="mb-8">
+          <h3 className="text-xs font-bold mb-2">২. কর্মকর্তা ভিত্তিক সমন্বিত প্রাপ্তির বিবরণী (Payee Statement):</h3>
+          <table className="w-full text-[10px] border-collapse" style={{ border: '1px solid #000' }}>
+            <thead>
+              <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
+                <th className="p-1 border-r border-black w-8" style={{ borderRight: '1px solid #000' }}>#</th>
+                <th className="p-1 border-r border-black" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>কর্মকর্তার নাম</th>
+                <th className="p-1 border-r border-black w-28" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>পদবী</th>
+                <th className="p-1 border-r border-black w-24" style={{ borderRight: '1px solid #000' }}>লেট-সিটিং (দিন/টাকা)</th>
+                <th className="p-1 border-r border-black w-24" style={{ borderRight: '1px solid #000' }}>ছুটির দিন (দিন/টাকা)</th>
+                <th className="p-1 border-r border-black w-24" style={{ borderRight: '1px solid #000' }}>নাইট শিফট (দিন/টাকা)</th>
+                <th className="p-1 border-r border-black w-14" style={{ borderRight: '1px solid #000' }}>মোট দিন</th>
+                <th className="p-1 text-right pr-2 w-24">সর্বমোট (টাকা)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employeesBreakdown.map((record, idx) => (
+                <tr key={idx} style={{ borderTop: '1px solid #000' }}>
+                  <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(idx + 1)}</td>
+                  <td className="p-1 border-r border-black font-bold" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>{record.employeeName}</td>
+                  <td className="p-1 border-r border-black" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>{record.designation}</td>
+                  <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>
+                    {record.lateSittingDays > 0 ? `${toBanglaDigits(record.lateSittingDays)} (${toBanglaDigits(record.lateSittingAmount)}/-)` : '-'}
+                  </td>
+                  <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>
+                    {record.holidayDays > 0 ? `${toBanglaDigits(record.holidayDays)} (${toBanglaDigits(record.holidayAmount)}/-)` : '-'}
+                  </td>
+                  <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>
+                    {record.nightShiftDays > 0 ? `${toBanglaDigits(record.nightShiftDays)} (${toBanglaDigits(record.nightShiftAmount)}/-)` : '-'}
+                  </td>
+                  <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(record.totalDays)}</td>
+                  <td className="p-1 text-right pr-2 font-bold">{toBanglaDigits(record.grandTotal)}/-</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer Signature Blocks */}
+        <div className="grid grid-cols-2 gap-4 pt-12 text-xs">
+          <div className="text-center">
+            <div className="w-40 border-t border-black mx-auto mb-1"></div>
+            <p className="font-semibold">প্রতিবেদন প্রস্তুতকারী</p>
+            <p className="text-[10px] text-slate-500">আইটিডি এডমিন সেল</p>
+          </div>
+          <div className="text-center">
+            <div className="w-40 border-t border-black mx-auto mb-1"></div>
+            <p className="font-semibold">বিভাগীয় প্রধান (আইটিডি)</p>
+            <p className="text-[10px] text-slate-500">অনুমোদনকারী কর্তৃপক্ষ</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (isReportPrintMode) {
+    return renderPrintableReport();
+  }
+
   return (
     <div className="space-y-6">
       {/* ----------------------------------------------------
@@ -2009,6 +2311,16 @@ export default function BillingPage() {
               }`}>
                 {toBanglaDigits(filteredBillMemos.length)}
               </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('reports')}
+              className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 relative cursor-pointer ${
+                activeTab === 'reports'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              রিপোর্ট ও বিশ্লেষণ (Reports)
             </button>
           </div>
 
@@ -2289,6 +2601,239 @@ export default function BillingPage() {
                       </div>
                     );
                   })()}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'reports' && (
+            <div className="space-y-6">
+              {/* Date selection bar */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 glass-card rounded-2xl">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
+                    <Calendar size={16} className="text-indigo-500" />
+                    প্রদেয় বিলের প্রতিবেদন (Daily Consolidated Report)
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5 font-sans">জেনারেটকৃত বিলের দৈনিক বিবরণী ও কর্মকর্তা ভিত্তিক সমন্বিত রিপোর্ট।</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={reportDate}
+                      onChange={(e) => setReportDate(e.target.value)}
+                      className="w-full md:w-auto px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans"
+                    />
+                  </div>
+                  <button
+                    onClick={() => setIsReportPrintMode(true)}
+                    disabled={reportData.totalBillsCount === 0}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-md font-sans"
+                  >
+                    <Printer size={14} />
+                    প্রিন্ট রিপোর্ট (Print Report)
+                  </button>
+                </div>
+              </div>
+
+              {reportData.totalBillsCount === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 glass-card rounded-2xl">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
+                    <AlertCircle size={28} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350 font-sans">নির্বাচিত তারিখে কোনো বিল জেনারেট করা হয়নি</h3>
+                    <p className="text-xs text-slate-400 mt-1 max-w-[320px] mx-auto font-sans">
+                      {getBanglaDate(reportDate)} তারিখে কোনো অফিস নির্দেশিকার বিল জেনারেট করা পাওয়া যায়নি। অনুগ্রহ করে অন্য তারিখ নির্বাচন করুন।
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* KPI Cards Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Card 1: Total Bills */}
+                    <div className="p-5 bg-gradient-to-br from-indigo-50 to-indigo-100/30 dark:from-indigo-950/20 dark:to-indigo-900/10 border border-indigo-100/50 dark:border-indigo-950/50 rounded-2xl shadow-sm">
+                      <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 font-sans">মোট জেনারেটকৃত বিল</p>
+                      <h4 className="text-2xl font-extrabold text-indigo-950 dark:text-indigo-350 mt-1.5 font-sans">{toBanglaDigits(reportData.totalBillsCount)} টি</h4>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-sans">আজকের জেনারেটকৃত মোট বিলের সংখ্যা</p>
+                    </div>
+
+                    {/* Card 2: Total Worked Days */}
+                    <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100/30 dark:from-purple-950/20 dark:to-purple-900/10 border border-purple-100/50 dark:border-purple-950/50 rounded-2xl shadow-sm">
+                      <p className="text-xs font-bold text-purple-600 dark:text-purple-400 font-sans">মোট ডিউটি দিন</p>
+                      <h4 className="text-2xl font-extrabold text-purple-950 dark:text-indigo-350 mt-1.5 font-sans">{toBanglaDigits(reportData.totalDays)} দিন</h4>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-sans">কর্মকর্তাদের মোট পালিত দায়িত্বের পরিমাণ</p>
+                    </div>
+
+                    {/* Card 3: Allowances Breakdown */}
+                    <div className="p-5 bg-gradient-to-br from-cyan-50 to-cyan-100/30 dark:from-cyan-950/20 dark:to-cyan-900/10 border border-cyan-100/50 dark:border-cyan-950/50 rounded-2xl shadow-sm flex flex-col justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400 font-sans">ভাতার বিভাজন</p>
+                        <div className="flex items-center justify-between mt-1.5 font-sans">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">যাতায়াত:</span>
+                          <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.totalTransport)}/- BDT</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1 font-sans">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">আপ্যায়ন:</span>
+                          <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.totalApyaon)}/- BDT</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card 4: Grand Total */}
+                    <div className="p-5 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-500/20 rounded-2xl shadow-sm relative overflow-hidden">
+                      <div className="absolute right-[-10px] bottom-[-10px] text-emerald-500/10 dark:text-emerald-500/5 pointer-events-none">
+                        <Banknote size={80} />
+                      </div>
+                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-sans">সর্বমোট প্রদেয় বিল</p>
+                      <h4 className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1.5 font-sans">{toBanglaDigits(reportData.grandTotal)}/- BDT</h4>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium font-sans">{getBanglaNumberWords(reportData.grandTotal)}</p>
+                    </div>
+                  </div>
+
+                  {/* Category-wise Breakdown Pills */}
+                  <div className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-wrap gap-4 items-center justify-around">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-3 h-3 rounded-full bg-amber-500" />
+                      <div>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider font-sans">লেট-সিটিং বিল</p>
+                        <p className="text-xs font-extrabold text-slate-700 dark:text-slate-350 font-sans">{toBanglaDigits(reportData.lateSittingAmount)}/- টাকা</p>
+                      </div>
+                    </div>
+                    <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 hidden md:block" />
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-3 h-3 rounded-full bg-teal-500" />
+                      <div>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider font-sans">ছুটির দিনের বিল</p>
+                        <p className="text-xs font-extrabold text-slate-700 dark:text-slate-350 font-sans">{toBanglaDigits(reportData.holidayAmount)}/- টাকা</p>
+                      </div>
+                    </div>
+                    <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 hidden md:block" />
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-3 h-3 rounded-full bg-indigo-500" />
+                      <div>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider font-sans">রাত্রিকালীন শিফট বিল</p>
+                        <p className="text-xs font-extrabold text-slate-700 dark:text-slate-350 font-sans">{toBanglaDigits(reportData.nightShiftAmount)}/- টাকা</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Table 1: Bill-wise Breakdown */}
+                  <div className="glass-card rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800/85">
+                    <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/80">
+                      <h4 className="text-xs font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
+                        <FileText size={14} className="text-indigo-500" />
+                        ১. জেনারেটকৃত বিলের তালিকা (Bill-wise Details)
+                      </h4>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse font-sans">
+                        <thead>
+                          <tr className="bg-slate-100/50 dark:bg-slate-900/80 text-[10px] font-bold text-slate-600 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
+                            <th className="p-3 text-center w-12">#</th>
+                            <th className="p-3">বিল রেফারেন্স</th>
+                            <th className="p-3">বিল টাইপ</th>
+                            <th className="p-3">প্রতিনিধি কর্মকর্তা</th>
+                            <th className="p-3">সেলের নাম</th>
+                            <th className="p-3 text-right pr-6">মোট বিল (টাকা)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs font-medium">
+                          {reportData.targetBills.map((bill, idx) => {
+                            const isLate = bill.category === 'BILL_LATE_SITTING';
+                            const isHol = bill.category === 'BILL_HOLIDAY';
+                            
+                            let billTotal = Number(bill.content?.grandTotal || 0);
+                            if (billTotal === 0) {
+                              try {
+                                const duties = JSON.parse(bill.dutiesJson || '[]');
+                                billTotal = duties.reduce((sum: number, d: any) => sum + Number(d.grandTotal || 0), 0);
+                              } catch(err) {}
+                            }
+
+                            return (
+                              <tr key={bill.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 text-slate-600 dark:text-slate-300">
+                                <td className="p-3 text-center font-mono text-[10px] text-slate-400">{toBanglaDigits(idx + 1)}</td>
+                                <td className="p-3 font-mono text-[10px]">{bill.orderRef}</td>
+                                <td className="p-3">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    isLate ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400' :
+                                    isHol ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400' :
+                                    'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400'
+                                  }`}>
+                                    {isLate ? 'লেট-সিটিং' : isHol ? 'ছুটির দিন' : 'রাত্রিকালীন'}
+                                  </span>
+                                </td>
+                                <td className="p-3">{bill.employeeName}</td>
+                                <td className="p-3 text-slate-400 text-[10px]">{bill.cellName}</td>
+                                <td className="p-3 text-right pr-6 font-extrabold text-slate-700 dark:text-slate-200">{toBanglaDigits(billTotal)}/-</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Table 2: Consolidated Payee Statement */}
+                  <div className="glass-card rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800/80">
+                    <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/80">
+                      <h4 className="text-xs font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
+                        <Users size={14} className="text-indigo-500" />
+                        ২. কর্মকর্তা ভিত্তিক সমন্বিত বিবরণী (Consolidated Payee Details)
+                      </h4>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse font-sans">
+                        <thead>
+                          <tr className="bg-slate-100/50 dark:bg-slate-900/80 text-[10px] font-bold text-slate-600 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
+                            <th className="p-3 text-center w-12">#</th>
+                            <th className="p-3">কর্মকর্তার নাম</th>
+                            <th className="p-3">পদবী</th>
+                            <th className="p-3 text-center">লেট-সিটিং দিন (টাকা)</th>
+                            <th className="p-3 text-center">ছুটির দিন দিন (টাকা)</th>
+                            <th className="p-3 text-center">নাইট শিফট দিন (টাকা)</th>
+                            <th className="p-3 text-center">মোট দিন</th>
+                            <th className="p-3 text-right pr-6">সর্বমোট প্রদেয় (টাকা)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs font-medium">
+                          {reportData.employeesBreakdown.map((record, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 text-slate-600 dark:text-slate-300">
+                              <td className="p-3 text-center font-mono text-[10px] text-slate-400">{toBanglaDigits(idx + 1)}</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 font-bold">{record.employeeName}</td>
+                              <td className="p-3 text-slate-400 text-[10px]">{record.designation}</td>
+                              <td className="p-3 text-center">
+                                {record.lateSittingDays > 0 ? (
+                                  <span>{toBanglaDigits(record.lateSittingDays)} দিন ({toBanglaDigits(record.lateSittingAmount)}/-)</span>
+                                ) : (
+                                  <span className="text-slate-300 dark:text-slate-700">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center">
+                                {record.holidayDays > 0 ? (
+                                  <span>{toBanglaDigits(record.holidayDays)} দিন ({toBanglaDigits(record.holidayAmount)}/-)</span>
+                                ) : (
+                                  <span className="text-slate-300 dark:text-slate-700">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center">
+                                {record.nightShiftDays > 0 ? (
+                                  <span>{toBanglaDigits(record.nightShiftDays)} দিন ({toBanglaDigits(record.nightShiftAmount)}/-)</span>
+                                ) : (
+                                  <span className="text-slate-300 dark:text-slate-700">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center font-bold">{toBanglaDigits(record.totalDays)}</td>
+                              <td className="p-3 text-right pr-6 font-extrabold text-slate-800 dark:text-slate-200">{toBanglaDigits(record.grandTotal)}/-</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
