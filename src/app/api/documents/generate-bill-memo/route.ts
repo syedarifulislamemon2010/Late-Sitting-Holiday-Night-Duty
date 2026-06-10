@@ -253,7 +253,7 @@ export async function POST(request: Request) {
 
   <div class="signature-container">
     <div class="signature-block">
-      <p class="font-bold">(${representativeName || ''})</p>
+      <p class="font-bold">(${(representativeName || '').replace(/^জনাব\s*/, '')})</p>
       <p style="margin-top: 5px; color: #333;">${representativeDesignation || ''}</p>
     </div>
   </div>

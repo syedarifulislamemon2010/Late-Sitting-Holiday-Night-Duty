@@ -136,6 +136,7 @@ interface EmployeeBillingSummary {
   nightAllowance1: number;
   nightAllowance2: number;
   grandTotal: number;
+  datesFormatted?: string;
 }
 
 // Convert English digits/text to Bengali digits
@@ -844,6 +845,83 @@ export default function BillingPage() {
       activeDuties = activeDuties.filter(d => d.type === selectedCategory);
     }
       
+    if (selectedOrderRef && activeDuties.length === 0) {
+      // Fallback to loading from the Office Order dutiesJson
+      const backingOrder = archivedOrders.find(o => {
+        if (!o.orderRef || o.category?.startsWith('BILL_')) return false;
+        return getNormalizedRef(o.orderRef) === getNormalizedRef(selectedOrderRef);
+      });
+
+      if (backingOrder) {
+        let orderDutiesList: any[] = [];
+        if (backingOrder.duties && backingOrder.duties.length > 0) {
+          orderDutiesList = backingOrder.duties;
+        } else if (backingOrder.dutiesJson) {
+          try {
+            orderDutiesList = JSON.parse(backingOrder.dutiesJson);
+          } catch (e) {
+            console.error('Failed to parse dutiesJson fallback:', e);
+          }
+        }
+
+        const { transportRate: tRate, apyaonRate: aRate } = getPrintCategoryRates();
+
+        orderDutiesList.forEach((od, idx) => {
+          const empId = Number(od.employeeId) || idx + 10000;
+          const name = od.employeeName || od.name || '';
+          const designation = od.designation || '';
+          const dates = od.dates || [];
+          const days = dates.length || od.days || 0;
+
+          const totalApyaon = days * aRate;
+          const totalTransport = days * tRate;
+          const grandTotal = totalApyaon + totalTransport;
+
+          if (selectedCategory !== 'all' && printCategory !== selectedCategory) {
+            return;
+          }
+
+          const sortedDates = [...dates].sort();
+          const formatted = sortedDates.map(dStr => {
+            const [year, month, day] = dStr.split('-');
+            const bnDay = toBanglaDigits(day.padStart(2, '0'));
+            const bnMonth = toBanglaDigits(month.padStart(2, '0'));
+            const bnYear = toBanglaDigits(year);
+            return `${bnDay}-${bnMonth}-${bnYear}`;
+          }).join(', ');
+
+          map.set(empId, {
+            employeeId: empId,
+            name,
+            designation,
+            cellName: backingOrder.cellName || '',
+            bankId: String(od.employeeId || ''),
+            fileNo: od.fileNo || '',
+            lateDays: printCategory === 'LATE_SITTING' ? days : 0,
+            lateAllowance1: printCategory === 'LATE_SITTING' ? totalApyaon : 0,
+            lateAllowance2: printCategory === 'LATE_SITTING' ? totalTransport : 0,
+            holidayDays: printCategory === 'HOLIDAY' ? days : 0,
+            holidayAllowance1: printCategory === 'HOLIDAY' ? totalApyaon : 0,
+            holidayAllowance2: printCategory === 'HOLIDAY' ? totalTransport : 0,
+            nightDays: printCategory === 'NIGHT_SHIFT' ? days : 0,
+            nightAllowance1: printCategory === 'NIGHT_SHIFT' ? totalApyaon : 0,
+            nightAllowance2: printCategory === 'NIGHT_SHIFT' ? totalTransport : 0,
+            grandTotal: grandTotal,
+            datesFormatted: formatted
+          });
+        });
+
+        return Array.from(map.values()).sort((a, b) => {
+          const rankA = getSeniorityRank(a.designation);
+          const rankB = getSeniorityRank(b.designation);
+          if (rankA !== rankB) {
+            return rankA - rankB;
+          }
+          return b.grandTotal - a.grandTotal;
+        });
+      }
+    }
+
     activeDuties.forEach(duty => {
       const emp = duty.employee;
       if (!map.has(emp.id)) {
@@ -981,6 +1059,11 @@ export default function BillingPage() {
 
   // Helper to format worked dates nicely with full DD-MM-YYYY format
   const formatWorkedDatesForCategory = (empId: number) => {
+    const summary = billingSummaries.find(s => s.employeeId === empId);
+    if (summary && summary.datesFormatted) {
+      return summary.datesFormatted;
+    }
+
     const empDuties = getEmployeeCategoryDuties(empId);
     if (empDuties.length === 0) return '';
     const sorted = [...empDuties].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -2606,7 +2689,7 @@ export default function BillingPage() {
                   {/* Right-aligned payee signature block */}
                   <div className="w-full flex justify-end text-right" style={{ marginTop: '0.6in', marginBottom: '0.2in' }}>
                     <div className="text-right leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '12px', paddingRight: '0.1in' }}>
-                      <p className="font-extrabold text-[12px]">({representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'})</p>
+                      <p className="font-extrabold text-[12px]">({(representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/^জনাব\s*/, '')})</p>
                       <p className="text-[12px] font-bold text-slate-800 mt-1">{representativeDesignation || 'এসও-আইটি'}</p>
                     </div>
                   </div>
@@ -2947,7 +3030,7 @@ export default function BillingPage() {
                         {/* Right-aligned payee signature block */}
                         <div className="w-full flex justify-end text-right" style={{ marginTop: '0.6in', marginBottom: '0.2in' }}>
                           <div className="text-right leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '12px', paddingRight: '0.1in' }}>
-                            <p className="font-extrabold text-[12px]">({viewingOrder.employeeName})</p>
+                            <p className="font-extrabold text-[12px]">({viewingOrder.employeeName.replace(/^জনাব\s*/, '')})</p>
                             <p className="text-[12px] font-bold text-slate-800 mt-1">{viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</p>
                           </div>
                         </div>
