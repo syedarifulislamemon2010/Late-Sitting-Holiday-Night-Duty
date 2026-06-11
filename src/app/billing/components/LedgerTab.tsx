@@ -7,7 +7,8 @@ import {
   AlertCircle, 
   CheckCircle, 
   Receipt,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Printer
 } from 'lucide-react';
 import { toBanglaDigits, getBanglaDate } from '@/lib/bengali-converter';
 
@@ -52,6 +53,7 @@ interface LedgerTabProps {
   handleGenerateBillFromOrder: (order: OfficeOrder) => void;
   ledgerGrandTotal: number;
   selectedMonth: string;
+  setIsLedgerPrintMode: (val: boolean) => void;
 }
 
 export default function LedgerTab({
@@ -63,7 +65,8 @@ export default function LedgerTab({
   handleLoadBillForEditing,
   handleGenerateBillFromOrder,
   ledgerGrandTotal,
-  selectedMonth
+  selectedMonth,
+  setIsLedgerPrintMode
 }: LedgerTabProps) {
 
   const handleExportToCSV = () => {
@@ -223,13 +226,22 @@ export default function LedgerTab({
             <p className="text-xs text-slate-400 mt-0.5 font-sans">জেনারেটেড ও প্রিন্টকৃত অফিস আদেশ এবং তাদের বিল প্রস্তুতকরণ খতিয়ান।</p>
           </div>
           {allActiveOfficeOrders.length > 0 && (
-            <button
-              onClick={handleExportToCSV}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-250 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer font-sans"
-            >
-              <FileSpreadsheet size={14} className="text-emerald-500" />
-              <span>Excel/CSV এক্সপোর্ট</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsLedgerPrintMode(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold transition-all border border-indigo-100 dark:border-indigo-950/30 cursor-pointer font-sans"
+              >
+                <Printer size={14} />
+                <span>প্রিন্ট প্রিভিউ</span>
+              </button>
+              <button
+                onClick={handleExportToCSV}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-250 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer font-sans"
+              >
+                <FileSpreadsheet size={14} className="text-emerald-500" />
+                <span>Excel/CSV এক্সপোর্ট</span>
+              </button>
+            </div>
           )}
         </div>
 

@@ -236,17 +236,79 @@ export class OfficeOrderService {
     }
 
     return db.transaction(async (tx) => {
+      const isBill = validated.category?.startsWith('BILL_');
+      const client = tx || db;
+
       if (validated.originalOrderRef && validated.originalOrderRef !== validated.orderRef) {
-        await OfficeOrderRepository.clearDutiesOrderRef(validated.originalOrderRef, tx);
-        await OfficeOrderRepository.deleteByOrderRef(validated.originalOrderRef, tx);
+        await OfficeOrderRepository.clearDutiesOrderRef(validated.originalOrderRef, client);
+        await OfficeOrderRepository.deleteByOrderRef(validated.originalOrderRef, client);
+
+        // Propagate orderRef rename to the matching paired record (OfficeOrder <-> Bill)
+        if (!isBill) {
+          const oldBillRef = validated.originalOrderRef + '/বিল';
+          const newBillRef = validated.orderRef + '/বিল';
+          const associatedBill = await client.select().from(officeOrders).where(eq(officeOrders.orderRef, oldBillRef));
+          if (associatedBill.length > 0) {
+            await client.update(officeOrders)
+              .set({ 
+                orderRef: newBillRef,
+                employeeName: validated.employeeName,
+                orderDate: validated.orderDate
+              })
+              .where(eq(officeOrders.id, associatedBill[0].id));
+            await client.update(dutiesTableHelper())
+              .set({ orderRef: newBillRef })
+              .where(eq(dutiesOrderRefHelper(), oldBillRef));
+          }
+        } else {
+          const oldOrderRef = validated.originalOrderRef.replace(/\/বিল$/, '');
+          const newOrderRef = validated.orderRef.replace(/\/বিল$/, '');
+          const associatedOrder = await client.select().from(officeOrders).where(eq(officeOrders.orderRef, oldOrderRef));
+          if (associatedOrder.length > 0) {
+            await client.update(officeOrders)
+              .set({ 
+                orderRef: newOrderRef,
+                employeeName: validated.employeeName,
+                orderDate: validated.orderDate
+              })
+              .where(eq(officeOrders.id, associatedOrder[0].id));
+            await client.update(dutiesTableHelper())
+              .set({ orderRef: newOrderRef })
+              .where(eq(dutiesOrderRefHelper(), oldOrderRef));
+          }
+        }
+      } else {
+        // If not renamed but payee (employeeName) or date is updated, sync it to the paired record
+        if (!isBill) {
+          const billRef = validated.orderRef + '/বিল';
+          const associatedBill = await client.select().from(officeOrders).where(eq(officeOrders.orderRef, billRef));
+          if (associatedBill.length > 0) {
+            await client.update(officeOrders)
+              .set({ 
+                employeeName: validated.employeeName,
+                orderDate: validated.orderDate
+              })
+              .where(eq(officeOrders.id, associatedBill[0].id));
+          }
+        } else {
+          const orderRef = validated.orderRef.replace(/\/বিল$/, '');
+          const associatedOrder = await client.select().from(officeOrders).where(eq(officeOrders.orderRef, orderRef));
+          if (associatedOrder.length > 0) {
+            await client.update(officeOrders)
+              .set({ 
+                employeeName: validated.employeeName,
+                orderDate: validated.orderDate
+              })
+              .where(eq(officeOrders.id, associatedOrder[0].id));
+          }
+        }
       }
 
-      await OfficeOrderRepository.clearDutiesOrderRef(validated.orderRef, tx);
+      await OfficeOrderRepository.clearDutiesOrderRef(validated.orderRef, client);
 
-      const existingOrder = await OfficeOrderRepository.findByOrderRef(validated.orderRef, tx);
+      const existingOrder = await OfficeOrderRepository.findByOrderRef(validated.orderRef, client);
       let orderRecord = existingOrder;
       const existed = !!existingOrder || !!validated.originalOrderRef;
-      const isBill = validated.category?.startsWith('BILL_');
 
       const statusToSave = validated.status || (existed ? 'Modified' : 'Generated');
 
@@ -262,7 +324,7 @@ export class OfficeOrderService {
       };
 
       if (!orderRecord) {
-        orderRecord = await OfficeOrderRepository.create(dataToSave, tx);
+        orderRecord = await OfficeOrderRepository.create(dataToSave, client);
       } else {
         orderRecord = await OfficeOrderRepository.updateByOrderRef(validated.orderRef, {
           orderDate: validated.orderDate,
@@ -271,14 +333,14 @@ export class OfficeOrderService {
           dutiesJson: validated.duties ? JSON.stringify(validated.duties) : '[]',
           contentJson: validated.content ? JSON.stringify(validated.content) : null,
           status: statusToSave
-        }, tx);
+        }, client);
       }
 
       if (validated.dutyIds && validated.dutyIds.length > 0) {
         await OfficeOrderRepository.linkDutiesToOrderRef(
           validated.dutyIds.map(id => Number(id)),
           validated.orderRef,
-          tx
+          client
         );
       }
 
@@ -329,20 +391,84 @@ export class OfficeOrderService {
     }
 
     return db.transaction(async (tx) => {
+      const isBill = existingOrder.category?.startsWith('BILL_');
+      const client = tx || db;
+
       if (validated.orderRef !== existingOrder.orderRef) {
-        await tx.update(dutiesTableHelper())
-          .set({ orderRef: validated.orderRef })
-          .where(eq(dutiesOrderRefHelper(), existingOrder.orderRef));
+        // Renaming orderRef, sync both orderRef and other details
+        if (!isBill) {
+          const oldBillRef = existingOrder.orderRef + '/বিল';
+          const newBillRef = validated.orderRef + '/বিল';
+          const associatedBill = await client.select().from(officeOrders).where(eq(officeOrders.orderRef, oldBillRef));
+          if (associatedBill.length > 0) {
+            await client.update(officeOrders)
+              .set({
+                orderRef: newBillRef,
+                employeeName: validated.employeeName,
+                orderDate: validated.orderDate
+              })
+              .where(eq(officeOrders.id, associatedBill[0].id));
+          }
+          await client.update(dutiesTableHelper())
+            .set({ orderRef: newBillRef })
+            .where(eq(dutiesOrderRefHelper(), oldBillRef));
+          await client.update(dutiesTableHelper())
+            .set({ orderRef: validated.orderRef })
+            .where(eq(dutiesOrderRefHelper(), existingOrder.orderRef));
+        } else {
+          const oldOrderRef = existingOrder.orderRef.replace(/\/বিল$/, '');
+          const newOrderRef = validated.orderRef.replace(/\/বিল$/, '');
+          const associatedOrder = await client.select().from(officeOrders).where(eq(officeOrders.orderRef, oldOrderRef));
+          if (associatedOrder.length > 0) {
+            await client.update(officeOrders)
+              .set({
+                orderRef: newOrderRef,
+                employeeName: validated.employeeName,
+                orderDate: validated.orderDate
+              })
+              .where(eq(officeOrders.id, associatedOrder[0].id));
+          }
+          await client.update(dutiesTableHelper())
+            .set({ orderRef: newOrderRef })
+            .where(eq(dutiesOrderRefHelper(), oldOrderRef));
+          await client.update(dutiesTableHelper())
+            .set({ orderRef: validated.orderRef })
+            .where(eq(dutiesOrderRefHelper(), existingOrder.orderRef));
+        }
+      } else {
+        // Not renaming, but payee (employeeName) or date is updated, sync to paired record
+        if (!isBill) {
+          const billRef = validated.orderRef + '/বিল';
+          const associatedBill = await client.select().from(officeOrders).where(eq(officeOrders.orderRef, billRef));
+          if (associatedBill.length > 0) {
+            await client.update(officeOrders)
+              .set({
+                employeeName: validated.employeeName,
+                orderDate: validated.orderDate
+              })
+              .where(eq(officeOrders.id, associatedBill[0].id));
+          }
+        } else {
+          const orderRef = validated.orderRef.replace(/\/বিল$/, '');
+          const associatedOrder = await client.select().from(officeOrders).where(eq(officeOrders.orderRef, orderRef));
+          if (associatedOrder.length > 0) {
+            await client.update(officeOrders)
+              .set({
+                employeeName: validated.employeeName,
+                orderDate: validated.orderDate
+              })
+              .where(eq(officeOrders.id, associatedOrder[0].id));
+          }
+        }
       }
 
-      const isBill = existingOrder.category?.startsWith('BILL_');
       const updated = await OfficeOrderRepository.update(id, {
         orderRef: validated.orderRef,
         orderDate: validated.orderDate,
         employeeName: validated.employeeName,
         cellName: validated.cellName || null,
         status: validated.status || 'Modified'
-      }, tx);
+      }, client);
 
       await logActivity({
         username: currentUser.username,
