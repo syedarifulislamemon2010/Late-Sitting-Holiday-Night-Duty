@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useProfile } from '@/context/ProfileContext';
 import { 
   Printer, 
   Loader2, 
@@ -116,7 +117,7 @@ interface LunchRecord {
 }
 
 export default function LunchBillPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { currentUser } = useProfile();
   const [activeCellId, setActiveCellId] = useState<number | null>(null);
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -167,24 +168,12 @@ export default function LunchBillPage() {
   // Collapsible Cell sections on the form list
   const [collapsedCells, setCollapsedCells] = useState<Record<string, boolean>>({});
 
-  // Fetch initial profile
+  // Sync active cell ID from currentUser profile
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        const res = await fetch('/api/auth');
-        const data = await res.json();
-        if (res.ok && data.authenticated) {
-          setCurrentUser(data.user);
-          if (data.user.cells && data.user.cells.length > 0) {
-            setActiveCellId(data.user.cells[0].id);
-          }
-        }
-      } catch (err) {
-        console.error('Error loading auth profile:', err);
-      }
+    if (currentUser && currentUser.cells && currentUser.cells.length > 0) {
+      setActiveCellId(currentUser.cells[0].id);
     }
-    loadProfile();
-  }, []);
+  }, [currentUser]);
 
   // Fetch cells, employees, executives, and holidays lists
   useEffect(() => {

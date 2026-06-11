@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
+import { useProfile } from '@/context/ProfileContext';
 import { 
   Printer, 
   ChevronLeft, 
@@ -211,7 +212,7 @@ const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGH
 };
 
 export default function BillingPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { currentUser } = useProfile();
   const [activeTab, setActiveTab] = useState<'ledger' | 'orders' | 'bills' | 'reports'>('ledger');
   const [viewingOrder, setViewingOrder] = useState<OfficeOrder | null>(null);
   const [reportDate, setReportDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -360,21 +361,16 @@ export default function BillingPage() {
   useEffect(() => {
     async function loadStaticData() {
       try {
-        const [cellRes, execRes, empRes, authRes] = await Promise.all([
+        const [cellRes, execRes, empRes] = await Promise.all([
           fetch('/api/cells'),
           fetch('/api/executives'),
-          fetch('/api/employees'),
-          fetch('/api/auth')
+          fetch('/api/employees')
         ]);
         const cellData = await cellRes.json();
         const execData = await execRes.json();
         const empData = await empRes.json();
-        const authData = await authRes.json();
         setCells(Array.isArray(cellData) ? cellData : []);
         setEmployees(Array.isArray(empData) ? empData : []);
-        if (authRes.ok && authData.authenticated) {
-          setCurrentUser(authData.user);
-        }
         if (Array.isArray(execData)) {
           const dgmExecs = execData.filter((ex: Executive) => {
             const d = ex.designation.trim().toLowerCase();
@@ -1470,14 +1466,14 @@ export default function BillingPage() {
   const hasDeletePermission = (order: OfficeOrder) => {
     if (!currentUser) return false;
     if (currentUser.role === 'ADMIN') return true;
-    const userCellNames = currentUser.cells?.map((c: Cell) => c.name) || [];
+    const userCellNames = currentUser.cells?.map((c) => c.name) || [];
     return order.cellName === 'All Cells' || order.cellName === 'all' || !order.cellName || userCellNames.includes(order.cellName);
   };
 
   const hasEditPermission = (order: OfficeOrder) => {
     if (!currentUser) return false;
     if (currentUser.role === 'ADMIN') return true;
-    const userCellNames = currentUser.cells?.map((c: Cell) => c.name) || [];
+    const userCellNames = currentUser.cells?.map((c) => c.name) || [];
     return order.cellName === 'All Cells' || order.cellName === 'all' || !order.cellName || userCellNames.includes(order.cellName);
   };
 
@@ -2043,7 +2039,7 @@ export default function BillingPage() {
                   <option value="all">সকল সেল (All Cells)</option>
                 )}
                 {cells
-                  .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: Cell) => uc.id === c.id))
+                  .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc) => uc.id === c.id))
                   .map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)
                 }
               </select>

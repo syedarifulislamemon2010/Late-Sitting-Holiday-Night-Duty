@@ -38,6 +38,10 @@ async function main() {
   await db.delete(schema.executives);
   await db.delete(schema.holidays);
   await db.delete(schema.documents);
+  await db.delete(schema.leaveApplications);
+  await db.delete(schema.lunchBills);
+  await db.delete(schema.manualDocuments);
+  await db.delete(schema.auditLogs);
   await db.delete(schema.duties);
   await db.delete(schema.employees);
   await db.delete(schema.userCells);
@@ -192,9 +196,95 @@ async function main() {
     }
   }
 
-  // 11. Reset PostgreSQL Serial Key sequences to prevent clashes
+  // 11. Seed Leave Applications
+  if (dump.leaveApplications) {
+    console.log(`Seeding ${dump.leaveApplications.length} Leave Applications...`);
+    for (const la of dump.leaveApplications) {
+      await db.insert(schema.leaveApplications).values({
+        id: la.id,
+        leaveType: la.leaveType,
+        startDate: la.startDate,
+        endDate: la.endDate,
+        applicationDate: la.applicationDate,
+        applicantName: la.applicantName,
+        designation: la.designation,
+        bankId: la.bankId,
+        fileNo: la.fileNo,
+        cellName: la.cellName,
+        leaveLocation: la.leaveLocation,
+        mobileNo: la.mobileNo,
+        selectedDistrict: la.selectedDistrict,
+        delegateId: la.delegateId,
+        casualTotal: la.casualTotal,
+        casualUsed: la.casualUsed,
+        ordinaryTotal: la.ordinaryTotal,
+        ordinaryUsed: la.ordinaryUsed,
+        specialTotal: la.specialTotal,
+        specialUsed: la.specialUsed,
+        userId: la.userId,
+        createdAt: la.createdAt ? new Date(la.createdAt) : undefined
+      });
+    }
+  }
+
+  // 12. Seed Lunch Bills
+  if (dump.lunchBills) {
+    console.log(`Seeding ${dump.lunchBills.length} Lunch Bills...`);
+    for (const lb of dump.lunchBills) {
+      await db.insert(schema.lunchBills).values({
+        id: lb.id,
+        month: lb.month,
+        cellId: lb.cellId,
+        workingDays: lb.workingDays,
+        recordsJson: lb.recordsJson,
+        generatedBy: lb.generatedBy,
+        createdAt: lb.createdAt ? new Date(lb.createdAt) : undefined,
+        updatedAt: lb.updatedAt ? new Date(lb.updatedAt) : undefined
+      });
+    }
+  }
+
+  // 13. Seed Manual Documents
+  if (dump.manualDocuments) {
+    console.log(`Seeding ${dump.manualDocuments.length} Manual Documents...`);
+    for (const md of dump.manualDocuments) {
+      await db.insert(schema.manualDocuments).values({
+        id: md.id,
+        name: md.name,
+        filePath: md.filePath,
+        fileSize: md.fileSize,
+        fileType: md.fileType,
+        uploadedBy: md.uploadedBy,
+        isVisibleToUsers: md.isVisibleToUsers === true || md.isVisibleToUsers === 'true',
+        uploadedAt: md.uploadedAt ? new Date(md.uploadedAt) : undefined
+      });
+    }
+  }
+
+  // 14. Seed Audit Logs
+  if (dump.auditLogs) {
+    console.log(`Seeding ${dump.auditLogs.length} Audit Logs...`);
+    for (const al of dump.auditLogs) {
+      await db.insert(schema.auditLogs).values({
+        id: al.id,
+        username: al.username,
+        action: al.action,
+        entityType: al.entityType,
+        entityId: al.entityId,
+        ipAddress: al.ipAddress,
+        userAgent: al.userAgent,
+        details: al.details,
+        createdAt: al.createdAt ? new Date(al.createdAt) : undefined
+      });
+    }
+  }
+
+  // 15. Reset PostgreSQL Serial Key sequences to prevent clashes
   console.log('Resetting PostgreSQL database serial sequences...');
-  const tables = ['Cell', 'User', 'Employee', 'Duty', 'Document', 'Holiday', 'Executive', 'Trash', 'OfficeOrder'];
+  const tables = [
+    'Cell', 'User', 'Employee', 'Duty', 'Document', 'Holiday', 'Executive', 
+    'Trash', 'OfficeOrder', 'LeaveApplication', 'LunchBill', 'ManualDocument', 'AuditLog'
+  ];
   for (const table of tables) {
     try {
       await db.execute(sql`

@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Rate limit POST logins and any document generation endpoints
-  const isAuthPost = pathname === '/api/auth' && request.method === 'POST';
+  const isAuthPost = pathname.startsWith('/api/auth/signin') && request.method === 'POST';
   const isDocGen = pathname.startsWith('/api/documents/generate-');
 
   if (isAuthPost || isDocGen) {
@@ -54,5 +54,5 @@ export function middleware(request: NextRequest) {
 
 // Config matcher targeting authentication and document generation paths
 export const config = {
-  matcher: ['/api/auth', '/api/documents/:path*'],
+  matcher: ['/api/auth/:path*', '/api/documents/:path*'],
 };

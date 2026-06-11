@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ShieldCheck, AlertCircle, Eye, EyeOff, Lock } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 
 // ===== INTERACTIVE DOG PHOTO EYE OVERLAY COMPONENT =====
 // Render a highly interactive, animated vector SVG dog mascot that tracks input and hides its eyes
@@ -307,7 +308,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/auth');
+        const res = await fetch('/api/profile');
         const contentType = res.headers.get('content-type');
         if (res.ok && contentType && contentType.includes('application/json')) {
           const data = await res.json();
@@ -356,19 +357,19 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'login', username, password }),
+      const res = await signIn('credentials', {
+        redirect: false,
+        username,
+        password,
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
+
+      if (res && !res.error) {
         setAuthenticated(true);
         localStorage.removeItem('login_attempts');
         setAttempts(0);
         window.dispatchEvent(new Event('storage'));
         // Fetch detailed profile immediately
-        const profileRes = await fetch('/api/auth');
+        const profileRes = await fetch('/api/profile');
         const profileData = await profileRes.json();
         if (profileRes.ok && profileData.authenticated) {
           setUserProfile(profileData.user);
@@ -382,7 +383,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         if (nextAttempts >= 5) {
           setError('অতিরিক্ত ভুল প্রচেষ্টার কারণে আপনার লগইন সাময়িকভাবে ব্লক করা হয়েছে। অনুগ্রহ করে কিছু সময় পর চেষ্টা করুন।');
         } else {
-          setError(data.message || `ভুল ইউজারনেম বা পাসওয়ার্ড! (অবশিষ্ট চেষ্টা: ${5 - nextAttempts} বার)`);
+          setError(`ভুল ইউজারনেম বা পাসওয়ার্ড! (অবশিষ্ট চেষ্টা: ${5 - nextAttempts} বার)`);
         }
       }
     } catch {

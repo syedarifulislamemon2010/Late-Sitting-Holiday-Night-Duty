@@ -235,68 +235,71 @@ export class OfficeOrderService {
       }
     }
 
-    if (validated.originalOrderRef && validated.originalOrderRef !== validated.orderRef) {
-      await OfficeOrderRepository.clearDutiesOrderRef(validated.originalOrderRef);
-      await OfficeOrderRepository.deleteByOrderRef(validated.originalOrderRef);
-    }
+    return db.transaction(async (tx) => {
+      if (validated.originalOrderRef && validated.originalOrderRef !== validated.orderRef) {
+        await OfficeOrderRepository.clearDutiesOrderRef(validated.originalOrderRef, tx);
+        await OfficeOrderRepository.deleteByOrderRef(validated.originalOrderRef, tx);
+      }
 
-    await OfficeOrderRepository.clearDutiesOrderRef(validated.orderRef);
+      await OfficeOrderRepository.clearDutiesOrderRef(validated.orderRef, tx);
 
-    const existingOrder = await OfficeOrderRepository.findByOrderRef(validated.orderRef);
-    let orderRecord = existingOrder;
-    const existed = !!existingOrder || !!validated.originalOrderRef;
-    const isBill = validated.category?.startsWith('BILL_');
+      const existingOrder = await OfficeOrderRepository.findByOrderRef(validated.orderRef, tx);
+      let orderRecord = existingOrder;
+      const existed = !!existingOrder || !!validated.originalOrderRef;
+      const isBill = validated.category?.startsWith('BILL_');
 
-    const statusToSave = validated.status || (existed ? 'Modified' : 'Generated');
+      const statusToSave = validated.status || (existed ? 'Modified' : 'Generated');
 
-    const dataToSave = {
-      orderRef: validated.orderRef,
-      orderDate: validated.orderDate,
-      category: validated.category,
-      employeeName: validated.employeeName,
-      cellName: validated.cellName || null,
-      dutiesJson: validated.duties ? JSON.stringify(validated.duties) : '[]',
-      contentJson: validated.content ? JSON.stringify(validated.content) : null,
-      status: statusToSave
-    };
-
-    if (!orderRecord) {
-      orderRecord = await OfficeOrderRepository.create(dataToSave);
-    } else {
-      orderRecord = await OfficeOrderRepository.updateByOrderRef(validated.orderRef, {
+      const dataToSave = {
+        orderRef: validated.orderRef,
         orderDate: validated.orderDate,
+        category: validated.category,
         employeeName: validated.employeeName,
         cellName: validated.cellName || null,
         dutiesJson: validated.duties ? JSON.stringify(validated.duties) : '[]',
         contentJson: validated.content ? JSON.stringify(validated.content) : null,
         status: statusToSave
+      };
+
+      if (!orderRecord) {
+        orderRecord = await OfficeOrderRepository.create(dataToSave, tx);
+      } else {
+        orderRecord = await OfficeOrderRepository.updateByOrderRef(validated.orderRef, {
+          orderDate: validated.orderDate,
+          employeeName: validated.employeeName,
+          cellName: validated.cellName || null,
+          dutiesJson: validated.duties ? JSON.stringify(validated.duties) : '[]',
+          contentJson: validated.content ? JSON.stringify(validated.content) : null,
+          status: statusToSave
+        }, tx);
+      }
+
+      if (validated.dutyIds && validated.dutyIds.length > 0) {
+        await OfficeOrderRepository.linkDutiesToOrderRef(
+          validated.dutyIds.map(id => Number(id)),
+          validated.orderRef,
+          tx
+        );
+      }
+
+      const logAction = isBill 
+        ? (existed ? 'EDIT_BILL' : 'GENERATE_BILL') 
+        : (existed ? 'EDIT_OFFICE_ORDER' : 'GENERATE_OFFICE_ORDER');
+
+      await logActivity({
+        username: currentUser.username,
+        action: logAction,
+        entityType: 'OFFICE_ORDER',
+        entityId: String(orderRecord.id),
+        userId: currentUser.id,
+        bankId: currentUser.username,
+        ipAddress: headersInfo.ipAddress,
+        userAgent: headersInfo.userAgent,
+        details: `${currentUser.name} (@${currentUser.username}) ${isBill ? (existed ? 'বিল মেমো সংশোধন' : 'নতুন বিল মেমো তৈরি') : (existed ? 'অফিস আদেশ সংশোধন' : 'নতুন অফিস আদেশ তৈরি')} করেছেন (সূত্র: ${validated.orderRef})।`
       });
-    }
 
-    if (validated.dutyIds && validated.dutyIds.length > 0) {
-      await OfficeOrderRepository.linkDutiesToOrderRef(
-        validated.dutyIds.map(id => Number(id)),
-        validated.orderRef
-      );
-    }
-
-    const logAction = isBill 
-      ? (existed ? 'EDIT_BILL' : 'GENERATE_BILL') 
-      : (existed ? 'EDIT_OFFICE_ORDER' : 'GENERATE_OFFICE_ORDER');
-
-    await logActivity({
-      username: currentUser.username,
-      action: logAction,
-      entityType: 'OFFICE_ORDER',
-      entityId: String(orderRecord.id),
-      userId: currentUser.id,
-      bankId: currentUser.username,
-      ipAddress: headersInfo.ipAddress,
-      userAgent: headersInfo.userAgent,
-      details: `${currentUser.name} (@${currentUser.username}) ${isBill ? (existed ? 'বিল মেমো সংশোধন' : 'নতুন বিল মেমো তৈরি') : (existed ? 'অফিস আদেশ সংশোধন' : 'নতুন অফিস আদেশ তৈরি')} করেছেন (সূত্র: ${validated.orderRef})।`
+      return { success: true, id: orderRecord.id, order: orderRecord };
     });
-
-    return { success: true, id: orderRecord.id, order: orderRecord };
   }
 
   static async updateOfficeOrder(currentUser: UserSession | null, id: number, body: OfficeOrderUpdateInput, headersInfo: { ipAddress: string, userAgent: string }) {
@@ -325,34 +328,36 @@ export class OfficeOrderService {
       }
     }
 
-    if (validated.orderRef !== existingOrder.orderRef) {
-      await db.update(dutiesTableHelper())
-        .set({ orderRef: validated.orderRef })
-        .where(eq(dutiesOrderRefHelper(), existingOrder.orderRef));
-    }
+    return db.transaction(async (tx) => {
+      if (validated.orderRef !== existingOrder.orderRef) {
+        await tx.update(dutiesTableHelper())
+          .set({ orderRef: validated.orderRef })
+          .where(eq(dutiesOrderRefHelper(), existingOrder.orderRef));
+      }
 
-    const isBill = existingOrder.category?.startsWith('BILL_');
-    const updated = await OfficeOrderRepository.update(id, {
-      orderRef: validated.orderRef,
-      orderDate: validated.orderDate,
-      employeeName: validated.employeeName,
-      cellName: validated.cellName || null,
-      status: validated.status || 'Modified'
+      const isBill = existingOrder.category?.startsWith('BILL_');
+      const updated = await OfficeOrderRepository.update(id, {
+        orderRef: validated.orderRef,
+        orderDate: validated.orderDate,
+        employeeName: validated.employeeName,
+        cellName: validated.cellName || null,
+        status: validated.status || 'Modified'
+      }, tx);
+
+      await logActivity({
+        username: currentUser.username,
+        action: isBill ? 'EDIT_BILL' : 'EDIT_OFFICE_ORDER',
+        entityType: 'OFFICE_ORDER',
+        entityId: String(updated.id),
+        userId: currentUser.id,
+        bankId: currentUser.username,
+        ipAddress: headersInfo.ipAddress,
+        userAgent: headersInfo.userAgent,
+        details: `${currentUser.name} (@${currentUser.username}) ${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} সংশোধন করেছেন (সূত্র: ${validated.orderRef})।`
+      });
+
+      return { success: true, order: updated };
     });
-
-    await logActivity({
-      username: currentUser.username,
-      action: isBill ? 'EDIT_BILL' : 'EDIT_OFFICE_ORDER',
-      entityType: 'OFFICE_ORDER',
-      entityId: String(updated.id),
-      userId: currentUser.id,
-      bankId: currentUser.username,
-      ipAddress: headersInfo.ipAddress,
-      userAgent: headersInfo.userAgent,
-      details: `${currentUser.name} (@${currentUser.username}) ${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} সংশোধন করেছেন (সূত্র: ${validated.orderRef})।`
-    });
-
-    return { success: true, order: updated };
   }
 
   static async deleteOfficeOrder(currentUser: UserSession | null, id: number, headersInfo: { ipAddress: string, userAgent: string }) {
@@ -374,42 +379,44 @@ export class OfficeOrderService {
 
     const isBill = order.category?.startsWith('BILL_');
 
-    await logActivity({
-      username: currentUser.username,
-      action: isBill ? 'DELETE_BILL' : 'DELETE_OFFICE_ORDER',
-      entityType: 'OFFICE_ORDER',
-      entityId: String(id),
-      userId: currentUser.id,
-      bankId: currentUser.username,
-      ipAddress: headersInfo.ipAddress,
-      userAgent: headersInfo.userAgent,
-      details: `${currentUser.name} (@${currentUser.username}) ${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} মুছে ফেলেছেন (সূত্র: ${order.orderRef})।`
-    });
+    await db.transaction(async (tx) => {
+      // Hard delete in database
+      await OfficeOrderRepository.delete(id, tx);
 
-    // Hard delete in database
-    await OfficeOrderRepository.delete(id);
-
-    // Free the duties associated with this office order by setting orderRef to null, or restore to original order ref if deleting a bill
-    if (order.orderRef) {
-      if (order.orderRef.endsWith('/বিল')) {
-        const originalOrderRef = order.orderRef.replace(/\/বিল$/, '');
-        await db.update(duties)
-          .set({ orderRef: originalOrderRef })
-          .where(eq(duties.orderRef, order.orderRef));
-      } else {
-        await db.update(duties)
-          .set({ orderRef: null })
-          .where(eq(duties.orderRef, order.orderRef));
+      // Free the duties associated with this office order by setting orderRef to null, or restore to original order ref if deleting a bill
+      if (order.orderRef) {
+        if (order.orderRef.endsWith('/বিল')) {
+          const originalOrderRef = order.orderRef.replace(/\/বিল$/, '');
+          await tx.update(duties)
+            .set({ orderRef: originalOrderRef })
+            .where(eq(duties.orderRef, order.orderRef));
+        } else {
+          await tx.update(duties)
+            .set({ orderRef: null })
+            .where(eq(duties.orderRef, order.orderRef));
+        }
       }
-    }
 
-    // Insert into trash table for restore support
-    await db.insert(trash).values({
-      entityType: 'OFFICE_ORDER',
-      entityId: id,
-      name: `${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} সূত্র: ${order.orderRef}`,
-      data: JSON.stringify(order),
-      deletedBy: currentUser.username
+      // Insert into trash table for restore support
+      await tx.insert(trash).values({
+        entityType: 'OFFICE_ORDER',
+        entityId: id,
+        name: `${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} সূত্র: ${order.orderRef}`,
+        data: JSON.stringify(order),
+        deletedBy: currentUser.username
+      });
+
+      await logActivity({
+        username: currentUser.username,
+        action: isBill ? 'DELETE_BILL' : 'DELETE_OFFICE_ORDER',
+        entityType: 'OFFICE_ORDER',
+        entityId: String(id),
+        userId: currentUser.id,
+        bankId: currentUser.username,
+        ipAddress: headersInfo.ipAddress,
+        userAgent: headersInfo.userAgent,
+        details: `${currentUser.name} (@${currentUser.username}) ${isBill ? 'বিল মেমো' : 'অফিস আদেশ'} মুছে ফেলেছেন (সূত্র: ${order.orderRef})।`
+      });
     });
 
     return { success: true };

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useProfile } from '@/context/ProfileContext';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 
 import { 
@@ -254,7 +255,7 @@ const calculateOrderDate = (earliestDateStr: string, holidaysList: Holiday[], st
 };
 
 export default function RosterPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { currentUser } = useProfile();
   const [orderGenerated, setOrderGenerated] = useState(false);
   const [isArchived, setIsArchived] = useState(false);
   const [isEditingArchive, setIsEditingArchive] = useState(() => {
@@ -1443,35 +1444,26 @@ export default function RosterPage() {
   }, []);
 
   useEffect(() => {
-    async function init() {
-      try {
-        const res = await fetch('/api/auth');
-        const data = await res.json();
-        if (res.ok && data.authenticated) {
-          setCurrentUser(data.user);
-          
-          const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-          const hasEditRef = params ? !!params.get('edit_ref') : false;
-          
-          if (!hasEditRef && data.user.role !== 'ADMIN') {
-            if (data.user.cells && data.user.cells.length === 1) {
-              const pIdStr = data.user.cells[0].id.toString();
-              setSelectedCell(pIdStr);
-              setOpt1CellId(pIdStr);
-            } else {
-              setSelectedCell('all');
-              setOpt1CellId('all');
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error loading auth profile:', err);
-      }
-      
-      await loadData();
-    }
-    init();
+    loadData();
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const hasEditRef = params ? !!params.get('edit_ref') : false;
+      
+      if (!hasEditRef && currentUser.role !== 'ADMIN') {
+        if (currentUser.cells && currentUser.cells.length === 1) {
+          const pIdStr = currentUser.cells[0].id.toString();
+          setSelectedCell(pIdStr);
+          setOpt1CellId(pIdStr);
+        } else {
+          setSelectedCell('all');
+          setOpt1CellId('all');
+        }
+      }
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     loadDuties();
@@ -2252,7 +2244,7 @@ export default function RosterPage() {
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800">
               <th className="p-3 text-[10px] uppercase font-bold tracking-wider text-center">ক্রমিক</th>
-              <th className="p-3 text-[10px] uppercase font-bold tracking-wider">স্মারক সূত্র নং</th>
+              <th className="p-3 text-[10px] uppercase font-bold tracking-wider min-w-[280px]">স্মারক সূত্র নং</th>
               <th className="p-3 text-[10px] uppercase font-bold tracking-wider">তারিখ</th>
               <th className="p-3 text-[10px] uppercase font-bold tracking-wider">ডিউটি ক্যাটাগরি</th>
               <th className="p-3 text-[10px] uppercase font-bold tracking-wider text-center font-bold">মোট ডিউটি সংখ্যা</th>
@@ -2277,7 +2269,7 @@ export default function RosterPage() {
                   <td className="p-3 text-center text-slate-500 font-sans font-semibold">
                     {toBanglaDigits(index + 1)}
                   </td>
-                  <td className="p-3 font-mono font-bold text-slate-700 dark:text-slate-300 break-all select-all">
+                  <td className="p-3 font-mono font-bold text-slate-700 dark:text-slate-300 break-words select-all min-w-[280px]">
                     {order.orderRef}
                   </td>
                   <td className="p-3 text-slate-500 dark:text-slate-400 font-sans whitespace-nowrap">
@@ -2714,7 +2706,7 @@ export default function RosterPage() {
                           <option value="all">সকল সেল (All Cells)</option>
                         )}
                         {cells
-                          .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: Cell) => uc.id === c.id))
+                          .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc) => uc.id === c.id))
                           .map(c => (
                             <option key={c.id} value={c.id.toString()}>{c.name}</option>
                           ))
@@ -2731,7 +2723,7 @@ export default function RosterPage() {
                         {(() => {
                           const allowedCellIds = currentUser?.role === 'ADMIN'
                             ? cells.map(c => c.id)
-                            : currentUser?.cells?.map((c: Cell) => c.id) || [];
+                            : currentUser?.cells?.map((c) => c.id) || [];
                           
                           const listEmployees = employees.filter(emp => 
                             opt1CellId === 'all' 
@@ -3007,7 +2999,7 @@ export default function RosterPage() {
                       <option value="all">সকল সেল (All Cells)</option>
                     )}
                     {cells
-                      .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: Cell) => uc.id === c.id))
+                      .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc) => uc.id === c.id))
                       .map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)
                     }
                   </select>

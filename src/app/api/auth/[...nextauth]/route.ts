@@ -3,6 +3,8 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
 import { users, employees, userCells } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { headers } from 'next/headers';
+import { logActivity } from '@/lib/audit';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -62,6 +64,24 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (user && user.password === password) {
+          try {
+            const reqHeaders = await headers();
+            const ipAddress = reqHeaders.get('x-forwarded-for') || reqHeaders.get('x-real-ip') || '127.0.0.1';
+            const userAgent = reqHeaders.get('user-agent') || 'Unknown';
+
+            await logActivity({
+              username: user.username,
+              action: 'LOGIN',
+              entityType: 'USER',
+              entityId: String(user.id),
+              ipAddress,
+              userAgent,
+              details: `${user.name} (@${user.username}) সিস্টেমে সফলভাবে লগইন করেছেন (NextAuth)।`
+            });
+          } catch (e) {
+            console.error('Failed to log login activity in authorize callback:', e);
+          }
+
           return {
             id: String(user.id),
             name: user.name,

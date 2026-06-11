@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useProfile } from '@/context/ProfileContext';
 import { 
   Plus, 
   Search, 
@@ -72,7 +73,7 @@ const extractNickname = (nameStr: string): string => {
 
 
 export default function ExecutivesPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { currentUser } = useProfile();
   const [executives, setExecutives] = useState<Executive[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,25 +150,16 @@ export default function ExecutivesPage() {
   }
 
 
+  // Redirect if not admin
   useEffect(() => {
-    async function getProfile() {
-      try {
-        const res = await fetch('/api/auth');
-        const data = await res.json();
-        if (res.ok && data.authenticated) {
-          setCurrentUser(data.user);
-          if (data.user.role !== 'ADMIN') {
-            window.location.href = '/';
-          }
-        } else {
-          window.location.href = '/';
-        }
-      } catch (err) {
-        console.error('Error fetching profile:', err);
+    if (currentUser) {
+      if (currentUser.role !== 'ADMIN') {
         window.location.href = '/';
       }
     }
-    getProfile();
+  }, [currentUser]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       loadData();
     }, 0);

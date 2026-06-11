@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useProfile } from '@/context/ProfileContext';
 import { 
   UserPlus, 
   Shield, 
@@ -93,7 +94,7 @@ const extractNickname = (nameStr: string): string => {
 };
 
 export default function UserManagement() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { currentUser, refetchProfile } = useProfile();
   const [users, setUsers] = useState<User[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -304,23 +305,13 @@ export default function UserManagement() {
     );
   };
 
-  // Fetch initial profile
+  // Sync profile details when currentUser changes
   useEffect(() => {
-    async function getProfile() {
-      try {
-        const res = await fetch('/api/auth');
-        const data = await res.json();
-        if (res.ok && data.authenticated) {
-          setCurrentUser(data.user);
-          setProfileName(data.user.name);
-          setProfileMobile(data.user.mobile || '');
-        }
-      } catch (err) {
-        console.error('Profile fetch error:', err);
-      }
+    if (currentUser) {
+      setProfileName(currentUser.name);
+      setProfileMobile(currentUser.mobile || '');
     }
-    getProfile();
-  }, []);
+  }, [currentUser]);
 
   const loadData = async () => {
     try {
@@ -567,9 +558,7 @@ export default function UserManagement() {
         setProfileSuccess('আপনার প্রোফাইল তথ্য ও পাসওয়ার্ড সফলভাবে আপডেট হয়েছে!');
         setNewPassword('');
         setConfirmPassword('');
-        const updatedUser = { ...currentUser, name: profileName.trim(), mobile: profileMobile.trim() };
-        setCurrentUser(updatedUser);
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        await refetchProfile();
         window.dispatchEvent(new Event('user-profile-updated'));
       } else {
         setProfileError(data.message || 'আপডেট করতে ব্যর্থ হয়েছে।');

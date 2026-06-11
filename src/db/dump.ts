@@ -32,6 +32,10 @@ async function main() {
   const executives = await db.select().from(schema.executives);
   const trash = await db.select().from(schema.trash);
   const officeOrders = await db.select().from(schema.officeOrders);
+  const leaveApplications = await db.select().from(schema.leaveApplications);
+  const lunchBills = await db.select().from(schema.lunchBills);
+  const manualDocuments = await db.select().from(schema.manualDocuments);
+  const auditLogs = await db.select().from(schema.auditLogs);
 
   // Map userCellLinks to the format expected by dump
   const userCellLinks = userCellLinksRaw.map(link => ({
@@ -49,7 +53,11 @@ async function main() {
     holidays,
     executives,
     trash,
-    officeOrders
+    officeOrders,
+    leaveApplications,
+    lunchBills,
+    manualDocuments,
+    auditLogs
   };
 
   fs.writeFileSync('postgres_dump.json', JSON.stringify(dump, null, 2));

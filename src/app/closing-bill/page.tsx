@@ -17,6 +17,7 @@ import {
   Search
 } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
+import { useProfile } from '@/context/ProfileContext';
 
 interface Cell {
   id: number;
@@ -97,7 +98,7 @@ const getInitialClosingMonth = () => {
 };
 
 export default function ClosingBillPage() {
-  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
+  const { currentUser } = useProfile();
   const [activeCellId, setActiveCellId] = useState<number | null>(null);
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -125,24 +126,12 @@ export default function ClosingBillPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [iframeUrl, setIframeUrl] = useState<string>('');
 
-  // Fetch initial profile
+  // Sync active cell ID from currentUser profile
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        const res = await fetch('/api/auth');
-        const data = await res.json();
-        if (res.ok && data.authenticated) {
-          setCurrentUser(data.user);
-          if (data.user.cells && data.user.cells.length > 0) {
-            setActiveCellId(data.user.cells[0].id);
-          }
-        }
-      } catch (err) {
-        console.error('Error loading auth profile:', err);
-      }
+    if (currentUser && currentUser.cells && currentUser.cells.length > 0) {
+      setActiveCellId(currentUser.cells[0].id);
     }
-    loadProfile();
-  }, []);
+  }, [currentUser]);
 
   // Fetch structural units
   useEffect(() => {

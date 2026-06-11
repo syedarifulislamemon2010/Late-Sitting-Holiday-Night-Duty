@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useProfile } from '@/context/ProfileContext';
 import { 
   DEFAULT_2026_HOLIDAYS, 
   isNonWorkingDay as libIsNonWorkingDay, 
@@ -79,7 +80,7 @@ interface Holiday {
 
 
 export default function LeaveGeneratorPage() {
-  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
+  const { currentUser } = useProfile();
   const [matchedEmp, setMatchedEmp] = useState<Employee | null>(null);
   const [selectedApplicantEmp, setSelectedApplicantEmp] = useState<Employee | null>(null);
   const [isProfileUnresolved, setIsProfileUnresolved] = useState(false);
@@ -371,78 +372,19 @@ export default function LeaveGeneratorPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fetch initial profile & data
+  // Fetch initial data (employees & holidays)
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
-        const [authRes, empsRes, holidaysRes] = await Promise.all([
-          fetch('/api/auth'),
+        const [empsRes, holidaysRes] = await Promise.all([
           fetch('/api/employees'),
           fetch('/api/holidays')
         ]);
 
-        if (authRes.ok) {
-          const authData = await authRes.json();
-          if (authData.authenticated) {
-            setCurrentUser(authData.user);
-            
-            // If they are admin, fetch employees. Search if employee exists matching bankId.
-            if (empsRes.ok) {
-              const empsData = await empsRes.json();
-              setEmployees(Array.isArray(empsData) ? empsData : []);
-              
-              let initialBankId = '';
-              if (authData.user.role === 'ADMIN') {
-                // Admin: pre-select the first employee in the list who is NOT the admin themselves
-                if (Array.isArray(empsData) && empsData.length > 0) {
-                  const firstNonAdminEmp = empsData.find((e: Employee) => 
-                    e.bankId?.trim().toLowerCase() !== authData.user.username.trim().toLowerCase()
-                  ) || empsData[0];
-                  
-                  setSelectedApplicantEmp(firstNonAdminEmp);
-                  setApplicantName((firstNonAdminEmp.name || '').replace(/^জনাব\s+/, ''));
-                  setDesignation(firstNonAdminEmp.designation);
-                  setBankId(firstNonAdminEmp.bankId || '');
-                  setFileNo(firstNonAdminEmp.fileNo || '');
-                  if (firstNonAdminEmp.cell && firstNonAdminEmp.cell.name) {
-                    setCellName(firstNonAdminEmp.cell.name);
-                  }
-                  initialBankId = firstNonAdminEmp.bankId || '';
-                }
-              } else {
-                // USER: load logged in user's profile details
-                setApplicantName((authData.user.name || '').replace(/^জনাব\s+/, ''));
-                setBankId(authData.user.username || '');
-                initialBankId = authData.user.username || '';
-                
-                // Find matching employee to load designation & file number automatically
-                const matchedEmp = empsData.find((e: Employee) => 
-                  e.bankId && e.bankId.trim().toLowerCase() === authData.user.username.trim().toLowerCase()
-                );
-                if (matchedEmp) {
-                  setMatchedEmp(matchedEmp);
-                  setSelectedApplicantEmp(matchedEmp);
-                  setApplicantName((matchedEmp.name || '').replace(/^জনাব\s+/, ''));
-                  setDesignation(matchedEmp.designation);
-                  if (matchedEmp.fileNo) {
-                    setFileNo(matchedEmp.fileNo);
-                  }
-                  if (matchedEmp.cell && matchedEmp.cell.name) {
-                    setCellName(matchedEmp.cell.name);
-                  }
-                  initialBankId = matchedEmp.bankId || authData.user.username || '';
-                } else {
-                  setIsProfileUnresolved(true);
-                  fetch('/api/leaves/log-resolve-failed', { method: 'POST' }).catch(err => console.error(err));
-                }
-              }
-
-              if (initialBankId) {
-                fetchArchivedLeaves(initialBankId);
-              }
-            }
-          }
+        if (empsRes.ok) {
+          const empsData = await empsRes.json();
+          setEmployees(Array.isArray(empsData) ? empsData : []);
         }
 
         if (holidaysRes.ok) {
@@ -450,13 +392,65 @@ export default function LeaveGeneratorPage() {
           setDbHolidays(Array.isArray(holData) ? holData : []);
         }
       } catch (err) {
-        console.error('Error fetching initial leave data:', err);
+        console.error('Error fetching initial static leave data:', err);
       } finally {
         setLoading(false);
       }
     }
     loadData();
   }, []);
+
+  // Sync state once currentUser and employees are loaded
+  useEffect(() => {
+    if (!currentUser || employees.length === 0) return;
+
+    let initialBankId = '';
+    if (currentUser.role === 'ADMIN') {
+      const firstNonAdminEmp = employees.find((e: Employee) => 
+        e.bankId?.trim().toLowerCase() !== currentUser.username.trim().toLowerCase()
+      ) || employees[0];
+      
+      if (firstNonAdminEmp) {
+        setSelectedApplicantEmp(firstNonAdminEmp);
+        setApplicantName((firstNonAdminEmp.name || '').replace(/^জনাব\s+/, ''));
+        setDesignation(firstNonAdminEmp.designation);
+        setBankId(firstNonAdminEmp.bankId || '');
+        setFileNo(firstNonAdminEmp.fileNo || '');
+        if (firstNonAdminEmp.cell && firstNonAdminEmp.cell.name) {
+          setCellName(firstNonAdminEmp.cell.name);
+        }
+        initialBankId = firstNonAdminEmp.bankId || '';
+      }
+    } else {
+      setApplicantName((currentUser.name || '').replace(/^জনাব\s+/, ''));
+      setBankId(currentUser.username || '');
+      initialBankId = currentUser.username || '';
+      
+      const matchedEmp = employees.find((e: Employee) => 
+        e.bankId && e.bankId.trim().toLowerCase() === currentUser.username.trim().toLowerCase()
+      );
+      if (matchedEmp) {
+        setMatchedEmp(matchedEmp);
+        setSelectedApplicantEmp(matchedEmp);
+        setApplicantName((matchedEmp.name || '').replace(/^জনাব\s+/, ''));
+        setDesignation(matchedEmp.designation);
+        if (matchedEmp.fileNo) {
+          setFileNo(matchedEmp.fileNo);
+        }
+        if (matchedEmp.cell && matchedEmp.cell.name) {
+          setCellName(matchedEmp.cell.name);
+        }
+        initialBankId = matchedEmp.bankId || currentUser.username || '';
+      } else {
+        setIsProfileUnresolved(true);
+        fetch('/api/leaves/log-resolve-failed', { method: 'POST' }).catch(err => console.error(err));
+      }
+    }
+
+    if (initialBankId) {
+      fetchArchivedLeaves(initialBankId);
+    }
+  }, [currentUser, employees]);
 
   // Format YYYY-MM-DD date to DD/MM/YYYY
   const toDisplayDateStr = (dateStr: string): string => {

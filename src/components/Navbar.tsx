@@ -7,6 +7,7 @@ import {
   Settings,
   LogOut
 } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 
 interface UserSession {
   id: number;
@@ -72,11 +73,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'logout' }),
-      });
+      await signOut({ redirect: false });
       localStorage.removeItem('currentUser');
       window.location.href = '/';
     } catch (err) {

@@ -512,15 +512,17 @@ export class DutyService {
 
     const deletedBy = currentUser ? currentUser.username : null;
 
-    await db.insert(trash).values({
-      entityType: 'DUTY',
-      entityId: id,
-      name: `${duty.employee.name} - ${typeMapBangla[duty.type] || duty.type} (${duty.date})`,
-      data: JSON.stringify(duty),
-      deletedBy
-    });
+    await db.transaction(async (tx) => {
+      await tx.insert(trash).values({
+        entityType: 'DUTY',
+        entityId: id,
+        name: `${duty.employee?.name || 'Unknown'} - ${typeMapBangla[duty.type] || duty.type} (${duty.date})`,
+        data: JSON.stringify(duty),
+        deletedBy
+      });
 
-    await DutyRepository.delete(id);
+      await DutyRepository.delete(id, tx);
+    });
 
     return { success: true };
   }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useProfile } from '@/context/ProfileContext';
 import { 
   UploadCloud, 
   FileText, 
@@ -86,7 +87,7 @@ interface OfficeOrder {
 }
 
 export default function DocumentsPage() {
-  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
+  const { currentUser } = useProfile();
   const [activeTab, setActiveTab] = useState<'files' | 'manual-docs' | 'orders' | 'bills'>('files');
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [officeOrders, setOfficeOrders] = useState<OfficeOrder[]>([]);
@@ -158,24 +159,12 @@ export default function DocumentsPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load user session from /api/auth
+  // Sync default tab if the user has a restricted role
   useEffect(() => {
-    async function loadUser() {
-      try {
-        const res = await fetch('/api/auth');
-        const data = await res.json();
-        if (res.ok && data.authenticated && data.user) {
-          setCurrentUser(data.user);
-          if (data.user.role === 'USER') {
-            setActiveTab('orders'); // default to office orders since files is restricted for USER
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load authenticated user in documents page:', err);
-      }
+    if (currentUser && currentUser.role === 'USER') {
+      setActiveTab('orders'); // default to office orders since files is restricted for USER
     }
-    loadUser();
-  }, []);
+  }, [currentUser]);
 
   const hasDeletePermission = (order: OfficeOrder) => {
     if (!currentUser) return false;

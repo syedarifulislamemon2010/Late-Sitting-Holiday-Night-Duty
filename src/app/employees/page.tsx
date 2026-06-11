@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
+import { useProfile } from '@/context/ProfileContext';
 
 import { 
   Plus, 
@@ -122,7 +123,7 @@ const STRICT_DESIGNATIONS = [
 ];
 
 export default function EmployeesPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { currentUser } = useProfile();
   const [activeTab, setActiveTab] = useState<'employees' | 'cells'>('employees');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -370,18 +371,6 @@ export default function EmployeesPage() {
 
 
   useEffect(() => {
-    async function getProfile() {
-      try {
-        const res = await fetch('/api/auth');
-        const data = await res.json();
-        if (res.ok && data.authenticated) {
-          setCurrentUser(data.user);
-        }
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-      }
-    }
-    getProfile();
     const timer = setTimeout(() => {
       loadData();
     }, 0);

@@ -3,6 +3,7 @@ import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import AuthGuard from "@/components/AuthGuard";
+import { ProfileProvider } from "@/context/ProfileContext";
 
 export const metadata: Metadata = {
   title: "লেট সিটিং-হলিডে-নাইট পোর্টাল",
@@ -58,12 +59,13 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300" suppressHydrationWarning={true}>
-        <AuthGuard>
-          <div className="flex-1 flex flex-col lg:flex-row min-h-0" suppressHydrationWarning={true}>
-            <Sidebar />
-            <main className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
-              <Navbar />
-              <div className="flex-1 p-4 lg:p-8 overflow-y-auto flex flex-col justify-between" suppressHydrationWarning={true}>
+        <ProfileProvider>
+          <AuthGuard>
+            <div className="flex-1 flex flex-col lg:flex-row min-h-0" suppressHydrationWarning={true}>
+              <Sidebar />
+              <main className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
+                <Navbar />
+                <div className="flex-1 p-4 lg:p-8 overflow-y-auto flex flex-col justify-between" suppressHydrationWarning={true}>
                 <div className="flex-1">
                   {children}
                 </div>
@@ -78,9 +80,10 @@ export default function RootLayout({
                   </p>
                 </footer>
               </div>
-            </main>
-          </div>
-        </AuthGuard>
+              </main>
+            </div>
+          </AuthGuard>
+        </ProfileProvider>
       </body>
     </html>
   );
