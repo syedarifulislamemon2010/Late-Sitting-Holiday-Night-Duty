@@ -308,6 +308,41 @@ export default function BillingPage() {
   const [billRef, setBillRef] = useState('');
   const [originalBillRef, setOriginalBillRef] = useState('');
   const [selectedOrderRef, setSelectedOrderRef] = useState<string>('');
+  const [initialBillValues, setInitialBillValues] = useState<{
+    printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+    billDate: string;
+    representativeName: string;
+    subjectText: string;
+    openingParagraph: string;
+    signingOfficer: string;
+    signingDesignation: string;
+  } | null>(null);
+  const [msgBanner, setMsgBanner] = useState<{ type: 'success' | 'cancel'; text: string } | null>(null);
+  
+  const isBillDirty = useMemo(() => {
+    if (!isEditingArchive || !initialBillValues) return false;
+    
+    if (printCategory !== initialBillValues.printCategory) return true;
+    if (billDate !== initialBillValues.billDate) return true;
+    if (representativeName !== initialBillValues.representativeName) return true;
+    if (subjectText !== initialBillValues.subjectText) return true;
+    if (openingParagraph !== initialBillValues.openingParagraph) return true;
+    if (signingOfficer !== initialBillValues.signingOfficer) return true;
+    if (signingDesignation !== initialBillValues.signingDesignation) return true;
+    
+    return false;
+  }, [
+    isEditingArchive,
+    initialBillValues,
+    printCategory,
+    billDate,
+    representativeName,
+    subjectText,
+    openingParagraph,
+    signingOfficer,
+    signingDesignation
+  ]);
+
   const [pendingOrderRefs, setPendingOrderRefs] = useState<string[]>([]);
   const [billedOrderRefs, setBilledOrderRefs] = useState<string[]>([]);
   const [randomNumber] = useState(() => Math.floor(10 + Math.random() * 90));
@@ -319,7 +354,11 @@ export default function BillingPage() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('edit_ref')) {
-        return;
+        const hasRepChanged = initialBillValues && representativeName !== initialBillValues.representativeName;
+        const hasCategoryChanged = initialBillValues && printCategory !== initialBillValues.printCategory;
+        if (!hasRepChanged && !hasCategoryChanged) {
+          return;
+        }
       }
     }
 
@@ -348,7 +387,7 @@ export default function BillingPage() {
         setBillRef(val);
       }, 0);
     }
-  }, [baseOrderRef, selectedOrderRef, printCategory, representativeName, randomNumber]);
+  }, [baseOrderRef, selectedOrderRef, printCategory, representativeName, randomNumber, initialBillValues]);
 
   const [executives, setExecutives] = useState<Executive[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -421,6 +460,22 @@ export default function BillingPage() {
     }
   }, [currentUser, employees]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const msg = params.get('msg');
+      if (msg === 'success') {
+        setMsgBanner({ type: 'success', text: 'আপনার সম্পাদনা সফল হয়েছে।' });
+        const newUrl = window.location.pathname + window.location.search.replace(/[?&]msg=success/, '').replace(/^&/, '?');
+        window.history.replaceState({}, '', newUrl);
+      } else if (msg === 'cancel') {
+        setMsgBanner({ type: 'cancel', text: 'অপারেশন বা সম্পাদনা বাতিল করা হয়েছে।' });
+        const newUrl = window.location.pathname + window.location.search.replace(/[?&]msg=cancel/, '').replace(/^&/, '?');
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, []);
+
   const loadArchivedBill = useCallback(async (editRefVal: string) => {
     isInitializingArchiveRef.current = true;
     try {
@@ -463,6 +518,19 @@ export default function BillingPage() {
               setSigningDesignation(archivedBill.content.signingDesignation);
             }
           }
+          let categoryVal: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' = 'LATE_SITTING';
+          if (archivedBill.category && archivedBill.category.startsWith('BILL_')) {
+            categoryVal = archivedBill.category.slice(5) as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+          }
+          setInitialBillValues({
+            printCategory: categoryVal,
+            billDate: archivedBill.orderDate || new Date().toISOString().split('T')[0],
+            representativeName: archivedBill.employeeName || '',
+            subjectText: archivedBill.content?.subjectText || '',
+            openingParagraph: archivedBill.content?.openingParagraph || '',
+            signingOfficer: archivedBill.content?.signingOfficer || '',
+            signingDesignation: archivedBill.content?.signingDesignation || ''
+          });
           if (archivedBill.status === 'Generated' || archivedBill.status === 'Modified' || archivedBill.status === 'Generated & Printed' || archivedBill.status === 'Printed') {
             setBillGenerated(true);
           } else {
@@ -738,6 +806,15 @@ export default function BillingPage() {
     setTimeout(() => {
       fetchDutiesForBilling();
     }, 0);
+  };
+
+  const handleCancelEditBill = () => {
+    setIsPrintMode(false);
+    setIsEditingArchive(false);
+    const params = new URLSearchParams(window.location.search);
+    const from = params.get('from') || '/documents';
+    const redirectUrl = from.includes('?') ? `${from}&msg=cancel` : `${from}?msg=cancel`;
+    window.location.assign(redirectUrl);
   };
 
   useEffect(() => {
@@ -1367,6 +1444,12 @@ export default function BillingPage() {
           setBillGenerated(true);
           setArchiveSuccess('বিল মেমো সফলভাবে জেনারেট এবং সংরক্ষণ করা হয়েছে!');
           fetchDutiesForBilling();
+          if (isEditingArchive) {
+            const params = new URLSearchParams(window.location.search);
+            const from = params.get('from') || '/documents';
+            const redirectUrl = from.includes('?') ? `${from}&msg=success` : `${from}?msg=success`;
+            window.location.assign(redirectUrl);
+          }
         } else {
           throw new Error('Failed to generate PDF');
         }
@@ -1780,14 +1863,16 @@ export default function BillingPage() {
 
   const handleLoadBillForEditing = (editRef: string) => {
     if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', `/billing?edit_ref=${encodeURIComponent(editRef)}`);
+      const currentUrl = window.location.pathname + window.location.search;
+      window.history.pushState({}, '', `/billing?edit_ref=${encodeURIComponent(editRef)}&from=${encodeURIComponent(currentUrl)}`);
     }
     loadArchivedBill(editRef);
   };
 
   const handleGenerateBillFromOrder = (order: OfficeOrder) => {
     if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', `/billing?orderRef=${encodeURIComponent(order.orderRef)}`);
+      const currentUrl = window.location.pathname + window.location.search;
+      window.history.pushState({}, '', `/billing?orderRef=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(currentUrl)}`);
     }
     setSelectedOrderRef(order.orderRef);
     setPrintCategory(order.category as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT');
@@ -2120,6 +2205,28 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-6">
+      {msgBanner && (
+        <div className={`p-4 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 ${
+          msgBanner.type === 'success' 
+            ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' 
+            : 'bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <div className={`p-1.5 rounded-lg ${
+              msgBanner.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-600'
+            }`}>
+              {msgBanner.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+            </div>
+            <span className="text-sm font-semibold">{msgBanner.text}</span>
+          </div>
+          <button 
+            onClick={() => setMsgBanner(null)}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-350 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       {/* ----------------------------------------------------
           NORMAL VIEW MODE
       ---------------------------------------------------- */}
@@ -2353,6 +2460,9 @@ export default function BillingPage() {
               ledgerGrandTotal={ledgerGrandTotal}
               selectedMonth={selectedMonth}
               setIsLedgerPrintMode={setIsLedgerPrintMode}
+              setViewingOrder={setViewingOrder}
+              handleDeleteOrder={handleDeleteOrder}
+              hasDeletePermission={hasDeletePermission}
             />
           )}
 
@@ -2448,15 +2558,41 @@ export default function BillingPage() {
           <div className="no-print flex flex-col gap-4 glass-card p-4 rounded-2xl">
             <div className="flex items-center justify-between">
               <button
-                onClick={handleBackToLedger}
-                className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                onClick={isEditingArchive ? handleCancelEditBill : handleBackToLedger}
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-sans"
               >
                 <ChevronLeft size={16} />
                 ফিরে যান (লেজার ভিউ)
               </button>
 
               <div className="flex gap-3">
-                {!billGenerated ? (
+                {isEditingArchive ? (
+                  <>
+                    <button
+                      onClick={() => handleGenerateAndPrint('generate')}
+                      disabled={archiving || !isBillDirty}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:dark:bg-slate-800 disabled:text-slate-400 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer disabled:cursor-not-allowed font-sans whitespace-nowrap"
+                    >
+                      {archiving ? (
+                        <>
+                          <Loader2 className="animate-spin" size={14} />
+                          সংরক্ষণ হচ্ছে...
+                        </>
+                      ) : (
+                        <>
+                          <FileSignature size={14} />
+                          সেভ করুন
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={handleCancelEditBill}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-750 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-250 dark:border-slate-700 cursor-pointer font-sans whitespace-nowrap"
+                    >
+                      বাতিল করুন
+                    </button>
+                  </>
+                ) : !billGenerated ? (
                   <button
                     onClick={() => handleGenerateAndPrint('generate')}
                     disabled={archiving}

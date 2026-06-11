@@ -159,6 +159,24 @@ export default function DocumentsPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [msgBanner, setMsgBanner] = useState<{ type: 'success' | 'cancel'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const msg = params.get('msg');
+      if (msg === 'success') {
+        setMsgBanner({ type: 'success', text: 'আপনার সম্পাদনা সফল হয়েছে।' });
+        const newUrl = window.location.pathname + window.location.search.replace(/[?&]msg=success/, '').replace(/^&/, '?');
+        window.history.replaceState({}, '', newUrl);
+      } else if (msg === 'cancel') {
+        setMsgBanner({ type: 'cancel', text: 'অপারেশন বা সম্পাদনা বাতিল করা হয়েছে।' });
+        const newUrl = window.location.pathname + window.location.search.replace(/[?&]msg=cancel/, '').replace(/^&/, '?');
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, []);
+
   // Sync default tab if the user has a restricted role
   useEffect(() => {
     if (currentUser && currentUser.role === 'USER') {
@@ -1089,35 +1107,55 @@ export default function DocumentsPage() {
                     <span>ভিউ</span>
                   </button>
 
-                  {isOrderBilled ? (
-                    <button 
-                      onClick={() => {
-                        const norm = getNormalizedRef(order.orderRef);
-                        const existingBill = officeOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
-                        if (existingBill) {
-                          window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}`;
-                        }
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 dark:hover:bg-teal-950/50 text-teal-600 dark:text-teal-400 rounded-lg text-[10px] font-extrabold transition-all border border-teal-100 dark:border-teal-950/30"
-                      title="বিলটি সম্পাদন করুন"
-                    >
-                      <Receipt size={12} />
-                      <span>বিল সম্পাদন</span>
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => window.location.href = `/billing?orderRef=${encodeURIComponent(order.orderRef)}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-extrabold transition-all border border-amber-100 dark:border-amber-950/30"
-                      title="বিল জেনারেট করুন"
-                    >
-                      <Receipt size={12} />
-                      <span>বিল জেনারেট</span>
-                    </button>
-                  )}
+                  {(() => {
+                    const norm = getNormalizedRef(order.orderRef);
+                    const existingBill = officeOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
+                    return existingBill ? (
+                      <>
+                        <button 
+                          onClick={() => {
+                            window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 dark:hover:bg-teal-955/20 text-teal-650 dark:text-teal-450 rounded-lg text-[10px] font-extrabold transition-all border border-teal-100 dark:border-teal-950/30"
+                          title="বিলটি সম্পাদন করুন"
+                        >
+                          <Receipt size={12} />
+                          <span>বিল সম্পাদন</span>
+                        </button>
+                        <button 
+                          onClick={() => setViewingOrder(existingBill)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-955/20 text-indigo-650 dark:text-indigo-455 rounded-lg text-[10px] font-extrabold transition-all border border-indigo-100 dark:border-indigo-950/30"
+                          title="বিল বিবরণী দেখুন ও প্রিন্ট করুন"
+                        >
+                          <Eye size={12} />
+                          <span>দেখুন</span>
+                        </button>
+                        {hasDeletePermission(existingBill) && (
+                          <button 
+                            onClick={() => handleDeleteOrder(existingBill.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-955/20 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 rounded-lg text-[10px] font-bold transition-all border border-red-100 dark:border-red-950/30"
+                            title="বিল বিবরণী মুছে ফেলুন"
+                          >
+                            <Trash2 size={12} />
+                            <span>মুছুন</span>
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <button 
+                        onClick={() => window.location.href = `/billing?orderRef=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-extrabold transition-all border border-amber-100 dark:border-amber-950/30"
+                        title="বিল জেনারেট করুন"
+                      >
+                        <Receipt size={12} />
+                        <span>বিল জেনারেট করুন</span>
+                      </button>
+                    );
+                  })()}
                   
                   {hasEditPermission(order) && (
                     <button 
-                      onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`}
+                      onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
                       title="রোস্টারে ফিরে এডিট করুন (স্মারক একই থাকবে)"
                     >
@@ -1146,6 +1184,28 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-8 font-sans max-w-7xl mx-auto pb-12">
+      {msgBanner && (
+        <div className={`p-4 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 ${
+          msgBanner.type === 'success' 
+            ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' 
+            : 'bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <div className={`p-1.5 rounded-lg ${
+              msgBanner.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-600'
+            }`}>
+              {msgBanner.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+            </div>
+            <span className="text-sm font-semibold">{msgBanner.text}</span>
+          </div>
+          <button 
+            onClick={() => setMsgBanner(null)}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-350 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       {/* Top Banner Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
@@ -2271,7 +2331,7 @@ export default function DocumentsPage() {
 
                           {hasEditPermission(order) && (
                             <button 
-                              onClick={() => window.location.href = `/billing?edit_ref=${encodeURIComponent(order.orderRef)}`}
+                              onClick={() => window.location.href = `/billing?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700"
                               title="বিলিং এ ফিরে এডিট করুন (স্মারক একই থাকবে)"
                             >

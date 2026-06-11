@@ -8,7 +8,9 @@ import {
   CheckCircle, 
   Receipt,
   FileSpreadsheet,
-  Printer
+  Printer,
+  Eye,
+  Trash2
 } from 'lucide-react';
 import { toBanglaDigits, getBanglaDate } from '@/lib/bengali-converter';
 
@@ -54,6 +56,9 @@ interface LedgerTabProps {
   ledgerGrandTotal: number;
   selectedMonth: string;
   setIsLedgerPrintMode: (val: boolean) => void;
+  setViewingOrder: (order: OfficeOrder) => void;
+  handleDeleteOrder: (id: number) => Promise<void> | void;
+  hasDeletePermission: (order: OfficeOrder) => boolean;
 }
 
 export default function LedgerTab({
@@ -66,7 +71,10 @@ export default function LedgerTab({
   handleGenerateBillFromOrder,
   ledgerGrandTotal,
   selectedMonth,
-  setIsLedgerPrintMode
+  setIsLedgerPrintMode,
+  setViewingOrder,
+  handleDeleteOrder,
+  hasDeletePermission
 }: LedgerTabProps) {
 
   const handleExportToCSV = () => {
@@ -328,17 +336,33 @@ export default function LedgerTab({
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {isBilled ? (
-                            <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center justify-end gap-1.5">
                               <button 
                                 onClick={() => handleLoadBillForEditing(bill.orderRef)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold transition-all border border-emerald-100 dark:border-emerald-950/30 cursor-pointer font-sans"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-955/20 dark:hover:bg-teal-900/30 text-teal-650 dark:text-teal-400 rounded-lg text-[10px] font-extrabold transition-all border border-teal-100 dark:border-teal-950/30 cursor-pointer font-sans"
+                                title="বিল সম্পাদন করুন"
                               >
-                                <CheckCircle size={13} className="text-emerald-500" />
+                                <CheckCircle size={12} className="text-teal-500" />
                                 <span>বিল সম্পাদন</span>
                               </button>
-                              <span className="text-[10px] text-slate-400 font-sans font-medium">
-                                জেনারেটেড: {getBanglaDate(bill.orderDate)}
-                              </span>
+                              <button 
+                                onClick={() => setViewingOrder(bill)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-650 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold transition-all border border-indigo-100 dark:border-indigo-950/30 cursor-pointer font-sans"
+                                title="বিল বিবরণী দেখুন ও প্রিন্ট করুন"
+                              >
+                                <Eye size={12} />
+                                <span>দেখুন</span>
+                              </button>
+                              {hasDeletePermission(bill) && (
+                                <button 
+                                  onClick={() => handleDeleteOrder(bill.id)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-955/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg text-[10px] font-bold transition-all cursor-pointer font-sans"
+                                  title="বিল বিবরণী মুছে ফেলুন"
+                                >
+                                  <Trash2 size={12} />
+                                  <span>মুছুন</span>
+                                </button>
+                              )}
                             </div>
                           ) : (
                             <button 

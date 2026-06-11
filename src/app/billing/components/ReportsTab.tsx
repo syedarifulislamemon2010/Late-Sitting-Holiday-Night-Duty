@@ -300,7 +300,7 @@ export default function ReportsTab({
                                             <span className="text-slate-300">|</span>
                                             <button 
                                               onClick={() => {
-                                                window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`;
+                                                window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
                                               }}
                                               className="text-[10px] text-teal-600 hover:text-teal-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
                                             >

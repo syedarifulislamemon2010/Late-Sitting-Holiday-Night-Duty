@@ -17,7 +17,9 @@ import {
   FileText,
   Eye,
   Receipt,
-  FileSignature
+  FileSignature,
+  CheckCircle,
+  X
 } from 'lucide-react';
 
 interface Cell {
@@ -270,6 +272,21 @@ export default function RosterPage() {
   });
   const [officeOrders, setOfficeOrders] = useState<OfficeOrder[]>([]);
   const isInitializingArchiveRef = useRef(false);
+  const hasLoadedEditRef = useRef(false);
+  const [initialRosterValues, setInitialRosterValues] = useState<{
+    printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+    payeeEmployeeId: string;
+    selectedCell: string;
+    selectedMonths: string[];
+    orderRef: string;
+    orderDate: string;
+    orderText: string;
+    signingOfficer: string;
+    signingDesignation: string;
+    copies: string[];
+    opt1Assignments: Record<number, string[]>;
+  } | null>(null);
+  const [msgBanner, setMsgBanner] = useState<{ type: 'success' | 'cancel'; text: string } | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [duties, setDuties] = useState<Duty[]>([]);
@@ -844,7 +861,11 @@ export default function RosterPage() {
     const catBangla = printCategory === 'LATE_SITTING' ? 'লেট-সিটিং' : printCategory === 'HOLIDAY' ? 'অফ-ডে' : 'নাইট';
 
     if (isEditingArchive && originalOrderRef) {
-      return originalOrderRef;
+      const hasPayeeChanged = initialRosterValues && payeeEmployeeId !== initialRosterValues.payeeEmployeeId;
+      const hasCategoryChanged = initialRosterValues && printCategory !== initialRosterValues.printCategory;
+      if (!hasPayeeChanged && !hasCategoryChanged) {
+        return originalOrderRef;
+      }
     }
 
     const cleanDate = orderDate.replace(/-/g, '');
@@ -852,7 +873,57 @@ export default function RosterPage() {
     const activeStableNumber = stableNumber + activePartIdx;
     const bnRand = toBanglaDigits(activeStableNumber);
     return `৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnDate}/${bnRand}`;
-  }, [userCustomOrderRef, isArchived, duties, selectedCell, printCategory, payeeEmployeeId, employees, isEditingArchive, originalOrderRef, stableNumber, activePartIdx, getGroupedDuties, orderDate]);
+  }, [userCustomOrderRef, isArchived, duties, selectedCell, printCategory, payeeEmployeeId, employees, isEditingArchive, originalOrderRef, stableNumber, activePartIdx, getGroupedDuties, orderDate, initialRosterValues]);
+
+  const isRosterDirty = useMemo(() => {
+    if (!isEditingArchive || !initialRosterValues) return false;
+
+    if (printCategory !== initialRosterValues.printCategory) return true;
+    if (payeeEmployeeId !== initialRosterValues.payeeEmployeeId) return true;
+    if (selectedCell !== initialRosterValues.selectedCell) return true;
+    
+    const initialMonthsStr = [...initialRosterValues.selectedMonths].sort().join(',');
+    const currentMonthsStr = [...selectedMonths].sort().join(',');
+    if (initialMonthsStr !== currentMonthsStr) return true;
+
+    if (orderRef !== initialRosterValues.orderRef) return true;
+    if (orderDate !== initialRosterValues.orderDate) return true;
+    if (orderText !== initialRosterValues.orderText) return true;
+    if (signingOfficer !== initialRosterValues.signingOfficer) return true;
+    if (signingDesignation !== initialRosterValues.signingDesignation) return true;
+
+    const initialCopiesStr = [...initialRosterValues.copies].join('\n');
+    const currentCopiesStr = [...copies].join('\n');
+    if (initialCopiesStr !== currentCopiesStr) return true;
+
+    // Compare opt1Assignments
+    const initialEmpIds = Object.keys(initialRosterValues.opt1Assignments).sort();
+    const currentEmpIds = Object.keys(opt1Assignments).sort();
+    if (initialEmpIds.join(',') !== currentEmpIds.join(',')) return true;
+
+    for (const empIdStr of initialEmpIds) {
+      const empId = Number(empIdStr);
+      const initialDates = [...(initialRosterValues.opt1Assignments[empId] || [])].sort().join(',');
+      const currentDates = [...(opt1Assignments[empId] || [])].sort().join(',');
+      if (initialDates !== currentDates) return true;
+    }
+
+    return false;
+  }, [
+    isEditingArchive,
+    initialRosterValues,
+    printCategory,
+    payeeEmployeeId,
+    selectedCell,
+    selectedMonths,
+    orderRef,
+    orderDate,
+    orderText,
+    signingOfficer,
+    signingDesignation,
+    copies,
+    opt1Assignments
+  ]);
 
   const [headerMode, setHeaderMode] = useState<'with_header' | 'without_header'>('with_header');
 
@@ -1046,7 +1117,10 @@ export default function RosterPage() {
         
         if (isEditingArchive) {
           setIsEditingArchive(false);
-          window.location.assign('/documents');
+          const params = new URLSearchParams(window.location.search);
+          const from = params.get('from') || '/documents';
+          const redirectUrl = from.includes('?') ? `${from}&msg=success` : `${from}?msg=success`;
+          window.location.assign(redirectUrl);
         } else {
           window.location.assign('/');
         }
@@ -1518,8 +1592,9 @@ export default function RosterPage() {
               }
               
               // Find cell id
+              let matchedCell: Cell | undefined = undefined;
               if (matchingOrder.cellName) {
-                const matchedCell = localCells.find((c: Cell) => c.name === matchingOrder.cellName);
+                matchedCell = localCells.find((c: Cell) => c.name === matchingOrder.cellName);
                 if (matchedCell) {
                   setSelectedCell(matchedCell.id.toString());
                 }
@@ -1620,6 +1695,19 @@ export default function RosterPage() {
                 });
               });
               setDuties(reconstructedDuties);
+              setInitialRosterValues({
+                printCategory: matchingOrder.category as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT',
+                payeeEmployeeId: matchedRep ? matchedRep.id.toString() : '',
+                selectedCell: matchedCell ? matchedCell.id.toString() : 'all',
+                selectedMonths: Array.from(orderMonthsSet).sort(),
+                orderRef: editRef,
+                orderDate: matchingOrder.orderDate,
+                orderText: matchingOrder.content?.orderText || '',
+                signingOfficer: matchingOrder.content?.signingOfficer || '',
+                signingDesignation: matchingOrder.content?.signingDesignation || '',
+                copies: Array.isArray(matchingOrder.content?.copies) ? [...matchingOrder.content.copies] : [],
+                opt1Assignments: JSON.parse(JSON.stringify(assignments))
+              });
               if (matchingOrder.status === 'Generated' || matchingOrder.status === 'Modified' || matchingOrder.status === 'Generated & Printed' || matchingOrder.status === 'Printed') {
                 setOrderGenerated(true);
                 setIsArchived(true);
@@ -1640,45 +1728,24 @@ export default function RosterPage() {
         loadArchivedDuties();
       }
     }
-  }, [
-    employees,
-    cells,
-    selectedCell,
-    originalOrderRef,
-    payeeEmployeeId,
-    selectedMonths,
-    orderRef,
-    orderDate,
-    orderText,
-    signingOfficer,
-    signingDesignation,
-    copies,
-    headerMode,
-    opt1Assignments,
-    duties,
-    isEditingArchive,
-    isPrintMode,
-    isArchived,
-    setIsEditingArchive,
-    setEmployees,
-    setCells,
-    setOpt1CellId,
-    setUserSelectedPrintCategory,
-    setUserSelectedPayeeId,
-    setSelectedCell,
-    setSelectedMonths,
-    setUserCustomOrderRef,
-    setOriginalOrderRef,
-    setUserCustomOrderDate,
-    setUserCustomOrderText,
-    setSigningOfficer,
-    setSigningDesignation,
-    setCopies,
-    setOpt1Assignments,
-    setDuties,
-    setOrderGenerated,
-    setIsArchived
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const msg = params.get('msg');
+      if (msg === 'success') {
+        setMsgBanner({ type: 'success', text: 'আপনার সম্পাদনা সফল হয়েছে।' });
+        const newUrl = window.location.pathname + window.location.search.replace(/[?&]msg=success/, '').replace(/^&/, '?');
+        window.history.replaceState({}, '', newUrl);
+      } else if (msg === 'cancel') {
+        setMsgBanner({ type: 'cancel', text: 'অপারেশন বা সম্পাদনা বাতিল করা হয়েছে।' });
+        const newUrl = window.location.pathname + window.location.search.replace(/[?&]msg=cancel/, '').replace(/^&/, '?');
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, []);
 
   const handleBackToRoster = () => {
     setIsPrintMode(false);
@@ -2018,7 +2085,10 @@ export default function RosterPage() {
 
         // Exit edit mode and redirect to documents archive page!
         setIsEditingArchive(false);
-        window.location.href = '/documents';
+        const params = new URLSearchParams(window.location.search);
+        const from = params.get('from') || '/documents';
+        const redirectUrl = from.includes('?') ? `${from}&msg=success` : `${from}?msg=success`;
+        window.location.href = redirectUrl;
         return;
       }
 
@@ -2177,6 +2247,15 @@ export default function RosterPage() {
     setOpt1ViewedMonths({});
     setFormCellFilter('all');
     setFormSearchQuery('');
+  };
+
+  const handleCancelRosterEdit = () => {
+    setIsEditingArchive(false);
+    setUserCustomOrderRef(null);
+    const params = new URLSearchParams(window.location.search);
+    const from = params.get('from') || '/documents';
+    const redirectUrl = from.includes('?') ? `${from}&msg=cancel` : `${from}?msg=cancel`;
+    window.location.assign(redirectUrl);
   };
 
 
@@ -2569,6 +2648,28 @@ export default function RosterPage() {
 
   return (
     <div className="space-y-6 min-h-screen bg-slate-50/50 -m-4 lg:-m-8 p-4 lg:p-8">
+      {msgBanner && (
+        <div className={`p-4 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 ${
+          msgBanner.type === 'success' 
+            ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' 
+            : 'bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <div className={`p-1.5 rounded-lg ${
+              msgBanner.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-600'
+            }`}>
+              {msgBanner.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+            </div>
+            <span className="text-sm font-semibold">{msgBanner.text}</span>
+          </div>
+          <button 
+            onClick={() => setMsgBanner(null)}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-350 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       {/* ----------------------------------------------------
           NORMAL VIEW MODE
       ---------------------------------------------------- */}
@@ -3018,25 +3119,20 @@ export default function RosterPage() {
                   </div>
                 ) : (
                   isEditingArchive ? (
-                    <div className="flex gap-3 mt-4">
+                    <div className="flex gap-3 mt-4 font-sans">
                       <button
                         type="button"
-                        onClick={() => {
-                          setIsEditingArchive(false);
-                          setUserCustomOrderRef(null);
-                          window.history.pushState({}, '', '/roster');
-                          loadDuties();
-                        }}
-                        className="flex-1 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-all shadow-sm cursor-pointer"
+                        onClick={handleCancelRosterEdit}
+                        className="flex-1 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-750 text-sm font-bold transition-all shadow-sm border border-slate-250 cursor-pointer"
                       >
-                        বাতিল
+                        বাতিল করুন
                       </button>
                       <button
                         type="submit"
-                        disabled={submitting || isSubmitDisabled()}
-                        className="flex-1 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-semibold transition-all shadow-md cursor-pointer disabled:cursor-not-allowed"
+                        disabled={submitting || isSubmitDisabled() || !isRosterDirty}
+                        className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-bold transition-all shadow-md cursor-pointer disabled:cursor-not-allowed"
                       >
-                        {submitting ? 'সম্পাদনা ও আপডেট হচ্ছে...' : 'অফিস আদেশ সম্পাদন ও আপডেট করুন'}
+                        {submitting ? 'সংরক্ষণ হচ্ছে...' : 'সেভ করুন'}
                       </button>
                     </div>
                   ) : (
@@ -3420,14 +3516,22 @@ export default function RosterPage() {
                     ডাউনলোড পিডিএফ (Download)
                   </button>
                   {isEditingArchive ? (
-                    <button
-                      onClick={saveOrderToArchive}
-                      disabled={submitting}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer disabled:opacity-50"
-                    >
-                      <FileText size={14} />
-                      {submitting ? 'আপডেট হচ্ছে...' : 'আর্কাইভ আপডেট করুন'}
-                    </button>
+                    <div className="flex gap-3 font-sans">
+                      <button
+                        onClick={saveOrderToArchive}
+                        disabled={submitting || !isRosterDirty}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:dark:bg-slate-800 disabled:text-slate-400 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        <FileText size={14} />
+                        {submitting ? 'সংরক্ষণ হচ্ছে...' : 'সেভ করুন'}
+                      </button>
+                      <button
+                        onClick={handleCancelRosterEdit}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-750 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-250 dark:border-slate-700 cursor-pointer whitespace-nowrap"
+                      >
+                        বাতিল করুন
+                      </button>
+                    </div>
                   ) : !isArchived ? (
                     <button
                       onClick={saveOrderToArchive}
@@ -3471,7 +3575,10 @@ export default function RosterPage() {
                   <label className="text-xs font-bold text-slate-500">২. বিল যার অনুকূলে হবে (Bill Favoring To)</label>
                   <select
                     value={payeeEmployeeId}
-                    onChange={(e) => setUserSelectedPayeeId(e.target.value)}
+                    onChange={(e) => {
+                      setUserSelectedPayeeId(e.target.value);
+                      setUserCustomOrderRef(null);
+                    }}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
                   >
                     <option value="">Select Employee (কর্মকর্তা নির্বাচন)</option>

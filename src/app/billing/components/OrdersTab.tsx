@@ -122,35 +122,55 @@ export default function OrdersTab({
                     <span>ভিউ</span>
                   </button>
 
-                  {isOrderBilled ? (
-                    <button 
-                      onClick={() => {
-                        const norm = getNormalizedRef(order.orderRef);
-                        const existingBill = archivedOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
-                        if (existingBill) {
-                          handleLoadBillForEditing(existingBill.orderRef);
-                        }
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 dark:hover:bg-teal-950/50 text-teal-600 dark:text-teal-400 rounded-lg text-[10px] font-extrabold transition-all border border-teal-100 dark:border-teal-950/30 cursor-pointer font-sans"
-                      title="বিলটি সম্পাদন করুন"
-                    >
-                      <Receipt size={12} />
-                      <span>বিল সম্পাদন</span>
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleGenerateBillFromOrder(order)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-extrabold transition-all border border-amber-100 dark:border-amber-950/30 cursor-pointer font-sans"
-                      title="বিল জেনারেট করুন"
-                    >
-                      <Receipt size={12} />
-                      <span>বিল জেনারেট</span>
-                    </button>
-                  )}
+                  {(() => {
+                    const norm = getNormalizedRef(order.orderRef);
+                    const existingBill = archivedOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
+                    return existingBill ? (
+                      <>
+                        <button 
+                          onClick={() => {
+                            handleLoadBillForEditing(existingBill.orderRef);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 dark:hover:bg-teal-955/20 text-teal-650 dark:text-teal-450 rounded-lg text-[10px] font-extrabold transition-all border border-teal-100 dark:border-teal-950/30 cursor-pointer font-sans"
+                          title="বিলটি সম্পাদন করুন"
+                        >
+                          <Receipt size={12} />
+                          <span>বিল সম্পাদন</span>
+                        </button>
+                        <button 
+                          onClick={() => setViewingOrder(existingBill)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-955/20 text-indigo-655 dark:text-indigo-455 rounded-lg text-[10px] font-extrabold transition-all border border-indigo-100 dark:border-indigo-950/30 cursor-pointer font-sans"
+                          title="বিল বিবরণী দেখুন ও প্রিন্ট করুন"
+                        >
+                          <Eye size={12} />
+                          <span>দেখুন</span>
+                        </button>
+                        {hasDeletePermission(existingBill) && (
+                          <button 
+                            onClick={() => handleDeleteOrder(existingBill.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-955/20 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 rounded-lg text-[10px] font-bold transition-all border border-red-100 dark:border-red-950/30 cursor-pointer"
+                            title="বিল বিবরণী মুছে ফেলুন"
+                          >
+                            <Trash2 size={12} />
+                            <span>মুছুন</span>
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <button 
+                        onClick={() => handleGenerateBillFromOrder(order)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-extrabold transition-all border border-amber-100 dark:border-amber-950/30 cursor-pointer font-sans"
+                        title="বিল জেনারেট করুন"
+                      >
+                        <Receipt size={12} />
+                        <span>বিল জেনারেট করুন</span>
+                      </button>
+                    );
+                  })()}
                   
                   {hasEditPermission(order) && (
                     <button 
-                      onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`}
+                      onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer font-sans"
                       title="রোস্টারে ফিরে এডিট করুন (স্মারক একই থাকবে)"
                     >
