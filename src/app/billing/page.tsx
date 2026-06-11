@@ -2944,7 +2944,7 @@ export default function BillingPage() {
                                               <div className="flex items-center gap-1.5">
                                                 <button 
                                                   onClick={() => {
-                                                    window.open(`/documents/preview?id=${order.id}`, '_blank');
+                                                    window.open(`/documents/preview?id=${order.id}&source=office-order`, '_blank');
                                                   }}
                                                   className="text-[10px] text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
                                                 >
@@ -2984,7 +2984,7 @@ export default function BillingPage() {
                                             <div className="flex items-center gap-1.5">
                                               <button 
                                                 onClick={() => {
-                                                  window.open(`/documents/preview?id=${bill.id}`, '_blank');
+                                                  window.open(`/documents/preview?id=${bill.id}&source=bill`, '_blank');
                                                 }}
                                                 className="text-[10px] text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
                                               >

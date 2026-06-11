@@ -9,14 +9,22 @@ function PreviewContent() {
   const id = searchParams.get('id');
   const name = searchParams.get('name') || 'নথি';
   const type = searchParams.get('type') || '';
+  const source = searchParams.get('source') || '';
 
-  const [loading, setLoading] = useState(true);
+  const isOfficeOrderOrBill = ['office-order', 'office_order', 'bill'].includes(source.trim().toLowerCase());
+
+  const [loading, setLoading] = useState(!isOfficeOrderOrBill);
   const [error, setError] = useState<string | null>(null);
   const [pages, setPages] = useState<string[]>([]);
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const pdfjsLoaded = useRef(false);
 
   useEffect(() => {
+    if (isOfficeOrderOrBill) {
+      setLoading(false);
+      return;
+    }
+
     const cleanType = type.trim().toLowerCase().replace(/^\./, '');
     const isPDF = cleanType === 'pdf';
 
@@ -148,6 +156,18 @@ function PreviewContent() {
       loadImage();
     }
   }, [file, id, type]);
+
+  if (isOfficeOrderOrBill) {
+    return (
+      <div style={{ width: '100%', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
+        <iframe
+          src={`/api/office-orders/raw?id=${id}`}
+          style={{ width: '100%', height: '100vh', border: 'none' }}
+          title={name}
+        />
+      </div>
+    );
+  }
 
   // Error layout
   if (error) {
