@@ -1085,7 +1085,7 @@ export default function RosterPage() {
           const ids: number[] = [];
           group.dates.forEach(dStr => {
             const matchedDuty = duties.find(d => d.employee.id === group.employee.id && d.date === dStr && d.type === printCategory);
-            if (matchedDuty) ids.push(matchedDuty.id);
+            if (matchedDuty && Number.isInteger(matchedDuty.id)) ids.push(matchedDuty.id);
           });
           return ids;
         }),
@@ -1335,7 +1335,7 @@ export default function RosterPage() {
           totalTransport: s.totalTransport,
           grandTotal: s.grandTotal
         })),
-        dutyIds: activeDuties.map(d => d.id), // Pass actual dutyIds!
+        dutyIds: activeDuties.map(d => d.id).filter(Number.isInteger), // Pass actual dutyIds!
         content: {
           openingParagraph: `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে অत्र ডিপার্টমেন্টের কর্মকর্তাদের নামের পাশে বর্ণিত তারিখে অতিরিক্ত কাজ সম্পন্ন করায় বিধি মোতাবেক আপ্যায়ন ও যাতায়াত ভাতা প্রদানের বিল মঞ্জুর করা হলো।`,
           totalDays: totalDaysAll,
@@ -1556,16 +1556,19 @@ export default function RosterPage() {
         
         const loadArchivedDuties = async () => {
           try {
-            // First load employees and cells locally to ensure we have them
-            const [empRes, cellRes, orderRes] = await Promise.all([
+            // First load employees, cells, office-orders, and the actual duties for this order
+            const [empRes, cellRes, orderRes, dutiesRes] = await Promise.all([
               fetch('/api/employees'),
               fetch('/api/cells'),
-              fetch('/api/office-orders')
+              fetch('/api/office-orders'),
+              fetch(`/api/duties?orderRef=${encodeURIComponent(editRef)}&includeArchived=true`)
             ]);
             
             const localEmps = await empRes.json();
             const localCells = await cellRes.json();
             const orders = await orderRes.json();
+            const dbDutiesList = dutiesRes.ok ? await dutiesRes.json() : [];
+            const dbDuties = Array.isArray(dbDutiesList) ? dbDutiesList : [];
             
             const sortedLocalEmps = Array.isArray(localEmps) ? sortEmployeesBySeniority(localEmps) : [];
             
@@ -1676,8 +1679,9 @@ export default function RosterPage() {
                 }
 
                 finalDates.forEach((date: string) => {
+                  const dbDuty = dbDuties.find(d => d.employeeId === finalEmpId && d.date === date && d.type === category);
                   reconstructedDuties.push({
-                    id: Math.random(),
+                    id: dbDuty ? dbDuty.id : Math.random(),
                     employeeId: finalEmpId,
                     date: date,
                     type: category,
