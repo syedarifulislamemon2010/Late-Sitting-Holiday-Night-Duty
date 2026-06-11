@@ -41,7 +41,6 @@ Late-Sitting-Holiday-Night-Duty/
 │   │   │   ├── audit/
 │   │   │   │   └── route.ts               # Fetches user logs and system-wide audit reports
 │   │   │   ├── auth/
-│   │   │   │   ├── route.ts               # Custom cookie authentication & session controller
 │   │   │   │   └── [...nextauth]/
 │   │   │   │       └── route.ts           # NextAuth.js configurations (Credentials Provider)
 │   │   │   ├── cells/
@@ -96,89 +95,100 @@ Late-Sitting-Holiday-Night-Duty/
 │   │   │   │   │   └── route.ts           # Renders formatted office order JSON payloads
 │   │   │   │   └── [id]/
 │   │   │   │       └── route.ts           # Office order modifications
+│   │   │   ├── profile/
+│   │   │   │   └── route.ts               # Fetches session profile data once from memory context
 │   │   │   ├── trash/
 │   │   │   │   └── route.ts               # Restores soft-deleted items (cells, staff, duties, etc.)
 │   │   │   ├── upload/
 │   │   │   │   └── route.ts               # Handles file uploads to storage bucket
 │   │   │   └── users/
-│   │   │   │   ├── route.ts               # Lists and registers bank cell operators
-│   │   │   │   └── [id]/
-│   │   │   │       └── route.ts           # Alters operator permissions and profiles
-│   │   │   ├── audit/                     # Audit logs viewer interface
-│   │   │   │   └── page.tsx               # Renders immutable log table filters and audit details
-│   │   │   ├── billing/                   # Conveyance and entertainment billing ledger UI
-│   │   │   │   └── page.tsx               # Complex multi-tab dashboard for bills, ledger, and print
-│   │   │   ├── closing-bill/              # Half-yearly closing allowances UI
-│   │   │   │   └── page.tsx               # Multi-column allowance sheets builder
-│   │   │   ├── converter/                 # SutonnyMJ to Unicode font converter page
-│   │   │   │   └── page.tsx               # Bi-directional text translation GUI
-│   │   │   ├── documents/                 # PDF previewing & document archive
-│   │   │   │   ├── page.tsx               # Lists generated rosters and billing reports
-│   │   │   │   └── preview/
-│   │   │   │       └── page.tsx           # Renders A4/Legal print templates inside iframe modals
-│   │   │   ├── employees/                 # Employee registry manager
-│   │   │   │   └── page.tsx               # CRUD table with batch CSV/Image scanning imports
-│   │   │   ├── executive/                 # Seniority directories viewer
-│   │   │   │   └── page.tsx               # Renders ranked executive directories with seniority color tags
-│   │   │   ├── leave/                     # Leave requests interface
-│   │   │   │   ├── bangladesh_areas.ts    # Static list of districts and divisions
-│   │   │   │   └── page.tsx               # Form generator applying sandwich-rules
-│   │   │   ├── lunch-bill/                # Lunch allowance billing UI
-│   │   │   │   └── page.tsx               # Form for logging monthly lunch days
-│   │   │   ├── roster/                    # Duty rosters scheduling UI
-│   │   │   │   └── page.tsx               # Drag-and-drop or checklist shift duty calendar scheduler
-│   │   │   ├── trash/                     # Soft-deleted items recovery UI
-│   │   │   │   └── page.tsx               # Recycle bin restoring deleted database entities
-│   │   │   ├── users/                     # Operators directory UI
-│   │   │   │   └── page.tsx               # Admin manager for mapping users to specific cells
-│   │   │   ├── favicon.ico                # App icon
-│   │   │   ├── globals.css                # Global CSS rules, custom scrollbars, and print layout styles
-│   │   │   ├── layout.tsx                 # Core HTML viewport shell, Google font configurations
-│   │   │   └── page.tsx                   # Main interactive dashboard, calendar, and JB rates guidelines
-│   │   ├── components/                    # Core UI components
-│   │   │   ├── AuthGuard.tsx              # Login screen featuring an interactive SVG dog mascot
-│   │   │   ├── Navbar.tsx                 # Dynamic top header with user avatar, logout controls
-│   │   │   └── Sidebar.tsx                # Left collapsible panel with responsive routing links
-│   │   ├── db/                            # Database synchronization layer
-│   │   │   ├── dump.ts                    # Backup dump exporter script
-│   │   │   ├── schema.ts                  # Drizzle ORM model schema declarations
-│   │   │   ├── seed.ts                    # Wipes, imports backup JSON, and resets Postgres key sequences
-│   │   │   └── migrations/                # Schema state version SQL files
-│   │   │       ├── 0000_tired_menace.sql  # Initial tables migration script
-│   │   │       ├── 0001_huge_tusk.sql     # Additional columns for leaves
-│   │   │       ├── 0002_stale_bucky.sql   # Lunch bill tables mapping
-│   │   │       ├── 0003_nice_vance_astro.sql# Manual documents schema update
-│   │   │       └── meta/                  # Kit journal schema snapshots
-│   │   ├── hooks/                         # Custom React Hooks
-│   │   │   └── useRealtime.ts             # Web socket / interval sync hook
-│   │   ├── lib/                           # Core utilities
-│   │   │   ├── audit.ts                   # Appends details to audit.log file
-│   │   │   ├── auth-wrapper.ts            # Resolves user sessions (NextAuth or custom cookie fallback)
-│   │   │   ├── bengali-converter.ts       # Bidirectional Bijoy ANSI <-> Unicode font mapper engine
-│   │   │   ├── db.ts                      # Instantiates and configures PostgreSQL client connector
-│   │   │   ├── errors.ts                  # Global error codes catalog, handles API error mapping
-│   │   │   ├── seniority.ts               # Executive seniority sorting engine
-│   │   │   └── sorting.ts                 # Employee designation ranking classifier
-│   │   ├── permissions/                   # Access Control Layers
-│   │   │   └── rbac.ts                    # Configures permission matrix for ADMIN vs USER
-│   │   ├── repositories/                  # Repository Layer (Data Access Layer)
-│   │   │   ├── duty.repository.ts         # Encapsulates Drizzle duty mutations
-│   │   │   ├── employee.repository.ts     # Encapsulates Drizzle employee mutations
-│   │   │   ├── holiday.repository.ts      # Encapsulates Drizzle holiday database queries
-│   │   │   ├── leave.repository.ts        # Encapsulates Drizzle leave database queries
-│   │   │   ├── officeOrder.repository.ts  # Encapsulates Drizzle office order database queries
-│   │   │   └── user.repository.ts         # Encapsulates Drizzle user database queries
-│   │   ├── services/                      # Service Layer (Business Logic Layer)
-│   │   │   ├── duty.service.ts            # Allowance calculations, leave overlaps verification
-│   │   │   ├── employee.service.ts        # Employee updates, batch import validations
-│   │   │   ├── executive.service.ts       # Seniority formatting
-│   │   │   ├── leave.service.ts           # Sandwich rules execution, dates overlap checks
-│   │   │   └── officeOrder.service.ts     # ৳7,500 budget limit splitter logic, document compilers
-│   │   └── validations/                   # Schema-driven validations using Zod
-│   │       ├── duty.schema.ts             # Validates duty logs and edit requests
-│   │       ├── employee.schema.ts         # Validates employee profile properties
-│   │       ├── leave.schema.ts            # Validates leave durations and sandwich rules
-│   │       └── officeOrder.schema.ts      # Validates office order compilation formats
+│   │   │       ├── route.ts               # Lists and registers bank cell operators
+│   │   │       └── [id]/
+│   │   │           └── route.ts           # Alters operator permissions and profiles
+│   │   ├── audit/                         # Audit logs viewer interface
+│   │   │   └── page.tsx                   # Renders immutable log table filters and audit details
+│   │   ├── billing/                       # Conveyance and entertainment billing ledger UI
+│   │   │   ├── page.tsx                   # Main Billing Page
+│   │   │   └── components/                # Decomposed modular tab components
+│   │   │       ├── BillPrintLayout.tsx    # Print layouts for conveyances
+│   │   │       ├── BillsTab.tsx           # Generates and reviews monthly lists of bills
+│   │   │       ├── LedgerTab.tsx          # Aggregates conveyances and allowance ledgers
+│   │   │       ├── OrdersTab.tsx          # Office order selections
+│   │   │       └── ReportsTab.tsx         # Detailed summary reports and exports
+│   │   ├── closing-bill/                  # Half-yearly closing allowances UI
+│   │   │   └── page.tsx                   # Multi-column allowance sheets builder
+│   │   ├── converter/                     # SutonnyMJ to Unicode font converter page
+│   │   │   └── page.tsx                   # Bi-directional text translation GUI
+│   │   ├── documents/                     # PDF previewing & document archive
+│   │   │   ├── page.tsx                   # Lists generated rosters and billing reports
+│   │   │   └── preview/
+│   │   │       └── page.tsx               # Renders A4/Legal print templates inside iframe modals
+│   │   ├── employees/                     # Employee registry manager
+│   │   │   └── page.tsx                   # CRUD table with batch CSV/Image scanning imports
+│   │   ├── executive/                     # Seniority directories viewer
+│   │   │   └── page.tsx                   # Renders ranked executive directories with seniority color tags
+│   │   ├── leave/                         # Leave requests interface
+│   │   │   ├── bangladesh_areas.ts        # Static list of districts and divisions
+│   │   │   └── page.tsx                   # Form generator applying sandwich-rules
+│   │   ├── lunch-bill/                    # Lunch allowance billing UI
+│   │   │   └── page.tsx                   # Form for logging monthly lunch days
+│   │   ├── roster/                        # Duty rosters scheduling UI
+│   │   │   └── page.tsx                   # Swap-Panel duty scheduler page
+│   │   ├── trash/                         # Soft-deleted items recovery UI
+│   │   │   └── page.tsx                   # Recycle bin restoring deleted database entities
+│   │   └── users/                         # Operators directory UI
+│   │       └── page.tsx                   # Admin manager for mapping users to specific cells
+│   ├── components/                        # Core UI components
+│   │   ├── AuthGuard.tsx                  # Login screen featuring an interactive SVG dog mascot
+│   │   ├── Navbar.tsx                     # Dynamic top header with user avatar, logout controls
+│   │   └── Sidebar.tsx                    # Left collapsible panel with responsive routing links
+│   ├── context/                           # Global state contexts
+│   │   ├── LayoutContext.tsx              # Toggles 70% vs 30% panel split
+│   │   └── ProfileContext.tsx             # Fetches session profile once on load
+│   ├── db/                                # Database synchronization layer
+│   │   ├── dump.ts                        # Backup dump exporter script
+│   │   ├── schema.ts                      # Drizzle ORM model schema declarations
+│   │   ├── seed.ts                        # Wipes, imports backup JSON, and resets Postgres key sequences
+│   │   └── migrations/                    # Schema state version SQL files
+│   │       ├── 0000_tired_menace.sql      # Initial tables migration script
+│   │       ├── 0001_huge_tusk.sql         # Additional columns for leaves
+│   │       ├── 0002_stale_bucky.sql       # Lunch bill tables mapping
+│   │       ├── 0003_nice_vance_astro.sql  # Manual documents schema update
+│   │       ├── 0004_tan_purple_man.sql    # Audit log tables mapping
+│   │       └── meta/                      # Kit journal schema snapshots
+│   ├── hooks/                             # Custom React Hooks
+│   │   └── useRealtime.ts                 # Web socket / interval sync hook
+│   ├── lib/                               # Core utilities
+│   │   ├── __tests__/                     # Utility unit tests
+│   │   ├── audit.ts                       # Appends details to audit.log file
+│   │   ├── auth-wrapper.ts                # Resolves user sessions (NextAuth or custom cookie fallback)
+│   │   ├── bengali-converter.ts           # Bidirectional Bijoy ANSI <-> Unicode font mapper engine
+│   │   ├── db.ts                          # Instantiates and configures PostgreSQL client connector
+│   │   ├── errors.ts                      # Global error codes catalog, handles API error mapping
+│   │   ├── leave-calculator.ts            # Core logic for dates and sandwich rules
+│   │   ├── seniority.ts                   # Executive seniority sorting engine
+│   │   └── sorting.ts                     # Employee designation ranking classifier
+│   ├── permissions/                       # Access Control Layers
+│   │   └── rbac.ts                        # Configures permission matrix for ADMIN vs USER
+│   ├── repositories/                      # Repository Layer (Data Access Layer)
+│   │   ├── duty.repository.ts             # Encapsulates Drizzle duty mutations
+│   │   ├── employee.repository.ts         # Encapsulates Drizzle employee mutations
+│   │   ├── holiday.repository.ts          # Encapsulates Drizzle holiday database queries
+│   │   ├── leave.repository.ts            # Encapsulates Drizzle leave database queries
+│   │   ├── officeOrder.repository.ts      # Encapsulates Drizzle office order database queries
+│   │   └── user.repository.ts             # Encapsulates Drizzle user database queries
+│   └── services/                          # Service Layer (Business Logic Layer)
+│       ├── __tests__/                     # Automated test suites
+│       │   ├── duty.service.test.ts       # Verifies rate logic (300, 500, 1000)
+│       │   ├── leave.service.test.ts      # Verifies sandwich-rule edge cases
+│       │   └── officeOrder.service.test.ts# Verifies office order budget splitting
+│       ├── duty.service.ts                # Allowance calculations, leave overlaps verification
+│       ├── employee.service.ts            # Employee updates, batch import validations
+│       ├── executive.service.ts           # Seniority formatting
+│       ├── leave.service.ts               # Sandwich rules execution, dates overlap checks
+│       └── officeOrder.service.ts         # ৳7,500 budget limit splitter logic, document compilers
+├── Dockerfile                             # Standalone optimized Docker configuration
+├── docker-compose.yml                     # Local compose script for app and DB container
 ├── drizzle.config.ts                      # Configuration file for Drizzle migrations generator
 ├── eslint.config.mjs                      # Lint rules specifications
 ├── next-env.d.ts                          # Next.js custom type definition file
