@@ -2947,7 +2947,7 @@ export default function RosterPage() {
                         ৪. কর্মকর্তা ও তারিখসমূহ নির্বাচন করুন
                       </label>
                       
-                      <div className="max-h-80 overflow-y-auto border border-slate-100 rounded-xl p-2 bg-white space-y-1">
+                      <div className="border border-slate-100 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {(() => {
                           const allowedCellIds = currentUser?.role === 'ADMIN'
                             ? cells.map(c => c.id)
@@ -2963,11 +2963,18 @@ export default function RosterPage() {
                             return listEmployees.map(emp => {
                               const isChecked = emp.id in opt1Assignments;
                               return (
-                                <div key={emp.id} className="border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-2.5 bg-white dark:bg-slate-900/40 space-y-2">
+                                <div 
+                                  key={emp.id} 
+                                  className={`border rounded-xl p-3 transition-all duration-250 hover:shadow-md dark:hover:shadow-indigo-950/20 ${
+                                    isChecked 
+                                      ? 'border-indigo-500/40 dark:border-indigo-400/40 bg-indigo-50/10 dark:bg-indigo-950/10 shadow-sm' 
+                                      : 'border-slate-200/60 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-slate-350 dark:hover:border-slate-650'
+                                  } space-y-3`}
+                                >
                                   <div className="flex items-center justify-between">
                                     <div 
                                       onClick={() => handleOpt1EmployeeToggle(emp.id)}
-                                      className="flex items-center gap-2 cursor-pointer select-none"
+                                      className="flex items-center gap-2.5 cursor-pointer select-none"
                                     >
                                       <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
                                         {isChecked && <Check size={10} strokeWidth={3} />}
@@ -2989,7 +2996,7 @@ export default function RosterPage() {
                             });
                           }
                           return (
-                            <p className="text-xs text-slate-400 text-center py-4">এই সেলের অধীনে কোনো কর্মকর্তা পাওয়া যায়নি।</p>
+                            <p className="text-xs text-slate-400 text-center py-4 col-span-full">এই সেলের অধীনে কোনো কর্মকর্তা পাওয়া যায়নি।</p>
                           );
                         })()}
                       </div>
@@ -3100,7 +3107,7 @@ export default function RosterPage() {
                       </div>
 
                       {/* Officers Checkboxes scrollbox */}
-                      <div className="max-h-48 overflow-y-auto border border-slate-100 rounded-xl p-2 bg-white space-y-1">
+                      <div className="border border-slate-100 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {(() => {
                           const isWorking = assignmentForm.date ? checkIsWorkingDay(assignmentForm.date, holidays) : true;
                           const isLateSitting = assignmentForm.type === 'LATE_SITTING';
@@ -3109,7 +3116,7 @@ export default function RosterPage() {
                           
                           if (isBlocked) {
                             return (
-                              <div className="p-8 text-center text-red-500/80 font-bold italic text-xs">
+                              <div className="p-8 text-center text-red-500/80 font-bold italic text-xs col-span-full">
                                 নির্বাচিত তারিখটি এই ডিউটি ক্যাটাগরির জন্য উপযুক্ত নয়। উপযুক্ত তারিখ বেছে নিন।
                               </div>
                             );
@@ -3117,7 +3124,7 @@ export default function RosterPage() {
                           
                           if (!assignmentForm.date) {
                             return (
-                              <div className="p-8 text-center text-slate-400 italic text-xs">
+                              <div className="p-8 text-center text-slate-400 italic text-xs col-span-full">
                                 অনুগ্রহ করে প্রথমে উপরে তারিখ সিলেক্ট করুন।
                               </div>
                             );
@@ -3130,23 +3137,27 @@ export default function RosterPage() {
                                  <div 
                                   key={emp.id}
                                   onClick={() => handleEmployeeToggle(emp.id)}
-                                  className="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-slate-50 transition-all"
+                                  className={`border rounded-xl p-3 cursor-pointer transition-all duration-250 hover:shadow-md dark:hover:shadow-blue-950/20 flex items-center justify-between gap-3 ${
+                                    isChecked 
+                                      ? 'border-blue-500/40 dark:border-blue-400/40 bg-blue-50/10 dark:bg-blue-950/10 shadow-sm' 
+                                      : 'border-slate-200/60 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-slate-350 dark:hover:border-slate-650'
+                                  }`}
                                 >
                                   <div className="flex items-center gap-3">
-                                    <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-white'}`}>
+                                    <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
                                       {isChecked && <Check size={10} strokeWidth={3} />}
                                     </div>
                                     <div>
-                                      <p className="text-sm font-semibold text-slate-900 leading-tight">{emp.name}</p>
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight">{emp.name}</p>
                                       <p className="text-xs text-slate-400 font-medium mt-0.5">{emp.designation}</p>
                                     </div>
                                   </div>
-                                  <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg uppercase font-sans">{emp.cell.name}</span>
+                                  <span className="text-[10px] font-bold bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-lg uppercase font-sans shrink-0">{emp.cell.name}</span>
                                 </div>
                               );
                             })
                           ) : (
-                            <p className="text-[11px] text-center text-slate-400 py-4">কর্মকর্তা পাওয়া যায়নি</p>
+                            <p className="text-[11px] text-center text-slate-400 py-4 col-span-full">কর্মকর্তা পাওয়া যায়নি</p>
                           );
                         })()}
                       </div>
