@@ -1176,28 +1176,74 @@ export default function RosterPage() {
     }
     
     // Load duties from DB for this order
+    let list: any[] = [];
     try {
       const res = await fetch(`/api/duties?orderRef=${encodeURIComponent(order.orderRef)}&includeArchived=true`);
       if (res.ok) {
         const data = await res.json();
-        const list = Array.isArray(data) ? data : [];
-        setDuties(list);
-        
-        // Pre-populate opt1Assignments
-        const assignments: Record<number, string[]> = {};
-        list.forEach(d => {
-          if (!assignments[d.employeeId]) {
-            assignments[d.employeeId] = [];
-          }
-          if (!assignments[d.employeeId].includes(d.date)) {
-            assignments[d.employeeId].push(d.date);
-          }
-        });
-        setOpt1Assignments(assignments);
+        list = Array.isArray(data) ? data : [];
       }
     } catch (err) {
       console.error('Error loading duties for preview:', err);
     }
+
+    if (list.length === 0 && order.duties && order.duties.length > 0) {
+      const category = order.category as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+      let allowance1 = 100;
+      let allowance2 = 200;
+      let totalBill = 300;
+      if (category === 'HOLIDAY') {
+        allowance1 = 250;
+        allowance2 = 250;
+        totalBill = 500;
+      } else if (category === 'NIGHT_SHIFT') {
+        allowance1 = 600;
+        allowance2 = 400;
+        totalBill = 1000;
+      }
+
+      const reconstructed: any[] = [];
+      order.duties.forEach((group: any) => {
+        const finalEmpId = typeof group.employeeId === 'string' ? parseInt(group.employeeId, 10) : group.employeeId;
+        const matchedEmp = employees.find(e => e.id === finalEmpId);
+        const datesList = group.dates || [];
+        
+        datesList.forEach((date: string) => {
+          reconstructed.push({
+            id: Math.random(),
+            employeeId: finalEmpId,
+            date: date,
+            type: category,
+            description: group.description || null,
+            allowance1,
+            allowance2,
+            totalBill,
+            orderRef: order.orderRef,
+            employee: matchedEmp || {
+              id: finalEmpId,
+              name: group.employeeName,
+              designation: group.designation,
+              cellId: matchedRep ? matchedRep.cellId : 7
+            }
+          });
+        });
+      });
+      list = reconstructed;
+    }
+
+    setDuties(list);
+    
+    // Pre-populate opt1Assignments
+    const assignments: Record<number, string[]> = {};
+    list.forEach(d => {
+      if (!assignments[d.employeeId]) {
+        assignments[d.employeeId] = [];
+      }
+      if (!assignments[d.employeeId].includes(d.date)) {
+        assignments[d.employeeId].push(d.date);
+      }
+    });
+    setOpt1Assignments(assignments);
     
     setOrderGenerated(true);
     setIsArchived(true);
@@ -1460,6 +1506,10 @@ export default function RosterPage() {
   const loadDuties = useCallback(async () => {
     if (isEditingArchive) {
       // In edit mode, duties state is fully driven by opt1Assignments sync useEffect.
+      return;
+    }
+    if (isArchived && isPrintMode) {
+      // In print preview mode for an archived order, do not reload/overwrite duties state.
       return;
     }
     try {

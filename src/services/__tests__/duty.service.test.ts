@@ -35,7 +35,7 @@ describe('DutyService - Allowance & Holiday Calculations', () => {
 
   describe('checkIsHoliday', () => {
     it('should return true for weekends (Friday & Saturday) by default', async () => {
-      vi.mocked(HolidayRepository.findByDate).mockResolvedValue(null);
+      vi.mocked(HolidayRepository.findByDate).mockResolvedValue(null as any);
 
       // Friday: 2026-06-12
       const isFridayHoliday = await DutyService.checkIsHoliday('2026-06-12');
@@ -58,7 +58,6 @@ describe('DutyService - Allowance & Holiday Calculations', () => {
         name: 'Office Working Day',
         isWorkingDay: true,
         createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
       const isHoliday = await DutyService.checkIsHoliday('2026-06-12');
@@ -73,7 +72,6 @@ describe('DutyService - Allowance & Holiday Calculations', () => {
         name: 'Public Holiday',
         isWorkingDay: false,
         createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
       const isHoliday = await DutyService.checkIsHoliday('2026-06-15');
