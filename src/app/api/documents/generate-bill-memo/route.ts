@@ -62,11 +62,11 @@ export async function POST(request: Request) {
           <td>${toBnDigits(index + 1)}</td>
           <td class="text-left">
             <span>${s.name}</span><br>
-            <span style="font-size: 9px; color: #444; margin-top: 2px; display: block;">${s.designation}</span>
+            <span style="font-size: 12px; color: #444; margin-top: 2px; display: block;">${s.designation}</span>
           </td>
           <td>
             <p>${s.datesFormatted}</p>
-            <p style="font-size: 9px; font-weight: bold; margin-top: 4px;">মোট: ${toBnDigits(s.days)} দিন</p>
+            <p style="font-size: 12px; font-weight: bold; margin-top: 4px;">মোট: ${toBnDigits(s.days)} দিন</p>
           </td>
           <td>(${toBnDigits(Math.round(transportRate))}x${toBnDigits(s.days)}) = ${toBnDigits(Math.round(s.totalTransport))}/-</td>
           <td>(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(s.days)}) = ${toBnDigits(Math.round(s.totalApyaon))}/-</td>
@@ -81,6 +81,7 @@ export async function POST(request: Request) {
 <head>
 <meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
 <style>
   * {
     margin: 0;
@@ -95,8 +96,8 @@ export async function POST(request: Request) {
     margin-right: 0.5in;
   }
   body {
-    font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
-    font-size: 8.5px;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+    font-size: 12px;
     line-height: 1.0;
     color: #000;
     background-color: #fff;
@@ -108,19 +109,19 @@ export async function POST(request: Request) {
     line-height: 1.0;
   }
   .header-title {
-    font-size: 15px;
+    font-size: 24px;
     font-weight: bold;
     margin: 0;
     line-height: 1.0;
   }
   .header-date {
-    font-size: 8.5px;
+    font-size: 12px;
     font-weight: bold;
     margin-top: 6px;
     line-height: 1.0;
   }
   .subject {
-    font-size: 9px;
+    font-size: 14px;
     font-weight: bold;
     text-decoration: underline;
     margin-bottom: 10px;
@@ -136,7 +137,7 @@ export async function POST(request: Request) {
     width: 100%;
     border-collapse: collapse;
     margin: 12px 0;
-    font-size: 8px;
+    font-size: 12px;
     line-height: 1.0;
   }
   th, td {
@@ -186,7 +187,7 @@ export async function POST(request: Request) {
     margin-top: 24px;
     text-align: left;
     line-height: 1.0;
-    font-size: 8px;
+    font-size: 12px;
   }
   .routing-item {
     margin-bottom: 0.5in;

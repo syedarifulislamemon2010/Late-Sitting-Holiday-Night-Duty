@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { users, employees, userCells, cells } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
+import { signSession, verifySession } from '@/lib/auth-wrapper';
 
 export async function POST(request: Request) {
   try {
@@ -78,11 +79,13 @@ export async function POST(request: Request) {
           }
         });
         
-        response.cookies.set('session', String(user.id), {
+        const signedCookie = signSession(String(user.id));
+        response.cookies.set('session', signedCookie, {
           path: '/',
           maxAge: 60 * 60 * 24, // 1 day
           sameSite: 'lax',
-          httpOnly: false, // accessible via document.cookie for client checking
+          httpOnly: true, // secure from XSS
+          secure: process.env.NODE_ENV === 'production',
         });
         return response;
       } else {
@@ -106,7 +109,12 @@ export async function GET() {
       return NextResponse.json({ authenticated: false, user: null });
     }
 
-    const userId = parseInt(sessionVal, 10);
+    const verifiedUserId = verifySession(sessionVal);
+    if (!verifiedUserId) {
+      return NextResponse.json({ authenticated: false, user: null });
+    }
+
+    const userId = parseInt(verifiedUserId, 10);
     if (isNaN(userId)) {
       return NextResponse.json({ authenticated: false, user: null });
     }

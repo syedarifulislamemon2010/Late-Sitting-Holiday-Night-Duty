@@ -198,182 +198,184 @@ export class DutyService {
       }
     }
 
-    if (validated.originalOrderRef) {
-      await DutyRepository.deleteDutiesByOrderRef(validated.originalOrderRef);
-    }
-    if (validated.orderRef && validated.orderRef !== validated.originalOrderRef) {
-      await DutyRepository.deleteDutiesByOrderRef(validated.orderRef);
-    }
-
-    const uniqueDates = Array.from(new Set(validated.assignments.map((a: { date: string }) => a.date)));
-    const holidayOverrides = await HolidayRepository.findHolidaysByDates(uniqueDates);
-    const holidayOverrideMap = new Map(holidayOverrides.map((h) => [h.date, h.isWorkingDay]));
-
-    const checkIsHolidayLocal = (dateStr: string): boolean => {
-      const dateObj = new Date(dateStr);
-      const dayOfWeek = dateObj.getDay();
-      const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
-      const isWorkingDay = holidayOverrideMap.get(dateStr);
-      if (isWorkingDay !== undefined) {
-        return !isWorkingDay;
+    return db.transaction(async (tx) => {
+      if (validated.originalOrderRef) {
+        await DutyRepository.deleteDutiesByOrderRef(validated.originalOrderRef, tx);
       }
-      return isWeekend;
-    };
+      if (validated.orderRef && validated.orderRef !== validated.originalOrderRef) {
+        await DutyRepository.deleteDutiesByOrderRef(validated.orderRef, tx);
+      }
 
-    const uniqueEmployeeIds = Array.from(new Set(validated.assignments.map((a: { employeeId: number }) => a.employeeId)));
-    const allExistingDutiesFromDb = await DutyRepository.findExistingDuties(uniqueEmployeeIds, uniqueDates);
-    
-    const dutiesToDeleteSet = new Set(validated.dutiesToDelete || []);
-    const isUpdateMode = validated.dutiesToDelete !== undefined;
-    
-    if (isUpdateMode) {
+      const uniqueDates = Array.from(new Set(validated.assignments.map((a: { date: string }) => a.date)));
+      const holidayOverrides = await HolidayRepository.findHolidaysByDates(uniqueDates);
+      const holidayOverrideMap = new Map(holidayOverrides.map((h) => [h.date, h.isWorkingDay]));
+
+      const checkIsHolidayLocal = (dateStr: string): boolean => {
+        const dateObj = new Date(dateStr);
+        const dayOfWeek = dateObj.getDay();
+        const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+        const isWorkingDay = holidayOverrideMap.get(dateStr);
+        if (isWorkingDay !== undefined) {
+          return !isWorkingDay;
+        }
+        return isWeekend;
+      };
+
+      const uniqueEmployeeIds = Array.from(new Set(validated.assignments.map((a: { employeeId: number }) => a.employeeId)));
+      const allExistingDutiesFromDb = await DutyRepository.findExistingDuties(uniqueEmployeeIds, uniqueDates);
+      
+      const dutiesToDeleteSet = new Set(validated.dutiesToDelete || []);
+      const isUpdateMode = validated.dutiesToDelete !== undefined;
+      
+      if (isUpdateMode) {
+        for (const assignment of validated.assignments) {
+          const conflicts = allExistingDutiesFromDb.filter(d =>
+            d.employeeId === assignment.employeeId &&
+            d.date === assignment.date
+          );
+          conflicts.forEach(c => dutiesToDeleteSet.add(c.id));
+        }
+      }
+
+      const allExistingDuties = allExistingDutiesFromDb.filter(d => !dutiesToDeleteSet.has(d.id));
+
+      const employeesList = await db.select().from(employees).where(inArray(employees.id, uniqueEmployeeIds));
+      const employeeMap = new Map(employeesList.map(e => [e.id, e]));
+
+      const employeeBankIds = employeesList.map(e => e.bankId).filter((bid): bid is string => Boolean(bid));
+      let leaves: (typeof leaveApplications.$inferSelect)[] = [];
+      if (employeeBankIds.length > 0) {
+        leaves = await db.select().from(leaveApplications).where(inArray(leaveApplications.bankId, employeeBankIds));
+      }
+
+      const duplicateConflicts: string[] = [];
       for (const assignment of validated.assignments) {
-        const conflicts = allExistingDutiesFromDb.filter(d =>
-          d.employeeId === assignment.employeeId &&
-          d.date === assignment.date
+        const duplicate = allExistingDuties.find(d => 
+          d.employeeId === assignment.employeeId && 
+          d.date === assignment.date && 
+          d.type === assignment.type
         );
-        conflicts.forEach(c => dutiesToDeleteSet.add(c.id));
+        if (duplicate) {
+          const emp = employeeMap.get(assignment.employeeId);
+          const empName = emp ? emp.name : 'কর্মকর্তা';
+          const dutyTypeBn = assignment.type === 'LATE_SITTING' ? 'লেট সিটিং' : assignment.type === 'HOLIDAY' ? 'হলিডে' : 'নাইট শিফট';
+          const formattedDate = assignment.date.split('-').reverse().join('-');
+          duplicateConflicts.push(`${empName} (${formattedDate} - ${dutyTypeBn})`);
+        }
       }
-    }
+      if (duplicateConflicts.length > 0) {
+        const uniqueConflicts = Array.from(new Set(duplicateConflicts));
+        throw new AppError(`এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।\n\nবিস্তারিত:\n` + uniqueConflicts.map(c => `- ${c}`).join('\n'), 400, 'duplicate_duty_on_date');
+      }
 
-    const allExistingDuties = allExistingDutiesFromDb.filter(d => !dutiesToDeleteSet.has(d.id));
+      const dutiesToInsert: {
+        employeeId: number;
+        type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+        date: string;
+        description: string | null;
+        allowance1: number;
+        allowance2: number;
+        totalBill: number;
+        orderRef: string | null;
+      }[] = [];
 
-    const employeesList = await db.select().from(employees).where(inArray(employees.id, uniqueEmployeeIds));
-    const employeeMap = new Map(employeesList.map(e => [e.id, e]));
+      for (const assignment of validated.assignments) {
+        const isHoliday = checkIsHolidayLocal(assignment.date);
 
-    const employeeBankIds = employeesList.map(e => e.bankId).filter((bid): bid is string => Boolean(bid));
-    let leaves: (typeof leaveApplications.$inferSelect)[] = [];
-    if (employeeBankIds.length > 0) {
-      leaves = await db.select().from(leaveApplications).where(inArray(leaveApplications.bankId, employeeBankIds));
-    }
+        if (assignment.type === 'LATE_SITTING' && isHoliday) {
+          throw new AppError('late_sitting_on_holiday', 400, 'late_sitting_on_holiday');
+        }
 
-    const duplicateConflicts: string[] = [];
-    for (const assignment of validated.assignments) {
-      const duplicate = allExistingDuties.find(d => 
-        d.employeeId === assignment.employeeId && 
-        d.date === assignment.date && 
-        d.type === assignment.type
-      );
-      if (duplicate) {
+        if (assignment.type === 'HOLIDAY' && !isHoliday) {
+          throw new AppError('holiday_duty_on_working_day', 400, 'holiday_duty_on_working_day');
+        }
+
+        if (assignment.type === 'LATE_SITTING' || assignment.type === 'NIGHT_SHIFT') {
+          const conflictingType = assignment.type === 'LATE_SITTING' ? 'NIGHT_SHIFT' : 'LATE_SITTING';
+          const dbConflict = allExistingDuties.some(d =>
+            d.employeeId === assignment.employeeId &&
+            d.date === assignment.date &&
+            d.type === conflictingType
+          );
+          const batchConflict = dutiesToInsert.some(d =>
+            d.employeeId === assignment.employeeId &&
+            d.date === assignment.date &&
+            d.type === conflictingType
+          );
+          if (dbConflict || batchConflict) {
+            throw new AppError('late_sitting_night_shift_conflict', 400, 'late_sitting_night_shift_conflict');
+          }
+        }
+
         const emp = employeeMap.get(assignment.employeeId);
-        const empName = emp ? emp.name : 'কর্মকর্তা';
-        const dutyTypeBn = assignment.type === 'LATE_SITTING' ? 'লেট সিটিং' : assignment.type === 'HOLIDAY' ? 'হলিডে' : 'নাইট শিফট';
-        const formattedDate = assignment.date.split('-').reverse().join('-');
-        duplicateConflicts.push(`${empName} (${formattedDate} - ${dutyTypeBn})`);
-      }
-    }
-    if (duplicateConflicts.length > 0) {
-      const uniqueConflicts = Array.from(new Set(duplicateConflicts));
-      throw new AppError(`এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।\n\nবিস্তারিত:\n` + uniqueConflicts.map(c => `- ${c}`).join('\n'), 400, 'duplicate_duty_on_date');
-    }
+        if (emp && emp.bankId) {
+          const hasLeaveConflict = leaves.some(l => 
+            l.bankId === emp.bankId && 
+            l.startDate <= assignment.date && 
+            l.endDate >= assignment.date
+          );
+          if (hasLeaveConflict) {
+            throw new AppError('leave_conflict', 400, 'leave_conflict');
+          }
+        }
 
-    const dutiesToInsert: {
-      employeeId: number;
-      type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
-      date: string;
-      description: string | null;
-      allowance1: number;
-      allowance2: number;
-      totalBill: number;
-      orderRef: string | null;
-    }[] = [];
+        const { allowance1, allowance2, totalBill } = this.calculateAllowances(assignment.type);
 
-    for (const assignment of validated.assignments) {
-      const isHoliday = checkIsHolidayLocal(assignment.date);
-
-      if (assignment.type === 'LATE_SITTING' && isHoliday) {
-        throw new AppError('late_sitting_on_holiday', 400, 'late_sitting_on_holiday');
+        dutiesToInsert.push({
+          employeeId: assignment.employeeId,
+          type: assignment.type,
+          date: assignment.date,
+          description: assignment.description || null,
+          allowance1,
+          allowance2,
+          totalBill,
+          orderRef: validated.orderRef || null
+        });
       }
 
-      if (assignment.type === 'HOLIDAY' && !isHoliday) {
-        throw new AppError('holiday_duty_on_working_day', 400, 'holiday_duty_on_working_day');
-      }
-
-      if (assignment.type === 'LATE_SITTING' || assignment.type === 'NIGHT_SHIFT') {
-        const conflictingType = assignment.type === 'LATE_SITTING' ? 'NIGHT_SHIFT' : 'LATE_SITTING';
-        const dbConflict = allExistingDuties.some(d =>
-          d.employeeId === assignment.employeeId &&
-          d.date === assignment.date &&
-          d.type === conflictingType
-        );
-        const batchConflict = dutiesToInsert.some(d =>
-          d.employeeId === assignment.employeeId &&
-          d.date === assignment.date &&
-          d.type === conflictingType
-        );
-        if (dbConflict || batchConflict) {
-          throw new AppError('late_sitting_night_shift_conflict', 400, 'late_sitting_night_shift_conflict');
+      if (dutiesToDeleteSet.size > 0) {
+        for (const dutyId of dutiesToDeleteSet) {
+          const dutyRecord = await DutyRepository.findById(dutyId);
+          if (dutyRecord) {
+            const emp = await EmployeeRepository.findById(dutyRecord.employeeId);
+            const duty = { ...dutyRecord, employee: emp };
+            const typeMapBangla: Record<string, string> = {
+              'LATE_SITTING': 'লেট সিটিং',
+              'HOLIDAY': 'ছুটির দিন',
+              'NIGHT_SHIFT': 'নাইট শিফট'
+            };
+            const deletedBy = currentUser ? currentUser.username : null;
+            await tx.insert(trash).values({
+              entityType: 'DUTY',
+              entityId: dutyId,
+              name: `${duty.employee?.name || 'Unknown'} - ${typeMapBangla[duty.type] || duty.type} (${duty.date})`,
+              data: JSON.stringify(duty),
+              deletedBy
+            });
+            await DutyRepository.delete(dutyId, tx);
+          }
         }
       }
 
-      const emp = employeeMap.get(assignment.employeeId);
-      if (emp && emp.bankId) {
-        const hasLeaveConflict = leaves.some(l => 
-          l.bankId === emp.bankId && 
-          l.startDate <= assignment.date && 
-          l.endDate >= assignment.date
-        );
-        if (hasLeaveConflict) {
-          throw new AppError('leave_conflict', 400, 'leave_conflict');
-        }
+      const inserted = await DutyRepository.createBulk(dutiesToInsert, tx);
+
+      const firstDuty = inserted[0];
+      if (firstDuty) {
+        const emp = await EmployeeRepository.findById(firstDuty.employeeId);
+        const activityDetails = `${currentUser.name} (@${currentUser.username}) ${validated.orderRef ? `নতুন অফিস আদেশ/বিল মেমো সংরক্ষণ` : `নতুন ডিউটি অ্যাসাইনমেন্ট`} করেছেন (${firstDuty.date}, কর্মকর্তা: ${emp?.name || 'Unknown'})।`;
+        await logActivity({
+          username: currentUser.username,
+          action: 'CREATE',
+          entityType: 'DUTY',
+          entityId: String(firstDuty.id),
+          ipAddress: headersInfo.ipAddress,
+          userAgent: headersInfo.userAgent,
+          details: activityDetails
+        });
       }
 
-      const { allowance1, allowance2, totalBill } = this.calculateAllowances(assignment.type);
-
-      dutiesToInsert.push({
-        employeeId: assignment.employeeId,
-        type: assignment.type,
-        date: assignment.date,
-        description: assignment.description || null,
-        allowance1,
-        allowance2,
-        totalBill,
-        orderRef: validated.orderRef || null
-      });
-    }
-
-    if (dutiesToDeleteSet.size > 0) {
-      for (const dutyId of dutiesToDeleteSet) {
-        const dutyRecord = await DutyRepository.findById(dutyId);
-        if (dutyRecord) {
-          const emp = await EmployeeRepository.findById(dutyRecord.employeeId);
-          const duty = { ...dutyRecord, employee: emp };
-          const typeMapBangla: Record<string, string> = {
-            'LATE_SITTING': 'লেট সিটিং',
-            'HOLIDAY': 'ছুটির দিন',
-            'NIGHT_SHIFT': 'নাইট শিফট'
-          };
-          const deletedBy = currentUser ? currentUser.username : null;
-          await db.insert(trash).values({
-            entityType: 'DUTY',
-            entityId: dutyId,
-            name: `${duty.employee?.name || 'Unknown'} - ${typeMapBangla[duty.type] || duty.type} (${duty.date})`,
-            data: JSON.stringify(duty),
-            deletedBy
-          });
-          await DutyRepository.delete(dutyId);
-        }
-      }
-    }
-
-    const inserted = await DutyRepository.createBulk(dutiesToInsert);
-
-    const firstDuty = inserted[0];
-    if (firstDuty) {
-      const emp = await EmployeeRepository.findById(firstDuty.employeeId);
-      const activityDetails = `${currentUser.name} (@${currentUser.username}) ${validated.orderRef ? `নতুন অফিস আদেশ/বিল মেমো সংরক্ষণ` : `নতুন ডিউটি অ্যাসাইনমেন্ট`} করেছেন (${firstDuty.date}, কর্মকর্তা: ${emp?.name || 'Unknown'})।`;
-      await logActivity({
-        username: currentUser.username,
-        action: 'CREATE',
-        entityType: 'DUTY',
-        entityId: String(firstDuty.id),
-        ipAddress: headersInfo.ipAddress,
-        userAgent: headersInfo.userAgent,
-        details: activityDetails
-      });
-    }
-
-    return inserted;
+      return inserted;
+    });
   }
 
   static async updateDuty(currentUser: UserSession | null | undefined, id: number, body: unknown, headersInfo: { ipAddress: string, userAgent: string }) {

@@ -65,8 +65,9 @@ export class DutyRepository {
     return list;
   }
 
-  static async deleteDutiesByOrderRef(orderRef: string) {
-    return db.delete(duties).where(eq(duties.orderRef, orderRef)).returning();
+  static async deleteDutiesByOrderRef(orderRef: string, tx?: any) {
+    const client = tx || db;
+    return client.delete(duties).where(eq(duties.orderRef, orderRef)).returning();
   }
 
   static async createBulk(dutiesData: {
@@ -78,8 +79,9 @@ export class DutyRepository {
     allowance2: number;
     totalBill: number;
     orderRef?: string | null;
-  }[]) {
-    return db.insert(duties).values(dutiesData).returning();
+  }[], tx?: any) {
+    const client = tx || db;
+    return client.insert(duties).values(dutiesData).returning();
   }
 
   static async update(id: number, data: {
@@ -91,13 +93,15 @@ export class DutyRepository {
     allowance2?: number;
     totalBill?: number;
     orderRef?: string | null;
-  }) {
-    const list = await db.update(duties).set(data).where(eq(duties.id, id)).returning();
+  }, tx?: any) {
+    const client = tx || db;
+    const list = await client.update(duties).set(data).where(eq(duties.id, id)).returning();
     return list[0];
   }
 
-  static async delete(id: number) {
-    const list = await db.delete(duties).where(eq(duties.id, id)).returning();
+  static async delete(id: number, tx?: any) {
+    const client = tx || db;
+    const list = await client.delete(duties).where(eq(duties.id, id)).returning();
     return list[0];
   }
 }

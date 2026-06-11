@@ -961,3 +961,74 @@ export function convertUnicodeToBijoy(text: string): string {
   
   return convertedTokens.join('');
 }
+
+export function toBanglaDigits(num: number | string | undefined | null): string {
+  if (num === undefined || num === null) return '';
+  const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
+}
+
+export function getBanglaDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-');
+  const bnDay = toBanglaDigits(parseInt(day, 10).toString().padStart(2, '0'));
+  const bnMonth = toBanglaDigits(parseInt(month, 10).toString().padStart(2, '0'));
+  const bnYear = toBanglaDigits(year);
+  return `${bnDay}-${bnMonth}-${bnYear}`;
+}
+
+export function getBanglaMonthYearLabel(ym: string): string {
+  if (!ym || !ym.includes('-')) return '';
+  const [yearStr, monthStr] = ym.split('-');
+  const month = parseInt(monthStr, 10);
+  const banglaMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+  return `${banglaMonths[month - 1]} ${toBanglaDigits(yearStr)}`;
+}
+
+export function getBanglaNumberWords(num: number): string {
+  if (num === 0) return 'শূন্য';
+  
+  const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
+  const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
+  const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
+
+  const convertTens = (n: number): string => {
+    if (n < 10) return singleWords[n];
+    if (n >= 10 && n < 20) return teenWords[n - 10];
+    const ten = Math.floor(n / 10);
+    const unit = n % 10;
+    return doubleWords[ten] + (unit > 0 ? ' ' + singleWords[unit] : '');
+  };
+
+  let wordStr = '';
+  let tempNum = num;
+  
+  // Lac portion
+  if (tempNum >= 100000) {
+    const lac = Math.floor(tempNum / 100000);
+    wordStr += convertTens(lac) + ' লক্ষ ';
+    tempNum %= 100000;
+  }
+
+  // Thousand portion
+  if (tempNum >= 1000) {
+    const thousand = Math.floor(tempNum / 1000);
+    wordStr += convertTens(thousand) + ' হাজার ';
+    tempNum %= 1000;
+  }
+  
+  // Hundred portion
+  if (tempNum >= 100) {
+    const hundred = Math.floor(tempNum / 100);
+    wordStr += singleWords[hundred] + ' শত ';
+    tempNum %= 100;
+  }
+  
+  // Tens portion
+  if (tempNum > 0) {
+    wordStr += convertTens(tempNum);
+  }
+  
+  return wordStr.trim() + ' টাকা মাত্র';
+}
+

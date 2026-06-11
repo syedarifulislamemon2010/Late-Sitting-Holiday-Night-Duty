@@ -3243,8 +3243,8 @@ export default function RosterPage() {
                 margin: 0 !important; 
                 padding: 0 !important; 
                 background: #fff !important; 
-                font-family: "Kalpurush", "Noto Sans Bengali", sans-serif !important; 
-                font-size: 12px !important;
+                font-family: "SolaimanLipi", "Noto Sans Bengali", sans-serif !important; 
+                font-size: 14px !important;
                 line-height: 1.6 !important;
               }
               /* Force resetting Next.js page margins & layout wrapper padding */
@@ -3260,8 +3260,8 @@ export default function RosterPage() {
                 padding: 1.0in !important;
                 border: none !important;
                 box-shadow: none !important;
-                font-family: "Kalpurush", "Noto Sans Bengali", sans-serif !important;
-                font-size: 12px !important;
+                font-family: "SolaimanLipi", "Noto Sans Bengali", sans-serif !important;
+                font-size: 14px !important;
                 line-height: 1.6 !important;
                 box-sizing: border-box !important;
                 page-break-after: avoid !important;
@@ -3521,7 +3521,7 @@ export default function RosterPage() {
           {/* Interactive Print Mock Sheet */}
           <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner font-serif">
             {/* Renders exactly like A4 Page in Print Preview with standard 1.0 inch margins all around */}
-            <div className="print-a4-layout w-[210mm] h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', padding: '1.0in', boxSizing: 'border-box' }}>
+            <div className="print-a4-layout w-[210mm] h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', padding: '1.0in', boxSizing: 'border-box' }}>
               
               {/* Janata Bank PLC Redesigned Header to match mockup logo exactly */}
               {headerMode === 'with_header' ? (
@@ -3542,14 +3542,14 @@ export default function RosterPage() {
                       </g>
                     </svg>
                     <div className="font-serif leading-none mt-0.5">
-                      <h2 style={{ fontFamily: 'Kalpurush', fontSize: '24px', fontWeight: 'bold', color: '#0b5e9e', lineHeight: '1.0' }}>জনতা ব্যাংক পিএলসি.</h2>
-                      <p style={{ fontFamily: 'Kalpurush', fontSize: '10px', fontWeight: 'bold', color: '#555555', marginTop: '4px', lineHeight: '1.0' }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
+                      <h2 style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '24px', fontWeight: 'bold', color: '#0b5e9e', lineHeight: '1.0' }}>জনতা ব্যাংক পিএলসি.</h2>
+                      <p style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10px', fontWeight: 'bold', color: '#555555', marginTop: '4px', lineHeight: '1.0' }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
                     </div>
                   </div>
 
                   {/* Right side: Department */}
                   <div className="text-right mt-1">
-                    <h3 style={{ fontFamily: 'Kalpurush', fontSize: '18px', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '8px' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
+                    <h3 style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '8px' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
                   </div>
                 </div>
               ) : (
@@ -3557,7 +3557,7 @@ export default function RosterPage() {
               )}
 
               {/* Sub-header line: Reference and Date (With exactly 1 inch space below it) */}
-              <div className="w-full flex justify-between items-center text-[12px] pt-1 pb-1 border-b border-black/10 mt-1" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0', marginBottom: '0.4in' }}>
+              <div className="w-full flex justify-between items-center text-[12px] pt-1 pb-1 border-b border-black/10 mt-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', marginBottom: '0.4in' }}>
                 <span className="font-bold">সূত্রঃ {orderRef}</span>
                 <span className="font-bold">
                   তারিখঃ {toBanglaDigits(new Date(orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং
@@ -3565,23 +3565,23 @@ export default function RosterPage() {
               </div>
 
               {/* Title and Main Body */}
-              <div className="flex-1 flex flex-col justify-start pt-2 text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6' }}>
+              <div className="flex-1 flex flex-col justify-start pt-2 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
                 <div className="space-y-2.5">
-                  <h2 className="text-center text-[14.5px] font-extrabold underline decoration-black underline-offset-2" style={{ fontFamily: 'Kalpurush', fontSize: '14.5px', lineHeight: '1.4' }}>
+                  <h2 className="text-center text-[14.5px] font-extrabold underline decoration-black underline-offset-2" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14.5px', lineHeight: '1.4' }}>
                     অফিস নির্দেশ
                   </h2>
                   
                   <p 
                     className="text-justify leading-normal mt-2 text-[12px] text-slate-950 text-indent-8"
-                    style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6' }}
+                    style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}
                     dangerouslySetInnerHTML={{ __html: orderText }}
                   />
 
                   {/* Redesigned Printed Duty Table Grouped by Employee */}
                   {getGroupedDuties().length > 0 ? (
-                    <table className="w-full border-collapse border border-black text-center mt-2.5 text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                    <table className="w-full border-collapse border border-black text-center mt-2.5 text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                       <thead>
-                        <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                        <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                           <th className="border border-black p-1 w-[8%] text-center">ক্রমিক নং</th>
                           <th className="border border-black p-1 text-left pl-2 w-[28%]">নির্বাহী/ কর্মকর্তার নাম</th>
                           <th className="border border-black p-1 text-center w-[12%]">পদবী</th>
@@ -3591,20 +3591,20 @@ export default function RosterPage() {
                       </thead>
                       <tbody>
                         {getGroupedDuties().map((group, index) => (
-                          <tr key={group.employee.id} className="text-black text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
-                            <td className="border border-black p-1 text-center font-normal" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                          <tr key={group.employee.id} className="text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                            <td className="border border-black p-1 text-center font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                               {toBanglaDigits(index + 1)}
                             </td>
-                            <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                            <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                               {group.employee.name.startsWith('জনাব') ? group.employee.name : `জনাব ${group.employee.name}`}
                             </td>
-                            <td className="border border-black p-1 text-center font-normal" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                            <td className="border border-black p-1 text-center font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                               {getShortDesignation(group.employee.designation)}
                             </td>
-                            <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                            <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                               {group.description}
                             </td>
-                            <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                            <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                               {getFormattedDateList(group.dates)}
                             </td>
                           </tr>
@@ -3619,7 +3619,7 @@ export default function RosterPage() {
                 </div>
 
                 {/* Redesigned bottom-left signature aligned exactly like mockup with exactly 1 inch of space above it */}
-                <div className="flex justify-between items-start text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0', marginTop: '1.0in' }}>
+                <div className="flex justify-between items-start text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', marginTop: '1.0in' }}>
                   <div className="w-[50%] text-left space-y-0.5 pl-2 leading-none">
                     <p className="font-extrabold text-[12px] text-black">({signingOfficer || 'ডিজিএম নাম সিলেক্ট করুন'})</p>
                     <p className="font-semibold text-slate-800 text-[12px]">{signingDesignation}</p>

@@ -52,6 +52,11 @@ export const employees = pgTable('Employee', {
   mobile: text('mobile'),
   cellId: integer('cellId').notNull().references(() => cells.id, { onDelete: 'restrict' }),
   createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    cellIdIdx: index('Employee_cellId_idx').on(table.cellId),
+    bankIdIdx: index('Employee_bankId_idx').on(table.bankId),
+  };
 });
 
 // ==========================================
@@ -71,6 +76,9 @@ export const duties = pgTable('Duty', {
 }, (table) => {
   return {
     orderRefIdx: index('Duty_orderRef_idx').on(table.orderRef),
+    employeeIdIdx: index('Duty_employeeId_idx').on(table.employeeId),
+    dateIdx: index('Duty_date_idx').on(table.date),
+    typeIdx: index('Duty_type_idx').on(table.type),
   };
 });
 
@@ -172,6 +180,9 @@ export const leaveApplications = pgTable('LeaveApplication', {
 }, (table) => {
   return {
     userIdIdx: index('LeaveApplication_userId_idx').on(table.userId),
+    startDateIdx: index('LeaveApplication_startDate_idx').on(table.startDate),
+    endDateIdx: index('LeaveApplication_endDate_idx').on(table.endDate),
+    bankIdIdx: index('LeaveApplication_bankId_idx').on(table.bankId),
   };
 });
 
@@ -206,6 +217,26 @@ export const manualDocuments = pgTable('ManualDocument', {
   uploadedBy: text('uploadedBy'),
   isVisibleToUsers: boolean('isVisibleToUsers').default(false).notNull(),
   uploadedAt: timestamp('uploadedAt', { mode: 'date' }).defaultNow().notNull(),
+});
+
+// ==========================================
+// 13. AUDIT LOG MODEL
+// ==========================================
+export const auditLogs = pgTable('AuditLog', {
+  id: serial('id').primaryKey(),
+  username: text('username').notNull(),
+  action: text('action').notNull(),
+  entityType: text('entityType'),
+  entityId: text('entityId'),
+  ipAddress: text('ipAddress'),
+  userAgent: text('userAgent'),
+  details: text('details').notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    usernameIdx: index('AuditLog_username_idx').on(table.username),
+    createdAtIdx: index('AuditLog_createdAt_idx').on(table.createdAt),
+  };
 });
 
 

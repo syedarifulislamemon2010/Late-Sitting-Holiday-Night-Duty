@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { db } from '@/lib/db';
-import { users, userCells, cells } from '@/db/schema';
+import { users, userCells, cells, auditLogs } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 export async function getMacAddress(): Promise<string> {
@@ -56,6 +56,22 @@ export async function logActivity(params: {
   const logLine = JSON.stringify(logEntry) + '\n';
   console.log(`[AUDIT LOG] [${timestamp}] User: ${logEntry.bankId} (ID: ${logEntry.userId}), Cell: ${logEntry.cell}, Action: ${logEntry.actionType}, Record: ${logEntry.recordId}, Details: ${params.details}`);
 
+  // 1. Write to database AuditLog table
+  try {
+    await db.insert(auditLogs).values({
+      username: params.username,
+      action: params.action,
+      entityType: params.entityType || null,
+      entityId: params.entityId !== undefined ? String(params.entityId) : null,
+      ipAddress: params.ipAddress || '127.0.0.1',
+      userAgent: params.userAgent || 'Unknown',
+      details: params.details
+    });
+  } catch (dbLogErr) {
+    console.error('Failed to write audit log to database:', dbLogErr);
+  }
+
+  // 2. Fallback: Write to local audit.log file
   try {
     const logsDir = path.join(process.cwd(), 'logs');
     if (!fs.existsSync(logsDir)) {

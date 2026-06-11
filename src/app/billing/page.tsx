@@ -25,6 +25,14 @@ import {
   Edit3
 } from 'lucide-react';
 
+import LedgerTab from './components/LedgerTab';
+import OrdersTab from './components/OrdersTab';
+import BillsTab from './components/BillsTab';
+import ReportsTab from './components/ReportsTab';
+import BillPrintLayout from './components/BillPrintLayout';
+import { toBanglaDigits, getBanglaDate, getBanglaMonthYearLabel, getBanglaNumberWords } from '@/lib/bengali-converter';
+
+
 
 interface Cell {
   id: number;
@@ -143,77 +151,7 @@ interface EmployeeBillingSummary {
 }
 
 // Convert English digits/text to Bengali digits
-const toBanglaDigits = (num: number | string | undefined | null): string => {
-  if (num === undefined || num === null) return '';
-  const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-  return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
-};
-
-// Convert Gregorian Date String to formal Bengali Date (e.g. ২৩-০৫-২০২৬)
-const getBanglaDate = (dateStr: string) => {
-  if (!dateStr) return '';
-  const [year, month, day] = dateStr.split('-');
-  const bnDay = toBanglaDigits(parseInt(day, 10).toString().padStart(2, '0'));
-  const bnMonth = toBanglaDigits(parseInt(month, 10).toString().padStart(2, '0'));
-  const bnYear = toBanglaDigits(year);
-  return `${bnDay}-${bnMonth}-${bnYear}`;
-};
-
-// Convert Gregorian YYYY-MM into formal Bengali Month Year (e.g. জুন ২০২৬)
-const getBanglaMonthYearLabel = (ym: string) => {
-  if (!ym || !ym.includes('-')) return '';
-  const [yearStr, monthStr] = ym.split('-');
-  const month = parseInt(monthStr, 10);
-  const banglaMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
-  return `${banglaMonths[month - 1]} ${toBanglaDigits(yearStr)}`;
-};
-
-// Convert total number into Bengali Words for Legal certification note
-const getBanglaNumberWords = (num: number) => {
-  if (num === 0) return 'শূন্য';
-  
-  const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
-  const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
-  const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
-
-  const convertTens = (n: number): string => {
-    if (n < 10) return singleWords[n];
-    if (n >= 10 && n < 20) return teenWords[n - 10];
-    const ten = Math.floor(n / 10);
-    const unit = n % 10;
-    return doubleWords[ten] + (unit > 0 ? ' ' + singleWords[unit] : '');
-  };
-
-  let wordStr = '';
-  
-  // Lac portion
-  if (num >= 100000) {
-    const lac = Math.floor(num / 100000);
-    wordStr += convertTens(lac) + ' লক্ষ ';
-    num %= 100000;
-  }
-
-  // Thousand portion
-  if (num >= 1000) {
-    const thousand = Math.floor(num / 1000);
-    wordStr += convertTens(thousand) + ' হাজার ';
-    num %= 1000;
-  }
-  
-  // Hundred portion
-  if (num >= 100) {
-    const hundred = Math.floor(num / 100);
-    wordStr += singleWords[hundred] + ' শত ';
-    num %= 100;
-  }
-  
-  // Tens portion
-  if (num > 0) {
-    wordStr += convertTens(num);
-  }
-  
-  return wordStr.trim() + ' টাকা মাত্র';
-};
+;
 
 const getSlotName = (dateStr: string) => {
   if (!dateStr) return '';
@@ -1898,208 +1836,9 @@ export default function BillingPage() {
     }
   };
 
-  const renderOrdersGrid = (ordersList: OfficeOrder[]) => {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {ordersList.map((order) => {
-          const isOrderBilled = archivedBillNormalizedRefs.has(getNormalizedRef(order.orderRef));
-          
-          return (
-            <div 
-              key={order.id}
-              className="group border border-slate-200/60 dark:border-slate-800/80 rounded-2xl p-5 bg-white/30 dark:bg-slate-900/20 hover:bg-white dark:hover:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 flex flex-col justify-between gap-4 shadow-sm text-slate-850 dark:text-slate-100"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-500/20 font-sans">
-                    <CheckCircle size={10} className="text-emerald-505" />
-                    {order.status === 'Generated & Printed' || order.status === 'Printed' ? 'জেনারেটেড এন্ড প্রিন্টেড' : order.status}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    {isOrderBilled ? (
-                      <span className="text-[10px] bg-teal-500/10 text-teal-600 dark:text-teal-400 px-2 py-0.5 rounded-full font-extrabold border border-teal-500/20 font-sans">
-                        বিল সম্পন্ন
-                      </span>
-                    ) : (
-                      <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-extrabold border border-amber-500/20 animate-pulse font-sans">
-                        বিল অপেক্ষমাণ
-                      </span>
-                    )}
-                    <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-bold uppercase font-sans">
-                      {order.category === 'LATE_SITTING' ? 'লেট সিটিং' : order.category === 'HOLIDAY' ? 'সরকারি ছুটি' : 'রাত্রীকালীন'}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="space-y-1.5 text-left">
-                  <h4 className="text-xs font-extrabold leading-snug font-mono break-all text-slate-800 dark:text-slate-100" title={order.orderRef}>
-                    {order.orderRef}
-                  </h4>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-semibold pt-1 border-t border-slate-100/50 dark:border-slate-800/50 mt-2 font-sans">
-                    <div>
-                      <span className="text-slate-400 font-medium block">আদেশের তারিখ:</span>
-                      <span>{order.orderDate}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 font-medium block">কর্মকর্তা:</span>
-                      <span className="truncate block" title={order.employeeName}>{order.employeeName}</span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-slate-400 font-medium block">শাখা/セル:</span>
-                      <span>{order.cellName || 'আইটি বিভাগ'}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+  ;
 
-              <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-3">
-                <div className="flex items-center gap-1.5">
-                  <button 
-                    onClick={() => setViewingOrder(order)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer font-sans"
-                    title="অর্ডারটি ভিউ করুন"
-                  >
-                    <Eye size={12} />
-                    <span>ভিউ</span>
-                  </button>
-
-                  {isOrderBilled ? (
-                    <button 
-                      onClick={() => {
-                        const norm = getNormalizedRef(order.orderRef);
-                        const existingBill = archivedOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
-                        if (existingBill) {
-                          handleLoadBillForEditing(existingBill.orderRef);
-                        }
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 dark:hover:bg-teal-950/50 text-teal-600 dark:text-teal-400 rounded-lg text-[10px] font-extrabold transition-all border border-teal-100 dark:border-teal-950/30 cursor-pointer font-sans"
-                      title="বিলটি সম্পাদন করুন"
-                    >
-                      <Receipt size={12} />
-                      <span>বিল সম্পাদন</span>
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleGenerateBillFromOrder(order)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-extrabold transition-all border border-amber-100 dark:border-amber-950/30 cursor-pointer font-sans"
-                      title="বিল জেনারেট করুন"
-                    >
-                      <Receipt size={12} />
-                      <span>বিল জেনারেট</span>
-                    </button>
-                  )}
-                  
-                  {hasEditPermission(order) && (
-                    <button 
-                      onClick={() => window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer font-sans"
-                      title="রোস্টারে ফিরে এডিট করুন (স্মারক একই থাকবে)"
-                    >
-                      <FileSignature size={12} />
-                      <span>সম্পাদনা (রোস্টার)</span>
-                    </button>
-                  )}
-                </div>
-
-                {hasDeletePermission(order) && (
-                  <button 
-                    onClick={() => handleDeleteOrder(order.id)}
-                    className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all cursor-pointer"
-                    title="আর্কাইভ থেকে মুছে ফেলুন"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  const renderBillMemosGrid = (memosList: OfficeOrder[]) => {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {memosList.map((order) => (
-          <div 
-            key={order.id}
-            className="group border border-slate-200/60 dark:border-slate-800/80 rounded-2xl p-5 bg-white/30 dark:bg-slate-900/20 hover:bg-white dark:hover:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 flex flex-col justify-between gap-4 shadow-sm text-slate-850 dark:text-slate-100"
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-500/20 font-sans">
-                  <CheckCircle size={10} className="text-emerald-555" />
-                  {order.status === 'Generated & Printed' || order.status === 'Printed' ? 'জেনারেটেড এন্ড প্রিন্টেড' : order.status}
-                </span>
-                <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-bold uppercase font-sans">
-                  {order.category === 'BILL_LATE_SITTING' ? 'লেট সিটিং বিল' : order.category === 'BILL_HOLIDAY' ? 'সরকারি ছুটি বিল' : 'রাত্রীকালীন বিল'}
-                </span>
-              </div>
-              
-              <div className="space-y-1.5 text-left">
-                <h4 className="text-xs font-extrabold leading-snug font-mono break-all text-slate-800 dark:text-slate-100" title={order.orderRef}>
-                  {order.orderRef}
-                </h4>
-                
-                <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-semibold pt-1 border-t border-slate-100/50 dark:border-slate-800/50 mt-2 font-sans">
-                  <div>
-                    <span className="text-slate-400 font-medium block">প্রতিনিধি কর্মকর্তা:</span>
-                    <span className="text-slate-700 dark:text-slate-300 font-bold">{order.employeeName}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium block">তারিখ:</span>
-                    <span className="text-slate-700 dark:text-slate-300 font-bold">
-                      {toBanglaDigits(new Date(order.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))}
-                    </span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-slate-400 font-medium block">শাখা/সেল:</span>
-                    <span>{order.cellName || 'আইটি বিভাগ'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-3">
-              <div className="flex items-center gap-1.5">
-                <button 
-                  onClick={() => setViewingOrder(order)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer font-sans"
-                  title="বিল মেমো ভিউ করুন"
-                >
-                  <Eye size={12} />
-                  <span>ভিউ</span>
-                </button>
-
-                {hasEditPermission(order) && (
-                  <button 
-                    onClick={() => handleLoadBillForEditing(order.orderRef)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer font-sans"
-                    title="বিলিং এ ফিরে এডিট করুন (স্মারক একই থাকবে)"
-                  >
-                    <FileSignature size={12} />
-                    <span>সম্পাদনা (বিলিং)</span>
-                  </button>
-                )}
-              </div>
-
-              {hasDeletePermission(order) && (
-                <button 
-                  onClick={() => handleDeleteOrder(order.id)}
-                  className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all cursor-pointer"
-                  title="আর্কাইভ থেকে মুছে ফেলুন"
-                >
-                  <Trash2 size={12} />
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
+  ;
 
   const { transportRate, apyaonRate } = getPrintCategoryRates(printCategory);
 
@@ -2126,7 +1865,7 @@ export default function BillingPage() {
     } = reportData;
 
     return (
-      <div className="print-report-layout max-w-4xl mx-auto bg-white p-8 border border-slate-200 shadow-md font-sans text-black" style={{ fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', sans-serif", color: '#000', lineHeight: '1.4' }}>
+      <div className="print-report-layout max-w-4xl mx-auto bg-white p-8 border border-slate-200 shadow-md font-sans text-black" style={{ fontFamily: "'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif", color: '#000', lineHeight: '1.4' }}>
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             @page {
@@ -2137,7 +1876,7 @@ export default function BillingPage() {
             body {
               background: #fff !important;
               color: #000 !important;
-              font-family: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif !important;
+              font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif !important;
             }
             .print-report-layout {
               border: none !important;
@@ -2152,14 +1891,14 @@ export default function BillingPage() {
         <div className="no-print flex items-center justify-between mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
           <button
             onClick={() => setIsReportPrintMode(false)}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
+            className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
           >
             <ChevronLeft size={16} />
             প্রতিবেদন ভিউতে ফিরে যান
           </button>
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors cursor-pointer"
           >
             <Printer size={14} />
             প্রিন্ট করুন (Print)
@@ -2168,11 +1907,11 @@ export default function BillingPage() {
 
         {/* Report Header */}
         <div className="text-center space-y-1 mb-6">
-          <h1 className="text-xl font-bold tracking-wide">জনতা ব্যাংক পিএলসি.</h1>
-          <p className="text-sm font-semibold">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
-          <p className="text-xs text-slate-500 font-bold uppercase mt-1">লেট সিটিং হলিডে নাইট বিল স্টেটমেন্ট</p>
+          <h1 className="text-2xl font-bold tracking-wide">জনতা ব্যাংক পিএলসি.</h1>
+          <p className="text-base font-semibold">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+          <p className="text-sm text-slate-500 font-bold uppercase mt-1">লেট সিটিং হলিডে নাইট বিল স্টেটমেন্ট</p>
           <div className="w-full border-t border-double border-black my-2"></div>
-          <div className="flex justify-between items-center text-xs font-bold px-2 pt-1">
+          <div className="flex justify-between items-center text-sm font-bold px-2 pt-1">
             <span>প্রতিবেদনের তারিখ: {getBanglaDate(reportDate)}</span>
             <span>প্রস্তুতকাল: {new Date().toLocaleDateString('bn-BD')}</span>
           </div>
@@ -2180,8 +1919,8 @@ export default function BillingPage() {
 
         {/* KPI Summary Block for Print */}
         <div className="mb-6 p-4 border border-black rounded-lg">
-          <h3 className="text-xs font-bold border-b border-black pb-1 mb-2">সংक्षिप्त সারসংক্ষেপ (KPI Summary):</h3>
-          <div className="grid grid-cols-2 gap-y-2 text-xs">
+          <h3 className="text-sm font-bold border-b border-black pb-1 mb-2">সংक्षिप्त সারসংক্ষেপ (KPI Summary):</h3>
+          <div className="grid grid-cols-2 gap-y-2 text-sm">
             <div><strong>মোট জেনারেটকৃত বিলের সংখ্যা:</strong> {toBanglaDigits(totalBillsCount)} টি</div>
             <div><strong>সর্বমোট প্রদেয় বিলের পরিমাণ:</strong> {toBanglaDigits(grandTotal)}/- টাকা</div>
             <div><strong>মোট ডিউটি কার্যদিবস:</strong> {toBanglaDigits(totalDays)} দিন</div>
@@ -2196,8 +1935,8 @@ export default function BillingPage() {
 
         {/* Table: Employee Breakdown for Print */}
         <div className="mb-8">
-          <h3 className="text-xs font-bold mb-2">১. কর্মকর্তা ভিত্তিক সমন্বিত প্রাপ্তির বিবরণী (Payee Statement):</h3>
-          <table className="w-full text-[10px] border-collapse" style={{ border: '1px solid #000' }}>
+          <h3 className="text-sm font-bold mb-2">১. কর্মকর্তা ভিত্তিক সমন্বিত প্রাপ্তির বিবরণী (Payee Statement):</h3>
+          <table className="w-full text-xs border-collapse" style={{ border: '1px solid #000' }}>
             <thead>
               <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
                 <th className="p-1 border-r border-black w-8" style={{ borderRight: '1px solid #000' }}>#</th>
@@ -2481,785 +2220,63 @@ export default function BillingPage() {
           </div>
 
           {activeTab === 'ledger' && (
-            <>
-              {showOrderWarning && (
-                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-3 font-sans font-medium text-sm animate-fade-in mb-6">
-                  <AlertCircle size={18} className="text-rose-600 shrink-0" />
-                  <p>নির্বাচিত মাস ও সেলের জন্য কোনো &quot;জেনারেটেড এন্ড প্রিন্টেড&quot; অফিস আদেশ পাওয়া যায়নি। আগে অফিস আদেশ জেনারেট করুন, তারপর বিল প্রস্তুত করতে পারবেন।</p>
-                </div>
-              )}
-
-              {loading ? (
-                /* KPI Loading state */
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
-                  {[...Array(4)].map((_, i) => <div key={i} className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl" />)}
-                </div>
-              ) : (
-                /* Detailed Allowance Cost KPI Grid */
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {/* Metric 1: Late Sitting Allowance splits */}
-                  <div className="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-800 transition-all">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="app-metadata-text font-medium text-slate-500 uppercase tracking-wider">লেট সিটিং বিল (Snacks + Travel)</p>
-                        <h3 className="app-kpi-value text-slate-800 dark:text-slate-100 font-sans">৳{metrics.totalLateSittingBill.toLocaleString('bn-BD')}</h3>
-                      </div>
-                      <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
-                        <Clock size={16} />
-                      </div>
-                    </div>
-                    <div className="app-metadata-text text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2 mt-4 space-y-0.5">
-                      <p>• নাস্তা বরাদ্দ (৳১০০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalLateAllowance1.toLocaleString('bn-BD')}</span></p>
-                      <p>• যাতায়াত বরাদ্দ (৳২০০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalLateAllowance2.toLocaleString('bn-BD')}</span></p>
-                    </div>
-                  </div>
-
-                  {/* Metric 2: Holiday Duty Allowance splits */}
-                  <div className="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-800 transition-all">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="app-metadata-text font-medium text-slate-500 uppercase tracking-wider">হলিডে ডিউটি বিল (Lunch + Travel)</p>
-                        <h3 className="app-kpi-value text-slate-800 dark:text-slate-100 font-sans">৳{metrics.totalHolidayBill.toLocaleString('bn-BD')}</h3>
-                      </div>
-                      <div className="p-2 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-lg">
-                        <Award size={16} />
-                      </div>
-                    </div>
-                    <div className="app-metadata-text text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2 mt-4 space-y-0.5">
-                      <p>• দুপুরের খাবার (৳২৫০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalHolidayAllowance1.toLocaleString('bn-BD')}</span></p>
-                      <p>• যাতায়াত বরাদ্দ (৳২৫০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalHolidayAllowance2.toLocaleString('bn-BD')}</span></p>
-                    </div>
-                  </div>
-
-                  {/* Metric 3: Night Shift Allowance splits */}
-                  <div className="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-800 transition-all">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1 flex-1">
-                        <p className="app-metadata-text font-medium text-slate-500 uppercase tracking-wider">নাইট শিফট বিল (Dinner + Travel)</p>
-                        <h3 className="app-kpi-value text-slate-800 dark:text-slate-100 font-sans">৳{metrics.totalNightBill.toLocaleString('bn-BD')}</h3>
-                      </div>
-                      <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg">
-                        <ShieldCheck size={16} />
-                      </div>
-                    </div>
-                    <div className="app-metadata-text text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2 mt-4 space-y-0.5">
-                      <p>• রাতের খাবার (৳৬০০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalNightAllowance1.toLocaleString('bn-BD')}</span></p>
-                      <p>• যাতায়াত বরাদ্দ (৳৪০০): <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{metrics.totalNightAllowance2.toLocaleString('bn-BD')}</span></p>
-                    </div>
-                  </div>
-
-                  {/* Metric 4: Grand Total */}
-                  <div className="glass-card p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between bg-gradient-to-tr from-indigo-950/30 to-emerald-950/20 border-emerald-500/20 hover:border-emerald-500/40 transition-all">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="app-metadata-text font-medium text-emerald-500 dark:text-emerald-400 uppercase tracking-wider">সর্বমোট প্রদেয় বিল (Grand Total)</p>
-                        <h3 className="app-kpi-value text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-400 font-sans">৳{metrics.grandTotal.toLocaleString('bn-BD')}</h3>
-                      </div>
-                      <div className="p-2 bg-emerald-600 text-white rounded-lg shadow-sm">
-                        <DollarSign size={16} />
-                      </div>
-                    </div>
-                    <div className="app-metadata-text text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2 mt-4 space-y-0.5">
-                      <p>• সর্বমোট আপ্যায়ন ব্যয়: <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{(metrics.totalLateAllowance1 + metrics.totalHolidayAllowance1 + metrics.totalNightAllowance1).toLocaleString('bn-BD')}</span></p>
-                      <p>• সর্বমোট যাতায়াত ব্যয়: <span className="font-semibold text-slate-600 dark:text-slate-300 font-sans">৳{(metrics.totalLateAllowance2 + metrics.totalHolidayAllowance2 + metrics.totalNightAllowance2).toLocaleString('bn-BD')}</span></p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Aggregated Officers Ledger Table Grouped By Cell */}
-              <div className="glass-card p-6 rounded-2xl space-y-4 border border-slate-200 dark:border-slate-800">
-                <div>
-                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">আপ্যায়ন বিলিং খতিয়ান (Monthly Billing Ledger)</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">জেনারেটেড ও প্রিন্টকৃত অফিস আদেশ এবং তাদের বিল প্রস্তুতকরণ খতিয়ান।</p>
-                </div>
-
-                {loading ? (
-                  <div className="h-64 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl" />
-                ) : allActiveOfficeOrders.length > 0 ? (
-                  <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800/80">
-                    <table className="w-full text-left text-xs leading-normal">
-                      <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-sans">
-                          <th className="px-4 py-3.5 text-center w-12">#</th>
-                          <th className="px-5 py-3.5">স্মারক নম্বর (Order Reference)</th>
-                          <th className="px-5 py-3.5 text-center">আদেশের তারিখ</th>
-                          <th className="px-5 py-3.5 text-center">ক্যাটাগরি</th>
-                          <th className="px-5 py-3.5">কর্মকর্তা (payee)</th>
-                          <th className="px-5 py-3.5 text-center">ডিউটি তথ্য</th>
-                          <th className="px-5 py-3.5 text-right">অ্যাকশন</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium">
-                        {allActiveOfficeOrders.map((order, idx) => {
-                          const bill = findAssociatedBill(order);
-                          const isBilled = !!bill;
-
-                          let dutiesList = order.duties || [];
-                          if (dutiesList.length === 0 && order.dutiesJson) {
-                            try {
-                              dutiesList = JSON.parse(order.dutiesJson);
-                            } catch (e) {
-                              console.error(e);
-                            }
-                          }
-                          const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
-                          
-                          let transportRate = 200;
-                          let apyaonRate = 100;
-                          let apyaonName = 'নাস্তা';
-                          let transportName = 'যাতায়াত';
-                          if (order.category === 'HOLIDAY') {
-                            transportRate = 250;
-                            apyaonRate = 250;
-                            apyaonName = 'দুপুরের খাবার';
-                          } else if (order.category === 'NIGHT_SHIFT') {
-                            transportRate = 400;
-                            apyaonRate = 600;
-                            apyaonName = 'রাতের খাবার';
-                          }
-                          const billTotal = totalDays * (apyaonRate + transportRate);
-
-                          return (
-                            <tr key={order.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-950/20 text-slate-600 dark:text-slate-300">
-                              <td className="px-4 py-4 text-center font-sans font-bold text-slate-400">
-                                {toBanglaDigits(idx + 1)}
-                              </td>
-                              <td className="px-5 py-4 font-mono font-bold text-xs text-slate-800 dark:text-slate-200 break-all max-w-[220px]">
-                                {order.orderRef}
-                              </td>
-                              <td className="px-5 py-4 text-center font-sans">
-                                {order.orderDate}
-                              </td>
-                              <td className="px-5 py-4 text-center font-sans">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  order.category === 'LATE_SITTING'
-                                    ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
-                                    : order.category === 'HOLIDAY'
-                                    ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
-                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                                }`}>
-                                  {order.category === 'LATE_SITTING' ? 'লেট সিটিং' : order.category === 'HOLIDAY' ? 'সরকারি ছুটি' : 'রাত্রীকালীন'}
-                                </span>
-                              </td>
-                              <td className="px-5 py-4 font-bold text-slate-800 dark:text-slate-200">
-                                {order.employeeName}
-                              </td>
-                              <td className="px-5 py-4 font-sans text-center">
-                                <div className="font-bold text-slate-800 dark:text-slate-200">
-                                  {toBanglaDigits(totalDays)} দিন (৳{toBanglaDigits(billTotal)}/- টাকা)
-                                </div>
-                                <div className="mt-1 text-[10px] text-slate-450 dark:text-slate-500 font-sans space-y-0.5 text-center flex flex-col items-center">
-                                  <div>• {apyaonName} (৳{toBanglaDigits(apyaonRate)}): ৳{toBanglaDigits(totalDays * apyaonRate)}/-</div>
-                                  <div>• {transportName} (৳{toBanglaDigits(transportRate)}): ৳{toBanglaDigits(totalDays * transportRate)}/-</div>
-                                </div>
-                              </td>
-                              <td className="px-5 py-4 text-right">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  {isBilled ? (
-                                    <div className="flex flex-col items-end gap-1">
-                                      <button 
-                                        onClick={() => handleLoadBillForEditing(bill.orderRef)}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold transition-all border border-emerald-100 dark:border-emerald-950/30 cursor-pointer font-sans"
-                                      >
-                                        <CheckCircle size={13} className="text-emerald-500" />
-                                        <span>বিল সম্পাদন</span>
-                                      </button>
-                                      <span className="text-[10px] text-slate-400 font-sans font-medium">
-                                        জেনারেটেড: {getBanglaDate(bill.orderDate)}
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <button 
-                                      onClick={() => handleGenerateBillFromOrder(order)}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-bold transition-all border border-amber-100 dark:border-amber-950/30 cursor-pointer font-sans"
-                                      title="বিল জেনারেট করুন"
-                                    >
-                                      <Receipt size={13} />
-                                      <span>বিল জেনারেট করুন</span>
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                      <tfoot className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-bold font-sans">
-                        <tr>
-                          <td colSpan={5} className="px-5 py-4 text-right font-extrabold text-sm text-slate-700 dark:text-slate-350">
-                            সর্বমোট:
-                          </td>
-                          <td className="px-5 py-4 text-center font-extrabold text-sm text-indigo-600 dark:text-indigo-400">
-                            ৳{toBanglaDigits(ledgerGrandTotal.toLocaleString('en-US'))}/- টাকা
-                          </td>
-                          <td className="px-5 py-4"></td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="p-16 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 italic">
-                    কোনো অপেক্ষমান বিল অফিস আদেশ পাওয়া যায়নি।
-                  </div>
-                )}
-              </div>
-            </>
+            <LedgerTab
+              loading={loading}
+              showOrderWarning={showOrderWarning}
+              metrics={metrics}
+              allActiveOfficeOrders={allActiveOfficeOrders}
+              findAssociatedBill={findAssociatedBill}
+              handleLoadBillForEditing={handleLoadBillForEditing}
+              handleGenerateBillFromOrder={handleGenerateBillFromOrder}
+              ledgerGrandTotal={ledgerGrandTotal}
+              selectedMonth={selectedMonth}
+            />
           )}
 
           {activeTab === 'orders' && (
-            <div className="space-y-6">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-3">
-                  <Loader2 size={36} className="text-indigo-500 animate-spin" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
-                </div>
-              ) : pendingBillingOfficeOrders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
-                    <AlertCircle size={28} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">কোনো অপেক্ষমাণ বিল অফিস আদেশ নেই</h3>
-                    <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
-                      নির্বাচিত ফিল্টারের অধীনে কোনো বিল অপেক্ষমাণ অফিস আদেশ পাওয়া যায়নি।
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  {/* Section 1: Pending Billing */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-2 border-b border-amber-200/30 pb-2 font-sans">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                      বিল অপেক্ষমাণ অফিস আদেশ - {toBanglaDigits(pendingBillingOfficeOrders.length)} টি
-                    </h3>
-                    {pendingBillingOfficeOrders.length > 0 ? (
-                      renderOrdersGrid(pendingBillingOfficeOrders)
-                    ) : (
-                      <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs font-sans">
-                        কোনো বিল অপেক্ষমাণ অফিস আদেশ নেই।
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <OrdersTab
+              loading={loading}
+              pendingBillingOfficeOrders={pendingBillingOfficeOrders}
+              archivedBillNormalizedRefs={archivedBillNormalizedRefs}
+              getNormalizedRef={getNormalizedRef}
+              archivedOrders={archivedOrders}
+              handleLoadBillForEditing={handleLoadBillForEditing}
+              handleGenerateBillFromOrder={handleGenerateBillFromOrder}
+              hasEditPermission={hasEditPermission}
+              hasDeletePermission={hasDeletePermission}
+              handleDeleteOrder={handleDeleteOrder}
+              setViewingOrder={setViewingOrder}
+            />
           )}
 
           {activeTab === 'bills' && (
-            <div className="space-y-6">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-3">
-                  <Loader2 size={36} className="text-indigo-500 animate-spin" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
-                </div>
-              ) : filteredBillMemos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
-                    <AlertCircle size={28} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">কোন বিল মেমো সংরক্ষিত নেই</h3>
-                    <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
-                      নির্বাচিত ফিল্টারের অধীনে কোনো বিল মেমো পাওয়া যায়নি।
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  {/* Section 1: Generated but not printed */}
-                  {(() => {
-                    const pendingPrintBillMemos = filteredBillMemos.filter(b => b.status === 'Generated');
-                    return (
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-2 border-b border-amber-200/30 pb-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                          জেনারেটেড কিন্তু প্রিন্ট করা হয়নি ({pendingPrintBillMemos.length} টি)
-                        </h3>
-                        {pendingPrintBillMemos.length > 0 ? (
-                          renderBillMemosGrid(pendingPrintBillMemos)
-                        ) : (
-                          <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs">
-                            কোনো প্রিন্ট অপেক্ষমাণ বিল মেমো নেই।
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Section 2: Printed/Generated & Printed/Modified */}
-                  {(() => {
-                    const printedBillMemos = filteredBillMemos.filter(b => b.status === 'Printed' || b.status === 'Generated & Printed' || b.status === 'Modified');
-                    return (
-                      <div className="space-y-4 pt-4">
-                        <h3 className="text-sm font-extrabold text-teal-600 dark:text-teal-400 flex items-center gap-2 border-b border-teal-200/30 pb-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
-                          জেনারেটেড এবং প্রিন্টেড বিল সেকশন ({printedBillMemos.length} টি)
-                        </h3>
-                        {printedBillMemos.length > 0 ? (
-                          renderBillMemosGrid(printedBillMemos)
-                        ) : (
-                          <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs">
-                            কোনো প্রিন্টেড বিল মেমো নেই।
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-            </div>
+            <BillsTab
+              loading={loading}
+              filteredBillMemos={filteredBillMemos}
+              handleLoadBillForEditing={handleLoadBillForEditing}
+              hasEditPermission={hasEditPermission}
+              hasDeletePermission={hasDeletePermission}
+              handleDeleteOrder={handleDeleteOrder}
+              setViewingOrder={setViewingOrder}
+            />
           )}
 
           {activeTab === 'reports' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              {/* Slot Groups Collapsible Cards */}
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 font-sans">
-                    <Calendar size={16} className="text-indigo-500" />
-                    বিলিং স্লট গ্রুপসমূহ (Billing Slots / Groups)
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5 font-sans">জেনারেটকৃত বিলের তারিখ ভিত্তিক স্লট গ্রুপসমূহ এবং তাদের অধীনে থাকা অফিস আদেশ ও বিল মেমোর তালিকা।</p>
-                </div>
-                
-                {billGroups.length === 0 ? (
-                  <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs font-sans">
-                    কোনো বিলিং স্লট গ্রুপ পাওয়া যায়নি।
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {billGroups.map((group) => {
-                      const isExpanded = !!expandedSlots[group.date];
-                      const slotTotalAmount = group.bills.reduce((sum, b) => {
-                        let innerTotal = 0;
-                        let dutiesList: any[] = (b.duties as any) || [];
-                        if (dutiesList.length === 0 && b.dutiesJson) {
-                          try { dutiesList = JSON.parse(b.dutiesJson); } catch {}
-                        }
-                        dutiesList.forEach((d: any) => {
-                          innerTotal += Number(d.grandTotal || 0);
-                        });
-                        return sum + innerTotal;
-                      }, 0);
-
-                      return (
-                        <div key={group.date} className="glass-card rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:border-slate-300 dark:hover:border-slate-800 transition-all">
-                          {/* Slot Header */}
-                          <div 
-                            className="p-4 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-4 cursor-pointer select-none"
-                            onClick={() => toggleSlot(group.date)}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
-                                <Calendar size={16} />
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 font-mono">
-                                  {group.name}
-                                </h4>
-                                <p className="text-[10px] text-slate-400 font-sans">
-                                  গ্রুপ তারিখ: {getBanglaDate(group.date)}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                              <div className="text-right hidden sm:block">
-                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-sans">
-                                  {toBanglaDigits(group.bills.length)} টি বিল
-                                </span>
-                                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold font-sans">
-                                  ৳{toBanglaDigits(slotTotalAmount)}/- BDT
-                                </p>
-                              </div>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setReportDate(group.date);
-                                }}
-                                className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer font-sans shadow-sm"
-                              >
-                                রিপোর্ট ভিউ
-                              </button>
-
-                              <button className="text-slate-400 hover:text-slate-600 transition-colors">
-                                {isExpanded ? <ChevronLeft size={16} className="rotate-90" /> : <ChevronRight size={16} className="rotate-90" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Slot Body (Table of pairs) */}
-                          {isExpanded && (
-                            <div className="border-t border-slate-100 dark:border-slate-800/80 overflow-x-auto">
-                              <table className="w-full text-left text-xs leading-normal font-sans border-collapse">
-                                <thead>
-                                  <tr className="bg-slate-100/30 dark:bg-slate-900/80 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                    <th className="px-4 py-3 text-center w-12">#</th>
-                                    <th className="px-4 py-3">কর্মকর্তার নাম (Payee)</th>
-                                    <th className="px-4 py-3 text-center">ক্যাটাগরি</th>
-                                    <th className="px-4 py-3">অফিস আদেশ (Office Order)</th>
-                                    <th className="px-4 py-3">বিল মেমো (Bill Memo)</th>
-                                    <th className="px-4 py-3 text-center">ডিউটি তথ্য ও বিল</th>
-                                    <th className="px-4 py-3 text-center">গ্রুপ পরিবর্তন (Shift Slot)</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 font-medium">
-                                  {group.bills.map((bill, bIdx) => {
-                                    const order = findMatchingOfficeOrder(bill);
-                                    let dutiesList: any[] = (bill.duties as any) || [];
-                                    if (dutiesList.length === 0 && bill.dutiesJson) {
-                                      try { dutiesList = JSON.parse(bill.dutiesJson); } catch {}
-                                    }
-                                    const totalDays = dutiesList.reduce((sum, d) => sum + Number(d.days || (d.dates && d.dates.length) || 0), 0);
-                                    const grandTotal = dutiesList.reduce((sum, d) => sum + Number(d.grandTotal || 0), 0);
-
-                                    return (
-                                      <tr key={bill.id} className="hover:bg-slate-50/20 text-slate-600 dark:text-slate-300">
-                                        <td className="px-4 py-3 text-center font-sans font-bold text-slate-400">
-                                          {toBanglaDigits(bIdx + 1)}
-                                        </td>
-                                        <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200">
-                                          {bill.employeeName}
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                            bill.category === 'BILL_LATE_SITTING'
-                                              ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
-                                              : bill.category === 'BILL_HOLIDAY'
-                                              ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
-                                              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                                          }`}>
-                                            {bill.category === 'BILL_LATE_SITTING' ? 'লেট সিটিং' : bill.category === 'BILL_HOLIDAY' ? 'সরকারি ছুটি' : 'রাত্রিকালীন'}
-                                          </span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                          {order ? (
-                                            <div className="space-y-1">
-                                              <div className="font-mono text-[10px] text-slate-600 dark:text-slate-400 break-all max-w-[180px]">
-                                                {order.orderRef}
-                                              </div>
-                                              <div className="flex items-center gap-1.5">
-                                                <button 
-                                                  onClick={() => {
-                                                    window.open(`/documents/preview?id=${order.id}&source=office-order`, '_blank');
-                                                  }}
-                                                  className="text-[10px] text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
-                                                >
-                                                  <Eye size={10} /> ভিউ
-                                                </button>
-                                                {hasDeletePermission(order) && (
-                                                  <>
-                                                    <span className="text-slate-300">|</span>
-                                                    <button 
-                                                      onClick={() => {
-                                                        window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`;
-                                                      }}
-                                                      className="text-[10px] text-teal-600 hover:text-teal-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
-                                                    >
-                                                      <Edit3 size={10} /> সম্পাদনা
-                                                    </button>
-                                                    <span className="text-slate-300">|</span>
-                                                    <button 
-                                                      onClick={() => handleDeleteOrder(order.id)}
-                                                      className="text-[10px] text-red-500 hover:text-red-700 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
-                                                    >
-                                                      <Trash2 size={10} /> ডিলিট
-                                                    </button>
-                                                  </>
-                                                )}
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            <span className="text-slate-400 italic">অর্ডার পাওয়া যায়নি</span>
-                                          )}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                          <div className="space-y-1">
-                                            <div className="font-mono text-[10px] text-slate-600 dark:text-slate-400 break-all max-w-[180px]">
-                                              {bill.orderRef}
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                              <button 
-                                                onClick={() => {
-                                                  window.open(`/documents/preview?id=${bill.id}&source=bill`, '_blank');
-                                                }}
-                                                className="text-[10px] text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
-                                              >
-                                                <Eye size={10} /> ভিউ
-                                              </button>
-                                              {hasDeletePermission(bill) && (
-                                                <>
-                                                  <span className="text-slate-300">|</span>
-                                                  <button 
-                                                    onClick={() => handleLoadBillForEditing(bill.orderRef)}
-                                                    className="text-[10px] text-teal-600 hover:text-teal-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
-                                                  >
-                                                    <Edit3 size={10} /> সম্পাদনা
-                                                  </button>
-                                                  <span className="text-slate-300">|</span>
-                                                  <button 
-                                                    onClick={() => handleDeleteOrder(bill.id)}
-                                                    className="text-[10px] text-red-500 hover:text-red-700 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
-                                                  >
-                                                    <Trash2 size={10} /> ডিলিট
-                                                  </button>
-                                                </>
-                                              )}
-                                            </div>
-                                          </div>
-                                        </td>
-                                        <td className="px-4 py-3 text-center font-sans">
-                                          <div className="font-bold text-slate-800 dark:text-slate-200">
-                                            {toBanglaDigits(totalDays)} দিন
-                                          </div>
-                                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                                            ৳{toBanglaDigits(grandTotal)}/-
-                                          </div>
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                          <select
-                                            value={bill.orderDate}
-                                            onChange={(e) => handleChangeBillGroup(bill.id, bill, e.target.value)}
-                                            className="px-2 py-1 rounded border border-slate-200 bg-white text-[10px] font-semibold text-slate-700 focus:outline-none dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200"
-                                          >
-                                            {billGroups.map(g => (
-                                              <option key={g.date} value={g.date}>{g.name}</option>
-                                            ))}
-                                            <option value="custom">নতুন গ্রুপ তারিখ...</option>
-                                          </select>
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Consolidated Daily Report Section */}
-              <div className="border-t border-slate-200 dark:border-slate-800 pt-6 space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 glass-card rounded-2xl">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
-                      <Calendar size={16} className="text-indigo-500" />
-                      নির্বাচিত তারিখের সমন্বিত প্রতিবেদন (Consolidated Daily Report)
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5 font-sans">
-                      তারিখ: {getBanglaDate(reportDate)} ({reportDate}) | মোট বিল: {toBanglaDigits(reportData.totalBillsCount)} টি | সর্বমোট পরিমাণ: ৳{toBanglaDigits(reportData.grandTotalSum)}/-
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={reportDate}
-                        onChange={(e) => setReportDate(e.target.value)}
-                        className="w-full md:w-auto px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans"
-                      />
-                    </div>
-                    <button
-                      onClick={() => setIsReportPrintMode(true)}
-                      disabled={reportData.totalBillsCount === 0}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-md font-sans"
-                    >
-                      <Printer size={14} />
-                      প্রিন্ট রিপোর্ট (Print Report)
-                    </button>
-                  </div>
-                </div>
-
-                {reportData.totalBillsCount === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 glass-card rounded-2xl">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
-                      <AlertCircle size={28} />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350 font-sans">নির্বাচিত তারিখে কোনো বিল জেনারেট করা হয়নি</h3>
-                      <p className="text-xs text-slate-400 mt-1 max-w-[320px] mx-auto font-sans">
-                        {getBanglaDate(reportDate)} তারিখে কোনো অফিস আদেশ স্মারক বিবরণীর বিল জেনারেট করা পাওয়া যায়নি। অনুগ্রহ করে অন্য তারিখ নির্বাচন করুন।
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6 animate-in fade-in duration-200">
-                    {/* KPI Cards Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {/* Card 1: Total Bills */}
-                      <div className="p-5 bg-gradient-to-br from-indigo-50 to-indigo-100/30 dark:from-indigo-950/20 dark:to-indigo-900/10 border border-indigo-100/50 dark:border-indigo-950/50 rounded-2xl shadow-sm">
-                        <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 font-sans">মোট জেনারেটকৃত বিল</p>
-                        <h4 className="text-2xl font-extrabold text-indigo-950 dark:text-indigo-350 mt-1.5 font-sans">{toBanglaDigits(reportData.totalBillsCount)} টি</h4>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-sans">আজকের জেনারেটকৃত মোট বিলের সংখ্যা</p>
-                      </div>
-
-                      {/* Card 2: Total Worked Days */}
-                      <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100/30 dark:from-purple-950/20 dark:to-purple-900/10 border border-purple-100/50 dark:border-purple-950/50 rounded-2xl shadow-sm">
-                        <p className="text-xs font-bold text-purple-600 dark:text-purple-400 font-sans">মোট ডিউটি দিন</p>
-                        <h4 className="text-2xl font-extrabold text-purple-950 dark:text-indigo-350 mt-1.5 font-sans">{toBanglaDigits(reportData.totalDaysSum)} দিন</h4>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-sans">কর্মকর্তাদের মোট পালিত দায়িত্বের পরিমাণ</p>
-                      </div>
-
-                      {/* Card 3: Allowances Breakdown */}
-                      <div className="p-5 bg-gradient-to-br from-cyan-50 to-cyan-100/30 dark:from-cyan-950/20 dark:to-cyan-900/10 border border-cyan-100/50 dark:border-cyan-950/50 rounded-2xl shadow-sm flex flex-col justify-between">
-                        <div>
-                          <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400 font-sans">ভাতার বিভাজন</p>
-                          <div className="flex items-center justify-between mt-1.5 font-sans">
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">যাতায়াত:</span>
-                            <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.totalTransport)}/- BDT</span>
-                          </div>
-                          <div className="flex items-center justify-between mt-1 font-sans">
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">আপ্যায়ন:</span>
-                            <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.totalApyaon)}/- BDT</span>
-                          </div>
-                          <div className="flex items-center justify-between mt-1 font-sans border-t border-dashed border-cyan-200 dark:border-cyan-800/50 pt-1">
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">লেট সিটিং:</span>
-                            <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.lateSittingAmount)}/- BDT</span>
-                          </div>
-                          <div className="flex items-center justify-between mt-0.5 font-sans">
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">ছুটির দিন:</span>
-                            <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.holidayAmount)}/- BDT</span>
-                          </div>
-                          <div className="flex items-center justify-between mt-0.5 font-sans">
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">রাত্রিকালীন:</span>
-                            <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.nightShiftAmount)}/- BDT</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Card 4: Grand Total */}
-                      <div className="p-5 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-500/20 rounded-2xl shadow-sm relative overflow-hidden">
-                        <div className="absolute right-[-10px] bottom-[-10px] text-emerald-500/10 dark:text-emerald-500/5 pointer-events-none">
-                          <Banknote size={80} />
-                        </div>
-                        <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-sans">সর্বমোট প্রদেয় বিল</p>
-                        <h4 className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1.5 font-sans">{toBanglaDigits(reportData.grandTotalSum)}/- BDT</h4>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium font-sans">{getBanglaNumberWords(reportData.grandTotalSum)}</p>
-                      </div>
-                    </div>
-
-                    {/* Category-wise Breakdown Pills */}
-                    <div className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-wrap gap-4 items-center justify-around">
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-3 h-3 rounded-full bg-amber-500" />
-                        <div>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider font-sans">লেট-সিটিং বিল</p>
-                          <p className="text-xs font-extrabold text-slate-700 dark:text-slate-300 font-sans">{toBanglaDigits(reportData.totalLateAmount)}/- টাকা</p>
-                        </div>
-                      </div>
-                      <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 hidden md:block" />
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-3 h-3 rounded-full bg-teal-500" />
-                        <div>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider font-sans">ছুটির দিনের বিল</p>
-                          <p className="text-xs font-extrabold text-slate-700 dark:text-slate-300 font-sans">{toBanglaDigits(reportData.totalHolidayAmount)}/- টাকা</p>
-                        </div>
-                      </div>
-                      <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 hidden md:block" />
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-3 h-3 rounded-full bg-indigo-500" />
-                        <div>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider font-sans">রাত্রিকালীন শিফট বিল</p>
-                          <p className="text-xs font-extrabold text-slate-700 dark:text-slate-300 font-sans">{toBanglaDigits(reportData.totalNightAmount)}/- টাকা</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Table: Consolidated Payee Statement */}
-                    <div className="glass-card rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800/80">
-                      <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/80">
-                        <h4 className="text-xs font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
-                          <Users size={14} className="text-indigo-500" />
-                          ১. কর্মকর্তা ভিত্তিক সমন্বিত বিবরণী (Consolidated Payee Details)
-                        </h4>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse font-sans">
-                          <thead>
-                            <tr className="bg-slate-100/50 dark:bg-slate-900/80 text-[10px] font-bold text-slate-600 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
-                              <th className="p-3 text-center w-12">#</th>
-                              <th className="p-3">কর্মকর্তার নাম</th>
-                              <th className="p-3">পদবী</th>
-                              <th className="p-3 text-center">লেট-সিটিং দিন (টাকা)</th>
-                              <th className="p-3 text-center">ছুটির দিন দিন (টাকা)</th>
-                              <th className="p-3 text-center">নাইট শিফট দিন (টাকা)</th>
-                              <th className="p-3 text-center">মোট দিন</th>
-                              <th className="p-3 text-right pr-6">সর্বমোট প্রদেয় (টাকা)</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs font-medium">
-                            {reportData.employeesBreakdown.map((record, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 text-slate-600 dark:text-slate-300">
-                                <td className="p-3 text-center font-mono text-[10px] text-slate-400">{toBanglaDigits(idx + 1)}</td>
-                                <td className="p-3 text-slate-800 dark:text-slate-200 font-bold">{record.employeeName}</td>
-                                <td className="p-3 text-slate-400 text-[10px]">{record.designation}</td>
-                                <td className="p-3 text-center">
-                                  {record.lateSittingDays > 0 ? (
-                                    <span>{toBanglaDigits(record.lateSittingDays)} দিন ({toBanglaDigits(record.lateSittingAmount)}/-)</span>
-                                  ) : (
-                                    <span className="text-slate-300 dark:text-slate-700">-</span>
-                                  )}
-                                </td>
-                                <td className="p-3 text-center">
-                                  {record.holidayDays > 0 ? (
-                                    <span>{toBanglaDigits(record.holidayDays)} দিন ({toBanglaDigits(record.holidayAmount)}/-)</span>
-                                  ) : (
-                                    <span className="text-slate-300 dark:text-slate-700">-</span>
-                                  )}
-                                </td>
-                                <td className="p-3 text-center">
-                                  {record.nightShiftDays > 0 ? (
-                                    <span>{toBanglaDigits(record.nightShiftDays)} দিন ({toBanglaDigits(record.nightShiftAmount)}/-)</span>
-                                  ) : (
-                                    <span className="text-slate-300 dark:text-slate-700">-</span>
-                                  )}
-                                </td>
-                                <td className="p-3 text-center font-bold">{toBanglaDigits(record.totalDays)}</td>
-                                <td className="p-3 text-right pr-6 font-extrabold text-slate-800 dark:text-slate-200">{toBanglaDigits(record.grandTotal)}/-</td>
-                              </tr>
-                            ))}
-                            <tr className="bg-slate-100/50 dark:bg-slate-900/60 font-bold text-slate-800 dark:text-slate-200 border-t-2 border-slate-300 dark:border-slate-700">
-                              <td className="p-3 text-center"></td>
-                              <td className="p-3 text-left font-extrabold" colSpan={2}>সর্বমোট</td>
-                              <td className="p-3 text-center font-bold">
-                                {reportData.totalLateDays > 0 ? (
-                                  <span>{toBanglaDigits(reportData.totalLateDays)} দিন ({toBanglaDigits(reportData.totalLateAmount)}/-)</span>
-                                ) : (
-                                  <span className="text-slate-300 dark:text-slate-700">-</span>
-                                )}
-                              </td>
-                              <td className="p-3 text-center font-bold">
-                                {reportData.totalHolidayDays > 0 ? (
-                                  <span>{toBanglaDigits(reportData.totalHolidayDays)} দিন ({toBanglaDigits(reportData.totalHolidayAmount)}/-)</span>
-                                ) : (
-                                  <span className="text-slate-300 dark:text-slate-700">-</span>
-                                )}
-                              </td>
-                              <td className="p-3 text-center font-bold">
-                                {reportData.totalNightDays > 0 ? (
-                                  <span>{toBanglaDigits(reportData.totalNightDays)} দিন ({toBanglaDigits(reportData.totalNightAmount)}/-)</span>
-                                ) : (
-                                  <span className="text-slate-300 dark:text-slate-700">-</span>
-                                )}
-                              </td>
-                              <td className="p-3 text-center font-bold">{toBanglaDigits(reportData.totalDaysSum)}</td>
-                              <td className="p-3 text-right pr-6 font-extrabold text-slate-950 dark:text-slate-100">{toBanglaDigits(reportData.grandTotalSum)}/-</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <ReportsTab
+              billGroups={billGroups}
+              expandedSlots={expandedSlots}
+              toggleSlot={toggleSlot}
+              findMatchingOfficeOrder={findMatchingOfficeOrder}
+              hasDeletePermission={hasDeletePermission}
+              handleDeleteOrder={handleDeleteOrder}
+              handleLoadBillForEditing={handleLoadBillForEditing}
+              handleChangeBillGroup={handleChangeBillGroup}
+              reportDate={reportDate}
+              setReportDate={setReportDate}
+              reportData={reportData}
+              setIsReportPrintMode={setIsReportPrintMode}
+              getBanglaNumberWords={getBanglaNumberWords}
+            />
           )}
         </>
       ) : (
@@ -3279,7 +2296,7 @@ export default function BillingPage() {
                 margin: 0 !important; 
                 padding: 0 !important; 
                 background: #fff !important; 
-                font-family: "Kalpurush", "Noto Sans Bengali", sans-serif !important; 
+                font-family: "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif !important; 
                 font-size: 12px !important;
                 line-height: 1.6 !important;
               }
@@ -3553,36 +2570,36 @@ export default function BillingPage() {
 
           {/* Interactive Print Mock Sheet */}
           <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner">
-            <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in', boxSizing: 'border-box', fontSize: '12px', lineHeight: '1.0' }}>
+            <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in', boxSizing: 'border-box', fontSize: '12px', lineHeight: '1.0' }}>
               
               <div className="flex flex-col h-full justify-between">
                 <div>
                   {/* Official Header */}
                   <div className="w-full flex justify-end text-right mb-4">
                     <div className="text-right leading-none">
-                      <h2 className="text-[18px] font-bold text-black uppercase" style={{ fontFamily: 'Kalpurush', fontSize: '18px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                      <p className="text-[12px] font-bold text-black mt-1.5" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>তারিখ: {getBanglaDate(billDate)} ইং</p>
+                      <h2 className="text-[18px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                      <p className="text-[12px] font-bold text-black mt-1.5" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>তারিখ: {getBanglaDate(billDate)} ইং</p>
                     </div>
                   </div>
 
                   {/* Title and Main Body */}
                   <div className="flex-1 flex flex-col justify-between mt-2">
                     <div>
-                      <h2 className="text-left text-[12px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
+                      <h2 className="text-left text-[12px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         বিষয়: {subjectText}
                       </h2>
                       
                       <div className="mt-2.5">
-                        <p className="text-justify leading-normal text-black text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6' }}>
+                        <p className="text-justify leading-normal text-black text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
                           {openingParagraph}
                         </p>
                       </div>
 
                       {/* Redesigned Printed Legal Billing Table */}
                       {printFilteredSummaries.length > 0 ? (
-                        <table className="w-full border-collapse border border-black text-center mt-3 text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                        <table className="w-full border-collapse border border-black text-center mt-3 text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                           <thead>
-                            <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                            <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                               <th className="border border-black p-1.5 w-[8%] text-center">ক্রমিক</th>
                               <th className="border border-black p-1.5 text-left pl-3 w-[28%]">নাম ও পদবী</th>
                               <th className="border border-black p-1.5 text-center w-[25%]">তারিখ</th>
@@ -3599,41 +2616,41 @@ export default function BillingPage() {
                               const empTotal = empTransport + empApyaon;
                               
                               return (
-                                <tr key={summary.employeeId} className="text-black text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
-                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>{toBanglaDigits(index + 1)}</td>
-                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                                <tr key={summary.employeeId} className="text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>{toBanglaDigits(index + 1)}</td>
+                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                     <p className="font-normal">{summary.name}</p>
                                     <p className="text-[10px] text-slate-800 font-normal mt-0.5">{summary.designation}</p>
                                   </td>
-                                  <td className="border border-black p-1.5 text-center leading-snug" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                                  <td className="border border-black p-1.5 text-center leading-snug" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                     <p>{formatWorkedDatesForCategory(summary.employeeId)}</p>
                                     <p className="text-[10px] text-slate-700 mt-1 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>
                                   </td>
-                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                     ({toBanglaDigits(transportRate)}x{toBanglaDigits(days)}) = {toBanglaDigits(empTransport)}/-
                                   </td>
-                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                     ({toBanglaDigits(apyaonRate)}x{toBanglaDigits(days)}) = {toBanglaDigits(empApyaon)}/-
                                   </td>
-                                  <td className="border border-black p-1.5 font-extrabold text-center" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                                  <td className="border border-black p-1.5 font-extrabold text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                     {toBanglaDigits(empTotal)}/-
                                   </td>
                                 </tr>
                               );
                             })}
                             
-                            <tr className="font-bold bg-slate-50/50 text-[11px] border-t-2 border-black" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
-                              <td className="border border-black p-1.5 text-right pr-3" colSpan={3} style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                            <tr className="font-bold bg-slate-50/50 text-[11px] border-t-2 border-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                              <td className="border border-black p-1.5 text-right pr-3" colSpan={3} style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                 <p>মোট দিন = {toBanglaDigits(totalDaysAll)} দিন</p>
                                 <p className="mt-1">মোট টাকা = ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</p>
                               </td>
-                              <td className="border border-black p-1.5 text-center" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                              <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                 ({toBanglaDigits(transportRate)}x{toBanglaDigits(totalDaysAll)}) = {toBanglaDigits(totalTransportAll)}/-
                               </td>
-                              <td className="border border-black p-1.5 text-center" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                              <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                 ({toBanglaDigits(apyaonRate)}x{toBanglaDigits(totalDaysAll)}) = {toBanglaDigits(totalApyaonAll)}/-
                               </td>
-                              <td className="border border-black p-1.5 font-extrabold text-center" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
+                              <td className="border border-black p-1.5 font-extrabold text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                 {toBanglaDigits(grandTotalPrintAll)}/-
                               </td>
                             </tr>
@@ -3642,14 +2659,14 @@ export default function BillingPage() {
                       ) : null}
 
                       {/* Paragraphs */}
-                      <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6' }}>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6' }}>
+                      <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
                           ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                         </p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
                           ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                         </p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
                           ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(grandTotalPrintAll)}/- ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'}, {representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                         </p>
                       </div>
@@ -3658,31 +2675,31 @@ export default function BillingPage() {
 
                   {/* Right-aligned payee signature block */}
                   <div className="w-full flex justify-end text-right" style={{ marginTop: '0.6in', marginBottom: '0.2in' }}>
-                    <div className="text-right leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '12px', paddingRight: '0.1in' }}>
+                    <div className="text-right leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', paddingRight: '0.1in' }}>
                       <p className="font-extrabold text-[12px]">({(representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/^জনাব\s*/, '')})</p>
                       <p className="text-[12px] font-bold text-slate-800 mt-1">{representativeDesignation || 'এসও-আইটি'}</p>
                     </div>
                   </div>
 
                   {/* Left-aligned Routing List with nice gaps, underlines and font size 12, NOT bold */}
-                  <div className="w-full text-left mt-6 pl-1 no-break-inside" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
+                  <div className="w-full text-left mt-6 pl-1 no-break-inside" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                     <div style={{ marginBottom: '0.85in' }}>
-                      <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
+                      <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
                     <div style={{ marginBottom: '0.85in' }}>
-                      <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
+                      <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
                     <div style={{ marginBottom: '0.85in' }}>
-                      <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
+                      <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
                     <div style={{ marginBottom: '0.85in' }}>
-                      <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
+                      <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
@@ -3697,455 +2714,13 @@ export default function BillingPage() {
       )}
 
       {/* --- VIEW OFFICE ORDER OR BILL MODAL --- */}
-      {viewingOrder && (() => {
-        const isBill = viewingOrder.category?.startsWith('BILL_');
-        return (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-              
-              {/* Modal Header Controls */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                <div className="flex items-center gap-2">
-                  <FileText className="text-indigo-500" size={20} />
-                  <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm font-sans">
-                    {isBill ? 'আপ্যায়ন বিল বিবরণী প্রাক-প্রদর্শন (Legal Size)' : 'অফিস নির্দেশ প্রাক-প্রদর্শন (A4 Size)'}
-                  </h3>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={async () => {
-                      const printContent = document.getElementById('printable-order-sheet');
-                      if (!printContent) return;
-                      if (isBill && viewingOrder.status === 'Generated') {
-                        try {
-                          await fetch(`/api/office-orders/${viewingOrder.id}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              orderRef: viewingOrder.orderRef,
-                              orderDate: viewingOrder.orderDate,
-                              employeeName: viewingOrder.employeeName,
-                              cellName: viewingOrder.cellName,
-                              status: 'Printed'
-                            })
-                          });
-                          fetchDutiesForBilling();
-                        } catch (e) {
-                          console.error('Failed to update printed status:', e);
-                        }
-                      }
-                      const printWindow = window.open('', '_blank');
-                      if (printWindow) {
-                        printWindow.document.write(`
-                          <html>
-                            <head>
-                              <title>${isBill ? 'আপ্যায়ন বিল বিবরণী' : 'অফিস নির্দেশ'} - প্রিন্ট</title>
-                              <style>
-                                body {
-                                  margin: 0;
-                                  padding: 0;
-                                  font-family: 'Kalpurush', 'Noto Sans Bengali', sans-serif;
-                                  font-size: 12px;
-                                  color: #000;
-                                  background-color: #fff;
-                                  line-height: 1.6;
-                                }
-                                @page {
-                                  size: ${isBill ? 'legal portrait' : 'A4'};
-                                  margin: 0;
-                                }
-                                #printable-order-sheet {
-                                  width: ${isBill ? '8.5in' : '210mm'} !important;
-                                  height: ${isBill ? '14.0in' : '297mm'} !important;
-                                  padding-top: ${isBill ? '0.6in' : '0.8in'} !important;
-                                  padding-bottom: ${isBill ? '0.75in' : '0.8in'} !important;
-                                  padding-left: ${isBill ? '1.3in' : '0.8in'} !important;
-                                  padding-right: ${isBill ? '0.5in' : '0.8in'} !important;
-                                  box-sizing: border-box !important;
-                                  display: flex !important;
-                                  flex-direction: column !important;
-                                  justify-content: space-between !important;
-                                  font-family: 'Kalpurush', 'Noto Sans Bengali', sans-serif !important;
-                                  font-size: 12px !important;
-                                  color: #000 !important;
-                                  background-color: #fff !important;
-                                  line-height: 1.5 !important;
-                                }
-                                .w-full { width: 100%; }
-                                .flex { display: flex; }
-                                .justify-between { justify-content: space-between; }
-                                .justify-end { justify-content: flex-end; }
-                                .items-start { align-items: flex-start; }
-                                .border-b-2 { border-bottom: 2px solid #0b5e9e; }
-                                .border-b { border-bottom: 1px solid #e2e8f0; }
-                                .border-t { border-top: 1px solid #e2e8f0; }
-                                .pb-2 { padding-bottom: 8px; }
-                                .pt-1 { padding-top: 4px; }
-                                .pb-1 { padding-bottom: 4px; }
-                                .pt-2 { padding-top: 8px; }
-                                .pt-4 { padding-top: 16px; }
-                                .text-left { text-align: left; }
-                                .text-right { text-align: right; }
-                                .font-bold { font-weight: bold; }
-                                .font-extrabold { font-weight: 800; }
-                                .text-center { text-align: center; }
-                                .text-xs { font-size: 12px; }
-                                .text-sm { font-size: 12px; }
-                                .text-base { font-size: 18px; }
-                                .leading-tight { line-height: 1.15; }
-                                .leading-relaxed { line-height: 1.6; }
-                                .leading-normal { line-height: 1.6; }
-                                .leading-none { line-height: 1.0; }
-                                .leading-snug { line-height: 1.375; }
-                                .uppercase { text-transform: uppercase; }
-                                .tracking-wider { letter-spacing: 0.05em; }
-                                .mt-0.5 { margin-top: 2px; }
-                                .mt-1 { margin-top: 4px; }
-                                .mt-2 { margin-top: 8px; }
-                                .mt-2.5 { margin-top: 10px; }
-                                .mt-4 { margin-top: 16px; }
-                                .mt-6 { margin-top: 24px; }
-                                .mt-8 { margin-top: 32px; }
-                                .mt-12 { margin-top: 48px; }
-                                .mb-1.5 { margin-bottom: 6px; }
-                                .mb-4 { margin-bottom: 16px; }
-                                .pl-2 { padding-left: 8px; }
-                                .pl-5 { padding-left: 20px; }
-                                .shrink-0 { flex-shrink: 0; }
-                                .gap-2 { gap: 8px; }
-                                .gap-3 { gap: 12px; }
-                                .gap-4 { gap: 16px; }
-                                .font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }
-                                .underline { text-decoration: underline; }
-                                .decoration-black { text-decoration-color: #000000; }
-                                .underline-offset-2 { text-underline-offset: 2px; }
-                                .text-justify { text-align: justify; }
-                                .text-indent-8 { text-indent: 0.5in; }
-                                .text-slate-950 { color: #000000; }
-                                .font-normal { font-weight: 400; }
-                                .w-\\[8\\%\\] { width: 8%; }
-                                .w-\\[28\\%\\] { width: 28%; }
-                                .w-\\[12\\%\\] { width: 12%; }
-                                .w-\\[27\\%\\] { width: 27%; }
-                                .w-\\[25\\%\\] { width: 25%; }
-                                .w-\\[50\\%\\] { width: 50%; }
-                                .list-decimal { list-style-type: decimal; }
-                                .space-y-4 > * + * { margin-top: 16px; }
-                                .space-y-2.5 > * + * { margin-top: 10px; }
-                                .space-y-1 > * + * { margin-top: 4px; }
-                                .space-y-0.5 > * + * { margin-top: 2px; }
-                                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                                th, td { border: 1px solid #000; padding: 4.5px; font-size: 11px; line-height: 1.4; }
-                                th { font-weight: bold; background-color: #f8fafc; }
-                                ${!isBill ? `
-                                  #printable-order-sheet .bank-title { font-size: 15.5pt !important; font-weight: bold !important; color: #0b5e9e !important; }
-                                  #printable-order-sheet .dept-title { font-size: 12.5pt !important; font-weight: bold !important; color: #000000 !important; }
-                                  #printable-order-sheet .memo-line, #printable-order-sheet .memo-line * { font-size: 11pt !important; font-weight: bold !important; }
-                                  #printable-order-sheet .office-order-title { font-size: 14.5pt !important; font-weight: bold !important; text-decoration: underline !important; }
-                                  #printable-order-sheet .body-paragraph, #printable-order-sheet .body-paragraph * { font-size: 11.5pt !important; line-height: 1.5 !important; }
-                                  #printable-order-sheet table th { font-size: 11px !important; font-weight: bold !important; }
-                                  #printable-order-sheet table td, #printable-order-sheet table td p, #printable-order-sheet table td span { font-size: 11px !important; }
-                                  #printable-order-sheet .signature-name { font-size: 11.5pt !important; font-weight: bold !important; }
-                                  #printable-order-sheet .signature-designation { font-size: 11pt !important; }
-                                  #printable-order-sheet .footer-copy, #printable-order-sheet .footer-copy * { font-size: 10.5pt !important; }
-                                ` : ''}
-                              </style>
-                            </head>
-                            <body>
-                              ${printContent.outerHTML}
-                              <script>
-                                window.onload = function() {
-                                  window.print();
-                                  window.close();
-                                }
-                              </script>
-                            </body>
-                          </html>
-                        `);
-                        printWindow.document.close();
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20 cursor-pointer font-sans"
-                  >
-                    <Printer size={13} />
-                    <span>প্রিন্ট করুন</span>
-                  </button>
-                  <button
-                    onClick={() => setViewingOrder(null)}
-                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition-all cursor-pointer"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Scrollable Printable Wrapper */}
-              <div className="flex-1 overflow-y-auto p-8 bg-slate-100/50 dark:bg-slate-950/20 flex justify-center">
-                
-                {isBill ? (
-                  /* simulated Legal-sized Bill Memo sheet */
-                  <div 
-                    id="printable-order-sheet"
-                    className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-none text-[12px]"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', fontSize: '12px', boxSizing: 'border-box', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
-                  >
-                    <div className="flex flex-col h-full justify-between">
-                      <div>
-                        {/* Official Header */}
-                        <div className="w-full flex justify-end text-right mb-4">
-                          <div className="text-right leading-none">
-                            <h2 className="text-[16px] font-bold text-black uppercase" style={{ fontFamily: 'Kalpurush', fontSize: '16px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                            <p className="text-[12px] font-bold text-black mt-1.5" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
-                          </div>
-                        </div>
-
-                        {/* Title and Main Body */}
-                        <div className="flex-1 flex flex-col justify-between mt-2">
-                          <div>
-                            <h2 className="text-left text-[12px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
-                              বিষয়: {viewingOrder.content?.subjectText || 'যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।'}
-                            </h2>
-                            
-                            <div className="mt-2.5">
-                              <p className="text-justify leading-normal text-black text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6', textIndent: '0.5in', textAlign: 'justify' }}>
-                                {viewingOrder.content?.openingParagraph}
-                              </p>
-                            </div>
-
-                            {/* Table */}
-                            {(() => {
-                              let dutiesList: OrderDuty[] = [];
-                              try {
-                                dutiesList = viewingOrder.duties || JSON.parse(viewingOrder.dutiesJson || '[]');
-                              } catch (e) {
-                                console.error(e);
-                              }
-                              if (!dutiesList || dutiesList.length === 0) return null;
-
-                              const sortedDutiesList = [...dutiesList].sort((a, b) => {
-                                const rankA = getSeniorityRank(a.designation);
-                                const rankB = getSeniorityRank(b.designation);
-                                if (rankA !== rankB) return rankA - rankB;
-                                return (b.grandTotal || 0) - (a.grandTotal || 0);
-                              });
-
-                              const cat = viewingOrder.category || '';
-                              const isHoliday = cat.includes('HOLIDAY');
-                              const isNight = cat.includes('NIGHT_SHIFT');
-                              const apyaonRate = isHoliday ? 250 : isNight ? 600 : 100;
-                              const transportRate = cat.includes('LATE_SITTING') ? 150 : 0;
-                              return (
-                                <table className="w-full border-collapse border border-black text-center mt-3 text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
-                                  <thead>
-                                    <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
-                                      <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '6px' }}>ক্রমিক</th>
-                                      <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>নাম ও পদবী</th>
-                                      <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '6px' }}>তারিখ</th>
-                                      <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '6px' }}>যাতায়াত</th>
-                                      <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '6px' }}>আপ্যায়ন</th>
-                                      <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '6px' }}>মোট</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {sortedDutiesList.map((s: OrderDuty, idx: number) => (
-                                      <tr key={idx} className="text-black text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
-                                        <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(idx + 1)}</td>
-                                        <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>
-                                          <p className="font-normal">{s.employeeName}</p>
-                                          <p className="text-[9.5px] text-slate-800 font-normal mt-0.5">{s.designation}</p>
-                                        </td>
-                                        <td className="border border-black p-1.5 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '6px' }}>
-                                          <p className="break-words max-w-[200px] leading-snug">{s.datesFormatted || s.dates || ''}</p>
-                                          <p className="text-[9.5px] text-slate-700 mt-1 font-semibold">মোট: {toBanglaDigits(s.days)} দিন</p>
-                                        </td>
-                                        <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '6px' }}>
-                                          ({toBanglaDigits(transportRate)}x{toBanglaDigits(s.days)}) = {toBanglaDigits(s.totalTransport)}/-
-                                        </td>
-                                        <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '6px' }}>
-                                          ({toBanglaDigits(apyaonRate)}x{toBanglaDigits(s.days)}) = {toBanglaDigits(s.totalApyaon)}/-
-                                        </td>
-                                        <td className="border border-black p-1.5 font-extrabold text-center" style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>
-                                          {toBanglaDigits(s.grandTotal)}/-
-                                        </td>
-                                      </tr>
-                                    ))}
-                                    <tr className="font-bold bg-slate-50/50 text-[11px]" style={{ border: '1px solid #000', fontWeight: 'bold' }}>
-                                      <td colSpan={2} className="border border-black p-1.5 text-right pr-3" style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', paddingRight: '12px' }}>সর্বমোট:</td>
-                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(viewingOrder.content?.totalDays)} দিন</td>
-                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>৳{toBanglaDigits(viewingOrder.content?.totalTransport)}/-</td>
-                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>৳{toBanglaDigits(viewingOrder.content?.totalApyaon)}/-</td>
-                                      <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>৳{toBanglaDigits(viewingOrder.content?.grandTotal)}/-</td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              );
-                            })()}
-
-                            {/* Words and paragraphs */}
-                            <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6' }}>
-                              <p className="font-bold text-black">কথায়: {viewingOrder.content?.grandTotalInWords || ''} মাত্র।</p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6', textAlign: 'justify' }}>
-                                ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
-                              </p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6', textAlign: 'justify' }}>
-                                ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport)}/- ({getBanglaNumberWords(viewingOrder.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/- ({getBanglaNumberWords(viewingOrder.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
-                              </p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.6', textAlign: 'justify' }}>
-                                ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal)}/- ({getBanglaNumberWords(viewingOrder.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{viewingOrder.employeeName}, {viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right-aligned payee signature block */}
-                        <div className="w-full flex justify-end text-right" style={{ marginTop: '0.6in', marginBottom: '0.2in' }}>
-                          <div className="text-right leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '12px', paddingRight: '0.1in' }}>
-                            <p className="font-extrabold text-[12px]">({viewingOrder.employeeName.replace(/^জনাব\s*/, '')})</p>
-                            <p className="text-[12px] font-bold text-slate-800 mt-1">{viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</p>
-                          </div>
-                        </div>
-
-                        {/* Left-aligned Routing List with nice gaps, underlines and font size 12, NOT bold */}
-                        <div className="w-full text-left mt-6 pl-1 no-break-inside" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
-                          <div style={{ marginBottom: '0.85in' }}>
-                            <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
-                              এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
-                            </p>
-                          </div>
-                          <div style={{ marginBottom: '0.85in' }}>
-                            <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
-                              এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
-                            </p>
-                          </div>
-                          <div style={{ marginBottom: '0.85in' }}>
-                            <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
-                              উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
-                            </p>
-                          </div>
-                          <div style={{ marginBottom: '0.85in' }}>
-                            <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: 'Kalpurush', fontSize: '12px', lineHeight: '1.0' }}>
-                              উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
-                            </p>
-                          </div>
-                        </div>
-
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  /* simulated A4 office order sheet */
-                  <div 
-                    id="printable-order-sheet"
-                    className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-relaxed text-[12px]"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', fontSize: '12px', boxSizing: 'border-box', paddingTop: '0.8in', paddingBottom: '0.8in', paddingLeft: '0.8in', paddingRight: '0.8in' }}
-                  >
-                    <div className="flex flex-col h-full justify-between">
-                      <div>
-                        {/* Header */}
-                        <div className="w-full flex justify-between items-start border-b-2 border-[#0b5e9e] pb-1.5">
-                          <Image 
-                            src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Janata_Bank_PLC_Logo.svg"
-                            alt="Janata Bank Logo" 
-                            width={120}
-                            height={32}
-                            className="h-8 shrink-0" 
-                            unoptimized
-                          />
-                          <div className="text-right leading-tight">
-                            <h2 className="text-[15pt] font-extrabold text-[#0b5e9e] bank-title" style={{ fontFamily: 'Kalpurush', fontSize: '15pt', lineHeight: '1.15' }}>জনতা ব্যাংক পিএলসি.</h2>
-                            <p className="text-[12pt] font-bold text-slate-500 uppercase tracking-wider mt-0.5 dept-title" style={{ fontFamily: 'Kalpurush', fontSize: '12pt', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
-                            <p className="text-[9px] font-medium text-slate-400 leading-none mt-1" style={{ fontFamily: 'Kalpurush', fontSize: '9px', lineHeight: '1.0' }}>প্রধান কার্যালয়, ঢাকা</p>
-                          </div>
-                        </div>
-
-                        {/* Title and Memo details */}
-                        <div className="w-full flex justify-between items-start mt-4 text-[11pt] memo-line" style={{ fontFamily: 'Kalpurush', fontSize: '11pt', lineHeight: '1.0' }}>
-                          <p className="font-bold">স্মারক নং: {viewingOrder.orderRef}</p>
-                          <p className="font-bold">তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
-                        </div>
-
-                        <div className="text-center font-bold text-sm underline decoration-black underline-offset-4 mt-6 leading-none office-order-title" style={{ fontFamily: 'Kalpurush', fontSize: '14.5pt', lineHeight: '1.0' }}>
-                          অফিস নির্দেশ
-                        </div>
-
-                        <div className="mt-6">
-                          <p className="text-justify leading-relaxed text-black text-[11.5pt] text-indent-8 body-paragraph" style={{ fontFamily: 'Kalpurush', fontSize: '11.5pt', lineHeight: '1.5', textIndent: '0.5in', textAlign: 'justify' }}>
-                            {viewingOrder.content?.openingParagraph || 'অনলাইন ব্যাংকিং ডিপার্টমেন্টের স্বাভাবিক কার্যক্রম পরিচালনার জন্য নিম্নলিখিত কর্মকর্তাদের দায়িত্ব অর্পণ করা হইলঃ'}
-                          </p>
-                        </div>
-
-                        {/* Table */}
-                        {(() => {
-                          let dutiesList: DutyListEntry[] = (viewingOrder.duties as any) || [];
-                          if (dutiesList.length === 0 && viewingOrder.dutiesJson) {
-                            try {
-                              dutiesList = JSON.parse(viewingOrder.dutiesJson);
-                            } catch (e) {
-                              console.error(e);
-                            }
-                          }
-                          return dutiesList.length > 0 ? (
-                            <table className="w-full border-collapse border border-black text-center mt-4 text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
-                              <thead>
-                                <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
-                                  <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক</th>
-                                  <th className="border border-black p-1 text-left pl-2 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>নাম ও পদবী</th>
-                                  <th className="border border-black p-1 text-left pl-2 w-[12%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>কার্ড নং</th>
-                                  <th className="border border-black p-1 text-center w-[27%]" style={{ border: '1px solid #000', padding: '3px' }}>তারিখ</th>
-                                  <th className="border border-black p-1 text-left pl-2 w-[25%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>মন্তব্য</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {dutiesList.map((d: DutyListEntry, idx: number) => (
-                                  <tr key={idx} className="text-black text-[11px]" style={{ fontFamily: 'Kalpurush', fontSize: '11px', lineHeight: '1.0' }}>
-                                    <td className="border border-black p-1 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(idx + 1)}</td>
-                                    <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>
-                                      <p className="font-normal">{d.employeeName || d.name}</p>
-                                      <p className="text-[9.5px] text-slate-800 font-normal mt-0.5">{d.designation}</p>
-                                    </td>
-                                    <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>
-                                      <p className="font-sans font-normal">{d.bankId}</p>
-                                    </td>
-                                    <td className="border border-black p-1 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '3px' }}>
-                                      <p className="break-words max-w-[200px] leading-snug">
-                                        {d.datesFormatted || d.date || ''}
-                                      </p>
-                                    </td>
-                                    <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>
-                                      {d.description || ''}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          ) : null;
-                        })()}
-
-                        {/* Signatures block */}
-                        <div className="w-full flex justify-between items-start mt-8 pt-4 leading-normal text-[11.5pt]" style={{ fontFamily: 'Kalpurush', fontSize: '11.5pt', lineHeight: '1.6' }}>
-                          <div className="w-[50%] footer-copy">
-                            <p className="underline underline-offset-2">অনুলিপি জ্ঞাতার্থে ও কার্যার্থে প্রেরিত হইলোঃ</p>
-                            <ol className="list-decimal pl-5 mt-2 space-y-1">
-                              <li>উপ-মহাব্যবস্থাপক মহোদয়ের ব্যক্তিগত নথি, অনলাইন ব্যাংকিং ডিপার্টমেন্ট;</li>
-                              <li>সংশ্লিষ্ট কর্মকর্তা; এবং</li>
-                              <li>নথি/অফিস কপি।</li>
-                            </ol>
-                          </div>
-                          <div className="w-[50%] text-right pr-2">
-                            <p className="font-extrabold signature-name">({viewingOrder.content?.signingOfficer || 'স্বাক্ষরিত'})</p>
-                            <p className="text-slate-800 mt-1 signature-designation">{viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {viewingOrder && (
+        <BillPrintLayout
+          viewingOrder={viewingOrder}
+          onClose={() => setViewingOrder(null)}
+          fetchDutiesForBilling={fetchDutiesForBilling}
+        />
+      )}
     </div>
   );
 }

@@ -60,6 +60,30 @@ export function handleApiError(error: unknown) {
   }
 
   console.error('Unhandled API Error:', error);
+
+  // Send Centralized Error Webhook Alert (Discord/Slack compatible)
+  const webhookUrl = process.env.ERROR_WEBHOOK_URL;
+  if (webhookUrl) {
+    const errObj = error instanceof Error ? error : new Error(String(error));
+    fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [{
+          title: '🚨 Production LHN Portal Server Error Alert',
+          color: 15158332, // Red
+          fields: [
+            { name: 'Error Message', value: errObj.message || 'Unknown Error', inline: false },
+            { name: 'Stack Trace', value: `\`\`\`javascript\n${(errObj.stack || 'No Stack Trace Available').slice(0, 800)}\n\`\`\``, inline: false },
+            { name: 'Timestamp', value: new Date().toISOString(), inline: true }
+          ]
+        }]
+      })
+    }).catch(webhookErr => {
+      console.error('Failed to send error notification webhook:', webhookErr);
+    });
+  }
+
   return NextResponse.json(
     {
       error: 'internal_server_error',

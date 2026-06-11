@@ -702,7 +702,7 @@ export default function DocumentsPage() {
               body {
                 margin: 0;
                 padding: 0;
-                font-family: 'Kalpurush', 'Noto Sans Bengali', sans-serif;
+                font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif;
                 font-size: 12px;
                 color: #000;
                 background-color: #fff;
@@ -723,7 +723,7 @@ export default function DocumentsPage() {
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: space-between !important;
-                font-family: 'Kalpurush', 'Noto Sans Bengali', sans-serif !important;
+                font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
                 font-size: 12px !important;
                 color: #000 !important;
                 background-color: #fff !important;
@@ -747,8 +747,8 @@ export default function DocumentsPage() {
               .font-bold { font-weight: bold; }
               .font-extrabold { font-weight: 800; }
               .text-center { text-align: center; }
-              .text-xs { font-size: 12px; }
-              .text-sm { font-size: 12px; }
+              .text-xs { font-size: 14px; }
+              .text-sm { font-size: 16px; }
               .text-base { font-size: 18px; }
               .leading-tight { line-height: 1.15; }
               .leading-relaxed { line-height: 1.5; }
@@ -793,19 +793,19 @@ export default function DocumentsPage() {
               .space-y-1 > * + * { margin-top: 4px; }
               .space-y-0.5 > * + * { margin-top: 2px; }
               table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-              th, td { border: 1px solid #000; padding: 4.5px; font-size: 11px; line-height: 1.4; }
+              th, td { border: 1px solid #000; padding: 4.5px; font-size: 14px; line-height: 1.4; }
               th { font-weight: bold; background-color: #f8fafc; }
               ${!isBill ? `
-                #printable-order-sheet .bank-title { font-size: 15.5pt !important; font-weight: bold !important; color: #0b5e9e !important; }
-                #printable-order-sheet .dept-title { font-size: 12.5pt !important; font-weight: bold !important; color: #000000 !important; }
-                #printable-order-sheet .memo-line, #printable-order-sheet .memo-line * { font-size: 11pt !important; font-weight: bold !important; }
-                #printable-order-sheet .office-order-title { font-size: 14.5pt !important; font-weight: bold !important; text-decoration: underline !important; }
-                #printable-order-sheet .body-paragraph, #printable-order-sheet .body-paragraph * { font-size: 11.5pt !important; line-height: 1.5 !important; }
-                #printable-order-sheet table th { font-size: 11px !important; font-weight: bold !important; }
-                #printable-order-sheet table td, #printable-order-sheet table td p, #printable-order-sheet table td span { font-size: 11px !important; }
-                #printable-order-sheet .signature-name { font-size: 11.5pt !important; font-weight: bold !important; }
-                #printable-order-sheet .signature-designation { font-size: 11pt !important; }
-                #printable-order-sheet .footer-copy, #printable-order-sheet .footer-copy * { font-size: 10.5pt !important; }
+                #printable-order-sheet .bank-title { font-size: 18pt !important; font-weight: bold !important; color: #0b5e9e !important; }
+                #printable-order-sheet .dept-title { font-size: 12pt !important; font-weight: bold !important; color: #000000 !important; }
+                #printable-order-sheet .memo-line, #printable-order-sheet .memo-line * { font-size: 12pt !important; font-weight: bold !important; }
+                #printable-order-sheet .office-order-title { font-size: 18pt !important; font-weight: bold !important; text-decoration: underline !important; }
+                #printable-order-sheet .body-paragraph, #printable-order-sheet .body-paragraph * { font-size: 12pt !important; line-height: 1.5 !important; }
+                #printable-order-sheet table th { font-size: 14px !important; font-weight: bold !important; }
+                #printable-order-sheet table td, #printable-order-sheet table td p, #printable-order-sheet table td span { font-size: 14px !important; }
+                #printable-order-sheet .signature-name { font-size: 12pt !important; font-weight: bold !important; }
+                #printable-order-sheet .signature-designation { font-size: 12pt !important; }
+                #printable-order-sheet .footer-copy, #printable-order-sheet .footer-copy * { font-size: 12pt !important; }
               ` : ''}
             </style>
           </head>
@@ -2340,27 +2340,27 @@ export default function DocumentsPage() {
                   <div 
                     id="printable-order-sheet"
                     className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-none text-[10px]"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', boxSizing: 'border-box', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
+                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', boxSizing: 'border-box', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
                   >
                     <div className="flex flex-col h-full justify-between">
                       <div>
                         {/* Official Header */}
                         <div className="w-full flex justify-end text-right mb-4">
                           <div className="text-right leading-none">
-                            <h2 className="text-[16px] font-bold text-black uppercase" style={{ fontFamily: 'Kalpurush', fontSize: '16px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                            <p className="text-[10px] font-bold text-black mt-1.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                            <h2 className="text-[16px] font-bold text-black uppercase" style={{ fontFamily: 'SolaimanLipi', fontSize: '16px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                            <p className="text-[10px] font-bold text-black mt-1.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                           </div>
                         </div>
 
                         {/* Title and Main Body */}
                         <div className="flex-1 flex flex-col justify-between mt-2">
                           <div>
-                            <h2 className="text-left text-[10px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                            <h2 className="text-left text-[10px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               বিষয়: {viewingOrder.content?.subjectText || 'যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।'}
                             </h2>
                             
                             <div className="mt-2.5">
-                              <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', textIndent: '0.5in', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', textIndent: '0.5in', textAlign: 'justify' }}>
                                 {viewingOrder.content?.openingParagraph}
                               </p>
                             </div>
@@ -2381,9 +2381,9 @@ export default function DocumentsPage() {
                               const apyaonRate = isHoliday ? 250 : isNight ? 600 : 100;
                               const transportRate = cat.includes('LATE_SITTING') ? 150 : 0;
                               return (
-                                <table className="w-full border-collapse border border-black text-center mt-3 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                                <table className="w-full border-collapse border border-black text-center mt-3 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
                                   <thead>
-                                    <tr className="bg-slate-50 font-bold border-b border-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                    <tr className="bg-slate-50 font-bold border-b border-black text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                                       <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '6px' }}>ক্রমিক</th>
                                       <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>নাম ও পদবী</th>
                                       <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '6px' }}>তারিখ</th>
@@ -2394,7 +2394,7 @@ export default function DocumentsPage() {
                                   </thead>
                                   <tbody>
                                     {dutiesList.map((s: OrderDuty, index: number) => (
-                                      <tr key={index} className="text-black text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                                      <tr key={index} className="text-black text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                                         <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(index + 1)}</td>
                                         <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>
                                           <p className="font-normal">{s.employeeName}</p>
@@ -2428,15 +2428,15 @@ export default function DocumentsPage() {
                             })()}
 
                             {/* Words and paragraphs */}
-                            <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                            <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               <p className="font-bold text-black">কথায়: {viewingOrder.content?.grandTotalInWords || ''} মাত্র।</p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
                                 ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                               </p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
                                 ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalTransport ? getFormattedNumberWords(viewingOrder.content.totalTransport) : ''})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalApyaon ? getFormattedNumberWords(viewingOrder.content.totalApyaon) : ''})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                               </p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
                                 ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal ?? 0)}/- ({viewingOrder.content && viewingOrder.content.grandTotal ? getFormattedNumberWords(viewingOrder.content.grandTotal) : ''})</strong> <strong>{viewingOrder.employeeName}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                               </p>
                             </div>
@@ -2445,7 +2445,7 @@ export default function DocumentsPage() {
 
                         {/* Right-aligned payee signature block */}
                         <div className="w-full flex justify-end text-right" style={{ marginTop: '0.4in', marginBottom: '0.2in' }}>
-                          <div className="text-right leading-none" style={{ fontFamily: 'Kalpurush', fontSize: '10px', paddingRight: '0.1in' }}>
+                          <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', paddingRight: '0.1in' }}>
                             <p className="font-extrabold text-[10px]">({viewingOrder.employeeName})</p>
                             <p className="text-[10px] font-bold text-slate-800 mt-1">
                               {viewingOrder.content?.representativeDesignation || viewingOrder.duties?.find((d: OrderDuty) => d.employeeName === viewingOrder.employeeName)?.designation || 'প্রিন্সিপাল অফিসার (পিও)'}
@@ -2454,24 +2454,24 @@ export default function DocumentsPage() {
                         </div>
 
                         {/* Left-aligned Routing List with nice gaps, underlines and font size 10, NOT bold */}
-                        <div className="w-full text-left mt-4 pl-1 no-break-inside" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                        <div className="w-full text-left mt-4 pl-1 no-break-inside" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                           <div style={{ marginBottom: '0.85in' }}>
-                            <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                            <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
                           <div style={{ marginBottom: '0.85in' }}>
-                            <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                            <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
                           <div style={{ marginBottom: '0.85in' }}>
-                            <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                            <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
                           <div style={{ marginBottom: '0.85in' }}>
-                            <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'Kalpurush', fontSize: '10px', lineHeight: '1.0' }}>
+                            <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
@@ -2485,7 +2485,7 @@ export default function DocumentsPage() {
                   <div 
                     id="printable-order-sheet"
                     className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg p-[0.8in] flex flex-col justify-between relative text-left font-serif leading-relaxed text-[10px]"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: 'Kalpurush, "Noto Sans Bengali", sans-serif', boxSizing: 'border-box' }}
+                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', boxSizing: 'border-box' }}
                   >
                     <div>
                       {/* Janata Bank PLC Redesigned Header to match mockup logo exactly */}
@@ -2506,19 +2506,19 @@ export default function DocumentsPage() {
                             </g>
                           </svg>
                           <div className="font-serif leading-none mt-0.5">
-                            <h2 className="bank-title" style={{ fontFamily: 'Kalpurush', fontSize: '14pt', fontWeight: 'bold', color: '#0b5e9e', lineHeight: '1.0', margin: 0 }}>জনতা ব্যাংক পিএলসি.</h2>
-                            <p style={{ fontFamily: 'Kalpurush', fontSize: '7.5pt', fontWeight: 'bold', color: '#555555', marginTop: '2px', lineHeight: '1.0', margin: 0 }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
+                            <h2 className="bank-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '14pt', fontWeight: 'bold', color: '#0b5e9e', lineHeight: '1.0', margin: 0 }}>জনতা ব্যাংক পিএলসি.</h2>
+                            <p style={{ fontFamily: 'SolaimanLipi', fontSize: '7.5pt', fontWeight: 'bold', color: '#555555', marginTop: '2px', lineHeight: '1.0', margin: 0 }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
                           </div>
                         </div>
 
                         {/* Right side: Department */}
                         <div className="text-right mt-1">
-                          <h3 className="dept-title" style={{ fontFamily: 'Kalpurush', fontSize: '11pt', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '5px' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
+                          <h3 className="dept-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '11pt', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '5px' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
                         </div>
                       </div>
 
                       {/* Sub-header line: Reference and Date (With exactly 1 inch space below it) */}
-                      <div className="w-full flex justify-between items-center text-[9.5pt] pt-1 pb-1 border-b border-black/10 mt-1 memo-line" style={{ fontFamily: 'Kalpurush', fontSize: '9.5pt', lineHeight: '1.0', marginBottom: '0.25in' }}>
+                      <div className="w-full flex justify-between items-center text-[9.5pt] pt-1 pb-1 border-b border-black/10 mt-1 memo-line" style={{ fontFamily: 'SolaimanLipi', fontSize: '9.5pt', lineHeight: '1.0', marginBottom: '0.25in' }}>
                         <span className="font-bold">সূত্রঃ {viewingOrder.orderRef}</span>
                         <span className="font-bold">
                           তারিখঃ {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং
@@ -2526,15 +2526,15 @@ export default function DocumentsPage() {
                       </div>
 
                       {/* Title and Main Body */}
-                      <div className="flex-1 flex flex-col justify-start pt-1 text-[10pt]" style={{ fontFamily: 'Kalpurush', fontSize: '10pt', lineHeight: '1.0' }}>
+                      <div className="flex-1 flex flex-col justify-start pt-1 text-[10pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10pt', lineHeight: '1.0' }}>
                         <div className="space-y-2">
-                          <h2 className="text-center text-[13px] font-extrabold underline decoration-black underline-offset-2 office-order-title" style={{ fontFamily: 'Kalpurush', fontSize: '13pt', lineHeight: '1.0' }}>
+                          <h2 className="text-center text-[13px] font-extrabold underline decoration-black underline-offset-2 office-order-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '13pt', lineHeight: '1.0' }}>
                             অফিস নির্দেশ
                           </h2>
                           
                           <p 
                             className="text-justify leading-normal mt-2 text-[10pt] text-slate-950 text-indent-8 body-paragraph"
-                            style={{ fontFamily: 'Kalpurush', fontSize: '10pt', lineHeight: '1.5', textIndent: '0.5in', textAlign: 'justify' }}
+                            style={{ fontFamily: 'SolaimanLipi', fontSize: '10pt', lineHeight: '1.5', textIndent: '0.5in', textAlign: 'justify' }}
                             dangerouslySetInnerHTML={{ __html: viewingOrder.content?.orderText || '' }}
                           />
 
@@ -2548,9 +2548,9 @@ export default function DocumentsPage() {
                             }
                             if (!dutiesList || dutiesList.length === 0) return null;
                             return (
-                              <table className="w-full border-collapse border border-black text-center mt-2.5 text-[9pt]" style={{ fontFamily: 'Kalpurush', fontSize: '9pt', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                              <table className="w-full border-collapse border border-black text-center mt-2.5 text-[9pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9pt', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
                                 <thead>
-                                  <tr className="bg-slate-50 font-bold border-b border-black text-[9.5pt]" style={{ fontFamily: 'Kalpurush', fontSize: '9.5pt', lineHeight: '1.0' }}>
+                                  <tr className="bg-slate-50 font-bold border-b border-black text-[9.5pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9.5pt', lineHeight: '1.0' }}>
                                     <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক নং</th>
                                     <th className="border border-black p-1 text-left pl-2 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>নির্বাহী/ কর্মকর্তার নাম</th>
                                     <th className="border border-black p-1 text-center w-[12%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center' }}>পদবী</th>
@@ -2560,7 +2560,7 @@ export default function DocumentsPage() {
                                 </thead>
                                 <tbody>
                                   {dutiesList.map((group: OrderDuty, index: number) => (
-                                    <tr key={index} className="text-black text-[9pt]" style={{ fontFamily: 'Kalpurush', fontSize: '9pt', lineHeight: '1.0' }}>
+                                    <tr key={index} className="text-black text-[9pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9pt', lineHeight: '1.0' }}>
                                       <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center' }}>
                                         {toBanglaDigits(index + 1)}
                                       </td>
@@ -2584,7 +2584,7 @@ export default function DocumentsPage() {
                           })()}
 
                           {/* Sign-off Officer block (Left Aligned on Bottom Left with 1 inch space above it) */}
-                          <div className="w-full flex justify-start text-[9.5pt]" style={{ fontFamily: 'Kalpurush', fontSize: '9.5pt', lineHeight: '1.0', marginTop: '0.6in' }}>
+                          <div className="w-full flex justify-start text-[9.5pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9.5pt', lineHeight: '1.0', marginTop: '0.6in' }}>
                             <div className="text-left pl-2">
                               <p className="font-bold text-black signature-name" style={{ margin: 0, fontWeight: 'bold' }}>({viewingOrder.content?.signingOfficer || 'স্বাক্ষরিত'})</p>
                               <p className="text-[9.5pt] text-slate-800 signature-designation" style={{ margin: 0, marginTop: '2px', fontWeight: 'bold' }}>{viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>

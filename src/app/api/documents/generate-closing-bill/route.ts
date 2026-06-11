@@ -155,7 +155,7 @@ export async function POST(request: Request) {
             <td style="width: 5%;">${toBnDigits(globalIndex++)}</td>
             <td class="text-left font-bold" style="color: #c2185b; width: 25%;">${r.employeeName}</td>
             <td style="color: #c2185b; font-weight: bold; width: 15%;">${abbreviateDesignation(r.designation)}</td>
-            <td style="color: #c2185b; font-family: sans-serif; font-size: 8.5px; width: 15%;">${r.bankId || '-'}</td>
+            <td style="color: #c2185b; font-family: sans-serif; font-size: 12px; width: 15%;">${r.bankId || '-'}</td>
             <td style="width: 13%;">${toBnDigits(2000)}/-</td>
             <td style="width: 13%;">${toBnDigits(15)}/-</td>
             <td class="font-bold" style="width: 14%;">${toBnDigits(1985)}/-</td>
@@ -165,14 +165,14 @@ export async function POST(request: Request) {
 
       tablesHtml += `
         <div style="margin-bottom: 12px; page-break-inside: avoid;">
-          <div style="background-color: #fdf2f8; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 9px; border: 1px solid #000; border-bottom: none; color: #db2777;">
+          <div style="background-color: #fdf2f8; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 12px; border: 1px solid #000; border-bottom: none; color: #db2777;">
             ● নির্বাহী প্যানেল (ডিজিএম ${toBnDigits(dgmCount)} জন + এজিএম ${toBnDigits(agmCount)} জন = মোট ${toBnDigits(totalExec)} জন নির্বাহী)
           </div>
           <table style="margin-top: 0; margin-bottom: 0;">
             ${tableHeaders}
             <tbody>
               ${execRows}
-              <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 10px;">
+              <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 12px;">
                 <td colspan="4" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777; width: 60%;">সর্বমোট (নির্বাহী প্যানেল) =</td>
                 <td class="font-bold" style="color: #db2777; width: 13%;">৳${toBnDigits(execClaim)}/-</td>
                 <td style="color: #b45309; font-weight: bold; width: 13%;">৳${toBnDigits(execStamp)}/-</td>
@@ -204,7 +204,7 @@ export async function POST(request: Request) {
               <td style="width: 5%;">${toBnDigits(globalIndex++)}</td>
               <td class="text-left font-bold" style="width: 25%;">${r.employeeName}</td>
               <td style="width: 15%;">${abbreviateDesignation(r.designation)}</td>
-              <td style="width: 15%; font-family: sans-serif; font-size: 8.5px;">${r.bankId || '-'}</td>
+              <td style="width: 15%; font-family: sans-serif; font-size: 12px;">${r.bankId || '-'}</td>
               <td style="width: 13%;">${toBnDigits(2000)}/-</td>
               <td style="width: 13%;">${toBnDigits(15)}/-</td>
               <td class="font-bold" style="width: 14%;">${toBnDigits(1985)}/-</td>
@@ -214,14 +214,14 @@ export async function POST(request: Request) {
 
         tablesHtml += `
           <div style="margin-bottom: 12px; page-break-inside: avoid;">
-            <div style="background-color: #f1f5f9; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 9px; border: 1px solid #000; border-bottom: none;">
+            <div style="background-color: #f1f5f9; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 12px; border: 1px solid #000; border-bottom: none;">
               ● সেল: ${cellGroup.cellName} (${toBnDigits(cellGroup.records.length)} জন কর্মকর্তা)
             </div>
             <table style="margin-top: 0; margin-bottom: 0;">
               ${tableHeaders}
               <tbody>
                 ${cellRows}
-                <tr style="background-color: #cbd5e1; font-weight: bold; font-size: 10px;">
+                <tr style="background-color: #cbd5e1; font-weight: bold; font-size: 12px;">
                   <td colspan="4" style="text-align: right; padding-right: 12px; font-weight: 900; width: 60%;">সর্বমোট (${cellGroup.cellName}) =</td>
                   <td class="font-bold" style="width: 13%;">৳${toBnDigits(cellClaim)}/-</td>
                   <td style="color: #b45309; font-weight: bold; width: 13%;">৳${toBnDigits(cellStamp)}/-</td>
@@ -237,10 +237,10 @@ export async function POST(request: Request) {
     // 3. Render Grand Departmental Total Summary at the bottom
     tablesHtml += `
       <div style="margin-top: 15px; margin-bottom: 12px; page-break-inside: avoid; border: 1.5px solid #000; padding: 10px 14px; background-color: #cbd5e1; text-align: center;">
-        <p style="font-size: 11px; font-weight: 900; color: #000; margin: 0; line-height: 1.6;">
+        <p style="font-size: 14px; font-weight: 900; color: #000; margin: 0; line-height: 1.6;">
           <strong>সেলের প্রাপ্তব্য টাকার পরিমাণ = ৳${toBnDigits(totalClaimAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
           <strong>রেভেনিউ স্ট্যাম্প = ৳${toBnDigits(totalStampAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
-          <span style="font-size: 13px; color: #15803d; font-weight: 900;">প্রাপ্তব্য = ৳${toBnDigits(grandTotalAll)}/-</span>
+          <span style="font-size: 16px; color: #15803d; font-weight: 900;">প্রাপ্তব্য = ৳${toBnDigits(grandTotalAll)}/-</span>
         </p>
       </div>
     `;
@@ -251,6 +251,9 @@ export async function POST(request: Request) {
 <head>
 <meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
+<link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
+<link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
 <style>
   * {
     margin: 0;
@@ -265,8 +268,8 @@ export async function POST(request: Request) {
     margin-right: 0.5in;
   }
   body {
-    font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
-    font-size: 10px;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+    font-size: 12px;
     line-height: 1.25;
     color: #000;
     background-color: #fff;
@@ -278,17 +281,17 @@ export async function POST(request: Request) {
     line-height: 1.3;
   }
   .header-main-title {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: bold;
   }
   .header-sub-title {
-    font-size: 11px;
+    font-size: 14px;
     font-weight: bold;
     color: #333;
     margin-top: 1px;
   }
   .header-loc {
-    font-size: 9px;
+    font-size: 12px;
     color: #444;
   }
   .report-meta {
@@ -303,18 +306,18 @@ export async function POST(request: Request) {
     font-size: 10px;
   }
   .cell-title {
-    font-size: 11px;
+    font-size: 14px;
     color: #111;
   }
   .report-date {
-    font-size: 10px;
+    font-size: 12px;
   }
   .report-title-box {
     text-align: center;
     margin-bottom: 8px;
   }
   .report-title {
-    font-size: 11px;
+    font-size: 14px;
     font-weight: bold;
     text-decoration: underline;
     display: inline-block;
@@ -323,7 +326,7 @@ export async function POST(request: Request) {
     width: 100%;
     border-collapse: collapse;
     margin: 6px 0;
-    font-size: 10px;
+    font-size: 12px;
   }
   th, td {
     border: 1px solid #000;
@@ -348,7 +351,7 @@ export async function POST(request: Request) {
   }
   .bill-summary-text {
     margin-top: 8px;
-    font-size: 10px;
+    font-size: 12px;
     line-height: 1.4;
     text-align: justify;
   }
@@ -359,7 +362,7 @@ export async function POST(request: Request) {
     background-color: #f8fafc;
     border-radius: 4px;
     line-height: 1.4;
-    font-size: 10px;
+    font-size: 12px;
   }
 </style>
 </head>
@@ -367,7 +370,7 @@ export async function POST(request: Request) {
   <div class="report-meta" style="margin-top: 10px;">
     <span class="cell-title">ক্লোজিং বিল রিপোর্ট</span>
     <div style="text-align: right;">
-      <div style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</div>
+      <div style="font-size: 14px; font-weight: bold; margin-bottom: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</div>
       <span class="report-date">তারিখ: ${getBnDate(reportDate)} ইং</span>
     </div>
   </div>

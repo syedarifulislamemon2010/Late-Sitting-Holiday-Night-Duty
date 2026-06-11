@@ -263,7 +263,7 @@ export async function POST(request: Request) {
         }
 
         const textColor = isCellIncharge ? '#0f766e' : '#000000';
-        const inchargeBadge = isCellIncharge ? ' <span style="font-size: 8px; font-weight: bold; background-color: #ccfbf1; color: #0f766e; padding: 1px 3px; border-radius: 4px; margin-left: 4px; display: inline-block; vertical-align: middle;">ইনচার্জ</span>' : '';
+        const inchargeBadge = isCellIncharge ? ' <span style="font-size: 14px; font-weight: bold; background-color: #ccfbf1; color: #0f766e; padding: 1px 3px; border-radius: 4px; margin-left: 4px; display: inline-block; vertical-align: middle;">ইনচার্জ</span>' : '';
 
         rowsHtml += `
           <tr style="color: ${textColor};">
@@ -303,7 +303,7 @@ export async function POST(request: Request) {
 
     if (tablesHtml === '' && execTableHtml === '') {
       tablesHtml = `
-        <div style="text-align: center; padding: 40px; font-weight: bold; font-size: 12px;">
+        <div style="text-align: center; padding: 40px; font-weight: bold; font-size: 14px;">
           কোনো কর্মকর্তার তালিকা পাওয়া যায়নি।
         </div>
       `;
@@ -316,6 +316,9 @@ export async function POST(request: Request) {
   <meta charset="utf-8">
   <title>কর্মকর্তা তালিকা</title>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
+<link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
+<link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -330,8 +333,8 @@ export async function POST(request: Request) {
       margin-right: 0.5in;
     }
     body {
-      font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
-      font-size: 10px;
+      font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
       line-height: 1.3;
       color: #000;
       background-color: #fff;
@@ -345,21 +348,21 @@ export async function POST(request: Request) {
       font-weight: bold;
       border-bottom: 1.2px solid #000;
       padding-bottom: 4px;
-      font-size: 10px;
+      font-size: 14px;
     }
     .cell-title {
-      font-size: 11px;
+      font-size: 14px;
       color: #111;
     }
     .report-date {
-      font-size: 10px;
+      font-size: 14px;
     }
     .report-title-box {
       text-align: center;
       margin-bottom: 12px;
     }
     .report-title {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: bold;
       text-decoration: underline;
       display: inline-block;
@@ -370,13 +373,13 @@ export async function POST(request: Request) {
       font-weight: bold;
       border: 1px solid #000;
       border-bottom: none;
-      font-size: 10px;
+      font-size: 14px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 15px;
-      font-size: 10px;
+      font-size: 14px;
       page-break-inside: auto;
     }
     tr {
@@ -409,7 +412,7 @@ export async function POST(request: Request) {
   <div class="report-meta">
     <span class="cell-title">${cellTitle}</span>
     <div style="text-align: right;">
-      <div style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</div>
+      <div style="font-size: 14px; font-weight: bold; margin-bottom: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</div>
       <span class="report-date">তারিখ: ${getBnDate(reportDate)} ইং</span>
     </div>
   </div>

@@ -75,6 +75,7 @@ export async function POST(request: Request) {
 <head>
 <meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
 <style>
   *, *:before, *:after {
     box-sizing: border-box;
@@ -84,8 +85,8 @@ export async function POST(request: Request) {
     margin: 0.8in;
   }
   body {
-    font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
-    font-size: 7.5px;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+    font-size: 12px;
     line-height: 1.5;
     color: #000;
     background: #fff;
@@ -111,21 +112,21 @@ export async function POST(request: Request) {
     text-align: right;
   }
   .bank-title {
-    font-size: 9.5pt;
+    font-size: 18pt;
     font-weight: bold;
     color: #0b5e9e;
     margin: 0;
     line-height: 1.0;
   }
   .bank-tagline {
-    font-size: 5.5pt;
+    font-size: 9pt;
     font-weight: bold;
     color: #555555;
     margin: 2px 0 0 0;
     line-height: 1.0;
   }
   .dept-title {
-    font-size: 7.5pt;
+    font-size: 12pt;
     font-weight: bold;
     color: #000000;
     margin: 5px 0 0 0;
@@ -138,7 +139,7 @@ export async function POST(request: Request) {
     padding-bottom: 4px;
     margin-bottom: 10px;
     margin-top: 4px;
-    font-size: 7pt;
+    font-size: 9pt;
     font-weight: bold;
   }
   .ref-date-table td {
@@ -147,7 +148,7 @@ export async function POST(request: Request) {
   }
   .title-content {
     text-align: center;
-    font-size: 9.5pt;
+    font-size: 18pt;
     font-weight: bold;
     text-decoration: underline;
     margin-bottom: 8px;
@@ -155,7 +156,7 @@ export async function POST(request: Request) {
   }
   .body-content {
     text-align: justify;
-    font-size: 7.5pt;
+    font-size: 12pt;
     line-height: 1.5;
     margin-bottom: 10px;
     text-indent: 0.5in;
@@ -166,7 +167,7 @@ export async function POST(request: Request) {
     border-collapse: collapse;
     margin-top: 8px;
     margin-bottom: 10px;
-    font-size: 7.5px;
+    font-size: 12px;
   }
   table.duty-table th, table.duty-table td {
     border: 1px solid #000;
@@ -177,12 +178,12 @@ export async function POST(request: Request) {
   }
   table.duty-table th {
     background-color: #f8fafc;
-    font-size: 7pt;
+    font-size: 10.5pt;
     font-weight: bold;
     text-align: center;
   }
   table.duty-table td {
-    font-size: 6.5pt;
+    font-size: 10.5pt;
   }
   table.duty-table td.text-center {
     text-align: center;
@@ -194,7 +195,7 @@ export async function POST(request: Request) {
   .signature-container {
     width: 100%;
     margin-top: 1.0in !important; /* 1 inch space above signing officer for signing space */
-    font-size: 7.5pt;
+    font-size: 12pt;
     clear: both;
   }
   .signature-block {
@@ -204,13 +205,13 @@ export async function POST(request: Request) {
     line-height: 1.2;
   }
   .sig-name {
-    font-size: 8pt;
+    font-size: 12pt;
     font-weight: bold;
   }
   .footer-copy {
     clear: both;
     margin-top: 25px;
-    font-size: 7pt;
+    font-size: 9pt;
     color: #333;
     border-top: 1px dashed #ccc;
     padding-top: 8px;
