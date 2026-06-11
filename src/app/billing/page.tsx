@@ -225,11 +225,7 @@ export default function BillingPage() {
   const [cells, setCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCell, setSelectedCell] = useState('all');
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const today = new Date();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    return `${today.getFullYear()}-${mm}`;
-  });
+  const [selectedMonth, setSelectedMonth] = useState('all');
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);

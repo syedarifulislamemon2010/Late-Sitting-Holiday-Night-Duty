@@ -1,6 +1,7 @@
 import { DutyRepository } from '@/repositories/duty.repository';
 import { EmployeeRepository } from '@/repositories/employee.repository';
 import { HolidayRepository } from '@/repositories/holiday.repository';
+import { OfficeOrderRepository } from '@/repositories/officeOrder.repository';
 import { db } from '@/lib/db';
 import { trash, cells, employees, duties, leaveApplications } from '@/db/schema';
 import { eq, inArray, and, or, isNull, gte, lte, SQL, like } from 'drizzle-orm';
@@ -66,18 +67,30 @@ export class DutyService {
     const conditions: SQL[] = [];
     
     if (isUserRestricted) {
-      if (filters.cellId && filters.cellId !== 'all') {
-        const targetId = parseInt(filters.cellId, 10);
-        if (userCellIds.includes(targetId)) {
-          conditions.push(eq(employeesCellIdHelper(), targetId));
-        } else {
-          conditions.push(eq(employeesCellIdHelper(), -1)); // block access
+      if (filters.orderRef) {
+        // Find the office order to see if the user has access to it
+        const allowedNames = [...(currentUser?.cells || []).map((c: any) => c.name), 'All Cells', 'All My Cells', 'IT Department'];
+        const order = await OfficeOrderRepository.findByOrderRef(filters.orderRef);
+        if (order) {
+          if (order.cellName && !allowedNames.includes(order.cellName)) {
+            return []; // block access
+          }
         }
       } else {
-        if (userCellIds.length > 0) {
-          conditions.push(inArray(employeesCellIdHelper(), userCellIds));
+        // Apply cell restrictions for general duties list
+        if (filters.cellId && filters.cellId !== 'all') {
+          const targetId = parseInt(filters.cellId, 10);
+          if (userCellIds.includes(targetId)) {
+            conditions.push(eq(employeesCellIdHelper(), targetId));
+          } else {
+            conditions.push(eq(employeesCellIdHelper(), -1)); // block access
+          }
         } else {
-          return []; // block access
+          if (userCellIds.length > 0) {
+            conditions.push(inArray(employeesCellIdHelper(), userCellIds));
+          } else {
+            return []; // block access
+          }
         }
       }
     } else {
