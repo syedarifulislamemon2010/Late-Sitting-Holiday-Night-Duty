@@ -501,7 +501,44 @@ sudo firewall-cmd --reload
 
 ---
 
-## 19. Production Readiness Checklist
+## 19. Docker Containerization Setup
+
+To simplify local development and deployment under a unified containerized environment, the LHN Portal is equipped with multi-stage Docker configurations.
+
+### 19.1 Run Using Docker Compose (Recommended)
+This spins up both the Next.js portal application and a local PostgreSQL 15 database instance side-by-side.
+
+1. **Prerequisites:**
+   Ensure Docker and Docker Compose are installed on your machine.
+
+2. **Launch Containers:**
+   Run the following command to build the app image and spin up the services:
+   ```bash
+   docker-compose up --build -d
+   ```
+
+3. **Database Migration and Seeding inside Docker:**
+   Once the containers are running, run migrations and restore the database from the JSON dump:
+   ```bash
+   # Push Drizzle schema to the containerized database
+   docker-compose exec app npx drizzle-kit push
+   
+   # Import database tables and records from postgres_dump.json
+   docker-compose exec app npm run db:seed
+   ```
+
+4. **Access the App:**
+   The portal will be live at `http://localhost:3000`.
+
+### 19.2 Direct Docker Build
+To build only the production Next.js image:
+```bash
+docker build -t lhn-portal .
+```
+
+---
+
+## 20. Production Readiness Checklist
 
 - [ ] Environment variables configured securely
 - [ ] Database backed up and schema initialized
@@ -511,18 +548,21 @@ sudo firewall-cmd --reload
 
 ---
 
-## 20. Recent Updates (June 2026)
+## 21. Recent Updates (June 2026)
 
-The LHN Portal was updated with the following features and fixes in June 2026:
-* **Office Order Preview Mismatch Resolution:** Implemented a robust payee reference normalizer to bridge differences in payee names and `/বিল` suffixes across rosters and bills, resolving empty duty table displays.
-* **Monthly Billing Ledger Redesign:** Streamlined the ledger table by removing the "Cell/Branch" column and adding a footer row showing the grand total of all active bills in Bangla digits.
-* **Allowance Breakdown KPI:** Expanded the "ভাতার বিভাজন" card on the reports dashboard to display distinct sums for Late Sitting, Holiday, and Night Shift allocations.
-* **Print PDF Typography & Header Updates:** Replaced `"Kalpurush"` with `'Hind Siliguri'` and `'Noto Sans Bengali'` Google web fonts to fix broken conjunct characters (e.g., "সং ক্ষিप्त" -> "সংক্ষিপ্ত"). Renamed report headers to "অনлайн ব্যাংকিং ডিপার্টমেন্ট" and "লেট সিটিং হলিডে নাইট বিল স্টেটমেন্ট", and removed signature blocks from the PDF.
-* **Payee Row Consolidation:** Grouped employee listings by their normalized name, merging multi-shift assignments into a single consolidated row with summed day counts and amounts.
+The LHN Portal has been updated with the following features and structural fixes in June 2026:
+* **Monolithic Component Decomposition:** Broken down the 4,150+ lines monolithic `BillingPage` into modular components (`LedgerTab`, `OrdersTab`, `BillsTab`, `ReportsTab`, `BillPrintLayout`) under `src/app/billing/components/` to optimize compilation speeds.
+* **Authentication Hardening:** Replaced unencrypted session cookie checks with jwt-validated NextAuth token validation inside `auth-wrapper.ts`.
+* **Database Schema & Transactions:** Implemented database-backed `AuditLog` table with query indexes and wrapped all multi-operation service methods inside SQL transactions (`db.transaction()`) to guarantee atomic operations.
+* **API Rate Limiting Middleware:** Added a Next.js middleware token-bucket rate limiter targeting auth and heavy document generation routes to mitigate brute-force and scraping vectors.
+* **Centralized Error Webhooks:** Wired unhandled server exceptions (500) to dispatch automated Discord/Slack webhook warning alerts.
+* **Automated Testing Suite:** Implemented Vitest environment with unit tests covering shift-rate calculations and leave sandwich-rule edge cases (`npx vitest run`).
+* **UTF-8 BOM CSV Exports:** Added CSV/Excel reporting utility to the billing ledger dashboard with a UTF-8 BOM prefix, ensuring Bengali script renders correctly in spreadsheet applications.
+* **Print Typography Standardization:** Replaced hardcoded `Kalpurush` font references with the standardized `'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif` print stack across billing, roster, documents, and leave print pages, ensuring visual layout stability.
 
 ---
 
-## 21. Contributors & Licensing
+## 22. Contributors & Licensing
 
 * **Syed Ariful Islam Emon** (Lead Developer)
 * **Online Banking Department, Janata Bank PLC.**
