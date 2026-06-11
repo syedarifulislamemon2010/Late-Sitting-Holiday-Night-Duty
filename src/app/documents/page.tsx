@@ -1060,12 +1060,12 @@ export default function DocumentsPage() {
                   </span>
                   <div className="flex items-center gap-1.5">
                     {isOrderBilled ? (
-                      <span className="text-[10px] bg-teal-500/10 text-teal-600 dark:text-teal-400 px-2 py-0.5 rounded-full font-extrabold border border-teal-500/20">
-                        বিল সম্পন্ন
+                      <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 px-2.5 py-0.5 rounded-full font-extrabold border border-emerald-500/20">
+                        বিল সম্পাদিত
                       </span>
                     ) : (
-                      <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-extrabold border border-amber-500/20 animate-pulse">
-                        বিল অপেক্ষমাণ
+                      <span className="text-[10px] bg-rose-500/10 text-rose-600 dark:text-rose-450 px-2.5 py-0.5 rounded-full font-extrabold border border-rose-500/20 animate-pulse">
+                        বিল সম্পাদন করুন
                       </span>
                     )}
                     <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-bold uppercase">
@@ -2096,8 +2096,8 @@ export default function DocumentsPage() {
                         className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
                       >
                         <option value="ALL">সকল স্ট্যাটাস (All)</option>
-                        <option value="pending">বিল অপেক্ষমাণ (Pending)</option>
-                        <option value="billed">বিল সম্পন্ন (Billed)</option>
+                        <option value="pending">বিল সম্পাদন করুন (Pending)</option>
+                        <option value="billed">বিল সম্পাদিত (Billed)</option>
                       </select>
                     </div>
 

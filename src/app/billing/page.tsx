@@ -2758,7 +2758,7 @@ export default function BillingPage() {
                     {billedOrderRefs.length > 0 && (
                       <optgroup label="ইতিমধ্যেই বিল প্রস্তুত করা হয়েছে (Already Billed)">
                         {billedOrderRefs.map(ref => (
-                          <option key={ref} value={ref}>{ref} (বিল সম্পন্ন)</option>
+                          <option key={ref} value={ref}>{ref} (বিল সম্পাদিত)</option>
                         ))}
                       </optgroup>
                     )}

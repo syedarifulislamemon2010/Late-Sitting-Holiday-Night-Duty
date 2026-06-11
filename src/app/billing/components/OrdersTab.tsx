@@ -75,12 +75,12 @@ export default function OrdersTab({
                   </span>
                   <div className="flex items-center gap-1.5">
                     {isOrderBilled ? (
-                      <span className="text-[10px] bg-teal-500/10 text-teal-600 dark:text-teal-400 px-2 py-0.5 rounded-full font-extrabold border border-teal-500/20 font-sans">
-                        বিল সম্পন্ন
+                      <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 px-2.5 py-0.5 rounded-full font-extrabold border border-emerald-500/20 font-sans">
+                        বিল সম্পাদিত
                       </span>
                     ) : (
-                      <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-extrabold border border-amber-500/20 animate-pulse font-sans">
-                        বিল অপেক্ষমাণ
+                      <span className="text-[10px] bg-rose-500/10 text-rose-600 dark:text-rose-450 px-2.5 py-0.5 rounded-full font-extrabold border border-rose-500/20 animate-pulse font-sans">
+                        বিল সম্পাদন করুন
                       </span>
                     )}
                     <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-bold uppercase font-sans">

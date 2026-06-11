@@ -843,7 +843,7 @@ export default function RosterPage() {
 
   const orderRef = useMemo(() => {
     if (userCustomOrderRef !== null) return userCustomOrderRef;
-    if (isArchived) return '';
+    if (isArchived && !isEditingArchive) return '';
 
     let empName = 'ইমন';
     if (payeeEmployeeId) {
