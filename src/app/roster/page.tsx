@@ -3246,6 +3246,8 @@ export default function RosterPage() {
                 font-family: "SolaimanLipi", "Noto Sans Bengali", sans-serif !important; 
                 font-size: 14px !important;
                 line-height: 1.6 !important;
+                letter-spacing: normal !important;
+                word-spacing: normal !important;
               }
               /* Force resetting Next.js page margins & layout wrapper padding */
               main, .flex-1, .p-4, .lg\\:p-8, .p-6, .space-y-6, .py-6, .my-6 {
@@ -3268,6 +3270,8 @@ export default function RosterPage() {
                 page-break-inside: avoid !important;
                 page-break-before: avoid !important;
                 overflow: hidden !important;
+                letter-spacing: normal !important;
+                word-spacing: normal !important;
               }
             }
           `}} />

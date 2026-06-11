@@ -186,6 +186,8 @@ body {
     margin: 0 !important;
     font-size: 13px !important;
     line-height: 1.4 !important;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
   }
   
   /* Force resetting Next.js page margins & layout wrapper padding for all pages in print mode */

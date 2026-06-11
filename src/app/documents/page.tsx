@@ -698,15 +698,20 @@ export default function DocumentsPage() {
         <html>
           <head>
             <title>${isBill ? 'আপ্যায়ন বিল বিবরণী' : 'অফিস নির্দেশ'} - প্রিন্ট</title>
+            <link rel="stylesheet" href="https://fonts.maateen.me/solaiman-lipi/font.css" />
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" />
             <style>
               body {
                 margin: 0;
                 padding: 0;
-                font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif;
+                font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
                 font-size: 12px;
                 color: #000;
                 background-color: #fff;
                 line-height: 1.6;
+                letter-spacing: normal !important;
+                word-spacing: normal !important;
+                -webkit-font-smoothing: antialiased;
               }
               @page {
                 size: ${isBill ? 'legal portrait' : 'A4'};
@@ -728,6 +733,13 @@ export default function DocumentsPage() {
                 color: #000 !important;
                 background-color: #fff !important;
                 line-height: 1.5 !important;
+                letter-spacing: normal !important;
+                word-spacing: normal !important;
+              }
+              #printable-order-sheet * {
+                font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
+                letter-spacing: normal !important;
+                word-spacing: normal !important;
               }
               .w-full { width: 100%; }
               .flex { display: flex; }

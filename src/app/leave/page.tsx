@@ -1513,6 +1513,8 @@ export default function LeaveGeneratorPage() {
           line-height: 1.45 !important;
           color: #000000 !important;
           text-decoration: none !important;
+          letter-spacing: normal !important;
+          word-spacing: normal !important;
         }
         #printable-leave-sheet, #printable-leave-sheet *:not(.bold-text) {
           font-weight: normal !important;

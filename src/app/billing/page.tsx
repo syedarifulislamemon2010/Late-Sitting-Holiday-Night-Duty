@@ -2299,6 +2299,8 @@ export default function BillingPage() {
                 font-family: "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif !important; 
                 font-size: 12px !important;
                 line-height: 1.6 !important;
+                letter-spacing: normal !important;
+                word-spacing: normal !important;
               }
               .print-legal-layout {
                 width: 8.5in !important;
@@ -2313,6 +2315,8 @@ export default function BillingPage() {
                 page-break-inside: avoid !important;
                 page-break-before: avoid !important;
                 overflow: hidden !important;
+                letter-spacing: normal !important;
+                word-spacing: normal !important;
               }
             }
           `}} />
