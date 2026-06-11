@@ -563,9 +563,6 @@ The LHN Portal has been updated with the following features and structural fixes
 
 ---
 
-## 22. Contributors & Licensing
+## 22. Contributors
 
-* **Syed Ariful Islam Emon** (Lead Developer)
-* **Online Banking Department, Janata Bank PLC.**
-
-**License:** Proprietary Software | Online Banking Department, Janata Bank PLC. All rights reserved.
+* **Syed Ariful Islam Emon**
