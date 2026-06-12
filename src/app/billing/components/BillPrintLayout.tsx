@@ -2,6 +2,8 @@ import React from 'react';
 import Image from 'next/image';
 import { FileText, Printer, X } from 'lucide-react';
 import { toBanglaDigits, getBanglaNumberWords } from '@/lib/bengali-converter';
+import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
+
 
 interface Cell {
   id: number;
@@ -285,15 +287,15 @@ export default function BillPrintLayout({
             <div 
               id="printable-order-sheet"
               className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-none text-[14px]"
-              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', boxSizing: 'border-box', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
+              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', boxSizing: 'border-box', paddingTop: '0.4in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
             >
               <div className="flex flex-col h-full justify-between">
                 <div>
                   {/* Official Header */}
                   <div className="w-full flex justify-end text-right mb-4">
                     <div className="text-right leading-none">
-                      <h2 className="text-[24px] font-bold text-black uppercase" style={{ fontFamily: 'SolaimanLipi', fontSize: '24px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                      <p className="text-[14px] font-bold text-black mt-1.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                      <h2 className="text-[24px] font-bold text-black uppercase" style={{ fontFamily: 'SolaimanLipi', fontSize: '24px', lineHeight: '1.1', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                      <p className="text-[14px] font-bold text-black mt-0.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.1', letterSpacing: 'normal' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                     </div>
                   </div>
 
@@ -330,49 +332,53 @@ export default function BillPrintLayout({
                         const cat = viewingOrder.category || '';
                         const isHoliday = cat.includes('HOLIDAY');
                         const isNight = cat.includes('NIGHT_SHIFT');
+                        const isLate = cat.includes('LATE_SITTING');
                         const apyaonRate = isHoliday ? 250 : isNight ? 600 : 100;
-                        const transportRate = cat.includes('LATE_SITTING') ? 150 : 0;
+                        const transportRate = isHoliday ? 250 : isNight ? 400 : isLate ? 200 : 0;
                         return (
                           <table className="w-full border-collapse border border-black text-center mt-3 text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
                             <thead>
                               <tr className="bg-slate-50 font-bold border-b border-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
-                                <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '6px' }}>ক্রমিক</th>
-                                <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>নাম ও পদবী</th>
-                                <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '6px' }}>তারিখ</th>
-                                <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '6px' }}>যাতায়াত</th>
-                                <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '6px' }}>আপ্যায়ন</th>
-                                <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '6px' }}>মোট</th>
+                                <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>ক্রমিক</th>
+                                <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '3.5px', textAlign: 'left', paddingLeft: '12px' }}>নাম ও পদবী</th>
+                                <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '3.5px' }}>তারিখ</th>
+                                <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3.5px' }}>যাতায়াত</th>
+                                <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3.5px' }}>আপ্যায়ন</th>
+                                <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '3.5px' }}>মোট</th>
                               </tr>
                             </thead>
                             <tbody>
                               {sortedDutiesList.map((s: OrderDuty, idx: number) => (
                                 <tr key={idx} className="text-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
-                                  <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(idx + 1)}</td>
-                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', paddingLeft: '12px' }}>
-                                    <p className="font-normal">{s.employeeName}</p>
-                                    <p className="text-[14px] text-slate-800 font-normal mt-0.5">{s.designation}</p>
+                                  <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>{toBanglaDigits(idx + 1)}</td>
+                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3.5px', textAlign: 'left', paddingLeft: '12px' }}>
+                                    <p className="font-normal">{s.employeeName.startsWith('জনাব') ? s.employeeName : `জনাব ${s.employeeName}`} ({getShortDesignation(s.designation)})</p>
                                   </td>
-                                  <td className="border border-black p-1.5 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '6px' }}>
-                                    <p className="break-words max-w-[200px] leading-snug">{s.datesFormatted || s.dates || ''}</p>
+                                  <td className="border border-black p-1.5 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '3.5px' }}>
+                                    {renderDatesInPairs(s.datesFormatted || s.dates || '').map((pair, pIdx, arr) => (
+                                      <span key={pIdx} className="block leading-snug">
+                                        {pair}{pIdx < arr.length - 1 ? ',' : ''}
+                                      </span>
+                                    ))}
                                     <p className="text-[14px] text-slate-700 mt-1 font-semibold">মোট: {toBanglaDigits(s.days)} দিন</p>
                                   </td>
-                                  <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '6px' }}>
+                                  <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3.5px' }}>
                                     ({toBanglaDigits(transportRate)}x{toBanglaDigits(s.days)}) = {toBanglaDigits(s.totalTransport)}/-
                                   </td>
-                                  <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '6px' }}>
+                                  <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3.5px' }}>
                                     ({toBanglaDigits(apyaonRate)}x{toBanglaDigits(s.days)}) = {toBanglaDigits(s.totalApyaon)}/-
                                   </td>
-                                  <td className="border border-black p-1.5 font-extrabold text-center" style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>
+                                  <td className="border border-black p-1.5 font-extrabold text-center" style={{ border: '1px solid #000', padding: '3.5px', fontWeight: 'bold' }}>
                                     {toBanglaDigits(s.grandTotal)}/-
                                   </td>
                                 </tr>
                               ))}
                               <tr className="font-bold bg-slate-50/50 text-[14px]" style={{ border: '1px solid #000', fontWeight: 'bold' }}>
-                                <td colSpan={2} className="border border-black p-1.5 text-right pr-3" style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', paddingRight: '12px' }}>সর্বমোট:</td>
-                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>{toBanglaDigits(viewingOrder.content?.totalDays)} দিন</td>
-                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>৳{toBanglaDigits(viewingOrder.content?.totalTransport)}/-</td>
-                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '6px' }}>৳{toBanglaDigits(viewingOrder.content?.totalApyaon)}/-</td>
-                                <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '6px', fontWeight: 'bold' }}>৳{toBanglaDigits(viewingOrder.content?.grandTotal)}/-</td>
+                                <td colSpan={2} className="border border-black p-1.5 text-right pr-3" style={{ border: '1px solid #000', padding: '3.5px', textAlign: 'right', paddingRight: '12px' }}>সর্বমোট:</td>
+                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>{toBanglaDigits(viewingOrder.content?.totalDays)} দিন</td>
+                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>৳{toBanglaDigits(viewingOrder.content?.totalTransport)}/-</td>
+                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>৳{toBanglaDigits(viewingOrder.content?.totalApyaon)}/-</td>
+                                <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3.5px', fontWeight: 'bold' }}>৳{toBanglaDigits(viewingOrder.content?.grandTotal)}/-</td>
                               </tr>
                             </tbody>
                           </table>
@@ -398,7 +404,7 @@ export default function BillPrintLayout({
                   {/* Right-aligned payee signature block */}
                   <div className="w-full flex justify-end text-right" style={{ marginTop: '0.6in', marginBottom: '0.2in' }}>
                     <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', paddingRight: '0.1in' }}>
-                      <p className="font-extrabold text-[14px]">({viewingOrder.employeeName.replace(/^জনাব\s*/, '')})</p>
+                      <p className="font-extrabold text-[14px]">({cleanBracketName(viewingOrder.employeeName)})</p>
                       <p className="text-[14px] font-bold text-slate-800 mt-1">{viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</p>
                     </div>
                   </div>
@@ -451,7 +457,7 @@ export default function BillPrintLayout({
                     />
                     <div className="text-right leading-tight">
                       <h2 className="text-[18pt] font-extrabold text-[#0b5e9e] bank-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '15pt', lineHeight: '1.15' }}>জনতা ব্যাংক পিএলসি.</h2>
-                      <p className="text-[14pt] font-bold text-slate-500 uppercase tracking-wider mt-0.5 dept-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '12pt', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+                      <p className="text-[14pt] font-bold text-slate-500 uppercase mt-0.5 dept-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '12pt', lineHeight: '1.0', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
                       <p className="text-[14px] font-medium text-slate-400 leading-none mt-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>প্রধান কার্যালয়, ঢাকা</p>
                     </div>
                   </div>
@@ -498,16 +504,17 @@ export default function BillPrintLayout({
                             <tr key={idx} className="text-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
                               <td className="border border-black p-1 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(idx + 1)}</td>
                               <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>
-                                <p className="font-normal">{d.employeeName || d.name}</p>
-                                <p className="text-[14px] text-slate-800 font-normal mt-0.5">{d.designation}</p>
+                                <p className="font-normal">{(d.employeeName || d.name || '').startsWith('জনাব') ? (d.employeeName || d.name) : `জনাব ${d.employeeName || d.name}`} ({getShortDesignation(d.designation)})</p>
                               </td>
                               <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>
                                 <p className="font-sans font-normal">{d.bankId}</p>
                               </td>
                               <td className="border border-black p-1 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '3px' }}>
-                                <p className="break-words max-w-[200px] leading-snug">
-                                  {d.datesFormatted || d.date || ''}
-                                </p>
+                                {renderDatesInPairs(d.datesFormatted || d.date || '').map((pair, pIdx, arr) => (
+                                  <span key={pIdx} className="block leading-snug">
+                                    {pair}{pIdx < arr.length - 1 ? ',' : ''}
+                                  </span>
+                                ))}
                               </td>
                               <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>
                                 {d.description || ''}
@@ -530,7 +537,7 @@ export default function BillPrintLayout({
                       </ol>
                     </div>
                     <div className="w-[50%] text-right pr-2">
-                      <p className="font-extrabold signature-name">({viewingOrder.content?.signingOfficer || 'স্বাক্ষরিত'})</p>
+                      <p className="font-extrabold signature-name">({cleanBracketName(viewingOrder.content?.signingOfficer || 'স্বাক্ষরিত')})</p>
                       <p className="text-slate-800 mt-1 signature-designation">{viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { useLayout, LayoutPriority } from '@/context/LayoutContext';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
+import { cleanBracketName } from '@/lib/print-helpers';
 
 import { 
   Trash2, 
@@ -3929,7 +3930,7 @@ export default function RosterPage() {
                 {/* Redesigned bottom-left signature aligned exactly like mockup with exactly 1 inch of space above it */}
                 <div className="flex justify-between items-start text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', marginTop: '1.0in' }}>
                   <div className="w-[50%] text-left space-y-0.5 pl-2 leading-none">
-                    <p className="font-extrabold text-[12px] text-black">({signingOfficer || 'ডিজিএম নাম সিলেক্ট করুন'})</p>
+                    <p className="font-extrabold text-[12px] text-black">({cleanBracketName(signingOfficer) || 'ডিজিএম নাম সিলেক্ট করুন'})</p>
                     <p className="font-semibold text-slate-800 text-[12px]">{signingDesignation}</p>
                   </div>
                   <div className="w-[50%]" />

@@ -32,6 +32,8 @@ import BillsTab from './components/BillsTab';
 import ReportsTab from './components/ReportsTab';
 import BillPrintLayout from './components/BillPrintLayout';
 import { toBanglaDigits, getBanglaDate, getBanglaMonthYearLabel, getBanglaNumberWords } from '@/lib/bengali-converter';
+import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
+
 
 
 
@@ -2901,11 +2903,14 @@ export default function BillingPage() {
                                 <tr key={summary.employeeId} className="text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                   <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>{toBanglaDigits(index + 1)}</td>
                                   <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                                    <p className="font-normal">{summary.name}</p>
-                                    <p className="text-[10px] text-slate-800 font-normal mt-0.5">{summary.designation}</p>
+                                    <p className="font-normal">{summary.name.startsWith('জনাব') ? summary.name : `জনাব ${summary.name}`} ({getShortDesignation(summary.designation)})</p>
                                   </td>
                                   <td className="border border-black p-1.5 text-center leading-snug" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                                    <p>{formatWorkedDatesForCategory(summary.employeeId)}</p>
+                                    {renderDatesInPairs(formatWorkedDatesForCategory(summary.employeeId)).map((pair, pIdx, arr) => (
+                                      <span key={pIdx} className="block leading-snug">
+                                        {pair}{pIdx < arr.length - 1 ? ',' : ''}
+                                      </span>
+                                    ))}
                                     <p className="text-[10px] text-slate-700 mt-1 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>
                                   </td>
                                   <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
@@ -2958,7 +2963,7 @@ export default function BillingPage() {
                   {/* Right-aligned payee signature block */}
                   <div className="w-full flex justify-end text-right" style={{ marginTop: '0.6in', marginBottom: '0.2in' }}>
                     <div className="text-right leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', paddingRight: '0.1in' }}>
-                      <p className="font-extrabold text-[12px]">({(representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/^জনাব\s*/, '')})</p>
+                      <p className="font-extrabold text-[12px]">({cleanBracketName(representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের')})</p>
                       <p className="text-[12px] font-bold text-slate-800 mt-1">{representativeDesignation || 'এসও-আইটি'}</p>
                     </div>
                   </div>
