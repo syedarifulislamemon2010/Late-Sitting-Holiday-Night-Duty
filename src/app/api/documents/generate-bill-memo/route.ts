@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
+import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
 
 interface BillSummaryItem {
   name: string;
@@ -57,16 +58,26 @@ export async function POST(request: Request) {
     } = payload;
 
     const summariesHtml = summaries.map((s: BillSummaryItem, index: number) => {
+      const displayName = (s.name || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+      const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
+      const shortDesignation = getShortDesignation(s.designation);
+      const pairedDates = renderDatesInPairs(s.datesFormatted || '');
+      
+      const datesHtml = pairedDates.map((pair, pIdx) => {
+        const isLast = pIdx === pairedDates.length - 1;
+        return `<span style="display: block; white-space: nowrap; line-height: 1.2;">${pair}${isLast ? '' : ','}</span>`;
+      }).join('');
+
       return `
-        <tr>
+        <tr style="line-height: 1.15;">
           <td>${toBnDigits(index + 1)}</td>
-          <td class="text-left">
-            <span>${s.name}</span><br>
-            <span style="font-size: 12px; color: #444; margin-top: 2px; display: block;">${s.designation}</span>
+          <td class="text-left" style="line-height: 1.2; padding-left: 12px; text-align: left;">
+            <span>${nameWithPrefix}</span><br>
+            <span style="font-size: 11px; color: #444; margin-top: 2px; display: block;">(${shortDesignation})</span>
           </td>
-          <td>
-            <p>${s.datesFormatted}</p>
-            <p style="font-size: 12px; font-weight: bold; margin-top: 4px;">মোট: ${toBnDigits(s.days)} দিন</p>
+          <td style="font-size: 11px; line-height: 1.15; padding: 4px; text-align: center;">
+            ${datesHtml}
+            <p style="font-size: 11px; font-weight: bold; margin-top: 4px; line-height: 1.1;">মোট: ${toBnDigits(s.days)} দিন</p>
           </td>
           <td>(${toBnDigits(Math.round(transportRate))}x${toBnDigits(s.days)}) = ${toBnDigits(Math.round(s.totalTransport))}/-</td>
           <td>(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(s.days)}) = ${toBnDigits(Math.round(s.totalApyaon))}/-</td>
@@ -161,11 +172,11 @@ export async function POST(request: Request) {
   .paragraphs {
     margin-top: 12px;
     text-align: justify;
-    line-height: 1.6;
+    line-height: 1.15;
   }
   .paragraph-item {
     margin-bottom: 10px;
-    line-height: 1.6;
+    line-height: 1.15;
   }
   .signature-container {
     width: 100%;
@@ -188,9 +199,11 @@ export async function POST(request: Request) {
     text-align: left;
     line-height: 1.0;
     font-size: 12px;
+    page-break-before: always;
+    break-before: page;
   }
   .routing-item {
-    margin-bottom: 0.5in;
+    margin-bottom: 0.95in;
     line-height: 1.0;
   }
   .routing-text {
@@ -254,8 +267,8 @@ export async function POST(request: Request) {
 
   <div class="signature-container">
     <div class="signature-block">
-      <p class="font-bold">(${(representativeName || '').replace(/^জনাব\s*/, '')})</p>
-      <p style="margin-top: 5px; color: #333;">${representativeDesignation || ''}</p>
+      <p class="font-bold">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
+      <p style="margin-top: 5px; color: #333; font-weight: bold;">${representativeDesignation || ''}</p>
     </div>
   </div>
 

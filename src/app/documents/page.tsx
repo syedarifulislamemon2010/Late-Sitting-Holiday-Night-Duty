@@ -2504,15 +2504,15 @@ export default function DocumentsPage() {
                             })()}
 
                             {/* Words and paragraphs */}
-                            <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.05' }}>
-                              <p className="font-bold text-black">কথায়: {viewingOrder.content?.grandTotalInWords || ''} মাত্র।</p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.05', textAlign: 'justify' }}>
+                            <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.15' }}>
+                              <p className="font-bold text-black">কথায়: {(viewingOrder.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
+                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
                                 ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                               </p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.05', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
                                 ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalTransport ? getFormattedNumberWords(viewingOrder.content.totalTransport) : ''})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalApyaon ? getFormattedNumberWords(viewingOrder.content.totalApyaon) : ''})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                               </p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.05', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
                                 ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal ?? 0)}/- ({viewingOrder.content && viewingOrder.content.grandTotal ? getFormattedNumberWords(viewingOrder.content.grandTotal) : ''})</strong> <strong>{viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                               </p>
                             </div>
@@ -2530,23 +2530,23 @@ export default function DocumentsPage() {
                         </div>
 
                         {/* Left-aligned Routing List with nice gaps, underlines and font size 10, NOT bold */}
-                        <div className="w-full text-left mt-4 pl-1 no-break-inside" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
-                          <div style={{ marginBottom: '0.4in' }}>
+                        <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', pageBreakBefore: 'always', breakBefore: 'page' }}>
+                          <div style={{ marginBottom: '0.95in' }}>
                             <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.4in' }}>
+                          <div style={{ marginBottom: '0.95in' }}>
                             <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.4in' }}>
+                          <div style={{ marginBottom: '0.95in' }}>
                             <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.4in' }}>
+                          <div style={{ marginBottom: '0.95in' }}>
                             <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                             </p>

@@ -2976,23 +2976,23 @@ export default function BillingPage() {
                   </div>
 
                   {/* Left-aligned Routing List with nice gaps, underlines and font size 12, NOT bold */}
-                  <div className="w-full text-left mt-4 pl-1 no-break-inside" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
-                    <div style={{ marginBottom: '0.4in' }}>
+                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', pageBreakBefore: 'always', breakBefore: 'page' }}>
+                    <div style={{ marginBottom: '0.95in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.4in' }}>
+                    <div style={{ marginBottom: '0.95in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.4in' }}>
+                    <div style={{ marginBottom: '0.95in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.4in' }}>
+                    <div style={{ marginBottom: '0.95in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                       </p>

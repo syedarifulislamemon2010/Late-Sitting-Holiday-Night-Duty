@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
 import { officeOrders } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -121,17 +122,28 @@ export async function GET(request: Request) {
       const { transportRate, apyaonRate } = getPrintCategoryRates(printCategory);
 
       const summariesHtml = duties.map((s: any, index: number) => {
-        const datesFormatted = s.datesFormatted || (s.dates ? getFormattedDateList(s.dates) : '');
+        const empName = s.employeeName || s.name || '';
+        const displayName = empName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+        const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
+        const shortDesignation = getShortDesignation(s.designation || '');
+        const rawDates = s.datesFormatted || (s.dates ? getFormattedDateList(s.dates) : '');
+        const pairedDates = renderDatesInPairs(rawDates);
+        
+        const datesHtml = pairedDates.map((pair, pIdx) => {
+          const isLast = pIdx === pairedDates.length - 1;
+          return `<span style="display: block; white-space: nowrap; line-height: 1.2;">${pair}${isLast ? '' : ','}</span>`;
+        }).join('');
+
         return `
-          <tr>
+          <tr style="line-height: 1.15;">
             <td>${toBnDigits(index + 1)}</td>
-            <td class="text-left">
-              <span>${s.employeeName || s.name || ''}</span><br>
-              <span style="font-size: 12px; color: #444; margin-top: 2px; display: block;">${s.designation || ''}</span>
+            <td class="text-left" style="line-height: 1.2; padding-left: 12px; text-align: left;">
+              <span>${nameWithPrefix}</span><br>
+              <span style="font-size: 11px; color: #444; margin-top: 2px; display: block;">(${shortDesignation})</span>
             </td>
-            <td>
-              <p>${datesFormatted}</p>
-              <p style="font-size: 12px; font-weight: bold; margin-top: 4px;">মোট: ${toBnDigits(s.days || 0)} দিন</p>
+            <td style="font-size: 11px; line-height: 1.15; padding: 4px; text-align: center;">
+              ${datesHtml}
+              <p style="font-size: 11px; font-weight: bold; margin-top: 4px; line-height: 1.1;">মোট: ${toBnDigits(s.days || 0)} দিন</p>
             </td>
             <td>(${toBnDigits(Math.round(transportRate))}x${toBnDigits(s.days || 0)}) = ${toBnDigits(Math.round(s.totalTransport || 0))}/-</td>
             <td>(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(s.days || 0)}) = ${toBnDigits(Math.round(s.totalApyaon || 0))}/-</td>
@@ -239,11 +251,11 @@ export async function GET(request: Request) {
   .paragraphs {
     margin-top: 12px;
     text-align: justify;
-    line-height: 1.6;
+    line-height: 1.15;
   }
   .paragraph-item {
     margin-bottom: 10px;
-    line-height: 1.6;
+    line-height: 1.15;
   }
   .signature-container {
     width: 100%;
@@ -266,9 +278,11 @@ export async function GET(request: Request) {
     text-align: left;
     line-height: 1.0;
     font-size: 12px;
+    page-break-before: always;
+    break-before: page;
   }
   .routing-item {
-    margin-bottom: 0.5in;
+    margin-bottom: 0.95in;
     line-height: 1.0;
   }
   .routing-text {
@@ -332,8 +346,8 @@ export async function GET(request: Request) {
 
   <div class="signature-container">
     <div class="signature-block">
-      <p class="font-bold">(${(representativeName || '').replace(/^জনাব\s*/, '')})</p>
-      <p style="margin-top: 5px; color: #333;">${representativeDesignation || ''}</p>
+      <p class="font-bold">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
+      <p style="margin-top: 5px; color: #333; font-weight: bold;">${representativeDesignation || ''}</p>
     </div>
   </div>
 
