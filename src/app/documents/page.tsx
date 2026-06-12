@@ -717,7 +717,7 @@ export default function DocumentsPage() {
                 font-size: 12px;
                 color: #000;
                 background-color: #fff;
-                line-height: 1.6;
+                line-height: 1.05;
                 letter-spacing: normal !important;
                 word-spacing: normal !important;
                 -webkit-font-smoothing: antialiased;
@@ -729,8 +729,8 @@ export default function DocumentsPage() {
               #printable-order-sheet {
                 width: ${isBill ? '8.5in' : '210mm'} !important;
                 height: ${isBill ? '14.0in' : '297mm'} !important;
-                padding-top: ${isBill ? '0.6in' : '0.8in'} !important;
-                padding-bottom: ${isBill ? '0.75in' : '0.8in'} !important;
+                padding-top: ${isBill ? '0.35in' : '0.6in'} !important;
+                padding-bottom: ${isBill ? '0.35in' : '0.6in'} !important;
                 padding-left: ${isBill ? '1.3in' : '0.8in'} !important;
                 padding-right: ${isBill ? '0.5in' : '0.8in'} !important;
                 box-sizing: border-box !important;
@@ -741,7 +741,7 @@ export default function DocumentsPage() {
                 font-size: 12px !important;
                 color: #000 !important;
                 background-color: #fff !important;
-                line-height: 1.5 !important;
+                line-height: 1.05 !important;
                 letter-spacing: normal !important;
                 word-spacing: normal !important;
               }
@@ -778,7 +778,7 @@ export default function DocumentsPage() {
               .leading-snug { line-height: 1.375; }
               .uppercase { text-transform: uppercase; }
               .tracking-wider { letter-spacing: 0.05em; }
-              th, td { border: 1px solid #000; padding: 3px; font-size: 14px; line-height: 1.4; }
+              th, td { border: 1px solid #000; padding: 3px; font-size: 14px; line-height: 1.05; }
               .mt-0.5 { margin-top: 2px; }
               .mt-1 { margin-top: 4px; }
               .mt-2 { margin-top: 8px; }
@@ -815,14 +815,14 @@ export default function DocumentsPage() {
               .space-y-1 > * + * { margin-top: 4px; }
               .space-y-0.5 > * + * { margin-top: 2px; }
               table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-              th, td { border: 1px solid #000; padding: 3px; font-size: 14px; line-height: 1.4; }
+              th, td { border: 1px solid #000; padding: 3px; font-size: 14px; line-height: 1.05; }
               th { font-weight: bold; background-color: #f8fafc; }
               ${!isBill ? `
                 #printable-order-sheet .bank-title { font-size: 18pt !important; font-weight: bold !important; color: #0b5e9e !important; }
                 #printable-order-sheet .dept-title { font-size: 12pt !important; font-weight: bold !important; color: #000000 !important; }
                 #printable-order-sheet .memo-line, #printable-order-sheet .memo-line * { font-size: 12pt !important; font-weight: bold !important; }
                 #printable-order-sheet .office-order-title { font-size: 18pt !important; font-weight: bold !important; text-decoration: underline !important; }
-                #printable-order-sheet .body-paragraph, #printable-order-sheet .body-paragraph * { font-size: 12pt !important; line-height: 1.5 !important; }
+                #printable-order-sheet .body-paragraph, #printable-order-sheet .body-paragraph * { font-size: 12pt !important; line-height: 1.15 !important; }
                 #printable-order-sheet table th { font-size: 14px !important; font-weight: bold !important; }
                 #printable-order-sheet table td, #printable-order-sheet table td p, #printable-order-sheet table td span { font-size: 14px !important; }
                 #printable-order-sheet .signature-name { font-size: 12pt !important; font-weight: bold !important; }
@@ -2404,7 +2404,7 @@ export default function DocumentsPage() {
                   <div 
                     id="printable-order-sheet"
                     className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-none text-[10px]"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', boxSizing: 'border-box', paddingTop: '0.4in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
+                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
                   >
                     <div className="flex flex-col h-full justify-between">
                       <div>
@@ -2461,16 +2461,24 @@ export default function DocumentsPage() {
                                     {dutiesList.map((s: OrderDuty, index: number) => (
                                       <tr key={index} className="text-black text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                                         <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>{toBanglaDigits(index + 1)}</td>
-                                        <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3.5px', textAlign: 'left', paddingLeft: '12px' }}>
-                                          <p className="font-normal">{s.employeeName.startsWith('জনাব') ? s.employeeName : `জনাব ${s.employeeName}`} ({getShortDesignation(s.designation)})</p>
+                                        <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3.5px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.05' }}>
+                                          {(() => {
+                                            const displayName = s.employeeName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                                            return (
+                                              <>
+                                                <p className="font-normal">{displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`}</p>
+                                                <p className="text-[9px] text-slate-800 font-normal mt-0.5">({getShortDesignation(s.designation)})</p>
+                                              </>
+                                            );
+                                          })()}
                                         </td>
-                                        <td className="border border-black p-1.5 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '3.5px' }}>
+                                        <td className="border border-black p-1.5 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '3.5px', fontSize: '9px', lineHeight: '1.0' }}>
                                           {renderDatesInPairs(s.datesFormatted || s.dates || '').map((pair, pIdx, arr) => (
-                                            <span key={pIdx} className="block leading-snug">
+                                            <span key={pIdx} className="block leading-snug" style={{ whiteSpace: 'nowrap' }}>
                                               {pair}{pIdx < arr.length - 1 ? ',' : ''}
                                             </span>
                                           ))}
-                                          <p className="text-[9px] text-slate-700 mt-1 font-semibold">মোট: {toBanglaDigits(s.days)} দিন</p>
+                                          <p className="text-[9px] text-slate-700 mt-0.5 font-semibold">মোট: {toBanglaDigits(s.days)} দিন</p>
                                         </td>
                                         <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3.5px' }}>
                                           ({toBanglaDigits(transportRate)}x{toBanglaDigits(s.days)}) = {toBanglaDigits(s.totalTransport)}/-
@@ -2496,25 +2504,25 @@ export default function DocumentsPage() {
                             })()}
 
                             {/* Words and paragraphs */}
-                            <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
+                            <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.05' }}>
                               <p className="font-bold text-black">কথায়: {viewingOrder.content?.grandTotalInWords || ''} মাত্র।</p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.05', textAlign: 'justify' }}>
                                 ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                               </p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.05', textAlign: 'justify' }}>
                                 ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalTransport ? getFormattedNumberWords(viewingOrder.content.totalTransport) : ''})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalApyaon ? getFormattedNumberWords(viewingOrder.content.totalApyaon) : ''})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                               </p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
-                                ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal ?? 0)}/- ({viewingOrder.content && viewingOrder.content.grandTotal ? getFormattedNumberWords(viewingOrder.content.grandTotal) : ''})</strong> <strong>{viewingOrder.employeeName}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.05', textAlign: 'justify' }}>
+                                ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal ?? 0)}/- ({viewingOrder.content && viewingOrder.content.grandTotal ? getFormattedNumberWords(viewingOrder.content.grandTotal) : ''})</strong> <strong>{viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                               </p>
                             </div>
                           </div>
                         </div>
 
                         {/* Right-aligned payee signature block */}
-                        <div className="w-full flex justify-end text-right" style={{ marginTop: '0.4in', marginBottom: '0.2in' }}>
+                        <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
                           <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', paddingRight: '0.1in' }}>
-                            <p className="font-extrabold text-[10px]">({cleanBracketName(viewingOrder.employeeName)})</p>
+                            <p className="font-extrabold text-[10px]">({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
                             <p className="text-[10px] font-bold text-slate-800 mt-1">
                               {viewingOrder.content?.representativeDesignation || viewingOrder.duties?.find((d: OrderDuty) => d.employeeName === viewingOrder.employeeName)?.designation || 'প্রিন্সিপাল অফিসার (পিও)'}
                             </p>
@@ -2523,22 +2531,22 @@ export default function DocumentsPage() {
 
                         {/* Left-aligned Routing List with nice gaps, underlines and font size 10, NOT bold */}
                         <div className="w-full text-left mt-4 pl-1 no-break-inside" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
-                          <div style={{ marginBottom: '0.85in' }}>
+                          <div style={{ marginBottom: '0.4in' }}>
                             <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.85in' }}>
+                          <div style={{ marginBottom: '0.4in' }}>
                             <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.85in' }}>
+                          <div style={{ marginBottom: '0.4in' }}>
                             <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.85in' }}>
+                          <div style={{ marginBottom: '0.4in' }}>
                             <p className="inline-block border-b border-black pb-0.5 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
                               উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                             </p>

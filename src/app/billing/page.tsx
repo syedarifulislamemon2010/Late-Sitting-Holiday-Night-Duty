@@ -2852,9 +2852,8 @@ export default function BillingPage() {
             </div>
           </div>
 
-          {/* Interactive Print Mock Sheet */}
-          <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner">
-            <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', paddingTop: '0.6in', paddingBottom: '0.75in', paddingLeft: '1.3in', paddingRight: '0.5in', boxSizing: 'border-box', fontSize: '12px', lineHeight: '1.0' }}>
+          <div className="flex justify-center p-2 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner">
+            <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', paddingTop: '0.3in', paddingBottom: '0.3in', paddingLeft: '1.0in', paddingRight: '0.5in', boxSizing: 'border-box', fontSize: '12px', lineHeight: '1.0' }}>
               
               <div className="flex flex-col h-full justify-between">
                 <div>
@@ -2874,7 +2873,7 @@ export default function BillingPage() {
                       </h2>
                       
                       <div className="mt-2.5">
-                        <p className="text-justify leading-normal text-black text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
+                        <p className="text-justify leading-normal text-black text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
                           {openingParagraph}
                         </p>
                       </div>
@@ -2902,16 +2901,24 @@ export default function BillingPage() {
                               return (
                                 <tr key={summary.employeeId} className="text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                   <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>{toBanglaDigits(index + 1)}</td>
-                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                                    <p className="font-normal">{summary.name.startsWith('জনাব') ? summary.name : `জনাব ${summary.name}`} ({getShortDesignation(summary.designation)})</p>
+                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.05' }}>
+                                    {(() => {
+                                      const displayName = summary.name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                                      return (
+                                        <>
+                                          <p className="font-normal">{displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`}</p>
+                                          <p className="text-[10px] text-slate-800 font-normal mt-0.5">({getShortDesignation(summary.designation)})</p>
+                                        </>
+                                      );
+                                    })()}
                                   </td>
-                                  <td className="border border-black p-1.5 text-center leading-snug" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                                  <td className="border border-black p-1.5 text-center leading-snug" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10px', lineHeight: '1.0' }}>
                                     {renderDatesInPairs(formatWorkedDatesForCategory(summary.employeeId)).map((pair, pIdx, arr) => (
-                                      <span key={pIdx} className="block leading-snug">
+                                      <span key={pIdx} className="block leading-snug" style={{ whiteSpace: 'nowrap' }}>
                                         {pair}{pIdx < arr.length - 1 ? ',' : ''}
                                       </span>
                                     ))}
-                                    <p className="text-[10px] text-slate-700 mt-1 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>
+                                    <p className="text-[10px] text-slate-700 mt-0.5 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>
                                   </td>
                                   <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                     ({toBanglaDigits(transportRate)}x{toBanglaDigits(days)}) = {toBanglaDigits(empTransport)}/-
@@ -2946,46 +2953,46 @@ export default function BillingPage() {
                       ) : null}
 
                       {/* Paragraphs */}
-                      <div className="text-left pt-3 mt-3 space-y-2.5" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
+                      <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
                           ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                         </p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
                           ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                         </p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
-                          ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(grandTotalPrintAll)}/- ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের'}, {representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
+                          ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(grandTotalPrintAll)}/- ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{(representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/\s*\([^)]*\)\s*$/, '')}, {representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                         </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Right-aligned payee signature block */}
-                  <div className="w-full flex justify-end text-right" style={{ marginTop: '0.6in', marginBottom: '0.2in' }}>
+                  <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
                     <div className="text-right leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', paddingRight: '0.1in' }}>
-                      <p className="font-extrabold text-[12px]">({cleanBracketName(representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের')})</p>
+                      <p className="font-extrabold text-[12px]">({cleanBracketName((representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
                       <p className="text-[12px] font-bold text-slate-800 mt-1">{representativeDesignation || 'এসও-আইটি'}</p>
                     </div>
                   </div>
 
                   {/* Left-aligned Routing List with nice gaps, underlines and font size 12, NOT bold */}
-                  <div className="w-full text-left mt-6 pl-1 no-break-inside" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
-                    <div style={{ marginBottom: '0.85in' }}>
+                  <div className="w-full text-left mt-4 pl-1 no-break-inside" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
+                    <div style={{ marginBottom: '0.4in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.85in' }}>
+                    <div style={{ marginBottom: '0.4in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.85in' }}>
+                    <div style={{ marginBottom: '0.4in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.85in' }}>
+                    <div style={{ marginBottom: '0.4in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                       </p>
