@@ -127,6 +127,24 @@ const getNormalizedRef = (ref: string | null | undefined): string => {
   return parts.join('/').toLowerCase();
 };
 
+const isNameMatchingRef = (empName: string, ref: string): boolean => {
+  if (!empName || !ref) return false;
+  let cleanEmp = empName
+    .replace(/জনাব/g, '')
+    .replace(/জনাবা/g, '')
+    .replace(/মোঃ/g, '')
+    .replace(/মো:/g, '')
+    .replace(/মো‌ঃ/g, '')
+    .replace(/মোহাম্মদ/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  
+  const cleanRef = ref.replace(/\s+/g, ' ').toLowerCase();
+  const firstWord = cleanEmp.split(' ')[0];
+  return firstWord ? cleanRef.includes(firstWord) : false;
+};
+
 const toBanglaDigits = (num: number | string) => {
   const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   return num.toString().replace(/\d/g, d => bn[parseInt(d, 10)]);
@@ -863,7 +881,11 @@ export default function RosterPage() {
     if (isEditingArchive && originalOrderRef) {
       const hasPayeeChanged = initialRosterValues && payeeEmployeeId !== initialRosterValues.payeeEmployeeId;
       const hasCategoryChanged = initialRosterValues && printCategory !== initialRosterValues.printCategory;
-      if (!hasPayeeChanged && !hasCategoryChanged) {
+      
+      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
+      const originalRefContainsPayee = emp ? isNameMatchingRef(emp.name, originalOrderRef) : false;
+
+      if (!hasPayeeChanged && !hasCategoryChanged && originalRefContainsPayee) {
         return originalOrderRef;
       }
     }
@@ -1162,7 +1184,8 @@ export default function RosterPage() {
     }
     
     setUserSelectedPrintCategory(order.category as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT');
-    setUserCustomOrderRef(order.orderRef);
+    const nameMatches = matchedRep ? isNameMatchingRef(matchedRep.name, order.orderRef) : false;
+    setUserCustomOrderRef(nameMatches ? order.orderRef : null);
     setOriginalOrderRef(order.orderRef);
     setUserCustomOrderDate(order.orderDate);
     
@@ -1671,7 +1694,8 @@ export default function RosterPage() {
               }
               
               // Set orderRef and date
-              setUserCustomOrderRef(editRef);
+              const nameMatches = matchedRep ? isNameMatchingRef(matchedRep.name, editRef) : false;
+              setUserCustomOrderRef(nameMatches ? editRef : null);
               setOriginalOrderRef(editRef);
               setUserCustomOrderDate(matchingOrder.orderDate);
               
