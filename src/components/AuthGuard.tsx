@@ -296,9 +296,47 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState('');
   const [focusField, setFocusField] = useState<'none' | 'username' | 'password'>('none');
   const [showPassword, setShowPassword] = useState(false);
+  const checkBlockStatus = () => {
+    if (typeof window === 'undefined') return { isBlocked: false, timeRemaining: 0 };
+
+    const blockedUntil = localStorage.getItem('login_blocked_until');
+    if (blockedUntil) {
+      const timeRemaining = parseInt(blockedUntil, 10) - Date.now();
+      if (timeRemaining > 0) {
+        return { isBlocked: true, timeRemaining };
+      } else {
+        localStorage.removeItem('login_attempts');
+        localStorage.removeItem('login_blocked_until');
+        setAttempts(0);
+        return { isBlocked: false, timeRemaining: 0 };
+      }
+    }
+
+    // Legacy fallback: if attempts >= 5 but no block timestamp, clear attempts
+    const savedAttempts = localStorage.getItem('login_attempts');
+    if (savedAttempts && parseInt(savedAttempts, 10) >= 5) {
+      localStorage.removeItem('login_attempts');
+      setAttempts(0);
+    }
+
+    return { isBlocked: false, timeRemaining: 0 };
+  };
+
   const [attempts, setAttempts] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('login_attempts');
+      const blockedUntil = localStorage.getItem('login_blocked_until');
+      if (blockedUntil) {
+        const timeRemaining = parseInt(blockedUntil, 10) - Date.now();
+        if (timeRemaining <= 0) {
+          localStorage.removeItem('login_attempts');
+          localStorage.removeItem('login_blocked_until');
+          return 0;
+        }
+      } else if (saved && parseInt(saved, 10) >= 5) {
+        localStorage.removeItem('login_attempts');
+        return 0;
+      }
       return saved ? parseInt(saved, 10) : 0;
     }
     return 0;
@@ -334,6 +372,31 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, []);
 
+  // Handle active block countdown and automatic reset
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkBlock = () => {
+        const { isBlocked, timeRemaining } = checkBlockStatus();
+        if (isBlocked) {
+          const minutes = Math.ceil(timeRemaining / 60000);
+          setError(`অতিরিক্ত ভুল প্রচেষ্টার কারণে আপনার লগইন সাময়িকভাবে ব্লক করা হয়েছে। অনুগ্রহ করে ${minutes} মিনিট পর পুনরায় চেষ্টা করুন।`);
+          
+          const timer = setTimeout(() => {
+            localStorage.removeItem('login_attempts');
+            localStorage.removeItem('login_blocked_until');
+            setAttempts(0);
+            setError('');
+          }, timeRemaining);
+          
+          return () => clearTimeout(timer);
+        } else {
+          setError('');
+        }
+      };
+      return checkBlock();
+    }
+  }, [attempts]);
+
   useEffect(() => {
     if (userProfile) {
       localStorage.setItem('currentUser', JSON.stringify(userProfile));
@@ -349,8 +412,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     e.preventDefault();
     setError('');
 
-    if (attempts >= 5) {
-      setError('অতিরিক্ত ভুল প্রচেষ্টার কারণে আপনার লগইন সাময়িকভাবে ব্লক করা হয়েছে। অনুগ্রহ করে কিছু সময় পর চেষ্টা করুন।');
+    const { isBlocked, timeRemaining } = checkBlockStatus();
+    if (isBlocked) {
+      const minutes = Math.ceil(timeRemaining / 60000);
+      setError(`অতিরিক্ত ভুল প্রচেষ্টার কারণে আপনার লগইন সাময়িকভাবে ব্লক করা হয়েছে। অনুগ্রহ করে ${minutes} মিনিট পর পুনরায় চেষ্টা করুন।`);
       return;
     }
 
@@ -366,6 +431,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       if (res && !res.error) {
         setAuthenticated(true);
         localStorage.removeItem('login_attempts');
+        localStorage.removeItem('login_blocked_until');
         setAttempts(0);
         window.dispatchEvent(new Event('storage'));
         // Fetch detailed profile immediately
@@ -376,12 +442,16 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         }
         window.location.href = '/';
       } else {
-        const nextAttempts = attempts + 1;
+        const savedAttempts = localStorage.getItem('login_attempts');
+        const currentAttempts = savedAttempts ? parseInt(savedAttempts, 10) : 0;
+        const nextAttempts = currentAttempts + 1;
         setAttempts(nextAttempts);
         localStorage.setItem('login_attempts', String(nextAttempts));
         window.dispatchEvent(new Event('storage'));
         if (nextAttempts >= 5) {
-          setError('অতিরিক্ত ভুল প্রচেষ্টার কারণে আপনার লগইন সাময়িকভাবে ব্লক করা হয়েছে। অনুগ্রহ করে কিছু সময় পর চেষ্টা করুন।');
+          const blockedUntil = Date.now() + 5 * 60 * 1000; // 5 minutes block
+          localStorage.setItem('login_blocked_until', String(blockedUntil));
+          setError('অতিরিক্ত ভুল প্রচেষ্টার কারণে আপনার লগইন সাময়িকভাবে ব্লক করা হয়েছে। অনুগ্রহ করে ৫ মিনিট পর পুনরায় চেষ্টা করুন।');
         } else {
           setError(`ভুল ইউজারনেম বা পাসওয়ার্ড! (অবশিষ্ট চেষ্টা: ${5 - nextAttempts} বার)`);
         }
