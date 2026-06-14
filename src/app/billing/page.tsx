@@ -2009,7 +2009,7 @@ export default function BillingPage() {
           @media print {
             @page {
               size: A4 !important;
-              margin: 1.5cm !important;
+              margin: 1in !important;
             }
             .no-print { display: none !important; }
             body {
