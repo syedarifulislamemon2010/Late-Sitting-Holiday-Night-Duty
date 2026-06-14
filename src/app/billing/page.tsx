@@ -2008,8 +2008,8 @@ export default function BillingPage() {
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             @page {
-              size: A4 !important;
-              margin: 1in !important;
+              size: A4;
+              margin: 1in;
             }
             .no-print { display: none !important; }
             body {
@@ -2174,8 +2174,8 @@ export default function BillingPage() {
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             @page {
-              size: A4 !important;
-              margin: 1.5cm !important;
+              size: A4;
+              margin: 1.5cm;
             }
             .no-print { display: none !important; }
             body {
@@ -2631,8 +2631,8 @@ export default function BillingPage() {
           <style dangerouslySetInnerHTML={{ __html: `
             @media print {
               @page {
-                size: legal !important;
-                margin: 0 !important;
+                size: legal;
+                margin: 0;
               }
               .no-print { display: none !important; }
               body { 
