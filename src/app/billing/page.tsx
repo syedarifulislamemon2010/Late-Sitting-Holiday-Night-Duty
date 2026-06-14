@@ -1136,6 +1136,56 @@ export default function BillingPage() {
     const totalDaysSum = employeesBreakdown.reduce((sum, r) => sum + r.totalDays, 0);
     const grandTotalSum = employeesBreakdown.reduce((sum, r) => sum + r.grandTotal, 0);
 
+    const payeeMap = new Map<string, {
+      payeeName: string;
+      designation: string;
+      billCount: number;
+      grandTotal: number;
+    }>();
+
+    targetBills.forEach(bill => {
+      const payeeName = bill.employeeName || 'অজ্ঞাত কর্মকর্তা';
+      const designation = bill.content?.representativeDesignation || '';
+      
+      let billTotal = 0;
+      if (bill.content?.grandTotal !== undefined && bill.content?.grandTotal !== null) {
+        billTotal = bill.content.grandTotal;
+      } else {
+        let dutiesList: any[] = (bill.duties as any) || [];
+        if (dutiesList.length === 0 && bill.dutiesJson) {
+          try {
+            dutiesList = JSON.parse(bill.dutiesJson);
+          } catch (e) {
+            console.error('Failed to parse bill dutiesJson in reportData:', e);
+          }
+        }
+        billTotal = dutiesList.reduce((sum, d) => {
+          const transport = Number(d.totalTransport || 0);
+          const apyaon = Number(d.totalApyaon || 0);
+          return sum + Number(d.grandTotal || (transport + apyaon) || 0);
+        }, 0);
+      }
+
+      const key = payeeName.trim().toLowerCase();
+      if (!payeeMap.has(key)) {
+        payeeMap.set(key, {
+          payeeName,
+          designation,
+          billCount: 0,
+          grandTotal: 0
+        });
+      }
+
+      const record = payeeMap.get(key)!;
+      record.billCount += 1;
+      record.grandTotal += billTotal;
+      if (!record.designation && designation) {
+        record.designation = designation;
+      }
+    });
+
+    const payeesSummary = Array.from(payeeMap.values()).sort((a, b) => b.grandTotal - a.grandTotal);
+
     return {
       targetBills,
       totalBillsCount,
@@ -1147,6 +1197,7 @@ export default function BillingPage() {
       holidayAmount,
       nightShiftAmount,
       employeesBreakdown,
+      payeesSummary,
       totalLateDays,
       totalLateAmount,
       totalHolidayDays,
@@ -1941,6 +1992,7 @@ export default function BillingPage() {
       holidayAmount, 
       nightShiftAmount, 
       employeesBreakdown,
+      payeesSummary,
       totalLateDays,
       totalLateAmount,
       totalHolidayDays,
@@ -2006,7 +2058,7 @@ export default function BillingPage() {
 
         {/* KPI Summary Block for Print */}
         <div className="mb-6 p-4 border border-black rounded-lg">
-          <h3 className="text-sm font-bold border-b border-black pb-1 mb-2">সংक्षिप्त সারসংক্ষেপ (KPI Summary):</h3>
+          <h3 className="text-sm font-bold border-b border-black pb-1 mb-2">সংক্ষিপ্ত সারসংক্ষেপ (KPI Summary):</h3>
           <div className="grid grid-cols-2 gap-y-2 text-sm">
             <div><strong>মোট জেনারেটকৃত বিলের সংখ্যা:</strong> {toBanglaDigits(totalBillsCount)} টি</div>
             <div><strong>সর্বমোট প্রদেয় বিলের পরিমাণ:</strong> {toBanglaDigits(grandTotal)}/- টাকা</div>
@@ -2020,9 +2072,46 @@ export default function BillingPage() {
           </div>
         </div>
 
+        {/* Table: Payee Bill Summary for Print */}
+        <div className="mb-6">
+          <h3 className="text-sm font-bold mb-2">১. কর্মকর্তা ভিত্তিক বিলের সারসংক্ষেপ (Payee Bill Summary):</h3>
+          <table className="w-full text-xs border-collapse" style={{ border: '1px solid #000' }}>
+            <thead>
+              <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
+                <th className="p-1.5 border-r border-black w-12" style={{ borderRight: '1px solid #000' }}>ক্রমিক</th>
+                <th className="p-1.5 border-r border-black text-left pl-2" style={{ borderRight: '1px solid #000' }}>কর্মকর্তার নাম ও পদবী (Payee Name & Designation)</th>
+                <th className="p-1.5 border-r border-black w-28 text-center" style={{ borderRight: '1px solid #000' }}>বিলের সংখ্যা</th>
+                <th className="p-1.5 text-right pr-4 w-40">মোট বিলের পরিমাণ (টাকা)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payeesSummary.map((payee, idx) => (
+                <tr key={idx} style={{ borderTop: '1px solid #000' }}>
+                  <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(idx + 1)}</td>
+                  <td className="p-1.5 border-r border-black text-left pl-2 font-bold" style={{ borderRight: '1px solid #000' }}>
+                    {payee.payeeName} {payee.designation ? `(${payee.designation})` : ''}
+                  </td>
+                  <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(payee.billCount)} টি</td>
+                  <td className="p-1.5 text-right pr-4 font-bold">{toBanglaDigits(payee.grandTotal)}/-</td>
+                </tr>
+              ))}
+              <tr style={{ borderTop: '2px solid #000', fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
+                <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}></td>
+                <td className="p-1.5 border-r border-black text-left pl-2 font-bold" style={{ borderRight: '1px solid #000' }}>সর্বমোট</td>
+                <td className="p-1.5 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
+                  {toBanglaDigits(payeesSummary.reduce((sum, p) => sum + p.billCount, 0))} টি
+                </td>
+                <td className="p-1.5 text-right pr-4 font-bold">
+                  {toBanglaDigits(payeesSummary.reduce((sum, p) => sum + p.grandTotal, 0))}/-
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         {/* Table: Employee Breakdown for Print */}
         <div className="mb-8">
-          <h3 className="text-sm font-bold mb-2">১. কর্মকর্তা ভিত্তিক সমন্বিত প্রাপ্তির বিবরণী (Payee Statement):</h3>
+          <h3 className="text-sm font-bold mb-2">২. কর্মকর্তা ভিত্তিক সমন্বিত প্রাপ্তির বিবরণী (Payee Detailed Statement):</h3>
           <table className="w-full text-xs border-collapse" style={{ border: '1px solid #000' }}>
             <thead>
               <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>

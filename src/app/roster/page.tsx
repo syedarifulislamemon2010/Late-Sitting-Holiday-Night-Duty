@@ -177,7 +177,7 @@ const getDefaultDescription = (empName: string | null | undefined, category: str
 const getBanglaNumberWords = (num: number) => {
   if (num === 0) return 'শূন্য';
   
-  const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'छয়', 'সাত', 'আট', 'নয়'];
+  const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
   const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
   const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
 
@@ -1407,7 +1407,7 @@ export default function RosterPage() {
         })),
         dutyIds: activeDuties.map(d => d.id).filter(Number.isInteger), // Pass actual dutyIds!
         content: {
-          openingParagraph: `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে অत्र ডিপার্টমেন্টের কর্মকর্তাদের নামের পাশে বর্ণিত তারিখে অতিরিক্ত কাজ সম্পন্ন করায় বিধি মোতাবেক আপ্যায়ন ও যাতায়াত ভাতা প্রদানের বিল মঞ্জুর করা হলো।`,
+          openingParagraph: `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে অত্র ডিপার্টমেন্টের কর্মকর্তাদের নামের পাশে বর্ণিত তারিখে অতিরিক্ত কাজ সম্পন্ন করায় বিধি মোতাবেক আপ্যায়ন ও যাতায়াত ভাতা প্রদানের বিল মঞ্জুর করা হলো।`,
           totalDays: totalDaysAll,
           totalApyaon: totalApyaonAll,
           totalTransport: totalTransportAll,

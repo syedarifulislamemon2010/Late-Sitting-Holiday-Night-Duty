@@ -1785,7 +1785,7 @@ export default function EmployeesPage() {
                   {isImageImportLoading && (
                     <span className="text-[10px] text-indigo-600 dark:text-indigo-455 font-bold flex items-center gap-1">
                       <span className="w-2 h-2 border border-indigo-600 border-t-transparent rounded-full animate-spin inline-block" />
-                      ... विश्लेषण করা হচ্ছে ...
+                      ... বিশ্লেষণ করা হচ্ছে ...
                     </span>
                   )}
                 </div>

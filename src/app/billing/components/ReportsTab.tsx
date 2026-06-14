@@ -45,6 +45,13 @@ interface EmployeeBreakdown {
   grandTotal: number;
 }
 
+interface PayeeSummary {
+  payeeName: string;
+  designation: string;
+  billCount: number;
+  grandTotal: number;
+}
+
 interface ReportData {
   totalBillsCount: number;
   grandTotalSum: number;
@@ -61,6 +68,7 @@ interface ReportData {
   totalNightDays: number;
   totalNightAmount: number;
   employeesBreakdown: EmployeeBreakdown[];
+  payeesSummary: PayeeSummary[];
 }
 
 interface ReportsTabProps {
@@ -519,12 +527,56 @@ export default function ReportsTab({
               </div>
             </div>
 
+            {/* Table 1: Payee Bill Summary */}
+            <div className="glass-card rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800/80 mb-6">
+              <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between gap-4">
+                <h4 className="text-xs font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
+                  <Users size={14} className="text-indigo-500" />
+                  ১. কর্মকর্তা ভিত্তিক বিলের সারসংক্ষেপ (Payee Bill Summary)
+                </h4>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse font-sans">
+                  <thead>
+                    <tr className="bg-slate-100/50 dark:bg-slate-900/80 text-[10px] font-bold text-slate-600 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
+                      <th className="p-3 text-center w-12">#</th>
+                      <th className="p-3">কর্মকর্তার নাম ও পদবী (Payee Name & Designation)</th>
+                      <th className="p-3 text-center w-36">বিলের সংখ্যা</th>
+                      <th className="p-3 text-right pr-6 w-48">মোট বিলের পরিমাণ (টাকা)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs font-medium">
+                    {reportData.payeesSummary?.map((payee, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/30 dark:hover:bg-slate-850/10 text-slate-600 dark:text-slate-350">
+                        <td className="p-3 text-center font-mono text-[10px] text-slate-450">{toBanglaDigits(idx + 1)}</td>
+                        <td className="p-3 text-slate-800 dark:text-slate-200 font-bold">
+                          {payee.payeeName} {payee.designation ? `(${payee.designation})` : ''}
+                        </td>
+                        <td className="p-3 text-center font-bold">{toBanglaDigits(payee.billCount)} টি</td>
+                        <td className="p-3 text-right pr-6 font-extrabold text-slate-800 dark:text-slate-200">{toBanglaDigits(payee.grandTotal)}/-</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-slate-100/50 dark:bg-slate-900/60 font-bold text-slate-850 dark:text-slate-200 border-t-2 border-slate-300 dark:border-slate-700">
+                      <td className="p-3 text-center"></td>
+                      <td className="p-3 text-left font-extrabold font-sans">সর্বমোট</td>
+                      <td className="p-3 text-center font-bold">
+                        {toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + p.billCount, 0) || 0)} টি
+                      </td>
+                      <td className="p-3 text-right pr-6 font-extrabold text-slate-950 dark:text-slate-100">
+                        {toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + p.grandTotal, 0) || 0)}/-
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             {/* Table: Consolidated Payee Statement */}
             <div className="glass-card rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800/80">
               <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h4 className="text-xs font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
                   <Users size={14} className="text-indigo-500" />
-                  ১. কর্মকর্তা ভিত্তিক সমন্বিত বিবরণী (Consolidated Payee Details)
+                  ২. কর্মকর্তা ভিত্তিক সমন্বিত বিস্তারিত বিবরণী (Consolidated Payee Details)
                 </h4>
                 <button
                   onClick={handleExportReportCSV}

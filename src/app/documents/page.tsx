@@ -2086,7 +2086,7 @@ export default function DocumentsPage() {
                       >
                         <option value="ALL">সকল ক্যাটাগরি (All)</option>
                         <option value="LATE_SITTING">লেট সিটিং (Late Sitting)</option>
-                        <option value="HOLIDAY">सरकारी ছুটি (Holiday)</option>
+                        <option value="HOLIDAY">সরকারি ছুটি (Holiday)</option>
                         <option value="NIGHT_SHIFT">রাত্রীকালীন (Night Shift)</option>
                       </select>
                     </div>
