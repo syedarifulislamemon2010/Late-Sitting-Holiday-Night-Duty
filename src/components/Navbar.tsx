@@ -81,7 +81,7 @@ export default function Navbar() {
     }
   };
 
-  const userDisplayName = currentUser?.name || '';
+  const userDisplayName = (currentUser?.name || '').replace(/^(জনাব|জনাবা)\s+/, '').trim();
 
   return (
     <header className="no-print sticky top-0 z-40 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between px-4 h-14 font-sans select-none">
@@ -106,7 +106,7 @@ export default function Navbar() {
             <div className="w-8 h-8 rounded-lg bg-blue-50/80 flex items-center justify-center overflow-hidden shrink-0 border border-blue-100">
               <Image src="/janata-bank-logo-real.svg" alt="JB Brand Avatar" width={24} height={24} className="object-contain" />
             </div>
-            <span className="hidden md:inline text-xs font-bold text-slate-700 dark:text-slate-200 max-w-[120px] truncate">{userDisplayName}</span>
+            <span className="hidden md:inline text-xs font-bold text-slate-700 dark:text-slate-200 max-w-[280px] truncate">{userDisplayName}</span>
           </button>
 
           {/* Premium Dropdown Menu */}
@@ -118,7 +118,7 @@ export default function Navbar() {
                   <Image src="/janata-bank-logo-real.svg" alt="JB Brand Avatar" width={32} height={32} className="object-contain" />
                 </div>
                 <div className="leading-tight flex-1 min-w-0">
-                  <h4 className="font-extrabold text-slate-900 dark:text-slate-50 text-sm truncate">{userDisplayName}</h4>
+                  <h4 className="font-extrabold text-slate-900 dark:text-slate-50 text-sm whitespace-normal break-words">{userDisplayName}</h4>
                   <p className="text-[10px] text-slate-400 font-semibold truncate mt-0.5">
                     {currentUser?.role === 'ADMIN' ? 'সিস্টেম অ্যাডমিনিস্ট্রেটর' : 'ডিপার্টমেন্টাল ইউজার'}
                   </p>

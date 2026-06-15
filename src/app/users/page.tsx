@@ -636,7 +636,7 @@ export default function UserManagement() {
               {extractNickname(currentUser.name)}
             </div>
             <div>
-              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">{currentUser.name}</h3>
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">{(currentUser.name || '').replace(/^(জনাব|জনাবা)\s+/, '').trim()}</h3>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">ব্যাংক আইডি: @{currentUser.username} | রোল: {currentUser.role === 'ADMIN' ? 'সিস্টেম সুপার এডমিন' : 'সাধারণ ইউজার'}</p>
             </div>
           </div>
@@ -1185,7 +1185,7 @@ export default function UserManagement() {
               {/* Profile Info Details */}
               <div className="pt-14 pb-8 px-6 text-center space-y-6">
                 <div>
-                  <h4 className="font-extrabold text-slate-800 dark:text-slate-50 text-lg leading-tight">{profileUser.name}</h4>
+                  <h4 className="font-extrabold text-slate-800 dark:text-slate-55 text-lg leading-tight">{(profileUser.name || '').replace(/^(জনাব|জনাবা)\s+/, '').trim()}</h4>
                   <p className="text-xs font-semibold text-slate-450 dark:text-slate-500 mt-1">@{profileUser.username}</p>
                 </div>
 
