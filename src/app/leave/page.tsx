@@ -27,6 +27,12 @@ import {
   Edit2
 } from 'lucide-react';
 
+// Helper to clean designations by removing duplicate parenthesized abbreviations (e.g. "সিনিয়র অফিসার-আইটি (এসও-আইটি)" -> "সিনিয়র অফিসার-আইটি")
+const cleanDesignationForLeave = (desig: string): string => {
+  if (!desig) return '';
+  return desig.replace(/\s*\([^)]*\)/g, '').trim();
+};
+
 interface Employee {
   id: number;
   name: string;
@@ -253,7 +259,7 @@ export default function LeaveGeneratorPage() {
     setEndDate(leave.endDate);
     setApplicationDate(leave.applicationDate);
     setApplicantName(leave.applicantName);
-    setDesignation(leave.designation);
+    setDesignation(cleanDesignationForLeave(leave.designation));
     setBankId(leave.bankId);
     setFileNo(leave.fileNo || '');
     setCellName(leave.cellName);
@@ -281,7 +287,7 @@ export default function LeaveGeneratorPage() {
     setEndDate(leave.endDate);
     setApplicationDate(leave.applicationDate);
     setApplicantName(leave.applicantName);
-    setDesignation(leave.designation);
+    setDesignation(cleanDesignationForLeave(leave.designation));
     setBankId(leave.bankId);
     setFileNo(leave.fileNo || '');
     setCellName(leave.cellName);
@@ -413,7 +419,7 @@ export default function LeaveGeneratorPage() {
       if (firstNonAdminEmp) {
         setSelectedApplicantEmp(firstNonAdminEmp);
         setApplicantName((firstNonAdminEmp.name || '').replace(/^জনাব\s+/, ''));
-        setDesignation(firstNonAdminEmp.designation);
+        setDesignation(cleanDesignationForLeave(firstNonAdminEmp.designation));
         setBankId(firstNonAdminEmp.bankId || '');
         setFileNo(firstNonAdminEmp.fileNo || '');
         if (firstNonAdminEmp.cell && firstNonAdminEmp.cell.name) {
@@ -433,7 +439,7 @@ export default function LeaveGeneratorPage() {
         setMatchedEmp(matchedEmp);
         setSelectedApplicantEmp(matchedEmp);
         setApplicantName((matchedEmp.name || '').replace(/^জনাব\s+/, ''));
-        setDesignation(matchedEmp.designation);
+        setDesignation(cleanDesignationForLeave(matchedEmp.designation));
         if (matchedEmp.fileNo) {
           setFileNo(matchedEmp.fileNo);
         }
@@ -556,7 +562,7 @@ export default function LeaveGeneratorPage() {
 
   const matchedDelegate = eligibleCoveringOfficers.find(e => String(e.id) === delegateId);
   const delegateName = matchedDelegate ? matchedDelegate.name : '';
-  const delegateDesignation = matchedDelegate ? matchedDelegate.designation : '';
+  const delegateDesignation = matchedDelegate ? cleanDesignationForLeave(matchedDelegate.designation) : '';
 
   // Single day validation and wording logic
   const isSingleDay = startDate && endDate && startDate === endDate;
@@ -779,7 +785,7 @@ export default function LeaveGeneratorPage() {
                           if (emp) {
                             setSelectedApplicantEmp(emp);
                             setApplicantName((emp.name || '').replace(/^জনাব\s+/, ''));
-                            setDesignation(emp.designation);
+                            setDesignation(cleanDesignationForLeave(emp.designation));
                             setBankId(emp.bankId || '');
                             setFileNo(emp.fileNo || '');
                             if (emp.cell && emp.cell.name) {
@@ -817,7 +823,7 @@ export default function LeaveGeneratorPage() {
                               <optgroup key={cell.id} label={cell.name}>
                                 {cellEmps.map((emp) => (
                                   <option key={emp.id} value={emp.id}>
-                                    {emp.name} ({emp.designation})
+                                    {emp.name} ({cleanDesignationForLeave(emp.designation)})
                                   </option>
                                 ))}
                               </optgroup>
@@ -1009,7 +1015,7 @@ export default function LeaveGeneratorPage() {
                       <option value="">দায়িত্বপ্রাপ্ত কর্মকর্তা নির্বাচন করুন...</option>
                       {eligibleCoveringOfficers.map((emp: Employee) => (
                         <option key={emp.id} value={emp.id}>
-                          {emp.name} ({emp.designation})
+                          {emp.name} ({cleanDesignationForLeave(emp.designation)})
                         </option>
                       ))}
                     </select>
@@ -1453,7 +1459,7 @@ export default function LeaveGeneratorPage() {
                     <p>আপনার বিশ্বস্ত,</p>
                     <div className="h-12 w-32 mt-1" />
                     <p className="pt-1">নামঃ {applicantName || 'সৈয়দ আরিফুল ইসলাম ইমন'}</p>
-                    <p>পদবীঃ {designation || 'সিনিয়র অফিসার-আইটি'}</p>
+                    <p>পদবীঃ {cleanDesignationForLeave(designation) || 'সিনিয়র অফিসার-আইটি'}</p>
                     <p className="font-mono">ব্যাংক আইডিঃ {toBanglaDigits(bankId || '০২৬৭৯৫')}</p>
                     {fileNo && <p>ব্যক্তিগত নথি নংঃ {fileNo}</p>}
                     <p>{cellName}</p>
