@@ -348,8 +348,6 @@ export default function LeaveGeneratorPage() {
 
   // Stayed Location State (Only District is needed)
   const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [startDateFocus, setStartDateFocus] = useState(false);
-  const [endDateFocus, setEndDateFocus] = useState(false);
 
   // Duty delegate officer
   const [delegateId, setDelegateId] = useState<string>('');
@@ -543,8 +541,8 @@ export default function LeaveGeneratorPage() {
   );
 
   const matchedDelegate = eligibleCoveringOfficers.find(e => String(e.id) === delegateId);
-  const delegateName = matchedDelegate ? matchedDelegate.name : 'আব্দুল্লাহ আল জোবায়ের';
-  const delegateDesignation = matchedDelegate ? matchedDelegate.designation : 'এসও-আইটি';
+  const delegateName = matchedDelegate ? matchedDelegate.name : '';
+  const delegateDesignation = matchedDelegate ? matchedDelegate.designation : '';
 
   // Single day validation and wording logic
   const isSingleDay = startDate && endDate && startDate === endDate;
@@ -556,9 +554,9 @@ export default function LeaveGeneratorPage() {
   const renderDelegateInfo = () => {
     if (!delegateId || !matchedDelegate) {
       return (
-        <span className="text-red-650 dark:text-rose-500 font-bold bold-text" style={{ color: '#dc2626', fontWeight: 'bold' }}>
+        <strong className="text-red-600 dark:text-red-400 font-bold bold-text" style={{ color: 'red', fontWeight: 'bold' }}>
           [দায়িত্ব পালনকারী কর্মকর্তা নির্বাচন করুন]
-        </span>
+        </strong>
       );
     }
     const cleanName = delegateName.replace(/^জনাব\s+/, '').trim();
@@ -946,13 +944,10 @@ export default function LeaveGeneratorPage() {
                       <label htmlFor="startDate" className="font-bold text-slate-500">শুরুর তারিখ:</label>
                       <input 
                         id="startDate"
-                        type={(startDate || startDateFocus) ? "date" : "text"} 
-                        placeholder="দিন-মাস-বছর"
+                        type="date" 
                         value={startDate}
                         min={dateLimits.min}
                         max={dateLimits.max}
-                        onFocus={() => setStartDateFocus(true)}
-                        onBlur={() => setStartDateFocus(false)}
                         onChange={(e) => setStartDate(e.target.value)}
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold"
                         required
@@ -964,14 +959,11 @@ export default function LeaveGeneratorPage() {
                       <label htmlFor="endDate" className="font-bold text-slate-500">শেষের তারিখ:</label>
                       <input 
                         id="endDate"
-                        type={(endDate || endDateFocus) ? "date" : "text"} 
-                        placeholder="দিন-মাস-বছর"
+                        type="date" 
                         value={endDate}
                         min={startDate || dateLimits.min}
                         max={dateLimits.max}
                         disabled={!startDate}
-                        onFocus={() => setEndDateFocus(true)}
-                        onBlur={() => setEndDateFocus(false)}
                         onChange={(e) => setEndDate(e.target.value)}
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold"
                         required
@@ -1488,22 +1480,25 @@ export default function LeaveGeneratorPage() {
 
                   {/* AGM/DGM/SPO routing lines */}
                   <div className="text-left" style={{ paddingBottom: '0.75in' }}>
-                    <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেষু</span>
+                    <span>এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                   <div className="text-left" style={{ paddingBottom: '0.75in' }}>
-                    <span>ডিজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেষু</span>
+                    <span>ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                   <div className="text-left" style={{ paddingBottom: '0.75in' }}>
-                    <span>এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেষু</span>
+                    <span>এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                   <div className="text-left" style={{ paddingBottom: '0.75in' }}>
-                    <span>এসপিও (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেষু</span>
+                    <span>এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
+                </div>
 
-                  {/* Dynamic Footer Copyright */}
-                  <div className="text-center text-[10px] text-slate-400 no-print print:hidden pt-4 mt-auto">
-                    © {toBanglaDigits(new Date().getFullYear())} জনতা ব্যাংক পিএলসি
-                  </div>
+                {/* Footer Copyright */}
+                <div 
+                  className="w-full text-center text-[10px] text-slate-400 font-sans border-t border-slate-100 pt-2 no-print print:block mt-auto pb-1"
+                  style={{ letterSpacing: 'normal' }}
+                >
+                  © {toBanglaDigits(new Date().getFullYear())} জনতা ব্যাংক পিএলসি
                 </div>
 
               </div>
