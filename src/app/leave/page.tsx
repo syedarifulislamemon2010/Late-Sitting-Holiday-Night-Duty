@@ -353,14 +353,14 @@ export default function LeaveGeneratorPage() {
   const [delegateId, setDelegateId] = useState<string>('');
   
   // Leaves Table Balance Sheet States (Editable inputs)
-  const [casualTotal, setCasualTotal] = useState(20);
-  const [casualUsed, setCasualUsed] = useState(9);
+  const [casualTotal, setCasualTotal] = useState<number | string>(20);
+  const [casualUsed, setCasualUsed] = useState<number | string>(0);
   
-  const [ordinaryTotal, setOrdinaryTotal] = useState(120);
-  const [ordinaryUsed, setOrdinaryUsed] = useState(0);
+  const [ordinaryTotal, setOrdinaryTotal] = useState<number | string>(120);
+  const [ordinaryUsed, setOrdinaryUsed] = useState<number | string>('-');
 
-  const [specialTotal, setSpecialTotal] = useState(47);
-  const [specialUsed, setSpecialUsed] = useState(0);
+  const [specialTotal, setSpecialTotal] = useState<number | string>('-');
+  const [specialUsed, setSpecialUsed] = useState<number | string>('-');
 
   // Initialize application date to today
   useEffect(() => {
@@ -525,11 +525,25 @@ export default function LeaveGeneratorPage() {
   }, [leaveType, startDate, todayStr]);
 
   // Dynamically calculate remaining leaves
-  const currentCasualUsed = casualUsed;
-  const currentCasualRemaining = Math.max(0, casualTotal - currentCasualUsed);
+  const getRemaining = (total: number | string, used: number | string) => {
+    const tStr = String(total).trim();
+    const uStr = String(used).trim();
+    if (tStr === '-' || uStr === '-' || tStr === '' || uStr === '') {
+      return '-';
+    }
+    const totalNum = parseInt(tStr, 10);
+    const usedNum = parseInt(uStr, 10);
+    if (isNaN(totalNum) || isNaN(usedNum)) {
+      return '-';
+    }
+    return Math.max(0, totalNum - usedNum);
+  };
 
-  const currentOrdinaryRemaining = Math.max(0, ordinaryTotal - ordinaryUsed);
-  const currentSpecialRemaining = Math.max(0, specialTotal - specialUsed);
+  const currentCasualUsed = casualUsed;
+  const currentCasualRemaining = getRemaining(casualTotal, casualUsed);
+
+  const currentOrdinaryRemaining = getRemaining(ordinaryTotal, ordinaryUsed);
+  const currentSpecialRemaining = getRemaining(specialTotal, specialUsed);
 
   // Filter Covering Officers: Restricted strictly to the same cell, excluding the applicant themselves
   const eligibleCoveringOfficers = sortEmployeesBySeniority(
@@ -1019,9 +1033,9 @@ export default function LeaveGeneratorPage() {
                         <label htmlFor="casualTotal" className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
                         <input 
                           id="casualTotal"
-                          type="number" 
+                          type="text" 
                           value={casualTotal}
-                          onChange={(e) => setCasualTotal(parseInt(e.target.value, 10) || 0)}
+                          onChange={(e) => setCasualTotal(e.target.value)}
                           className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
                         />
                       </div>
@@ -1029,9 +1043,9 @@ export default function LeaveGeneratorPage() {
                         <label htmlFor="casualUsed" className="text-[10px] text-slate-400 font-bold">ভোগকৃত (আগের):</label>
                         <input 
                           id="casualUsed"
-                          type="number" 
+                          type="text" 
                           value={casualUsed}
-                          onChange={(e) => setCasualUsed(parseInt(e.target.value, 10) || 0)}
+                          onChange={(e) => setCasualUsed(e.target.value)}
                           className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
                         />
                       </div>
@@ -1046,9 +1060,9 @@ export default function LeaveGeneratorPage() {
                         <label htmlFor="ordinaryTotal" className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
                         <input 
                           id="ordinaryTotal"
-                          type="number" 
+                          type="text" 
                           value={ordinaryTotal}
-                          onChange={(e) => setOrdinaryTotal(parseInt(e.target.value, 10) || 0)}
+                          onChange={(e) => setOrdinaryTotal(e.target.value)}
                           className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
                         />
                       </div>
@@ -1056,9 +1070,9 @@ export default function LeaveGeneratorPage() {
                         <label htmlFor="ordinaryUsed" className="text-[10px] text-slate-400 font-bold">ভোগকৃত:</label>
                         <input 
                           id="ordinaryUsed"
-                          type="number" 
+                          type="text" 
                           value={ordinaryUsed}
-                          onChange={(e) => setOrdinaryUsed(parseInt(e.target.value, 10) || 0)}
+                          onChange={(e) => setOrdinaryUsed(e.target.value)}
                           className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
                         />
                       </div>
@@ -1073,9 +1087,9 @@ export default function LeaveGeneratorPage() {
                         <label htmlFor="specialTotal" className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
                         <input 
                           id="specialTotal"
-                          type="number" 
+                          type="text" 
                           value={specialTotal}
-                          onChange={(e) => setSpecialTotal(parseInt(e.target.value, 10) || 0)}
+                          onChange={(e) => setSpecialTotal(e.target.value)}
                           className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
                         />
                       </div>
@@ -1083,9 +1097,9 @@ export default function LeaveGeneratorPage() {
                         <label htmlFor="specialUsed" className="text-[10px] text-slate-400 font-bold">ভোগকৃত:</label>
                         <input 
                           id="specialUsed"
-                          type="number" 
+                          type="text" 
                           value={specialUsed}
-                          onChange={(e) => setSpecialUsed(parseInt(e.target.value, 10) || 0)}
+                          onChange={(e) => setSpecialUsed(e.target.value)}
                           className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
                         />
                       </div>
