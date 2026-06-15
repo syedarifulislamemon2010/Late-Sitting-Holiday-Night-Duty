@@ -17,7 +17,6 @@ import {
   Utensils,
   Languages,
   ChevronLeft,
-  ChevronRight,
   ClipboardList,
   AlertCircle
 } from 'lucide-react';
@@ -168,15 +167,27 @@ export default function Sidebar() {
 
       {/* Sidebar Navigation Panel */}
       <aside 
-        className={`no-print fixed top-0 lg:top-0 bottom-0 left-0 z-30 flex flex-col bg-white/90 backdrop-blur-sm border-r border-slate-200/80 transition-all duration-300 lg:translate-x-0 ${
+        className={`no-print fixed top-0 lg:top-0 bottom-0 left-0 z-30 flex flex-col bg-white/90 backdrop-blur-sm border-r border-slate-200/80 transition-all duration-300 ease-in-out lg:translate-x-0 relative ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:sticky lg:h-screen'
         } ${
-          isMounted && isCollapsed ? 'lg:w-20' : 'lg:w-72'
-        } ${isOpen ? 'w-72' : ''}`}
+          isMounted && isCollapsed ? 'lg:w-20' : 'lg:w-64'
+        } ${isOpen ? 'w-64' : ''}`}
       >
+        {/* Collapse toggle button on desktop - Floats on the right middle edge */}
+        <button 
+          onClick={toggleCollapse}
+          className={`hidden lg:flex absolute top-1/2 -translate-y-1/2 -right-3 items-center justify-center w-6 h-6 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-slate-800 shadow-sm z-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] transition-transform duration-300 ${
+            isCollapsed ? 'rotate-180' : ''
+          }`}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={isCollapsed ? "Sidebar প্রসারিত করুন" : "Sidebar সংকুচিত করুন"}
+        >
+          <ChevronLeft size={14} className="shrink-0" />
+        </button>
+
         {/* Sidebar Header Logo */}
-        <div className={`flex items-center justify-between py-5 border-b border-slate-100 ${
-          isMounted && isCollapsed ? 'lg:px-3 lg:justify-center' : 'px-6'
+        <div className={`flex items-center py-5 border-b border-slate-100 ${
+          isMounted && isCollapsed ? 'lg:px-3 lg:justify-center' : 'px-6 justify-between'
         }`}>
           <Link 
             href="/" 
@@ -187,7 +198,7 @@ export default function Sidebar() {
                 setShowWarningModal(true);
               }
             }}
-            className="flex items-center gap-3 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] focus:ring-offset-2 rounded-lg"
+            className="flex items-center group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] focus:ring-offset-2 rounded-lg w-full"
           >
             <Image 
               src="/janata-bank-logo-real.svg" 
@@ -196,35 +207,16 @@ export default function Sidebar() {
               height={36}
               className="shrink-0 object-contain transition-transform group-hover:scale-105" 
             />
-            {!(isMounted && isCollapsed) && (
-              <div className="whitespace-nowrap transition-opacity duration-200">
-                <h1 className="font-extrabold text-slate-950 text-[15px] sm:text-[16px] leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
-                <p className="text-[10px] font-bold text-[#0b5e9e] uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
-              </div>
-            )}
+            <div className={`transition-all duration-200 whitespace-nowrap overflow-hidden ${
+              isMounted && isCollapsed 
+                ? 'opacity-0 w-0 ml-0' 
+                : 'opacity-100 w-auto ml-3'
+            }`}>
+              <h1 className="font-extrabold text-slate-950 text-[15px] sm:text-[16px] leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
+              <p className="text-[10px] font-bold text-[#0b5e9e] uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
+            </div>
           </Link>
           
-          {/* Collapse toggle button on desktop */}
-          {!(isMounted && isCollapsed) ? (
-            <button 
-              onClick={toggleCollapse}
-              className="hidden lg:flex p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e]"
-              title="Sidebar সংকুচিত করুন"
-              aria-label="Collapse sidebar"
-            >
-              <ChevronLeft size={18} />
-            </button>
-          ) : (
-            <button 
-              onClick={toggleCollapse}
-              className="hidden lg:flex p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e]"
-              title="Sidebar প্রসারিত করুন"
-              aria-label="Expand sidebar"
-            >
-              <ChevronRight size={18} />
-            </button>
-          )}
-
           <button 
             onClick={() => setIsOpen(false)}
             className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer"
@@ -240,15 +232,20 @@ export default function Sidebar() {
         }`}>
           {sections.map((section, secIdx) => (
             <div key={section.title} className="space-y-1.5">
-              {secIdx > 0 && <div className="border-t border-slate-100 my-2.5" />}
-              
-              {!(isMounted && isCollapsed) ? (
-                <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider transition-all duration-200">
-                  {section.title}
-                </h3>
-              ) : (
-                <div className="h-2" />
-              )}
+              {/* Clean Divider System / Title Transition */}
+              <div className="transition-all duration-300">
+                {isMounted && isCollapsed ? (
+                  secIdx > 0 ? (
+                    <div className="border-t border-slate-100 my-2 mx-3" />
+                  ) : (
+                    <div className="h-2" />
+                  )
+                ) : (
+                  <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider pt-2 whitespace-nowrap">
+                    {section.title}
+                  </h3>
+                )}
+              </div>
               
               <div className="space-y-1">
                 {section.items.map((item) => {
@@ -267,13 +264,14 @@ export default function Sidebar() {
                         }
                       }}
                       className={`flex items-center transition-all duration-200 group relative border-l-4 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] ${
-                        isMounted && isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'
+                        isMounted && isCollapsed 
+                          ? 'justify-center py-2.5 px-0' 
+                          : 'px-3 py-2.5'
                       } ${
                         isActive 
-                          ? 'bg-[#0b5e9e]/5 text-[#0b5e9e] border-[#0b5e9e] font-bold' 
+                          ? 'bg-slate-50 text-[#0b5e9e] border-[#0b5e9e] font-bold' 
                           : 'text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-900'
                       }`}
-                      title={isMounted && isCollapsed ? item.name : undefined}
                       aria-current={isActive ? 'page' : undefined}
                     >
                       <Icon 
@@ -283,18 +281,17 @@ export default function Sidebar() {
                         }`} 
                       />
                       
-                      {!(isMounted && isCollapsed) && (
-                        <span className="app-sidebar-text">{item.name}</span>
-                      )}
+                      <span className={`transition-all duration-200 whitespace-nowrap overflow-hidden ${
+                        isMounted && isCollapsed 
+                          ? 'opacity-0 w-0 ml-0' 
+                          : 'opacity-100 w-auto ml-3'
+                      }`}>
+                        {item.name}
+                      </span>
 
-                      {/* Left-side active indicator bar */}
-                      {isActive && (isMounted && isCollapsed) && (
-                        <span className="absolute left-0 top-0 bottom-0 w-1 bg-[#0b5e9e]" />
-                      )}
-
-                      {/* Tooltip on hover when collapsed */}
+                      {/* Interactive Hover Tooltip when collapsed */}
                       {isMounted && isCollapsed && (
-                        <div className="absolute left-full ml-3 px-2.5 py-1.5 bg-slate-950 text-white text-[12px] font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 shadow-md">
+                        <div className="absolute left-16 opacity-0 pointer-events-none invisible group-hover:opacity-100 group-hover:visible group-hover:left-20 transition-all duration-200 whitespace-nowrap z-50 shadow-md px-2.5 py-1.5 bg-slate-950 text-white text-[12px] font-medium rounded-lg">
                           {item.name}
                         </div>
                       )}
