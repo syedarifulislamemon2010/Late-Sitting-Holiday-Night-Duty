@@ -38,5 +38,8 @@ export const renderDatesInPairs = (datesStrOrArr: string | string[]): string[] =
 };
 
 export const cleanBracketName = (name: string): string => {
-  return (name || '').replace(/^(জনাব|জনাবা)\s*/, '');
+  if (!name) return '';
+  let clean = name.trim().replace(/^\((.*)\)$/, '$1').trim();
+  clean = clean.replace(/^(জনাব|জনাবা)\s+/, '');
+  return clean;
 };

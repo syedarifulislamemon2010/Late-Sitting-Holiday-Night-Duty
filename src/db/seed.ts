@@ -301,6 +301,7 @@ async function main() {
   }
 
   console.log('Drizzle Database Seeding & Clone Restore completed successfully!');
+  process.exit(0);
 }
 
 main()

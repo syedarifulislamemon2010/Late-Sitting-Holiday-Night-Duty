@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { 
   Settings,
   LogOut
@@ -81,19 +82,59 @@ export default function Navbar() {
     }
   };
 
+  const pathname = usePathname();
+
+  const getBreadcrumbs = () => {
+    if (pathname === '/') {
+      return (
+        <span className="text-slate-800 dark:text-slate-200 font-bold text-sm sm:text-base" style={{ letterSpacing: 'normal' }}>
+          ড্যাশবোর্ড
+        </span>
+      );
+    }
+
+    const routeMap: Record<string, { section: string; title: string }> = {
+      'executive': { section: 'প্রশাসনিক কার্যক্রম', title: 'নির্বাহী প্যানেল' },
+      'audit': { section: 'প্রশাসনিক কার্যক্রম', title: 'অডিট লগ' },
+      'employees': { section: 'প্রশাসনিক কার্যক্রম', title: 'কর্মকর্তাবৃন্দ' },
+      'roster': { section: 'প্রশাসনিক কার্যক্রম', title: 'অফিস আদেশ ও ডিউটি রোস্টার' },
+      'billing': { section: 'বিল ও ভাতাসমূহ', title: 'বিল ও ভাতার বিবরণী' },
+      'lunch-bill': { section: 'বিল ও ভাতাসমূহ', title: 'লাঞ্চ বিল শিট' },
+      'closing-bill': { section: 'বিল ও ভাতাসমূহ', title: 'ক্লোজিং বিল শিট' },
+      'leave': { section: 'আবেদনপত্র', title: 'ছুটি আবেদন' },
+      'converter': { section: 'অন্যান্য', title: 'বাংলা কনভার্টার' },
+      'documents': { section: 'অন্যান্য', title: 'আর্কাইভ' },
+      'trash': { section: 'অন্যান্য', title: 'রিসাইকেল বিন' },
+      'users': { section: 'সেটিংস', title: 'ব্যবহারকারী সেটিংস' }
+    };
+
+    const cleanPath = pathname.replace(/^\//, '').split('/')[0];
+    const item = routeMap[cleanPath];
+
+    if (!item) {
+      return (
+        <span className="text-slate-800 dark:text-slate-200 font-bold text-sm sm:text-base" style={{ letterSpacing: 'normal' }}>
+          লেট সিটিং-হলিডে-নাইট পোর্টাল
+        </span>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 select-none">
+        <span className="hover:text-slate-700 dark:hover:text-slate-350 transition-colors" style={{ letterSpacing: 'normal' }}>{item.section}</span>
+        <span className="text-slate-300 dark:text-slate-700">/</span>
+        <span className="text-slate-800 dark:text-slate-200 font-bold" style={{ letterSpacing: 'normal' }}>{item.title}</span>
+      </div>
+    );
+  };
+
   const userDisplayName = (currentUser?.name || '').replace(/^(জনাব|জনাবা)\s+/, '').trim();
 
   return (
     <header className="no-print sticky top-0 z-40 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between px-4 h-14 font-sans select-none">
-      {/* Left section: Brand Logo & Title */}
-      <div className="flex items-center gap-2 w-[320px] shrink-0">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={36} height={36} className="shrink-0 object-contain transition-transform group-hover:scale-105" />
-          <div className="hidden sm:block leading-none">
-            <h1 className="font-extrabold text-slate-950 dark:text-slate-100 text-[16px] sm:text-[18px] leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
-            <p className="text-[11px] font-bold text-[#0b5e9e] dark:text-[#38bdf8] uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
-          </div>
-        </Link>
+      {/* Left section: Breadcrumbs */}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        {getBreadcrumbs()}
       </div>
 
       {/* Right section: Corporate Profile Avatar / Janata Bank Badge */}

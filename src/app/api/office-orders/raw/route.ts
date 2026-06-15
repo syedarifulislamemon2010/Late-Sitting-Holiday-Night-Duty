@@ -130,16 +130,14 @@ export async function GET(request: Request) {
         const pairedDates = renderDatesInPairs(rawDates);
         
         const datesHtml = pairedDates.map((pair, pIdx) => {
-          const isLast = pIdx === pairedDates.length - 1;
-          return `<span style="display: block; white-space: nowrap; line-height: 1.2;">${pair}${isLast ? '' : ','}</span>`;
+          return `<span style="display: block; white-space: nowrap; line-height: 1.2;">${pair}</span>`;
         }).join('');
 
         return `
           <tr style="line-height: 1.15;">
             <td>${toBnDigits(index + 1)}</td>
             <td class="text-left" style="line-height: 1.2; padding-left: 12px; text-align: left;">
-              <span>${nameWithPrefix}</span><br>
-              <span style="font-size: 11px; color: #444; margin-top: 2px; display: block;">(${shortDesignation})</span>
+              <span>${nameWithPrefix} (${shortDesignation})</span>
             </td>
             <td style="font-size: 11px; line-height: 1.15; padding: 4px; text-align: center;">
               ${datesHtml}
@@ -177,10 +175,11 @@ export async function GET(request: Request) {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    letter-spacing: normal !important;
   }
   @page {
     size: legal portrait;
-    margin-top: 0.6in;
+    margin-top: 0.4in;
     margin-bottom: 0.75in;
     margin-left: 1.3in;
     margin-right: 0.5in;
@@ -232,7 +231,7 @@ export async function GET(request: Request) {
   }
   th, td {
     border: 1px solid #000;
-    padding: 4px 4px;
+    padding: 3px 3px;
     text-align: center;
     vertical-align: middle;
     line-height: 1.0;
@@ -404,7 +403,7 @@ export async function GET(request: Request) {
         `;
       }).join('');
 
-      const signingOfficer = content.signingOfficer || '';
+      const signingOfficer = cleanBracketName(content.signingOfficer || '');
       const signingDesignation = content.signingDesignation || '';
       const orderText = content.orderText || '';
       const copies = content.copies || [];

@@ -62,9 +62,11 @@ async function main() {
 
   fs.writeFileSync('postgres_dump.json', JSON.stringify(dump, null, 2));
   console.log('PostgreSQL Neon data successfully dumped to postgres_dump.json via Drizzle!');
+  process.exit(0);
 }
 
 main()
   .catch(e => {
     console.error('Migration Dump failed:', e);
+    process.exit(1);
   });

@@ -2449,12 +2449,12 @@ export default function DocumentsPage() {
                                 <table className="w-full border-collapse border border-black text-center mt-3 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
                                   <thead>
                                     <tr className="bg-slate-50 font-bold border-b border-black text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
-                                      <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>ক্রমিক</th>
-                                      <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '3.5px', textAlign: 'left', paddingLeft: '12px' }}>নাম ও পদবী</th>
-                                      <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '3.5px' }}>তারিখ</th>
-                                      <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3.5px' }}>যাতায়াত</th>
-                                      <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3.5px' }}>আপ্যায়ন</th>
-                                      <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '3.5px' }}>মোট</th>
+                                      <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক</th>
+                                      <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px' }}>নাম ও পদবী</th>
+                                      <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '3px' }}>তারিখ</th>
+                                      <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px' }}>যাতায়াত</th>
+                                      <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px' }}>আপ্যায়ন</th>
+                                      <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '3px' }}>মোট</th>
                                     </tr>
                                   </thead>
                                   <tbody>

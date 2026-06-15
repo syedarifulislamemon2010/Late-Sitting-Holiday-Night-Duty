@@ -257,12 +257,17 @@ export default function Dashboard() {
                     return <div key={`empty-${idx}`} className="aspect-square" />;
                   }
 
+                  const isToday = slot.dateStr === todayStr;
                   let cellClass = 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60';
 
                   if (slot.isHoliday) {
                     cellClass = 'bg-rose-500 text-white font-extrabold shadow-sm scale-[1.02] border border-rose-600 hover:bg-rose-600 shadow-rose-500/10 cursor-pointer relative group';
                   } else if (slot.isWeekend) {
                     cellClass = 'bg-rose-50/40 dark:bg-rose-950/10 text-rose-600 dark:text-rose-400 font-bold border border-rose-100/50 dark:border-rose-950/20';
+                  }
+
+                  if (isToday) {
+                    cellClass += ' ring-2 ring-indigo-600 dark:ring-indigo-400 ring-offset-2 dark:ring-offset-slate-900';
                   }
 
                   return (
@@ -274,6 +279,9 @@ export default function Dashboard() {
                       <span className="font-sans font-bold text-sm">
                         {slot.day}
                       </span>
+                      {isToday && (
+                        <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-650 dark:bg-indigo-455" />
+                      )}
                       {slot.isHoliday && (
                         <span className="absolute bottom-1 w-1 h-1 rounded-full bg-white animate-pulse" />
                       )}
@@ -402,7 +410,7 @@ export default function Dashboard() {
                           {toBanglaDigits(dateObj.getDate())}
                         </p>
                         <p className="text-[8px] leading-none mt-1 font-bold">
-                          {dateObj.toLocaleDateString('bn-BD', { month: 'short' })}
+                          {MONTH_NAMES[dateObj.getMonth()]}
                         </p>
                       </div>
                       <div className="leading-tight">

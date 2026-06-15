@@ -2806,7 +2806,7 @@ export default function RosterPage() {
           <div className="flex flex-col xl:flex-row gap-6 items-start no-print">
             {/* LEFT COLUMN: Assign New Duty Form */}
             <div 
-              tabIndex={!isAssignmentPrimary ? 0 : undefined}
+              tabIndex={0}
               onClick={() => {
                 if (!isAssignmentPrimary) {
                   setLayoutPriority(LayoutPriority.ASSIGNMENT);
@@ -2817,10 +2817,10 @@ export default function RosterPage() {
                   setLayoutPriority(LayoutPriority.ASSIGNMENT);
                 }
               }}
-              className={`bg-white rounded-2xl shadow-sm border border-slate-100 p-6 transition-all duration-300 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
+              className={`bg-white rounded-2xl shadow-sm border border-slate-100 p-6 transition-all duration-500 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40 select-none ${
                 isAssignmentPrimary 
-                  ? 'w-full xl:w-[70%] space-y-6' 
-                  : 'w-full xl:w-[30%] space-y-3 xl:hover:border-blue-300'
+                  ? 'w-full xl:w-[70%] space-y-6 opacity-100' 
+                  : 'w-full xl:w-[30%] space-y-3 xl:hover:border-blue-300 opacity-50 blur-[0.5px] scale-[0.99]'
               }`}
             >
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -2845,43 +2845,8 @@ export default function RosterPage() {
                 )}
               </div>
 
-              {/* Collapsed View Summary Card (only shown when not primary on xl screens) */}
-              <div className={`hidden ${!isAssignmentPrimary ? 'xl:flex' : ''} flex-col gap-3 p-4 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100`}>
-                <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                  ডিউটি অ্যাসাইনমেন্ট সংক্ষেপ
-                </div>
-                <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-350">
-                  <p>
-                    <span className="font-semibold text-slate-500">ক্যাটাগরি:</span>{' '}
-                    {assignmentForm.type === 'LATE_SITTING'
-                      ? 'Late Sitting'
-                      : assignmentForm.type === 'HOLIDAY'
-                        ? 'Holiday Duty'
-                        : assignmentForm.type === 'NIGHT_SHIFT'
-                          ? 'Night Shift'
-                          : 'নির্বাচন করা হয়নি'}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-500">এন্ট্রি মোড:</span>{' '}
-                    {entryMode === 'EMPLOYEE_WISE' ? 'সেল ও কর্মকর্তা ভিত্তিক' : 'তারিখ ভিত্তিক'}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-500">নির্বাচন:</span>{' '}
-                    {entryMode === 'EMPLOYEE_WISE'
-                      ? `${toBanglaDigits(Object.keys(opt1Assignments).length)} জন কর্মকর্তা`
-                      : assignmentForm.date
-                        ? toBanglaDigits(assignmentForm.date.split('-').reverse().join('-'))
-                        : 'তারিখ নির্বাচন করা হয়নি'}
-                  </p>
-                </div>
-                <div className="mt-1 flex items-center gap-1 text-[10px] font-extrabold text-blue-600 dark:text-blue-400">
-                  <span>সম্পাদন করতে ক্লিক করুন</span>
-                  <ChevronRight size={12} />
-                </div>
-              </div>
-
-              {/* Form Body Wrapper (always mounted, hidden when secondary on xl screens) */}
-              <div className={`space-y-6 ${!isAssignmentPrimary ? 'xl:hidden xl:pointer-events-none' : ''}`}>
+              {/* Form Body Wrapper (always mounted, pointer-events disabled when shrunk) */}
+              <div className={`space-y-6 transition-all duration-500 ${!isAssignmentPrimary ? 'pointer-events-none select-none' : ''}`}>
 
               {/* Entry Option Toggle */}
               <div className="w-full">
@@ -3241,7 +3206,7 @@ export default function RosterPage() {
 
             {/* RIGHT COLUMN: Roster Monthly List Grid */}
             <div 
-              tabIndex={isAssignmentPrimary ? 0 : undefined}
+              tabIndex={0}
               onClick={() => {
                 if (isAssignmentPrimary) {
                   setLayoutPriority(LayoutPriority.ROSTER);
@@ -3252,19 +3217,17 @@ export default function RosterPage() {
                   setLayoutPriority(LayoutPriority.ROSTER);
                 }
               }}
-              className={`bg-white rounded-2xl shadow-sm border border-slate-100 p-6 transition-all duration-300 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
+              className={`bg-white rounded-2xl shadow-sm border border-slate-100 p-6 transition-all duration-500 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40 select-none ${
                 !isAssignmentPrimary 
-                  ? 'w-full xl:w-[70%] space-y-6' 
-                  : 'w-full xl:w-[30%] space-y-3 xl:hover:border-blue-300'
+                  ? 'w-full xl:w-[70%] space-y-6 opacity-100' 
+                  : 'w-full xl:w-[30%] space-y-3 xl:hover:border-blue-300 opacity-50 blur-[0.5px] scale-[0.99]'
               }`}
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex flex-col">
                   <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">ডিউটি রোস্টার তালিকা</h3>
-                  {!isAssignmentPrimary && (
-                    <p className="text-xs text-slate-400 mt-0.5 hidden xl:block">মাসিক ভিউ ফিল্টার এবং বরাদ্দ তালিকা।</p>
-                  )}
+                  <p className="text-xs text-slate-400 mt-0.5">মাসিক ভিউ ফিল্টার এবং বরাদ্দ তালিকা।</p>
                 </div>
                 {isAssignmentPrimary && (
                   <button
@@ -3282,9 +3245,9 @@ export default function RosterPage() {
               </div>
 
               {/* Roster List Body Wrapper (pointer-events disabled when shrunk) */}
-              <div className={`space-y-6 ${isAssignmentPrimary ? 'xl:pointer-events-none' : ''}`}>
+              <div className={`space-y-6 transition-all duration-500 ${isAssignmentPrimary ? 'pointer-events-none select-none' : ''}`}>
                 {/* Controls Menu */}
-                <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 ${isAssignmentPrimary ? 'xl:hidden' : ''}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                   <div>
                     <p className="text-xs text-slate-400 mt-0.5">মাসিক ভিউ ফিল্টার এবং বরাদ্দ তালিকা।</p>
                   </div>
@@ -3443,7 +3406,7 @@ export default function RosterPage() {
                 return (
                   <div className="space-y-6">
                     {/* Tab Navigation */}
-                    <div className={`flex border-b border-slate-200 dark:border-slate-800 ${isAssignmentPrimary ? 'xl:hidden' : ''}`}>
+                    <div className="flex border-b border-slate-200 dark:border-slate-800">
                       <button
                         type="button"
                         onClick={() => setActiveRosterTab('pending')}
@@ -3486,7 +3449,7 @@ export default function RosterPage() {
                     {/* Tab Contents */}
                     {activeRosterTab === 'pending' ? (
                       <div className="space-y-3">
-                        <h4 className={`text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2 ${isAssignmentPrimary ? 'xl:hidden' : ''}`}>
+                        <h4 className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                           অপেক্ষমান অর্ডার জেনারেট করুন - {toBanglaDigits(pendingDuties.length)} টি
                         </h4>
@@ -3500,7 +3463,7 @@ export default function RosterPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <h4 className={`text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2 ${isAssignmentPrimary ? 'xl:hidden' : ''}`}>
+                        <h4 className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           জেনারেটেড এবং প্রিন্টেড সেকশন - {toBanglaDigits(filteredOfficeOrders.length)} টি
                         </h4>
