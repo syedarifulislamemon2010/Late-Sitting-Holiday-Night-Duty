@@ -1493,14 +1493,6 @@ export default function LeaveGeneratorPage() {
                   </div>
                 </div>
 
-                {/* Footer Copyright */}
-                <div 
-                  className="w-full text-center text-[10px] text-slate-400 font-sans border-t border-slate-100 pt-2 no-print print:block mt-auto pb-1"
-                  style={{ letterSpacing: 'normal' }}
-                >
-                  © {toBanglaDigits(new Date().getFullYear())} জনতা ব্যাংক পিএলসি
-                </div>
-
               </div>
 
             </div>
