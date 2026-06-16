@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { sql } from 'drizzle-orm';
-import { db } from '../lib/db';
 import * as schema from './schema';
 
 // Simple .env parser to read DATABASE_URL natively without dependency
@@ -22,6 +21,7 @@ try {
 
 async function main() {
   console.log('Drizzle Seeding Engine starting...');
+  const { db } = await import('../lib/db');
 
   const dumpPath = path.resolve(process.cwd(), 'postgres_dump.json');
   if (!fs.existsSync(dumpPath)) {

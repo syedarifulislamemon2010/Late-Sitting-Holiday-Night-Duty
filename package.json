@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "npx tsx --env-file=.env src/db/seed.ts",
-    "db:dump": "npx tsx --env-file=.env src/db/dump.ts"
+    "db:seed": "npx tsx src/db/seed.ts",
+    "db:dump": "npx tsx src/db/dump.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

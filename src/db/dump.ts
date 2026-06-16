@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { db } from '../lib/db';
 import * as schema from './schema';
 
 // Simple .env parser to read DATABASE_URL natively without dependency
@@ -21,6 +20,7 @@ try {
 
 async function main() {
   console.log('Fetching all tables from PostgreSQL Neon Cloud via Drizzle...');
+  const { db } = await import('../lib/db');
   
   const cells = await db.select().from(schema.cells);
   const users = await db.select().from(schema.users);
