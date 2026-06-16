@@ -98,6 +98,32 @@ export class OfficeOrderService {
       .where(inArray(dutiesOrderRefHelper(), orderRefs)) as unknown as { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null; designation: string; cellName: string } }[];
     }
 
+    // Fetch all employees and their cellNames to use as a fallback when database duties are missing
+    const allEmps = await db.select({
+      id: employeesIdHelper(),
+      bankId: employeesBankIdHelper(),
+      name: employeesNameHelper(),
+      cellName: cells.name
+    })
+    .from(employeesTableHelper())
+    .innerJoin(cells, eq(employees.cellId, cells.id));
+
+    const findCellNameForEmp = (s: any): string | null => {
+      const match = allEmps.find((e) => {
+        if (s.employeeId) {
+          const sEmpIdStr = s.employeeId.toString().trim();
+          if (e.bankId && e.bankId.trim() === sEmpIdStr) return true;
+          if (e.id.toString() === sEmpIdStr) return true;
+        }
+        if (s.employeeName && e.name) {
+          if (e.name.trim() === s.employeeName.trim()) return true;
+          if (e.name.replace(/^জনাব\s+/, '').trim() === s.employeeName.replace(/^জনাব\s+/, '').trim()) return true;
+        }
+        return false;
+      });
+      return match ? match.cellName : null;
+    };
+
     const toBanglaDigits = (num: string | number): string => {
       const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
       return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit)]);
@@ -174,7 +200,7 @@ export class OfficeOrderService {
               return d.orderRef.replace(/\/বিল$/, '') === order.orderRef.replace(/\/বিল$/, '') && 
               (d.employee.bankId === s.employeeId || d.employee.id.toString() === s.employeeId || d.employee.name === s.employeeName);
             });
-            const cellName = matches.length > 0 ? matches[0].employee.cellName : null;
+            const cellName = (matches.length > 0 ? matches[0].employee.cellName : null) || findCellNameForEmp(s);
 
             if (!s.datesFormatted && matches.length > 0) {
               const uniqueDates = Array.from(new Set(matches.map((m) => m.date))).sort();
@@ -195,7 +221,7 @@ export class OfficeOrderService {
             return d.orderRef.replace(/\/বিল$/, '') === order.orderRef.replace(/\/বিল$/, '') && 
             (d.employee.bankId === s.employeeId || d.employee.id.toString() === s.employeeId || d.employee.name === s.employeeName);
           });
-          const cellName = matches.length > 0 ? matches[0].employee.cellName : null;
+          const cellName = (matches.length > 0 ? matches[0].employee.cellName : null) || findCellNameForEmp(s);
           return { ...s, cellName };
         });
       }
