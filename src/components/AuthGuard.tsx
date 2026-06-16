@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ShieldCheck, AlertCircle, Eye, EyeOff, Lock } from 'lucide-react';
-import { signIn } from 'next-auth/react';
+import { signIn, signOut } from 'next-auth/react';
 
 // ===== INTERACTIVE DOG PHOTO EYE OVERLAY COMPONENT =====
 // Render a highly interactive, animated vector SVG dog mascot that tracks input and hides its eyes
@@ -312,9 +312,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Legacy fallback: if attempts >= 5 but no block timestamp, clear attempts
+    // Legacy fallback: if attempts >= 3 but no block timestamp, clear attempts
     const savedAttempts = localStorage.getItem('login_attempts');
-    if (savedAttempts && parseInt(savedAttempts, 10) >= 5) {
+    if (savedAttempts && parseInt(savedAttempts, 10) >= 3) {
       localStorage.removeItem('login_attempts');
       setAttempts(0);
     }
@@ -333,7 +333,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           localStorage.removeItem('login_blocked_until');
           return 0;
         }
-      } else if (saved && parseInt(saved, 10) >= 5) {
+      } else if (saved && parseInt(saved, 10) >= 3) {
         localStorage.removeItem('login_attempts');
         return 0;
       }
@@ -351,15 +351,29 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         if (res.ok && contentType && contentType.includes('application/json')) {
           const data = await res.json();
           if (data.authenticated) {
+            // Check if tab session is active (to log out on browser/tab close)
+            if (typeof window !== 'undefined' && !sessionStorage.getItem('tab_session_active')) {
+              await signOut({ redirect: false });
+              setAuthenticated(false);
+              setUserProfile(null);
+              sessionStorage.setItem('tab_session_active', 'true');
+              return;
+            }
             setAuthenticated(true);
             setUserProfile(data.user);
           } else {
             setAuthenticated(false);
             setUserProfile(null);
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem('tab_session_active', 'true');
+            }
           }
         } else {
           setAuthenticated(false);
           setUserProfile(null);
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('tab_session_active', 'true');
+          }
         }
       } catch (err) {
         console.error('Auth verification error:', err);
@@ -433,6 +447,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('login_attempts');
         localStorage.removeItem('login_blocked_until');
         setAttempts(0);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('tab_session_active', 'true');
+        }
         window.dispatchEvent(new Event('storage'));
         // Fetch detailed profile immediately
         const profileRes = await fetch('/api/profile');
@@ -448,12 +465,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         setAttempts(nextAttempts);
         localStorage.setItem('login_attempts', String(nextAttempts));
         window.dispatchEvent(new Event('storage'));
-        if (nextAttempts >= 5) {
+        if (nextAttempts >= 3) {
           const blockedUntil = Date.now() + 5 * 60 * 1000; // 5 minutes block
           localStorage.setItem('login_blocked_until', String(blockedUntil));
           setError('অতিরিক্ত ভুল প্রচেষ্টার কারণে আপনার লগইন সাময়িকভাবে ব্লক করা হয়েছে। অনুগ্রহ করে ৫ মিনিট পর পুনরায় চেষ্টা করুন।');
         } else {
-          setError(`ভুল ইউজারনেম বা পাসওয়ার্ড! (অবশিষ্ট চেষ্টা: ${5 - nextAttempts} বার)`);
+          setError(`ভুল ইউজারনেম বা পাসওয়ার্ড! (অবশিষ্ট চেষ্টা: ${3 - nextAttempts} বার)`);
         }
       }
     } catch {
