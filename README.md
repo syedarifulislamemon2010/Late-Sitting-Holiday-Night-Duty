@@ -439,6 +439,114 @@ cd lhn-portal
 sudo npm install --omit=dev
 ```
 
+### Step 2.5: Install & Configure PostgreSQL 15 on RHEL 8 (Direct OS Installation)
+
+If you are running PostgreSQL directly on your RedHat Enterprise Linux 8 server, follow these commands to install, configure, and restore the database schema and dump data:
+
+#### A. Install PostgreSQL 15 Server
+Configure the official PostgreSQL repository on RHEL 8 and install:
+```bash
+# Disable default postgresql appstream module
+sudo dnf -qy module disable postgresql
+
+# Install official PostgreSQL repository RPM
+sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# Install PostgreSQL 15 server
+sudo dnf install -y postgresql15-server postgresql15-contrib
+```
+
+#### B. Initialize Database and Start Service
+```bash
+# Initialize the PostgreSQL cluster configuration
+sudo /usr/pgsql-15/bin/postgresql-15-setup initdb
+
+# Enable and start the PostgreSQL daemon
+sudo systemctl enable --now postgresql-15
+```
+
+#### C. Set Database Password & Create Database
+Log in as the default database superuser `postgres` and configure credentials:
+```bash
+# Switch to postgres user shell
+sudo -i -u postgres
+
+# Change password for default 'postgres' user
+psql -c "ALTER USER postgres PASSWORD 'db_secure_password_123';"
+
+# Create the application database
+createdb lhn_portal
+
+# Exit postgres user shell
+exit
+```
+
+#### D. Configure Client Authentication (Crucial RHEL Step)
+By default, PostgreSQL uses `ident` or `peer` authentication on RHEL, which will cause `Password authentication failed` or `Peer authentication failed` errors when Next.js connects. You must modify `/var/lib/pgsql/15/data/pg_hba.conf`:
+
+1. Open the file with your editor:
+   ```bash
+   sudo vi /var/lib/pgsql/15/data/pg_hba.conf
+   ```
+2. Locate the IPv4/IPv6 local connection lines and change `ident` / `peer` method to `scram-sha-256` or `md5`:
+   ```text
+   # TYPE  DATABASE        USER            ADDRESS                 METHOD
+   
+   # "local" is for Unix domain socket connections only
+   local   all             all                                     peer
+   
+   # IPv4 local connections:
+   host    all             all             127.0.0.1/32            scram-sha-256
+   
+   # IPv6 local connections:
+   host    all             all             ::1/128                 scram-sha-256
+   ```
+3. Restart PostgreSQL to apply the changes:
+   ```bash
+   sudo systemctl restart postgresql-15
+   ```
+
+#### E. Sync Database Schemas & Seed Backup Data
+1. Add the local database connection URL to your `.env` file:
+   ```env
+   DATABASE_URL="postgresql://postgres:db_secure_password_123@localhost:5432/lhn_portal?sslmode=disable"
+   ```
+2. Run Drizzle migrations to generate all portal tables:
+   ```bash
+   # Push schema structures directly
+   npx drizzle-kit push
+   
+   # OR apply existing migrations
+   npx drizzle-kit migrate
+   ```
+   *(If prompted, confirm the operation in the console by pressing `y` and Enter).*
+3. Seed the local tables with the backup JSON data in the root directory:
+   ```bash
+   npm run db:seed
+   ```
+
+---
+
+#### F. Troubleshooting & Alternative Solutions
+
+##### 1. Error: "Password Authentication Failed (peer/ident)"
+* **Reason:** PostgreSQL is still using `ident` auth.
+* **Fix:** Re-check `/var/lib/pgsql/15/data/pg_hba.conf` and ensure local IPv4 address `127.0.0.1/32` has method `scram-sha-256` or `md5`, then restart PostgreSQL: `sudo systemctl restart postgresql-15`.
+
+##### 2. Error: "Connection Refused (Port 5432)"
+* **Reason:** PostgreSQL is not running or not listening.
+* **Fix:** Start the service: `sudo systemctl start postgresql-15`. Verify with: `sudo systemctl status postgresql-15`.
+
+##### 3. Alternative: Running Database via Docker (Highly Recommended)
+If you prefer not to manage PostgreSQL at the OS level, you can run it inside a Docker container using the pre-configured `docker-compose.yml` in this repository:
+```bash
+# Spin up containerized Postgres 15 database on RHEL 8
+docker compose up -d db
+```
+This starts database listening on port `5432` with username `postgres`, password `db_secure_password_123`, and database name `lhn_portal` automatically.
+
+---
+
 ### Step 3: Setup Environment & Process Manager
 Install PM2 globally to run the node service in the background:
 ```bash
