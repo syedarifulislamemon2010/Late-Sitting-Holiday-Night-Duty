@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "set NODE_OPTIONS=--no-deprecation && next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node --no-deprecation --require ./polyfill.js node_modules/next/dist/bin/next dev",
+    "build": "node --no-deprecation --require ./polyfill.js node_modules/next/dist/bin/next build",
+    "start": "node --no-deprecation --require ./polyfill.js node_modules/next/dist/bin/next start",
     "lint": "eslint",
     "db:seed": "npx tsx src/db/seed.ts",
     "db:dump": "npx tsx src/db/dump.ts",
