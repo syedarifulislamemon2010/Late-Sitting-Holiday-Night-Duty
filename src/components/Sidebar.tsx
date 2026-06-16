@@ -123,7 +123,6 @@ export default function Sidebar() {
     {
       title: 'অন্যান্য',
       items: [
-        { name: 'বাংলা কনভার্টার', href: '/converter', icon: Languages },
         { name: 'আর্কাইভ', href: '/documents', icon: FileText },
         { name: 'রিসাইকেল বিন', href: '/trash', icon: Trash2 }
       ]

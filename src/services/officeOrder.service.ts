@@ -1,6 +1,6 @@
 import { OfficeOrderRepository } from '@/repositories/officeOrder.repository';
 import { db } from '@/lib/db';
-import { trash, officeOrders, duties, employees } from '@/db/schema';
+import { trash, officeOrders, duties, employees, cells } from '@/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { AppError, AuthError } from '@/lib/errors';
@@ -74,20 +74,11 @@ export class OfficeOrderService {
       }
     }
 
-    let ordersList: OfficeOrderDBRecord[] = [];
-    if (isUserRestricted) {
-      if (userCellNames.length > 0) {
-        const allowedNames = [...userCellNames, 'All Cells', 'All My Cells', 'IT Department'];
-        ordersList = await OfficeOrderRepository.listAll(inArray(officeOrdersCellNameHelper(), allowedNames)) as unknown as OfficeOrderDBRecord[];
-      } else {
-        ordersList = [];
-      }
-    } else {
-      ordersList = await OfficeOrderRepository.listAll() as unknown as OfficeOrderDBRecord[];
-    }
+    // Always load all orders first to filter them in memory using their linked duties' cells
+    const ordersList = await OfficeOrderRepository.listAll() as unknown as OfficeOrderDBRecord[];
 
     const orderRefs = ordersList.map((o) => o.orderRef);
-    let linkedDuties: { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null; designation: string } }[] = [];
+    let linkedDuties: { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null; designation: string; cellName: string } }[] = [];
     if (orderRefs.length > 0) {
       linkedDuties = await db.select({
         id: dutiesIdHelper(),
@@ -97,12 +88,14 @@ export class OfficeOrderService {
           id: employeesIdHelper(),
           name: employeesNameHelper(),
           bankId: employeesBankIdHelper(),
-          designation: employeesDesignationHelper()
+          designation: employeesDesignationHelper(),
+          cellName: cells.name
         }
       })
       .from(dutiesTableHelper())
       .innerJoin(employeesTableHelper(), eq(dutiesEmployeeIdHelper(), employeesIdHelper()))
-      .where(inArray(dutiesOrderRefHelper(), orderRefs)) as unknown as { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null; designation: string } }[];
+      .innerJoin(cells, eq(employees.cellId, cells.id))
+      .where(inArray(dutiesOrderRefHelper(), orderRefs)) as unknown as { id: number; date: string; orderRef: string | null; employee: { id: number; name: string; bankId: string | null; designation: string; cellName: string } }[];
     }
 
     const toBanglaDigits = (num: string | number): string => {
@@ -111,7 +104,7 @@ export class OfficeOrderService {
     };
 
     const res = ordersList.map((order) => {
-      let parsedDuties: OrderDutyInput[] = order.dutiesJson ? JSON.parse(order.dutiesJson) : [];
+      let parsedDuties: any[] = order.dutiesJson ? JSON.parse(order.dutiesJson) : [];
       
       if (order.category.startsWith('BILL_')) {
         if (parsedDuties.length === 0) {
@@ -130,6 +123,7 @@ export class OfficeOrderService {
               employeeId: string;
               employeeName: string;
               designation: string;
+              cellName: string;
               dates: string[];
             }>();
 
@@ -140,6 +134,7 @@ export class OfficeOrderService {
                   employeeId: d.employee.bankId || String(d.employee.id),
                   employeeName: d.employee.name,
                   designation: d.employee.designation,
+                  cellName: d.employee.cellName,
                   dates: []
                 });
               }
@@ -167,30 +162,42 @@ export class OfficeOrderService {
                 totalApyaon,
                 totalTransport,
                 grandTotal,
-                datesFormatted: formatted
+                datesFormatted: formatted,
+                cellName: g.cellName
               };
             });
           }
         } else {
           parsedDuties = parsedDuties.map((s) => {
-            if (!s.datesFormatted) {
-              const matches = linkedDuties.filter((d) => {
-                if (!d.orderRef) return false;
-                return d.orderRef.replace(/\/বিল$/, '') === order.orderRef.replace(/\/বিল$/, '') && 
-                (d.employee.bankId === s.employeeId || d.employee.id.toString() === s.employeeId || d.employee.name === s.employeeName);
-              });
-              if (matches.length > 0) {
-                const uniqueDates = Array.from(new Set(matches.map((m) => m.date))).sort();
-                const formatted = uniqueDates.map((dStr) => {
-                  const [year, month, day] = dStr.split('-');
-                  return toBanglaDigits(`${day}-${month}-${year}`);
-                }).join(', ');
-                return { ...s, datesFormatted: formatted };
-              }
+            const matches = linkedDuties.filter((d) => {
+              if (!d.orderRef) return false;
+              return d.orderRef.replace(/\/বিল$/, '') === order.orderRef.replace(/\/বিল$/, '') && 
+              (d.employee.bankId === s.employeeId || d.employee.id.toString() === s.employeeId || d.employee.name === s.employeeName);
+            });
+            const cellName = matches.length > 0 ? matches[0].employee.cellName : null;
+
+            if (!s.datesFormatted && matches.length > 0) {
+              const uniqueDates = Array.from(new Set(matches.map((m) => m.date))).sort();
+              const formatted = uniqueDates.map((dStr) => {
+                const [year, month, day] = dStr.split('-');
+                return toBanglaDigits(`${day}-${month}-${year}`);
+              }).join(', ');
+              return { ...s, datesFormatted: formatted, cellName };
             }
-            return s;
+            return { ...s, cellName };
           });
         }
+      } else {
+        // For standard office orders, also map cellName to each duty
+        parsedDuties = parsedDuties.map((s) => {
+          const matches = linkedDuties.filter((d) => {
+            if (!d.orderRef) return false;
+            return d.orderRef.replace(/\/বিল$/, '') === order.orderRef.replace(/\/বিল$/, '') && 
+            (d.employee.bankId === s.employeeId || d.employee.id.toString() === s.employeeId || d.employee.name === s.employeeName);
+          });
+          const cellName = matches.length > 0 ? matches[0].employee.cellName : null;
+          return { ...s, cellName };
+        });
       }
 
       return {
@@ -206,6 +213,20 @@ export class OfficeOrderService {
         createdAt: order.createdAt.toISOString()
       };
     });
+
+    if (isUserRestricted) {
+      return res.filter(order => {
+        // 1. Direct cell name match on the office order record itself
+        if (order.cellName && userCellNames.includes(order.cellName)) {
+          return true;
+        }
+
+        // 2. Overlap check: Check if any duty linked to this order belongs to an employee in one of the user's cells
+        const hasOverlap = order.duties && Array.isArray(order.duties) && order.duties.some((d: any) => d.cellName && userCellNames.includes(d.cellName));
+
+        return hasOverlap;
+      });
+    }
 
     return res;
   }
@@ -378,7 +399,22 @@ export class OfficeOrderService {
 
     if (currentUser.role !== 'ADMIN') {
       const userCellNames = currentUser.cells?.map((c) => c.name) || [];
-      if (existingOrder.cellName !== 'All Cells' && existingOrder.cellName !== 'all' && (!existingOrder.cellName || !userCellNames.includes(existingOrder.cellName))) {
+      let hasAccess = false;
+      if (existingOrder.cellName && userCellNames.includes(existingOrder.cellName)) {
+        hasAccess = true;
+      } else {
+        const dutiesForOrder = await db.select({
+          cellName: cells.name
+        })
+        .from(duties)
+        .innerJoin(employees, eq(duties.employeeId, employees.id))
+        .innerJoin(cells, eq(employees.cellId, cells.id))
+        .where(eq(duties.orderRef, existingOrder.orderRef));
+        
+        hasAccess = dutiesForOrder.some(d => userCellNames.includes(d.cellName));
+      }
+
+      if (!hasAccess) {
         throw new AuthError('অন্য সেলের জন্য অফিস আদেশ আপডেট করার অনুমতি নেই।', 403, 'forbidden');
       }
     }
@@ -498,7 +534,22 @@ export class OfficeOrderService {
 
     if (currentUser.role !== 'ADMIN') {
       const userCellNames = currentUser.cells?.map((c) => c.name) || [];
-      if (order.cellName !== 'All Cells' && order.cellName !== 'all' && (!order.cellName || !userCellNames.includes(order.cellName))) {
+      let hasAccess = false;
+      if (order.cellName && userCellNames.includes(order.cellName)) {
+        hasAccess = true;
+      } else {
+        const dutiesForOrder = await db.select({
+          cellName: cells.name
+        })
+        .from(duties)
+        .innerJoin(employees, eq(duties.employeeId, employees.id))
+        .innerJoin(cells, eq(employees.cellId, cells.id))
+        .where(eq(duties.orderRef, order.orderRef));
+        
+        hasAccess = dutiesForOrder.some(d => userCellNames.includes(d.cellName));
+      }
+
+      if (!hasAccess) {
         throw new AuthError('অন্য সেলের জন্য রেকর্ড মুছে ফেলার অনুমতি নেই।', 403, 'forbidden');
       }
     }

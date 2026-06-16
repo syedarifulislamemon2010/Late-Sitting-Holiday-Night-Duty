@@ -102,7 +102,6 @@ export default function Navbar() {
       'lunch-bill': { section: 'বিল ও ভাতাসমূহ', title: 'লাঞ্চ বিল শিট' },
       'closing-bill': { section: 'বিল ও ভাতাসমূহ', title: 'ক্লোজিং বিল শিট' },
       'leave': { section: 'আবেদনপত্র', title: 'ছুটি আবেদন' },
-      'converter': { section: 'অন্যান্য', title: 'বাংলা কনভার্টার' },
       'documents': { section: 'অন্যান্য', title: 'আর্কাইভ' },
       'trash': { section: 'অন্যান্য', title: 'রিসাইকেল বিন' },
       'users': { section: 'সেটিংস', title: 'ব্যবহারকারী সেটিংস' }

@@ -1607,14 +1607,22 @@ export default function BillingPage() {
     if (!currentUser) return false;
     if (currentUser.role === 'ADMIN') return true;
     const userCellNames = currentUser.cells?.map((c) => c.name) || [];
-    return order.cellName === 'All Cells' || order.cellName === 'all' || !order.cellName || userCellNames.includes(order.cellName);
+    if (order.cellName && userCellNames.includes(order.cellName)) return true;
+    if (order.duties && Array.isArray(order.duties)) {
+      return order.duties.some((d: any) => d.cellName && userCellNames.includes(d.cellName));
+    }
+    return false;
   };
 
   const hasEditPermission = (order: OfficeOrder) => {
     if (!currentUser) return false;
     if (currentUser.role === 'ADMIN') return true;
     const userCellNames = currentUser.cells?.map((c) => c.name) || [];
-    return order.cellName === 'All Cells' || order.cellName === 'all' || !order.cellName || userCellNames.includes(order.cellName);
+    if (order.cellName && userCellNames.includes(order.cellName)) return true;
+    if (order.duties && Array.isArray(order.duties)) {
+      return order.duties.some((d: any) => d.cellName && userCellNames.includes(d.cellName));
+    }
+    return false;
   };
 
 
