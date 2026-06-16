@@ -20,7 +20,8 @@ import {
   Receipt,
   FileSignature,
   CheckCircle,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 
 interface Cell {
@@ -538,7 +539,7 @@ export default function RosterPage() {
     const banglaMonthLabel = `${banglaMonths[month - 1]} ${toBanglaDigits(yearStr)}`;
     
     return (
-      <div key={ym} className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 no-print flex-1 min-w-[240px]">
+      <div key={ym} className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 no-print flex-1 w-full min-w-0">
         <div className="flex items-center justify-between gap-1">
           <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">ডিউটি তারিখসমূহ:</span>
           {opt1Assignments[empId] && opt1Assignments[empId].some(d => d.startsWith(ym)) && (
@@ -583,9 +584,9 @@ export default function RosterPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-1 font-sans text-center">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 font-sans text-center">
           {['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহ', 'শুক্র', 'শনি'].map((dName, idx) => (
-            <div key={idx} className={`text-[9px] sm:text-[10px] font-bold py-0.5 ${idx === 5 || idx === 6 ? 'text-red-500 font-extrabold' : 'text-slate-400 dark:text-slate-500'}`}>
+            <div key={idx} className={`text-[8px] xs:text-[9px] sm:text-[10px] font-bold py-0.5 ${idx === 5 || idx === 6 ? 'text-red-500 font-extrabold' : 'text-slate-400 dark:text-slate-500'}`}>
               {dName}
             </div>
           ))}
@@ -611,7 +612,7 @@ export default function RosterPage() {
                     handleOpt1AddDate(empId, c.dateStr);
                   }
                 }}
-                className={`relative p-0.5 text-[10px] font-bold rounded-md transition-all flex flex-col items-center justify-center min-h-[32px] border ${
+                className={`relative p-0.5 text-[9px] sm:text-[10px] font-bold rounded-md transition-all flex flex-col items-center justify-center min-h-[28px] sm:min-h-[32px] border ${
                   c.isSelected
                     ? 'bg-indigo-650 border-indigo-650 text-white shadow-sm font-extrabold scale-105'
                     : isDisabled
@@ -2905,7 +2906,17 @@ export default function RosterPage() {
                   </select>
                 </div>
 
-                {/* Mode Specific Layouts */}
+                {!assignmentForm.type ? (
+                  <div className="p-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/10 text-center space-y-2 mt-4">
+                    <Lock className="mx-auto text-slate-400 dark:text-slate-500 animate-bounce" size={20} />
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">কর্মকর্তা ও তারিখ নির্বাচন লকড</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      কর্মকর্তা ও তারিখ সমূহ নির্বাচন করতে অনুগ্রহ করে প্রথমে উপরে ডিউটির ক্যাটাগরি সিলেক্ট করুন।
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Mode Specific Layouts */}
                 {entryMode === 'EMPLOYEE_WISE' ? (
                   /* ========================================================
                      OPTION 1: Cell & Employee wise (Multi-date picker)
@@ -2937,7 +2948,11 @@ export default function RosterPage() {
                         ৪. কর্মকর্তা ও তারিখসমূহ নির্বাচন করুন
                       </label>
                       
-                      <div className="border border-slate-100 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className={`border border-slate-100 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/10 grid gap-3 ${
+                        isAssignmentPrimary 
+                          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
+                          : 'grid-cols-1'
+                      }`}>
                         {(() => {
                           const allowedCellIds = currentUser?.role === 'ADMIN'
                             ? cells.map(c => c.id)
@@ -3097,7 +3112,11 @@ export default function RosterPage() {
                       </div>
 
                       {/* Officers Checkboxes scrollbox */}
-                      <div className="border border-slate-100 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className={`border border-slate-100 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/10 grid gap-3 ${
+                        isAssignmentPrimary 
+                          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
+                          : 'grid-cols-1'
+                      }`}>
                         {(() => {
                           const isWorking = assignmentForm.date ? checkIsWorkingDay(assignmentForm.date, holidays) : true;
                           const isLateSitting = assignmentForm.type === 'LATE_SITTING';
@@ -3199,6 +3218,8 @@ export default function RosterPage() {
                       {submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন'}
                     </button>
                   )
+                )}
+                  </>
                 )}
               </form>
               </div>
