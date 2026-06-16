@@ -1,6 +1,6 @@
 # Janata Bank Late-Sitting, Holiday, and Night Duty Portal (LHN Portal)
 
-An enterprise-grade utility management portal built to automate late-sitting, holiday, and night duty assignments, calculate conveyance and entertainment allowance bill reports, manage executive seniority directories, and handle official leave requests.
+An enterprise-grade utility management portal built to automate late-sitting, holiday, and night duty assignments, calculate conveyance and entertainment allowance bill reports, manage executive seniority directories, handle official leave requests, and configure fine-grained role-based cell assignments.
 
 ---
 
@@ -10,17 +10,18 @@ The **Janata Bank LHN Portal** is a production-ready administrative utility desi
 
 ### 1.1 Target User Roles
 * **System Administrators:** Who configure security settings, manage operator directories, assign roles, and oversee audit trails.
-* **Operators (Cell In-Charges):** Who coordinate rosters for their specific cells, log shift duties, generate billing memos, and input leave entries.
+* **Operators (Cell In-Charges & Cell Officers):** Who coordinate rosters for their specific cells, log shift duties, generate billing memos, input leave entries, and manage employee directories within their assigned cells.
 * **Executives (AGM, DGM, GM):** Who review, authorize, and sign off on duty rosters and bill memos.
 
 ### 1.2 Core Modules & Functionality
-1. **Duty Roster Management:** Dynamic assignment of late-sitting, holiday, and night shift duties. Restricts operator errors (e.g. duplicate duty assignments).
+1. **Duty Roster Management:** Dynamic assignment of late-sitting, holiday, and night shift duties. Restricts operator errors (e.g., duplicate duty assignments).
 2. **Bill Memo Generator:** Dynamically calculates conveyance and entertainment allowance bills based on validated duty hours and days. Generates official print-ready Legal-size billing memos.
 3. **Leave Processing Engine:** Casual, Station, and Special Leave management with sandwich-rule calculations and dates validation to prevent overlapping duty assignments.
 4. **Lunch Bill Module:** Generates monthly lunch bill records for employees within specific cells.
 5. **Executive Directory:** Seniority-ranked directory of executive members (AGM, DGM) with real-time status visibility.
 6. **Soft Deleted Items (Recycle Bin):** An audit-compliant soft-deletion bin that allows administrators to review and recover deleted records without database pollution.
 7. **Audit Log:** System-wide immutable logging tracking data modifications (insertions, updates, deletions).
+8. **Role-Based Cell Assignment:** Advanced role delegation allowing admins to flag operator cell permissions as **PRIMARY (মূল দায়িত্ব)**, **ADDITIONAL (অতিরিক্ত দায়িত্ব)**, or **INCHARGE (ইনচার্জ)**.
 
 ---
 
@@ -64,7 +65,7 @@ Late-Sitting-Holiday-Night-Duty/
 │   │   │   │   └── [id]/
 │   │   │   │       └── route.ts           # Modifies, views, or soft-deletes a specific duty
 │   │   │   ├── employees/
-│   │   │   │   ├── route.ts               # Employee CRUD API
+│   │   │   │   ├── route.ts               # Employee CRUD API (Enforces cell officer scope rules)
 │   │   │   │   ├── parse-image/
 │   │   │   │   │   └── route.ts           # Gemini API OCR tool for scanning paper employee rosters
 │   │   │   │   └── [id]/
@@ -104,7 +105,7 @@ Late-Sitting-Holiday-Night-Duty/
 │   │   │   └── users/
 │   │   │       ├── route.ts               # Lists and registers bank cell operators
 │   │   │       └── [id]/
-│   │   │           └── route.ts           # Alters operator permissions and profiles
+│   │   │           └── route.ts           # Alters operator permissions, cellDuties configurations, and profiles
 │   │   ├── audit/                         # Audit logs viewer interface
 │   │   │   └── page.tsx                   # Renders immutable log table filters and audit details
 │   │   ├── billing/                       # Conveyance and entertainment billing ledger UI
@@ -123,8 +124,8 @@ Late-Sitting-Holiday-Night-Duty/
 │   │   │   ├── page.tsx                   # Lists generated rosters and billing reports
 │   │   │   └── preview/
 │   │   │       └── page.tsx               # Renders A4/Legal print templates inside iframe modals
-│   │   ├── employees/                     # Employee registry manager
-│   │   │   └── page.tsx                   # CRUD table with batch CSV/Image scanning imports
+│   │   ├── employees/                     # Employee directory manager
+│   │   │   └── page.tsx                   # CRUD dashboard with cell role badges and scoped officer actions
 │   │   ├── executive/                     # Seniority directories viewer
 │   │   │   └── page.tsx                   # Renders ranked executive directories with seniority color tags
 │   │   ├── leave/                         # Leave requests interface
@@ -137,11 +138,11 @@ Late-Sitting-Holiday-Night-Duty/
 │   │   ├── trash/                         # Soft-deleted items recovery UI
 │   │   │   └── page.tsx                   # Recycle bin restoring deleted database entities
 │   │   └── users/                         # Operators directory UI
-│   │       └── page.tsx                   # Admin manager for mapping users to specific cells
+│   │       └── page.tsx                   # Admin manager for mapping users to specific cell assignments with roles
 │   ├── components/                        # Core UI components
 │   │   ├── AuthGuard.tsx                  # Login screen featuring an interactive SVG dog mascot
 │   │   ├── Navbar.tsx                     # Dynamic top header with user avatar, logout controls
-│   │   └── Sidebar.tsx                    # Left collapsible panel with responsive routing links
+│   │   └── Sidebar.tsx                    # Left collapsible panel with responsive routing links, branding, and tooltips
 │   ├── context/                           # Global state contexts
 │   │   ├── LayoutContext.tsx              # Toggles 70% vs 30% panel split
 │   │   └── ProfileContext.tsx             # Fetches session profile once on load
@@ -183,7 +184,7 @@ Late-Sitting-Holiday-Night-Duty/
 │       │   ├── leave.service.test.ts      # Verifies sandwich-rule edge cases
 │       │   └── officeOrder.service.test.ts# Verifies office order budget splitting
 │       ├── duty.service.ts                # Allowance calculations, leave overlaps verification
-│       ├── employee.service.ts            # Employee updates, batch import validations
+│       ├── employee.service.ts            # Employee updates, batch import validations, cell permission gates
 │       ├── executive.service.ts           # Seniority formatting
 │       ├── leave.service.ts               # Sandwich rules execution, dates overlap checks
 │       └── officeOrder.service.ts         # ৳7,500 budget limit splitter logic, document compilers
@@ -286,7 +287,9 @@ The portal ensures a high standard of code safety and maintainability:
 
 Security is designed into the portal at every layer:
 * **Authentication:** Handled through NextAuth.js, utilizing cryptographically secure session cookies.
-* **Role-Based Access Control (RBAC):** Users are assigned roles (`ADMIN` or `USER`). The API layer and page navigation enforce strict guards ensuring `USER` role cannot execute admin mutations (e.g. creating/deleting employees or restoring items).
+* **Role-Based Access Control (RBAC) & Cell Permission Boundary:** 
+  * Users are assigned roles (`ADMIN` or `USER`).
+  * Cell duties mapping (`PRIMARY`, `ADDITIONAL`, `INCHARGE`) restricts modifications inside the Employee Directory so operators with the `USER` role can only CRUD employee records belonging directly to their authorized cells.
 * **SQL Injection Mitigation:** Parameterized queries are automatically generated via **Drizzle ORM** to neutralize SQL injection vulnerabilities.
 * **Data Validation:** Zod schemas validate data inputs to block malformed parameters or illegal type casting at runtime.
 * **Audit Logging:** System-wide mutations (Insert, Update, and Soft-Deletion) are recorded in an immutable `AuditLog` table containing timestamps, target records, action type, and user session details.
@@ -297,7 +300,7 @@ Security is designed into the portal at every layer:
 
 The project has been planned and executed following standard Agile methodologies:
 * **Iterative Sprints:** Development is structured into bi-weekly sprints focused on functional deliverables.
-* **User Stories:** Requirements are formulated around user scenarios (e.g. "As an Operator, I want to assign holiday duties so that I can automatically calculate entertainment allowances").
+* **User Stories:** Requirements are formulated around user scenarios (e.g., "As an Operator, I want to assign holiday duties so that I can automatically calculate entertainment allowances").
 * **Continuous Integration:** Regular local compilation checks and database script testing ensure code remains always stable.
 
 ---
@@ -379,7 +382,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the portal.
 | :--- | :---: | :--- |
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `NEXTAUTH_SECRET` | Yes | Secret key used to encrypt session cookies |
-| `NEXTAUTH_URL` | Yes | Deployed application domain URL (e.g. `http://localhost:3000` for development) |
+| `NEXTAUTH_URL` | Yes | Deployed application domain URL (e.g., `http://localhost:3000` for development) |
 | `GEMINI_API_KEY` | Yes | Google Gemini API Key for OCR and bulk uploads |
 
 ---
@@ -669,6 +672,9 @@ docker build -t lhn-portal .
 ## 21. Recent Updates (June 2026)
 
 The LHN Portal has been updated with the following features and structural fixes in June 2026:
+* **Branding Single-Source & Collapse Mechanics (Left Sidebar)**: Refactored [Sidebar.tsx](file:///e:/Late-Sitting-Holiday-Night-Duty/src/components/Sidebar.tsx) to support a flawless animated collapsed state (with opacity transition prevention of popping, a floating toggle button, and interactive tooltips) while keeping all bank branding single-sourced to the sidebar.
+* **Role-Based Cell Assignment (Primary/Additional/Incharge)**: Added the `cellDuties` text column in the `users` table to map operators to cell assignments tagged explicitly as **PRIMARY (মূল দায়িত্ব)**, **ADDITIONAL (অতিরিক্ত দায়িত্ব)**, or **INCHARGE (ইনচার্জ)**. Built UI segmented controls in the User popup modal to configure roles, rendering beautiful, corresponding badges on individual user and employee cards.
+* **Cell Officer Scoped Permissions**: Restructured [employee.service.ts](file:///e:/Late-Sitting-Holiday-Night-Duty/src/services/employee.service.ts) to restrict officer actions so that cell operators (`USER` role) can only add, update, or delete employee directory records within their own assigned cells, protecting unauthorized modifications across cells.
 * **Monolithic Component Decomposition:** Broken down the 4,150+ lines monolithic `BillingPage` into modular components (`LedgerTab`, `OrdersTab`, `BillsTab`, `ReportsTab`, `BillPrintLayout`) under `src/app/billing/components/` to optimize compilation speeds.
 * **Authentication Hardening:** Replaced unencrypted session cookie checks with jwt-validated NextAuth token validation inside `auth-wrapper.ts`.
 * **Database Schema & Transactions:** Implemented database-backed `AuditLog` table with query indexes and wrapped all multi-operation service methods inside SQL transactions (`db.transaction()`) to guarantee atomic operations.
