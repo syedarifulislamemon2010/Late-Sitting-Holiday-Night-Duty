@@ -315,55 +315,6 @@ export default function Dashboard() {
 
           </div>
 
-
-        </div>
-
-        {/* Right Section (Upcoming Holidays & approved Rate Cards) - Spans 1 column */}
-        <div className="space-y-8">
-          
-          {/* Upcoming Configuration Public Holidays */}
-          <div className="glass-card p-6 rounded-2xl space-y-4">
-            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex justify-between items-center">
-              <div>
-                <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">আসন্ন সরকারি ছুটি</h3>
-                <p className="text-[9px] text-slate-400 mt-0.5 font-medium">পরবর্তী ক্যালেন্ডার ছুটির দিনসমূহ।</p>
-              </div>
-              <span className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-rose-500 animate-pulse">
-                <CalendarCheck size={14} />
-              </span>
-            </div>
-            
-            {finalUpcomingHolidays.length > 0 ? (
-              <div className="space-y-3 font-sans">
-                {finalUpcomingHolidays.map((holiday: Holiday) => {
-                  const dateObj = new Date(holiday.date);
-                  return (
-                    <div key={holiday.date} className="flex items-center gap-3 hover:bg-slate-50/55 dark:hover:bg-slate-800/30 p-2 rounded-xl transition-colors">
-                      <div className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-bold text-center shrink-0 border border-rose-100 dark:border-rose-900/30 w-12 shadow-xs">
-                        <p className="text-xs leading-none tracking-tight">
-                          {toBanglaDigits(dateObj.getDate())}
-                        </p>
-                        <p className="text-[8px] leading-none mt-1 font-bold">
-                          {MONTH_NAMES[dateObj.getMonth()]}
-                        </p>
-                      </div>
-                      <div className="leading-tight">
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{holiday.name}</p>
-                        <p className="text-[8px] font-bold text-slate-400 tracking-wide mt-1">
-                          {toBanglaDigits(dateObj.toLocaleDateString('bn-BD', { weekday: 'long' }))} ({toBanglaDigits(holiday.date)})
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-xs text-slate-400">আসন্ন ছুটির কোনো দিন পাওয়া যায়নি।</p>
-              </div>
-            )}
-          </div>
-
           {/* Approved Janata Bank Rates Guideline Card Block */}
           <div className="glass-card p-6 rounded-2xl space-y-4">
             <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex justify-between items-center">
@@ -422,6 +373,56 @@ export default function Dashboard() {
 
             </div>
           </div>
+
+        </div>
+
+        {/* Right Section (Upcoming Holidays & approved Rate Cards) - Spans 1 column */}
+        <div className="space-y-8">
+          
+          {/* Upcoming Configuration Public Holidays */}
+          <div className="glass-card p-6 rounded-2xl space-y-4">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex justify-between items-center">
+              <div>
+                <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">আসন্ন সরকারি ছুটি</h3>
+                <p className="text-[9px] text-slate-400 mt-0.5 font-medium">পরবর্তী ক্যালেন্ডার ছুটির দিনসমূহ।</p>
+              </div>
+              <span className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-rose-500 animate-pulse">
+                <CalendarCheck size={14} />
+              </span>
+            </div>
+            
+            {finalUpcomingHolidays.length > 0 ? (
+              <div className="space-y-3 font-sans">
+                {finalUpcomingHolidays.map((holiday: Holiday) => {
+                  const dateObj = new Date(holiday.date);
+                  return (
+                    <div key={holiday.date} className="flex items-center gap-3 hover:bg-slate-50/55 dark:hover:bg-slate-800/30 p-2 rounded-xl transition-colors">
+                      <div className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-bold text-center shrink-0 border border-rose-100 dark:border-rose-900/30 w-12 shadow-xs">
+                        <p className="text-xs leading-none tracking-tight">
+                          {toBanglaDigits(dateObj.getDate())}
+                        </p>
+                        <p className="text-[8px] leading-none mt-1 font-bold">
+                          {MONTH_NAMES[dateObj.getMonth()]}
+                        </p>
+                      </div>
+                      <div className="leading-tight">
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{holiday.name}</p>
+                        <p className="text-[8px] font-bold text-slate-400 tracking-wide mt-1">
+                          {toBanglaDigits(dateObj.toLocaleDateString('bn-BD', { weekday: 'long' }))} ({toBanglaDigits(holiday.date)})
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-xs text-slate-400">আসন্ন ছুটির কোনো দিন পাওয়া যায়নি।</p>
+              </div>
+            )}
+          </div>
+
+
 
         </div>
 
