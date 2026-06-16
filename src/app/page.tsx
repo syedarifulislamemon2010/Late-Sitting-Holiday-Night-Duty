@@ -105,8 +105,8 @@ export default function Dashboard() {
 
   // Determine upcoming holidays relative to today's date
   const todayStr = new Date().toISOString().split('T')[0];
-  const upcomingHolidaysList = allHolidays.filter(h => h.date >= todayStr).slice(0, 5);
-  const finalUpcomingHolidays = upcomingHolidaysList.length > 0 ? upcomingHolidaysList : allHolidays.slice(0, 5);
+  const upcomingHolidaysList = allHolidays.filter(h => h.date >= todayStr).slice(0, 6);
+  const finalUpcomingHolidays = upcomingHolidaysList.length > 0 ? upcomingHolidaysList : allHolidays.slice(0, 6);
 
   // Calculate calendar elements for the selected month of 2026
   const daysInMonth = DAYS_IN_MONTH[selectedMonth];
@@ -182,13 +182,13 @@ export default function Dashboard() {
       </div>
 
       {/* Main Interactive Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-stretch">
         
         {/* Left Section (Interactive Calendar & Month Picker) - Spans 2 columns */}
-        <div className="xl:col-span-2 space-y-8">
+        <div className="xl:col-span-2 flex flex-col">
           
           {/* Beautiful Month Picker Tabs */}
-          <div className="glass-card p-5 rounded-2xl space-y-4">
+          <div className="glass-card p-5 rounded-2xl space-y-4 flex-1 flex flex-col justify-between">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
                 <Calendar className="text-indigo-600" size={18} />
@@ -200,7 +200,7 @@ export default function Dashboard() {
             </div>
             
             {/* Month Selection Buttons */}
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-w-xl mx-auto w-full">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 w-full">
               {MONTH_NAMES.map((name, idx) => (
                 <button
                   key={name}
@@ -217,7 +217,7 @@ export default function Dashboard() {
             </div>
 
             {/* Interactive Grid Calendar */}
-            <div className="border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 bg-slate-50/20 max-w-[460px] mx-auto w-full">
+            <div className="border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 bg-slate-50/20 w-full">
               
               {/* Month Name and Summary Header */}
               <div className="text-center pb-4">
@@ -315,72 +315,13 @@ export default function Dashboard() {
 
           </div>
 
-          {/* Approved Janata Bank Rates Guideline Card Block */}
-          <div className="glass-card p-6 rounded-2xl space-y-4">
-            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex justify-between items-center">
-              <div>
-                <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">আপ্যায়ন বিল ও যাতায়াত ভাতা রেট</h3>
-                <p className="text-[9px] text-slate-400 mt-0.5 font-medium">জনতা ব্যাংক পিএলসি. এর অনুমোদিত নির্দেশিকা।</p>
-              </div>
-              <span className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-amber-500">
-                <Info size={14} />
-              </span>
-            </div>
-
-            <div className="space-y-4 font-sans">
-              
-              {/* Late Sitting (৳300) */}
-              <div className="p-4 bg-indigo-50/20 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl space-y-2">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-extrabold text-indigo-700 dark:text-indigo-400 text-xs">Late Sitting (লেট সিটিং)</h4>
-                  <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">৳৩০০</span>
-                </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 space-y-1 leading-normal">
-                  <p className="flex justify-between font-bold"><span>• সান্ধ্যকালীন নাস্তা:</span> <span>৳১০০</span></p>
-                  <p className="flex justify-between font-bold"><span>• যাতায়াত ভাতা:</span> <span>৳২০০</span></p>
-                  <div className="h-px bg-indigo-100/30 my-1" />
-                  <p className="text-[9px] text-rose-500 leading-normal font-bold">কর্মদিবসে সন্ধ্যা ০৭:০০ টার পর দায়িত্ব পালনের ক্ষেত্রে প্রযোজ্য।</p>
-                </div>
-              </div>
-
-              {/* Holiday Duty (৳500) */}
-              <div className="p-4 bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-100/50 dark:border-emerald-900/20 rounded-2xl space-y-2">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-extrabold text-emerald-700 dark:text-emerald-400 text-xs">Holiday Duty (সরকারি ছুটি)</h4>
-                  <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">৳৫০০</span>
-                </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 space-y-1 leading-normal">
-                  <p className="flex justify-between font-bold"><span>• দুপুরের খাবার:</span> <span>৳২৫০</span></p>
-                  <p className="flex justify-between font-bold"><span>• যাতায়াত ভাতা:</span> <span>৳২৫০</span></p>
-                  <div className="h-px bg-emerald-100/30 my-1" />
-                  <p className="text-[9px] text-emerald-600 leading-normal font-bold">শুক্রবার, শনিবার ও অন্যান্য সরকারি ছুটির দিনগুলোতে ডিউটি।</p>
-                </div>
-              </div>
-
-              {/* Night Shift (৳1000) */}
-              <div className="p-4 bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/50 dark:border-rose-900/20 rounded-2xl space-y-2">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-extrabold text-rose-700 dark:text-rose-400 text-xs">Night Shift (রাত্রীকালীন ডিউটি)</h4>
-                  <span className="text-[10px] font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">৳১,০০০</span>
-                </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 space-y-1 leading-normal">
-                  <p className="flex justify-between font-bold"><span>• রাতের খাবার (ডিনার):</span> <span>৳৬০০</span></p>
-                  <p className="flex justify-between font-bold"><span>• যাতায়াত ভাতা:</span> <span>৳৪০০</span></p>
-                  <div className="h-px bg-rose-100/30 my-1" />
-                  <p className="text-[9px] text-rose-600 dark:text-rose-400 leading-normal font-black font-sans">রিপোর্ট এর ডাটা এক্সট্রাকশন, ডাটা আপ্লোড এবং ডাউনলোড ডিউটি।</p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
         </div>
 
         {/* Right Section (Upcoming Holidays & approved Rate Cards) - Spans 1 column */}
-        <div className="space-y-8">
+        <div className="flex flex-col">
           
           {/* Upcoming Configuration Public Holidays */}
-          <div className="glass-card p-6 rounded-2xl space-y-4">
+          <div className="glass-card p-6 rounded-2xl space-y-4 flex-1">
             <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex justify-between items-center">
               <div>
                 <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">আসন্ন সরকারি ছুটি</h3>
@@ -422,10 +363,70 @@ export default function Dashboard() {
             )}
           </div>
 
-
-
         </div>
 
+      </div>
+
+      {/* Approved Janata Bank Rates Guideline Card Block (Full Width) */}
+      <div className="glass-card p-6 rounded-2xl space-y-6">
+        <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex justify-between items-center">
+          <div>
+            <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg flex items-center gap-2">
+              <Info className="text-amber-500" size={20} />
+              আপ্যায়ন বিল ও যাতায়াত ভাতা রেট
+            </h3>
+            <p className="text-xs text-slate-400 mt-1 font-medium font-sans">জনতা ব্যাংক পিএলসি. এর অনুমোদিত নির্দেশিকা।</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
+          
+          {/* Late Sitting (৳300) */}
+          <div className="p-5 bg-indigo-50/20 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl flex flex-col justify-between space-y-3">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center border-b border-indigo-100/30 pb-2">
+                <h4 className="font-extrabold text-indigo-700 dark:text-indigo-400 text-sm">Late Sitting (লেট সিটিং)</h4>
+                <span className="text-xs font-bold text-indigo-655 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100/60 shadow-xs">৳৩০০</span>
+              </div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
+                <p className="flex justify-between"><span>• সান্ধ্যকালীন নাস্তা:</span> <span className="font-bold">৳১০০</span></p>
+                <p className="flex justify-between"><span>• যাতায়াত ভাতা:</span> <span className="font-bold">৳২০০</span></p>
+              </div>
+            </div>
+            <p className="text-[10px] text-rose-500 leading-normal font-bold pt-2 border-t border-dashed border-indigo-100/20">কর্মদিবসে সন্ধ্যা ০৭:০০ টার পর দায়িত্ব পালনের ক্ষেত্রে প্রযোজ্য।</p>
+          </div>
+
+          {/* Holiday Duty (৳500) */}
+          <div className="p-5 bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-100/50 dark:border-emerald-900/20 rounded-2xl flex flex-col justify-between space-y-3">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center border-b border-emerald-100/30 pb-2">
+                <h4 className="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">Holiday Duty (সরকারি ছুটি)</h4>
+                <span className="text-xs font-bold text-emerald-655 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100/60 shadow-xs">৳৫০০</span>
+              </div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
+                <p className="flex justify-between"><span>• দুপুরের খাবার:</span> <span className="font-bold">৳২৫০</span></p>
+                <p className="flex justify-between"><span>• যাতায়াত ভাতা:</span> <span className="font-bold">৳২৫০</span></p>
+              </div>
+            </div>
+            <p className="text-[10px] text-emerald-600 leading-normal font-bold pt-2 border-t border-dashed border-emerald-100/20">শুক্রবার, শনিবার ও অন্যান্য সরকারি ছুটির দিনগুলোতে ডিউটি।</p>
+          </div>
+
+          {/* Night Shift (৳1000) */}
+          <div className="p-5 bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/50 dark:border-rose-900/20 rounded-2xl flex flex-col justify-between space-y-3">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center border-b border-rose-100/30 pb-2">
+                <h4 className="font-extrabold text-rose-700 dark:text-rose-400 text-sm">Night Shift (রাত্রীকালীন ডিউটি)</h4>
+                <span className="text-xs font-bold text-rose-655 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100/60 shadow-xs">৳১,০০০</span>
+              </div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
+                <p className="flex justify-between"><span>• রাতের খাবার (ডিনার):</span> <span className="font-bold">৳৬০০</span></p>
+                <p className="flex justify-between"><span>• যাতায়াত ভাতা:</span> <span className="font-bold">৳৪০০</span></p>
+              </div>
+            </div>
+            <p className="text-[10px] text-rose-600 dark:text-rose-400 leading-normal font-black pt-2 border-t border-dashed border-rose-100/20">রিপোর্ট এর ডাটা এক্সট্রাকশন, ডাটা আপ্লোড এবং ডাউনলোড ডিউটি।</p>
+          </div>
+
+        </div>
       </div>
 
     </div>
