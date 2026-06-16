@@ -105,8 +105,8 @@ export default function Dashboard() {
 
   // Determine upcoming holidays relative to today's date
   const todayStr = new Date().toISOString().split('T')[0];
-  const upcomingHolidaysList = allHolidays.filter(h => h.date >= todayStr).slice(0, 6);
-  const finalUpcomingHolidays = upcomingHolidaysList.length > 0 ? upcomingHolidaysList : allHolidays.slice(0, 6);
+  const upcomingHolidaysList = allHolidays.filter(h => h.date >= todayStr).slice(0, 12);
+  const finalUpcomingHolidays = upcomingHolidaysList.length > 0 ? upcomingHolidaysList : allHolidays.slice(0, 12);
 
   // Calculate calendar elements for the selected month of 2026
   const daysInMonth = DAYS_IN_MONTH[selectedMonth];
@@ -337,18 +337,18 @@ export default function Dashboard() {
                 {finalUpcomingHolidays.map((holiday: Holiday) => {
                   const dateObj = new Date(holiday.date);
                   return (
-                    <div key={holiday.date} className="flex items-center gap-3 hover:bg-slate-50/55 dark:hover:bg-slate-800/30 p-2 rounded-xl transition-colors">
-                      <div className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-bold text-center shrink-0 border border-rose-100 dark:border-rose-900/30 w-12 shadow-xs">
-                        <p className="text-xs leading-none tracking-tight">
+                    <div key={holiday.date} className="flex items-center gap-4 hover:bg-slate-50/55 dark:hover:bg-slate-800/30 p-3 rounded-2xl transition-colors border border-slate-100/40 dark:border-slate-800/20 bg-white/40 dark:bg-slate-900/10 shadow-xs">
+                      <div className="px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-extrabold text-center shrink-0 border border-rose-100 dark:border-rose-900/30 w-14 shadow-sm">
+                        <p className="text-sm sm:text-base leading-none tracking-tight">
                           {toBanglaDigits(dateObj.getDate())}
                         </p>
-                        <p className="text-[8px] leading-none mt-1 font-bold">
+                        <p className="text-[9px] sm:text-[10px] leading-none mt-1.5 font-bold">
                           {MONTH_NAMES[dateObj.getMonth()]}
                         </p>
                       </div>
-                      <div className="leading-tight">
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{holiday.name}</p>
-                        <p className="text-[8px] font-bold text-slate-400 tracking-wide mt-1">
+                      <div className="leading-normal space-y-1">
+                        <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200">{holiday.name}</p>
+                        <p className="text-[10px] sm:text-xs font-bold text-slate-400 tracking-wide">
                           {toBanglaDigits(dateObj.toLocaleDateString('bn-BD', { weekday: 'long' }))} ({toBanglaDigits(holiday.date)})
                         </p>
                       </div>
