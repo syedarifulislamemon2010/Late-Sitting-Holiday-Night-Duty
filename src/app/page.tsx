@@ -5,14 +5,8 @@ import Link from 'next/link';
 import { 
   Calendar,
   CalendarCheck,
-  Receipt,
-  FileText,
-  FileSpreadsheet,
-  TrendingUp,
   Info,
-  Compass,
-  CalendarPlus,
-  UserPlus
+  Compass
 } from 'lucide-react';
 
 // Custom Bangla digit converter
@@ -206,7 +200,7 @@ export default function Dashboard() {
             </div>
             
             {/* Month Selection Buttons */}
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-w-xl mx-auto w-full">
               {MONTH_NAMES.map((name, idx) => (
                 <button
                   key={name}
@@ -223,7 +217,7 @@ export default function Dashboard() {
             </div>
 
             {/* Interactive Grid Calendar */}
-            <div className="border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 bg-slate-50/20">
+            <div className="border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 bg-slate-50/20 max-w-[460px] mx-auto w-full">
               
               {/* Month Name and Summary Header */}
               <div className="text-center pb-4">
@@ -321,66 +315,6 @@ export default function Dashboard() {
 
           </div>
 
-          {/* Quick Actions Panel */}
-          <div className="glass-card p-6 rounded-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg flex items-center gap-2">
-                <TrendingUp className="text-indigo-600" size={20} />
-                ঝটপট অ্যাডমিন অ্যাকশন
-              </h3>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 font-sans">
-              <Link href="/roster" className="p-4 rounded-2xl bg-indigo-50/30 hover:bg-indigo-50 dark:bg-indigo-950/10 dark:hover:bg-indigo-950/20 border border-indigo-100/40 dark:border-indigo-900/20 text-center flex flex-col items-center gap-3 transition-all group cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-200 dark:shadow-none group-hover:scale-110 transition-transform">
-                  <CalendarPlus size={20} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-200">ডিউটি দিন</h4>
-                  <p className="text-[9px] text-slate-400 mt-1">রপ্তানি ও ছুটি ডিউটি</p>
-                </div>
-              </Link>
-
-              <Link href="/employees" className="p-4 rounded-2xl bg-emerald-50/30 hover:bg-emerald-50 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20 border border-emerald-100/40 dark:border-emerald-900/20 text-center flex flex-col items-center gap-3 transition-all group cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-200 dark:shadow-none group-hover:scale-110 transition-transform">
-                  <UserPlus size={20} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-200">কর্মকর্তা যুক্ত</h4>
-                  <p className="text-[9px] text-slate-400 mt-1">নতুন ডেটাবেজ এন্ট্রি</p>
-                </div>
-              </Link>
-
-              <Link href="/billing" className="p-4 rounded-2xl bg-amber-50/30 hover:bg-amber-50 dark:bg-amber-950/10 dark:hover:bg-amber-950/20 border border-amber-100/40 dark:border-amber-900/20 text-center flex flex-col items-center gap-3 transition-all group cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-200 dark:shadow-none group-hover:scale-110 transition-transform">
-                  <FileText size={20} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">বিল নোট তৈরি</h4>
-                  <p className="text-[9px] text-slate-400 mt-1">আপ্যায়ন বিল শিট</p>
-                </div>
-              </Link>
-
-              <Link href="/roster" className="p-4 rounded-2xl bg-sky-50/30 hover:bg-sky-50 dark:bg-sky-950/10 dark:hover:bg-sky-950/20 border border-sky-100/40 dark:border-sky-900/20 text-center flex flex-col items-center gap-3 transition-all group cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-md shadow-sky-200 dark:shadow-none group-hover:scale-110 transition-transform">
-                  <FileSpreadsheet size={20} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-sky-900 dark:text-sky-200">রোস্টার ও জেনারেট</h4>
-                  <p className="text-[9px] text-slate-400 mt-1">অফিস আদেশ ডাউনলোড</p>
-                </div>
-              </Link>
-
-              <Link href="/lunch-bill" className="p-4 rounded-2xl bg-rose-50/30 hover:bg-rose-50 dark:bg-rose-950/10 dark:hover:bg-rose-950/20 border border-rose-100/40 dark:border-rose-900/20 text-center flex flex-col items-center gap-3 transition-all group cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-200 dark:shadow-none group-hover:scale-110 transition-transform">
-                  <Receipt size={20} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-rose-900 dark:text-rose-200">লাঞ্চ বিল শিট</h4>
-                  <p className="text-[9px] text-slate-400 mt-1">খাবার ভাতার হিসাব</p>
-                </div>
-              </Link>
-            </div>
-          </div>
 
         </div>
 
