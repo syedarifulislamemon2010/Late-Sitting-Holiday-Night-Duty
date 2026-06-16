@@ -28,6 +28,7 @@ interface User {
   role: string;
   cells: { id: number; name: string }[];
   mobile?: string | null;
+  cellDuties?: string | null;
 }
 
 interface Employee {
@@ -111,6 +112,7 @@ export default function UserManagement() {
   const [mobile, setMobile] = useState('');
   const [role, setRole] = useState('USER');
   const [selectedCellIds, setSelectedCellIds] = useState<number[]>([]);
+  const [cellRoles, setCellRoles] = useState<Record<number, string>>({});
   const [profileUser, setProfileUser] = useState<User | null>(null);
 
   // Tab State
@@ -265,14 +267,31 @@ export default function UserManagement() {
               </p>
             ) : user.cells.length > 0 ? (
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {user.cells.map(c => (
-                  <span 
-                    key={c.id} 
-                    className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold font-mono"
-                  >
-                    {c.name}
-                  </span>
-                ))}
+                {user.cells.map(c => {
+                  let roleText = 'মূল দায়িত্ব';
+                  let roleColor = 'bg-indigo-50 border-indigo-100 text-indigo-600 dark:bg-indigo-950/40 dark:border-indigo-900/20 dark:text-indigo-400';
+                  if (user.cellDuties) {
+                    try {
+                      const duties = JSON.parse(user.cellDuties);
+                      const duty = duties[c.id];
+                      if (duty === 'ADDITIONAL') {
+                        roleText = 'অতিরিক্ত দায়িত্ব';
+                        roleColor = 'bg-amber-55/20 border-amber-100/50 text-amber-600 dark:bg-amber-950/40 dark:border-amber-900/20 dark:text-amber-400';
+                      } else if (duty === 'INCHARGE') {
+                        roleText = 'ইনচার্জ';
+                        roleColor = 'bg-emerald-55/20 border-emerald-100/50 text-emerald-600 dark:bg-emerald-950/40 dark:border-emerald-900/20 dark:text-emerald-400';
+                      }
+                    } catch (e) {}
+                  }
+                  return (
+                    <span 
+                      key={c.id} 
+                      className={`px-2 py-0.5 border rounded-lg text-[10px] font-extrabold font-mono ${roleColor}`}
+                    >
+                      {c.name} ({roleText})
+                    </span>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-2 italic">
@@ -381,6 +400,7 @@ export default function UserManagement() {
     setMobile('');
     setRole('USER');
     setSelectedCellIds([]);
+    setCellRoles({});
     setError('');
     setSuccess('');
     setIsModalOpen(true);
@@ -397,6 +417,7 @@ export default function UserManagement() {
         timer = setTimeout(() => {
           setName(match.name);
           setSelectedCellIds([match.cellId]);
+          setCellRoles({ [match.cellId]: 'PRIMARY' });
           setPassword('123456');
         }, 0);
       }
@@ -414,6 +435,22 @@ export default function UserManagement() {
     setMobile(user.mobile || '');
     setRole(user.role);
     setSelectedCellIds(user.cells.map(c => c.id));
+    
+    let parsedCellRoles: Record<number, string> = {};
+    if (user.cellDuties) {
+      try {
+        parsedCellRoles = JSON.parse(user.cellDuties);
+      } catch (e) {
+        console.warn('Failed to parse cellDuties', e);
+      }
+    }
+    user.cells.forEach(c => {
+      if (!parsedCellRoles[c.id]) {
+        parsedCellRoles[c.id] = 'PRIMARY';
+      }
+    });
+    setCellRoles(parsedCellRoles);
+    
     setError('');
     setSuccess('');
     setIsModalOpen(true);
@@ -422,16 +459,29 @@ export default function UserManagement() {
   const handleCellToggle = (cellId: number) => {
     if (selectedCellIds.includes(cellId)) {
       setSelectedCellIds(selectedCellIds.filter(id => id !== cellId));
+      const newRoles = { ...cellRoles };
+      delete newRoles[cellId];
+      setCellRoles(newRoles);
     } else {
       setSelectedCellIds([...selectedCellIds, cellId]);
+      setCellRoles({
+        ...cellRoles,
+        [cellId]: 'PRIMARY'
+      });
     }
   };
 
   const handleSelectAllCells = () => {
     if (selectedCellIds.length === cells.length) {
       setSelectedCellIds([]);
+      setCellRoles({});
     } else {
       setSelectedCellIds(cells.map(c => c.id));
+      const newRoles: Record<number, string> = {};
+      cells.forEach(c => {
+        newRoles[c.id] = cellRoles[c.id] || 'PRIMARY';
+      });
+      setCellRoles(newRoles);
     }
   };
 
@@ -463,6 +513,7 @@ export default function UserManagement() {
       password: password ? password.trim() : undefined,
       role,
       cellIds: selectedCellIds,
+      cellDuties: cellRoles,
       mobile: mobile.trim()
     };
 
@@ -1105,32 +1156,94 @@ export default function UserManagement() {
                   </div>
 
                   {cells.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3 max-h-36 overflow-y-auto pr-1 no-scrollbar pt-1">
-                      {cells.map(cell => {
-                        const isChecked = selectedCellIds.includes(cell.id);
-                        return (
-                          <div 
-                            key={cell.id}
-                            onClick={() => handleCellToggle(cell.id)}
-                            className={`p-3 rounded-xl border-2 cursor-pointer flex items-center justify-between transition-all duration-200 active:scale-[0.98] ${isChecked ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50/50 dark:bg-slate-950/10 border-slate-200/70 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'}`}
-                          >
-                            <div className="space-y-0.5 text-left leading-none">
-                              <span className="font-extrabold text-xs font-mono">{cell.name}</span>
-                              {cell.description && (
-                                <p className="text-[9px] font-medium text-slate-400 dark:text-slate-555 mt-0.5 line-clamp-1">
-                                  {cell.description}
-                                </p>
+                    <>
+                      <div className="grid grid-cols-2 gap-3 max-h-36 overflow-y-auto pr-1 no-scrollbar pt-1">
+                        {cells.map(cell => {
+                          const isChecked = selectedCellIds.includes(cell.id);
+                          return (
+                            <div 
+                              key={cell.id}
+                              onClick={() => handleCellToggle(cell.id)}
+                              className={`p-3 rounded-xl border-2 cursor-pointer flex items-center justify-between transition-all duration-200 active:scale-[0.98] ${isChecked ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50/50 dark:bg-slate-950/10 border-slate-200/70 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'}`}
+                            >
+                              <div className="space-y-0.5 text-left leading-none">
+                                <span className="font-extrabold text-xs font-mono">{cell.name}</span>
+                                {cell.description && (
+                                  <p className="text-[9px] font-medium text-slate-400 dark:text-slate-555 mt-0.5 line-clamp-1">
+                                    {cell.description}
+                                  </p>
+                                )}
+                              </div>
+                              {isChecked ? (
+                                <CheckSquare size={16} className="text-indigo-600 dark:text-indigo-400" />
+                              ) : (
+                                <Square size={16} className="text-slate-400" />
                               )}
                             </div>
-                            {isChecked ? (
-                              <CheckSquare size={16} className="text-indigo-600 dark:text-indigo-400" />
-                            ) : (
-                              <Square size={16} className="text-slate-400" />
-                            )}
+                          );
+                        })}
+                      </div>
+
+                      {/* Selected cell duty types configuration list */}
+                      {selectedCellIds.length > 0 && (
+                        <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-950/25 border border-slate-100 dark:border-slate-800/80 rounded-2xl space-y-2">
+                          <p className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">নির্বাচিত সেলে দায়িত্বের ধরন নির্ধারণ করুন:</p>
+                          <div className="space-y-2 max-h-40 overflow-y-auto pr-1 no-scrollbar">
+                            {selectedCellIds.map(cellId => {
+                              const cell = cells.find(c => c.id === cellId);
+                              if (!cell) return null;
+                              const currentRole = cellRoles[cellId] || 'PRIMARY';
+                              return (
+                                <div key={cellId} className="flex items-center justify-between gap-3 p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-850 rounded-xl">
+                                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{cell.name}</span>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCellRoles({ ...cellRoles, [cellId]: 'PRIMARY' });
+                                      }}
+                                      className={`px-2.5 py-1 rounded text-[9px] font-bold border transition-all ${
+                                        currentRole === 'PRIMARY'
+                                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950/35 dark:border-indigo-900/50 dark:text-indigo-400'
+                                          : 'bg-transparent border-slate-100 dark:border-slate-800 text-slate-400 hover:text-indigo-600'
+                                      }`}
+                                    >
+                                      মূল
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCellRoles({ ...cellRoles, [cellId]: 'ADDITIONAL' });
+                                      }}
+                                      className={`px-2.5 py-1 rounded text-[9px] font-bold border transition-all ${
+                                        currentRole === 'ADDITIONAL'
+                                          ? 'bg-amber-50 border-amber-250 text-amber-700 dark:bg-amber-950/35 dark:border-amber-900/50 dark:text-amber-400'
+                                          : 'bg-transparent border-slate-100 dark:border-slate-800 text-slate-400 hover:text-amber-600'
+                                      }`}
+                                    >
+                                      অতিরিক্ত
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCellRoles({ ...cellRoles, [cellId]: 'INCHARGE' });
+                                      }}
+                                      className={`px-2.5 py-1 rounded text-[9px] font-bold border transition-all ${
+                                        currentRole === 'INCHARGE'
+                                          ? 'bg-emerald-50 border-emerald-250 text-emerald-700 dark:bg-emerald-950/35 dark:border-emerald-900/50 dark:text-emerald-400'
+                                          : 'bg-transparent border-slate-100 dark:border-slate-800 text-slate-400 hover:text-emerald-600'
+                                      }`}
+                                    >
+                                      ইনচার্জ
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <p className="text-xs text-amber-500 italic">সিস্টেমে কোনো সেল খুঁজে পাওয়া যায়নি! প্রথমে কর্মকর্তা পেজে গিয়ে সেল তৈরি করুন।</p>
                   )}

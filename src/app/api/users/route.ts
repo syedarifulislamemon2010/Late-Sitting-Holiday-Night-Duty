@@ -71,6 +71,7 @@ export async function GET() {
         name: u.name,
         role: u.role,
         mobile: u.mobile,
+        cellDuties: u.cellDuties,
         createdAt: u.createdAt,
         cells: assigned
       };
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { username, password, name, role, cellIds, mobile } = body;
+    const { username, password, name, role, cellIds, cellDuties, mobile } = body;
 
     if (!username || !password || !name) {
       return NextResponse.json({ error: 'fields_required', message: 'সবগুলো আবশ্যক ফিল্ড পূরণ করুন।' }, { status: 400 });
@@ -109,6 +110,7 @@ export async function POST(request: Request) {
       password: password.trim(),
       name: name.trim(),
       role: role || 'USER',
+      cellDuties: cellDuties ? JSON.stringify(cellDuties) : null,
       mobile: mobile ? mobile.trim() : null,
     }).returning();
     const user = newUsers[0];
@@ -144,6 +146,7 @@ export async function POST(request: Request) {
       name: user.name,
       role: user.role,
       mobile: user.mobile,
+      cellDuties: user.cellDuties,
       createdAt: user.createdAt,
       cells: assignedCells,
     };

@@ -393,7 +393,7 @@ export default function Dashboard() {
                 <p className="flex justify-between"><span>• যাতায়াত ভাতা:</span> <span className="font-bold">৳২০০</span></p>
               </div>
             </div>
-            <p className="text-[10px] text-rose-500 leading-normal font-bold pt-2 border-t border-dashed border-indigo-100/20">কর্মদিবসে সন্ধ্যা ০৭:০০ টার পর দায়িত্ব পালনের ক্ষেত্রে প্রযোজ্য।</p>
+            <p className="text-[10px] text-rose-500 leading-normal font-bold pt-2 border-t border-dashed border-indigo-100/20">কর্মদিবসে অফিস ছুটির পর দায়িত্ব পালনের ক্ষেত্রে প্রযোজ্য।</p>
           </div>
 
           {/* Holiday Duty (৳500) */}
@@ -408,7 +408,7 @@ export default function Dashboard() {
                 <p className="flex justify-between"><span>• যাতায়াত ভাতা:</span> <span className="font-bold">৳২৫০</span></p>
               </div>
             </div>
-            <p className="text-[10px] text-emerald-600 leading-normal font-bold pt-2 border-t border-dashed border-emerald-100/20">শুক্রবার, শনিবার ও অন্যান্য সরকারি ছুটির দিনগুলোতে ডিউটি।</p>
+            <p className="text-[10px] text-emerald-600 leading-normal font-bold pt-2 border-t border-dashed border-emerald-100/20">শুক্রবার, শনিবার ও অন্যান্য সরকারি ছুটির দিনগুলোতে  রিপোর্ট এর ডাটা এক্সট্রাকশন, ডাটা আপ্লোড এবং ডাউনলোড ডিউটি।</p>
           </div>
 
           {/* Night Shift (৳1000) */}

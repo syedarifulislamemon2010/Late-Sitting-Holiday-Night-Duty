@@ -28,7 +28,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, password, role, cellIds, mobile } = body;
+    const { name, password, role, cellIds, cellDuties, mobile } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'name_required', message: 'নাম পূরণ করা আবশ্যক।' }, { status: 400 });
@@ -60,12 +60,16 @@ export async function PUT(
     const updatedFields: {
       name: string;
       role: string;
+      cellDuties?: string | null;
       mobile?: string | null;
       password?: string;
     } = {
       name: name.trim(),
       role: finalRole,
     };
+    if (currentUser.role === 'ADMIN') {
+      updatedFields.cellDuties = cellDuties !== undefined ? (cellDuties ? JSON.stringify(cellDuties) : null) : undefined;
+    }
     if (mobile !== undefined) {
       updatedFields.mobile = mobile ? mobile.trim() : null;
     }
@@ -102,6 +106,7 @@ export async function PUT(
       name: updatedUser.name,
       role: updatedUser.role,
       mobile: updatedUser.mobile,
+      cellDuties: updatedUser.cellDuties,
       createdAt: updatedUser.createdAt,
       cells: assignedCells,
     };

@@ -71,6 +71,7 @@ async function main() {
       name: u.name,
       role: u.role,
       mobile: u.mobile,
+      cellDuties: u.cellDuties || null,
       createdAt: u.createdAt ? new Date(u.createdAt) : undefined
     });
   }

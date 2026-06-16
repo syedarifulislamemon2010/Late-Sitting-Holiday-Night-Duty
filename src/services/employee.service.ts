@@ -30,6 +30,7 @@ interface EmployeeWithCell {
     description?: string | null;
     createdAt?: Date | null;
   };
+  dutyType?: string;
 }
 
 interface EmployeeInput {
@@ -48,6 +49,22 @@ interface EmployeeUpdateInput {
   fileNo?: string | null;
   mobile?: string;
   cellId?: number;
+}
+
+async function getAllowedCellIds(currentUser: UserSession): Promise<number[]> {
+  if (currentUser.role === 'ADMIN') {
+    const cellList = await db.select().from(cells);
+    return cellList.map(c => c.id);
+  }
+  const cellIds = new Set<number>();
+  if (currentUser.cells) {
+    currentUser.cells.forEach(c => cellIds.add(c.id));
+  }
+  const emp = await db.select().from(employees).where(eq(employees.bankId, currentUser.username));
+  if (emp[0]) {
+    cellIds.add(emp[0].cellId);
+  }
+  return Array.from(cellIds);
 }
 
 export class EmployeeService {
@@ -108,6 +125,8 @@ export class EmployeeService {
         .innerJoin(cells, eq(userCells.A, cells.id));
 
       const userCellsMap = new Map<string, { id: number; name: string; description: string | null; createdAt: Date | null }[]>();
+      const userCellDutiesMap = new Map<string, Record<string, string>>();
+
       allUsers.forEach(u => {
         if (u.username) {
           const uCells = allUserCells
@@ -119,22 +138,56 @@ export class EmployeeService {
               createdAt: uc.cellCreatedAt
             }));
           userCellsMap.set(u.username.trim().toLowerCase(), uCells);
+
+          let parsedDuties: Record<string, string> = {};
+          if (u.cellDuties) {
+            try {
+              parsedDuties = JSON.parse(u.cellDuties);
+            } catch (e) {
+              console.warn('Failed to parse cellDuties for user', u.username, e);
+            }
+          }
+          userCellDutiesMap.set(u.username.trim().toLowerCase(), parsedDuties);
         }
       });
 
       const expandedEmployees: EmployeeWithCell[] = [];
       for (const emp of empList as unknown as EmployeeWithCell[]) {
-        expandedEmployees.push(emp);
+        let primaryDutyType = 'PRIMARY';
+        if (emp.bankId) {
+          const duties = userCellDutiesMap.get(emp.bankId.trim().toLowerCase());
+          if (duties && duties[String(emp.cellId)]) {
+            primaryDutyType = duties[String(emp.cellId)];
+          } else if (emp.designation.includes('ইনচার্জ') || emp.designation.includes('Incharge')) {
+            primaryDutyType = 'INCHARGE';
+          }
+        } else if (emp.designation.includes('ইনচার্জ') || emp.designation.includes('Incharge')) {
+          primaryDutyType = 'INCHARGE';
+        }
+
+        expandedEmployees.push({
+          ...emp,
+          dutyType: primaryDutyType
+        });
         
         if (emp.bankId) {
           const assignedCells = userCellsMap.get(emp.bankId.trim().toLowerCase());
+          const duties = userCellDutiesMap.get(emp.bankId.trim().toLowerCase());
           if (assignedCells) {
             for (const cell of assignedCells) {
               if (cell.id !== emp.cellId) {
+                let addDutyType = 'ADDITIONAL';
+                if (duties && duties[String(cell.id)]) {
+                  addDutyType = duties[String(cell.id)];
+                } else if (emp.designation.includes('ইনচার্জ') || emp.designation.includes('Incharge')) {
+                  addDutyType = 'INCHARGE';
+                }
+                
                 expandedEmployees.push({
                   ...emp,
                   cellId: cell.id,
-                  cell: cell
+                  cell: cell,
+                  dutyType: addDutyType
                 });
               }
             }
@@ -146,6 +199,17 @@ export class EmployeeService {
       if (isUserRestricted) {
         finalEmployees = finalEmployees.filter(emp => cellIds.includes(emp.cellId));
       }
+    } else {
+      finalEmployees = finalEmployees.map(emp => {
+        let primaryDutyType = 'PRIMARY';
+        if (emp.designation.includes('ইনচার্জ') || emp.designation.includes('Incharge')) {
+          primaryDutyType = 'INCHARGE';
+        }
+        return {
+          ...emp,
+          dutyType: primaryDutyType
+        };
+      });
     }
 
     return sortEmployeesBySeniority(finalEmployees);
@@ -156,8 +220,9 @@ export class EmployeeService {
       throw new AuthError('অনুমতি নেই।', 403, 'unauthorized');
     }
 
-    if (currentUser.role !== 'ADMIN') {
-      throw new AuthError('অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন কর্মকর্তা যোগ করতে পারবেন।', 403, 'forbidden');
+    const allowedCellIds = await getAllowedCellIds(currentUser);
+    if (!allowedCellIds.includes(body.cellId)) {
+      throw new AuthError('অনুমতি নেই। আপনি শুধুমাত্র আপনার নিজের সেলে কর্মকর্তা যোগ করতে পারবেন।', 403, 'forbidden');
     }
 
     const validated = employeeCreateSchema.parse(body);
@@ -210,6 +275,16 @@ export class EmployeeService {
       throw new AppError('কর্মকর্তা পাওয়া যায়নি।', 404, 'employee_not_found');
     }
 
+    const allowedCellIds = await getAllowedCellIds(currentUser);
+    const isOwnCell = allowedCellIds.includes(existingEmployee.cellId);
+    if (!isOwnCell) {
+      throw new AuthError('অনুমতি নেই। আপনি শুধুমাত্র আপনার নিজের সেলের কর্মকর্তা সংশোধন করতে পারবেন।', 403, 'forbidden');
+    }
+
+    if (validated.cellId !== undefined && !allowedCellIds.includes(validated.cellId)) {
+      throw new AuthError('অনুমতি নেই। আপনি কর্মকর্তাকে আপনার সেলের বাইরের কোনো সেলে স্থানান্তর করতে পারবেন না।', 403, 'forbidden');
+    }
+
     const updatedData: {
       name?: string;
       designation?: string;
@@ -218,25 +293,14 @@ export class EmployeeService {
       mobile?: string | null;
       cellId?: number;
     } = {
-      name: validated.name ? validated.name.trim() : existingEmployee.name,
+      name: validated.name !== undefined ? validated.name.trim() : existingEmployee.name,
       mobile: validated.mobile !== undefined ? (validated.mobile?.trim() || '') : existingEmployee.mobile
     };
 
-    if (currentUser.role !== 'ADMIN') {
-      const isOwnRecord = existingEmployee.bankId && currentUser.username && existingEmployee.bankId.trim() === currentUser.username.trim();
-      if (!isOwnRecord) {
-        throw new AuthError('অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন কর্মকর্তা সংশোধন করতে পারবেন।', 403, 'forbidden');
-      }
-      updatedData.designation = existingEmployee.designation;
-      updatedData.bankId = existingEmployee.bankId;
-      updatedData.fileNo = existingEmployee.fileNo;
-      updatedData.cellId = existingEmployee.cellId;
-    } else {
-      if (validated.designation) updatedData.designation = validated.designation.trim();
-      if (validated.bankId !== undefined) updatedData.bankId = validated.bankId?.trim() || null;
-      if (validated.fileNo !== undefined) updatedData.fileNo = validated.fileNo?.trim() || null;
-      if (validated.cellId !== undefined) updatedData.cellId = validated.cellId;
-    }
+    if (validated.designation !== undefined) updatedData.designation = validated.designation.trim();
+    if (validated.bankId !== undefined) updatedData.bankId = validated.bankId?.trim() || null;
+    if (validated.fileNo !== undefined) updatedData.fileNo = validated.fileNo?.trim() || null;
+    if (validated.cellId !== undefined) updatedData.cellId = validated.cellId;
 
     const updatedEmp = await EmployeeRepository.update(id, updatedData);
 
@@ -273,13 +337,14 @@ export class EmployeeService {
       throw new AuthError('অনুমতি নেই।', 403, 'unauthorized');
     }
 
-    if (currentUser.role !== 'ADMIN') {
-      throw new AuthError('অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন কর্মকর্তা মুছে ফেলতে পারবেন।', 403, 'forbidden');
-    }
-
     const employee = await EmployeeRepository.findById(id);
     if (!employee) {
       throw new AppError('employee_not_found', 404, 'employee_not_found');
+    }
+
+    const allowedCellIds = await getAllowedCellIds(currentUser);
+    if (!allowedCellIds.includes(employee.cellId)) {
+      throw new AuthError('অনুমতি নেই। আপনি শুধুমাত্র আপনার নিজের সেলের কর্মকর্তা মুছে ফেলতে পারবেন।', 403, 'forbidden');
     }
 
     const employeeDuties = await db.select().from(duties).where(eq(duties.employeeId, id));
@@ -312,7 +377,6 @@ export class EmployeeService {
   }
 }
 
-// Helpers for schema referencing (to handle compilation types dynamically if required)
 function employeesCellIdHelper() {
   return employees.cellId;
 }

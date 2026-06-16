@@ -21,6 +21,7 @@ export const users = pgTable('User', {
   name: text('name').notNull(),
   role: text('role').default('USER').notNull(), // 'ADMIN' or 'USER'
   mobile: text('mobile'),
+  cellDuties: text('cellDuties'),
   createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
 });
 

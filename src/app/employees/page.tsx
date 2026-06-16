@@ -68,6 +68,7 @@ interface Employee {
   mobile: string | null;
   cellId: number;
   cell: Cell;
+  dutyType?: string;
 }
 
 const extractNickname = (nameStr: string): string => {
@@ -257,6 +258,20 @@ export default function EmployeesPage() {
     return '';
   });
 
+  const allowedCellIds = (() => {
+    if (!currentUser) return [];
+    if (currentUser.role === 'ADMIN') return cells.map(c => c.id);
+    const ids = new Set<number>();
+    if (currentUser.cells) {
+      currentUser.cells.forEach(c => ids.add(c.id));
+    }
+    const emp = employees.find(e => e.bankId?.trim() === currentUser.username?.trim());
+    if (emp) {
+      ids.add(emp.cellId);
+    }
+    return Array.from(ids);
+  })();
+
   const ownEmployee = employees.find(emp => emp.bankId?.trim() === currentUser?.username?.trim());
   const ownCellId = ownEmployee ? ownEmployee.cellId : (currentUser?.cells?.[0]?.id || null);
 
@@ -277,7 +292,7 @@ export default function EmployeesPage() {
     if (!currentUser || currentUser.role === 'ADMIN') {
       return cells;
     }
-    return cells.filter(cell => cell.id === ownCellId);
+    return cells.filter(cell => allowedCellIds.includes(cell.id));
   })();
 
 
@@ -1069,7 +1084,7 @@ export default function EmployeesPage() {
                 {generating ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
                 ডাউনলোড পিডিএফ
               </button>
-              {currentUser?.role === 'ADMIN' && selectableCells.length > 0 && (
+              {(currentUser?.role === 'ADMIN' || allowedCellIds.length > 0) && selectableCells.length > 0 && (
                 <>
                   <button
                     onClick={() => {
@@ -1085,7 +1100,7 @@ export default function EmployeesPage() {
                   <button
                     onClick={() => {
                       setEditingEmp(null);
-                      setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', mobile: '', cellId: selectableCells[0]?.id.toString() || '' });
+                      setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', mobile: '', cellId: formSelectableCells[0]?.id.toString() || '' });
                       setErrorMessage('');
                       setIsEmpModalOpen(true);
                     }}
@@ -1285,18 +1300,26 @@ export default function EmployeesPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {cellEmps.map((emp) => {
                           const firstSpoId = cellEmps.find(e => e.designation === 'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)')?.id || null;
-                          const isCellIncharge = emp.id === firstSpoId;
+                          const isCellIncharge = emp.dutyType === 'INCHARGE' || emp.id === firstSpoId;
                           const pal = getPalette(emp.cellId);
                           return (
                             <div key={emp.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group border-l-3 ${isCellIncharge ? 'border-teal-200 dark:border-teal-900/50 bg-teal-50/10 dark:bg-teal-955/5 shadow-xs' : pal.border} ${isCellIncharge ? '' : pal.bg}`} style={isCellIncharge ? { borderLeft: '3px solid #0d9488' } : {}}>
                               <div className="space-y-4 cursor-pointer" onClick={() => setProfileEmp(emp)}>
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
-                                    <h3 className={`app-card-title transition-colors flex items-center gap-2 ${isCellIncharge ? 'text-teal-700 dark:text-teal-400 group-hover:text-teal-800' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400'}`}>
-                                      {emp.name}
-                                      {isCellIncharge && (
+                                    <h3 className={`app-card-title transition-colors flex flex-wrap items-center gap-1.5 ${isCellIncharge ? 'text-teal-700 dark:text-teal-400 group-hover:text-teal-800' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400'}`}>
+                                      <span>{emp.name}</span>
+                                      {emp.dutyType === 'INCHARGE' ? (
                                         <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-450 text-[9px] font-bold rounded-lg border border-teal-200/50 dark:border-teal-955/30">
                                           সেল ইনচার্জ
+                                        </span>
+                                      ) : emp.dutyType === 'ADDITIONAL' ? (
+                                        <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-455 text-[9px] font-bold rounded-lg border border-amber-200/50 dark:border-amber-950/30">
+                                          অতিরিক্ত দায়িত্ব
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 text-[9px] font-bold rounded-lg border border-indigo-100/50 dark:border-indigo-950/30">
+                                          মূল দায়িত্ব
                                         </span>
                                       )}
                                     </h3>
@@ -1323,7 +1346,7 @@ export default function EmployeesPage() {
                                 </div>
                               </div>
 
-                              {(currentUser?.role === 'ADMIN' || (emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim())) && (
+                              {(currentUser?.role === 'ADMIN' || allowedCellIds.includes(emp.cellId) || (emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim())) && (
                                 <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80 font-sans">
                                   <button
                                     onClick={(e) => {
@@ -1335,7 +1358,7 @@ export default function EmployeesPage() {
                                   >
                                     <Edit2 size={13} />
                                   </button>
-                                  {currentUser?.role === 'ADMIN' && (
+                                  {(currentUser?.role === 'ADMIN' || allowedCellIds.includes(emp.cellId)) && (
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -1884,7 +1907,7 @@ export default function EmployeesPage() {
                 >
                   বন্ধ করুন
                 </button>
-                {(currentUser?.role === 'ADMIN' || (profileEmp.bankId && currentUser?.username && profileEmp.bankId.trim() === currentUser.username.trim())) && (
+                {(currentUser?.role === 'ADMIN' || allowedCellIds.includes(profileEmp.cellId) || (profileEmp.bankId && currentUser?.username && profileEmp.bankId.trim() === currentUser.username.trim())) && (
                   <button
                     onClick={() => {
                       const emp = profileEmp;
