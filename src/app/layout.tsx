@@ -3,6 +3,7 @@ import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import AuthGuard from "@/components/AuthGuard";
+import CommandCenter from "@/components/CommandCenter";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { LayoutProvider } from "@/context/LayoutContext";
 
@@ -67,6 +68,7 @@ export default function RootLayout({
                 <Sidebar />
                 <main className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
                   <Navbar />
+                  <CommandCenter />
                   <div className="flex-1 p-4 lg:p-8 overflow-y-auto flex flex-col justify-between" suppressHydrationWarning={true}>
                   <div className="flex-1">
                     {children}

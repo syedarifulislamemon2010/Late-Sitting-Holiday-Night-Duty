@@ -6,7 +6,13 @@ import {
   Calendar,
   CalendarCheck,
   Info,
-  Compass
+  Compass,
+  BarChart3,
+  TrendingUp,
+  X,
+  Loader2,
+  Building2,
+  Sparkles
 } from 'lucide-react';
 
 // Custom Bangla digit converter
@@ -74,6 +80,79 @@ export default function Dashboard() {
     const today = new Date();
     return today.getFullYear() === 2026 ? today.getMonth() : 0;
   });
+
+  const [activeChart, setActiveChart] = useState<'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | null>(null);
+  const [cellWiseData, setCellWiseData] = useState<{ name: string; count: number }[]>([]);
+  const [monthlyTrend, setMonthlyTrend] = useState<{ name: string; count: number }[]>([]);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [recentModules, setRecentModules] = useState<{ title: string; url: string }[]>([]);
+
+  const loadRecentModules = () => {
+    const stored = localStorage.getItem('recentModules');
+    if (stored) {
+      try {
+        setRecentModules(JSON.parse(stored));
+      } catch {
+        setRecentModules([]);
+      }
+    } else {
+      setRecentModules([]);
+    }
+  };
+
+  useEffect(() => {
+    loadRecentModules();
+    window.addEventListener('storage', loadRecentModules);
+    return () => window.removeEventListener('storage', loadRecentModules);
+  }, []);
+
+  useEffect(() => {
+    if (!activeChart) return;
+
+    async function fetchChartData() {
+      setChartLoading(true);
+      try {
+        const res = await fetch(`/api/duties?type=${activeChart}`);
+        if (res.ok) {
+          const list = await res.json();
+          
+          const cellsMap: Record<string, number> = {};
+          const monthlyCounts = Array(12).fill(0);
+
+          list.forEach((duty: any) => {
+            const cellName = duty.employee?.cell?.name || 'অন্যান্য';
+            cellsMap[cellName] = (cellsMap[cellName] || 0) + 1;
+
+            if (duty.date) {
+              const monthIndex = new Date(duty.date).getMonth();
+              if (monthIndex >= 0 && monthIndex < 12) {
+                monthlyCounts[monthIndex]++;
+              }
+            }
+          });
+
+          const cellData = Object.keys(cellsMap).map(name => ({
+            name,
+            count: cellsMap[name]
+          })).sort((a, b) => b.count - a.count);
+
+          const trendData = MONTH_NAMES.map((name, idx) => ({
+            name: name.substring(0, 3),
+            count: monthlyCounts[idx]
+          }));
+
+          setCellWiseData(cellData);
+          setMonthlyTrend(trendData);
+        }
+      } catch (err) {
+        console.error('Analytics aggregation error:', err);
+      } finally {
+        setChartLoading(false);
+      }
+    }
+
+    fetchChartData();
+  }, [activeChart]);
 
   useEffect(() => {
     async function loadStats() {
@@ -178,6 +257,25 @@ export default function Dashboard() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
             জনতা ব্যাংক পিএলসি. এর অনলাইন ব্যাংকিং ডিপার্টমেন্টের ডিউটি ও আপ্যায়ন ব্যয়ের রিয়েল-টাইম সারসংক্ষেপ।
           </p>
+
+          {/* Navigation Intelligence Layer (Recently Visited) */}
+          {recentModules.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mt-4 text-[11px] font-bold text-slate-400 font-sans">
+              <span className="flex items-center gap-1">
+                <Sparkles size={11} className="text-indigo-505 shrink-0" />
+                <span>সাম্প্রতিক কার্যক্রম:</span>
+              </span>
+              {recentModules.map((mod, idx) => (
+                <Link 
+                  key={idx} 
+                  href={mod.url}
+                  className="px-2.5 py-1 bg-slate-50 dark:bg-slate-850/60 hover:bg-indigo-50 hover:text-indigo-650 dark:hover:bg-indigo-950/20 dark:hover:text-indigo-400 border border-slate-200/50 dark:border-slate-800/70 rounded-xl transition-all font-semibold"
+                >
+                  {mod.title}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -375,21 +473,26 @@ export default function Dashboard() {
               <Info className="text-amber-500" size={20} />
               আপ্যায়ন বিল ও যাতায়াত ভাতা রেট
             </h3>
-            <p className="text-xs text-slate-400 mt-1 font-medium font-sans">জনতা ব্যাংক পিএলসি. এর অনুমোদিত নির্দেশিকা।</p>
+            <p className="text-xs text-slate-400 mt-1 font-medium font-sans">জনতা ব্যাংক পিএলসি. এর অনুমোদিত নির্দেশিকা। কার্ডে ক্লিক করে অ্যানালিটিক্স দেখুন।</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
           
           {/* Late Sitting (৳300) */}
-          <div className="p-5 bg-indigo-50/20 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl flex flex-col justify-between space-y-3">
+          <div 
+            onClick={() => setActiveChart(activeChart === 'LATE_SITTING' ? null : 'LATE_SITTING')}
+            className={`p-5 bg-indigo-50/20 dark:bg-indigo-950/10 border rounded-2xl flex flex-col justify-between space-y-3 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all select-none ${
+              activeChart === 'LATE_SITTING' ? 'ring-2 ring-indigo-500 border-indigo-500 shadow-sm' : 'border-indigo-100/50 dark:border-indigo-900/20'
+            }`}
+          >
             <div className="space-y-3">
               <div className="flex justify-between items-center border-b border-indigo-100/30 pb-2">
                 <h4 className="font-extrabold text-indigo-700 dark:text-indigo-400 text-sm">Late Sitting (লেট সিটিং)</h4>
                 <span className="text-xs font-bold text-indigo-655 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100/60 shadow-xs">৳৩০০</span>
               </div>
               <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
-                <p className="flex justify-between"><span>• সান্ধ্যকালীন নাস্তা:</span> <span className="font-bold">৳১০০</span></p>
+                <p className="flex justify-between"><span>• নাস্তা ভাতা:</span> <span className="font-bold">৳১০০</span></p>
                 <p className="flex justify-between"><span>• যাতায়াত ভাতা:</span> <span className="font-bold">৳২০০</span></p>
               </div>
             </div>
@@ -397,7 +500,12 @@ export default function Dashboard() {
           </div>
 
           {/* Holiday Duty (৳500) */}
-          <div className="p-5 bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-100/50 dark:border-emerald-900/20 rounded-2xl flex flex-col justify-between space-y-3">
+          <div 
+            onClick={() => setActiveChart(activeChart === 'HOLIDAY' ? null : 'HOLIDAY')}
+            className={`p-5 bg-emerald-50/20 dark:bg-emerald-950/10 border rounded-2xl flex flex-col justify-between space-y-3 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all select-none ${
+              activeChart === 'HOLIDAY' ? 'ring-2 ring-emerald-500 border-emerald-500 shadow-sm' : 'border-emerald-100/50 dark:border-emerald-900/20'
+            }`}
+          >
             <div className="space-y-3">
               <div className="flex justify-between items-center border-b border-emerald-100/30 pb-2">
                 <h4 className="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">Holiday Duty (সরকারি ছুটি)</h4>
@@ -408,11 +516,16 @@ export default function Dashboard() {
                 <p className="flex justify-between"><span>• যাতায়াত ভাতা:</span> <span className="font-bold">৳২৫০</span></p>
               </div>
             </div>
-            <p className="text-[10px] text-emerald-600 leading-normal font-bold pt-2 border-t border-dashed border-emerald-100/20">শুক্রবার, শনিবার ও অন্যান্য সরকারি ছুটির দিনগুলোতে  রিপোর্ট এর ডাটা এক্সট্রাকশন, ডাটা আপ্লোড এবং ডাউনলোড ডিউটি।</p>
+            <p className="text-[10px] text-emerald-600 leading-normal font-bold pt-2 border-t border-dashed border-emerald-100/20">শুক্রবার, শনিবার ও সরকারি ছুটির দিনগুলোতে ডিউটি।</p>
           </div>
 
           {/* Night Shift (৳1000) */}
-          <div className="p-5 bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/50 dark:border-rose-900/20 rounded-2xl flex flex-col justify-between space-y-3">
+          <div 
+            onClick={() => setActiveChart(activeChart === 'NIGHT_SHIFT' ? null : 'NIGHT_SHIFT')}
+            className={`p-5 bg-rose-50/20 dark:bg-rose-955/10 border rounded-2xl flex flex-col justify-between space-y-3 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all select-none ${
+              activeChart === 'NIGHT_SHIFT' ? 'ring-2 ring-rose-500 border-rose-500 shadow-sm' : 'border-rose-100/50 dark:border-rose-900/20'
+            }`}
+          >
             <div className="space-y-3">
               <div className="flex justify-between items-center border-b border-rose-100/30 pb-2">
                 <h4 className="font-extrabold text-rose-700 dark:text-rose-400 text-sm">Night Shift (রাত্রীকালীন ডিউটি)</h4>
@@ -428,6 +541,146 @@ export default function Dashboard() {
 
         </div>
       </div>
+
+      {/* Drill-down Analytics Panel */}
+      {activeChart && (
+        <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6 animate-in slide-in-from-bottom-4 duration-300 font-sans">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="text-indigo-650" size={20} />
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">
+                {activeChart === 'LATE_SITTING' ? 'লেট সিটিং ডিউটি' : activeChart === 'HOLIDAY' ? 'ছুটির দিন ডিউটি' : 'রাত্রীকালীন ডিউটি'} বিশ্লেষণ ও ট্রেন্ড
+              </h3>
+            </div>
+            <button 
+              onClick={() => setActiveChart(null)}
+              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-655 rounded-lg cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {chartLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-3">
+              <Loader2 className="animate-spin text-indigo-505" size={28} />
+              <p className="text-xs text-slate-500 font-medium">অ্যানালিটিক্স লোড হচ্ছে...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              
+              {/* Cell Split (Bar Chart) */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Building2 size={13} className="text-indigo-500 shrink-0" />
+                  <span>সেল ভিত্তিক ডিউটি বিভাজন (Cell Split)</span>
+                </h4>
+                {cellWiseData.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic py-6">কোনো ডিউটি রেকর্ড পাওয়া যায়নি।</p>
+                ) : (
+                  <div className="space-y-3">
+                    {cellWiseData.slice(0, 5).map((item, idx) => {
+                      const maxVal = Math.max(...cellWiseData.map(c => c.count)) || 1;
+                      const percentage = (item.count / maxVal) * 100;
+                      return (
+                        <div key={idx} className="space-y-1">
+                          <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-350">
+                            <span>{item.name}</span>
+                            <span className="font-sans font-bold">{toBanglaDigits(item.count)} টি</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-indigo-650 dark:bg-indigo-400 rounded-full transition-all duration-500"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Monthly Trend (Line Graph SVG) */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <TrendingUp size={13} className="text-emerald-505 shrink-0" />
+                  <span>মাসিক ট্রেন্ড গ্রাফ (Monthly Trend)</span>
+                </h4>
+                
+                {monthlyTrend.length === 0 || Math.max(...monthlyTrend.map(t => t.count)) === 0 ? (
+                  <div className="w-full h-40 border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-50/30 dark:bg-slate-950/10 flex items-center justify-center text-slate-400 italic text-xs">
+                    কোনো ড্যাটা পাওয়া যায়নি
+                  </div>
+                ) : (
+                  <div className="w-full h-40 border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-50/30 dark:bg-slate-950/10 p-4 relative">
+                    {(() => {
+                      const maxCount = Math.max(...monthlyTrend.map(t => t.count)) || 1;
+                      const points = monthlyTrend.map((t, idx) => {
+                        const x = (idx / 11) * 220 + 20; 
+                        const y = 80 - (t.count / maxCount) * 60; 
+                        return `${x},${y}`;
+                      }).join(' ');
+
+                      return (
+                        <svg viewBox="0 0 260 100" className="w-full h-full overflow-visible">
+                          <line x1="20" y1="20" x2="240" y2="20" stroke="#f1f5f9" strokeWidth="0.5" className="dark:stroke-slate-800" />
+                          <line x1="20" y1="50" x2="240" y2="50" stroke="#f1f5f9" strokeWidth="0.5" className="dark:stroke-slate-800" />
+                          <line x1="20" y1="80" x2="240" y2="80" stroke="#e2e8f0" strokeWidth="1" className="dark:stroke-slate-800" />
+
+                          {points && (
+                            <>
+                              <polyline
+                                fill="none"
+                                stroke="#4f46e5"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                points={points}
+                              />
+                              {monthlyTrend.map((t, idx) => {
+                                const x = (idx / 11) * 220 + 20;
+                                const y = 80 - (t.count / maxCount) * 60;
+                                return (
+                                  <g key={idx} className="group/dot cursor-pointer">
+                                    <circle
+                                      cx={x}
+                                      cy={y}
+                                      r="2.5"
+                                      fill="#4f46e5"
+                                      className="hover:r-4 transition-all"
+                                    />
+                                  </g>
+                                );
+                              })}
+                            </>
+                          )}
+                          
+                          {monthlyTrend.filter((_, i) => i % 2 === 0).map((t, idx) => {
+                            const originalIdx = idx * 2;
+                            const x = (originalIdx / 11) * 220 + 20;
+                            return (
+                              <text 
+                                key={idx} 
+                                x={x} 
+                                y="92" 
+                                textAnchor="middle" 
+                                className="text-[6px] font-bold fill-slate-400 font-sans"
+                              >
+                                {t.name}
+                              </text>
+                            );
+                          })}
+                        </svg>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+        </div>
+      )}
 
     </div>
   );

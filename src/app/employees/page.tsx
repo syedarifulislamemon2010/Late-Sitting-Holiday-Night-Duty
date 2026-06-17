@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 import { useProfile } from '@/context/ProfileContext';
+import InlineEdit from '@/components/InlineEdit';
+
 
 import { 
   Plus, 
@@ -156,6 +158,43 @@ export default function EmployeesPage() {
   const [profileEmp, setProfileEmp] = useState<Employee | null>(null);
   
   const isSelfEditingOnly = !!(editingEmp && currentUser?.role !== 'ADMIN' && editingEmp.bankId?.trim() === currentUser?.username?.trim());
+
+  const [selectedEmps, setSelectedEmps] = useState<number[]>([]);
+
+  const handleInlineSave = async (empId: number, field: string, value: string) => {
+    try {
+      const res = await fetch(`/api/employees/${empId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'সংশোধন ব্যর্থ হয়েছে।');
+      }
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`আপনি কি নির্বাচিত ${selectedEmps.length} জন কর্মকর্তাকে সরিয়ে দিতে চান?`)) return;
+    setLoading(true);
+    try {
+      for (const id of selectedEmps) {
+        await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+      }
+      setSelectedEmps([]);
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      alert('কিছু কর্মকর্তার ডেটা ডিলিট করা যায়নি।');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Helper for premium HSL color palettes
   const getPalette = (cellId: number) => {
@@ -1302,46 +1341,94 @@ export default function EmployeesPage() {
                           const firstSpoId = cellEmps.find(e => e.designation === 'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)')?.id || null;
                           const isCellIncharge = emp.dutyType === 'INCHARGE' || emp.id === firstSpoId;
                           const pal = getPalette(emp.cellId);
+                          const canUserEdit = currentUser?.role === 'ADMIN' || allowedCellIds.includes(emp.cellId);
+                          
                           return (
                             <div key={emp.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group border-l-3 ${isCellIncharge ? 'border-teal-200 dark:border-teal-900/50 bg-teal-50/10 dark:bg-teal-955/5 shadow-xs' : pal.border} ${isCellIncharge ? '' : pal.bg}`} style={isCellIncharge ? { borderLeft: '3px solid #0d9488' } : {}}>
                               <div className="space-y-4 cursor-pointer" onClick={() => setProfileEmp(emp)}>
                                 <div className="flex items-start justify-between gap-3">
-                                  <div>
-                                    <h3 className={`app-card-title transition-colors flex flex-wrap items-center gap-1.5 ${isCellIncharge ? 'text-teal-700 dark:text-teal-400 group-hover:text-teal-800' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400'}`}>
-                                      <span>{emp.name}</span>
-                                      {emp.dutyType === 'INCHARGE' ? (
-                                        <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-450 text-[9px] font-bold rounded-lg border border-teal-200/50 dark:border-teal-955/30">
-                                          সেল ইনচার্জ
-                                        </span>
-                                      ) : emp.dutyType === 'ADDITIONAL' ? (
-                                        <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-455 text-[9px] font-bold rounded-lg border border-amber-200/50 dark:border-amber-950/30">
-                                          অতিরিক্ত দায়িত্ব
-                                        </span>
-                                      ) : (
-                                        <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 text-[9px] font-bold rounded-lg border border-indigo-100/50 dark:border-indigo-950/30">
-                                          মূল দায়িত্ব
-                                        </span>
-                                      )}
-                                    </h3>
-                                    <p className="text-[13px] sm:text-[14px] font-medium text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
-                                      <Briefcase size={12} className="text-slate-400" />
-                                      {emp.designation}
-                                    </p>
+                                  <div className="flex items-start gap-2">
+                                    {canUserEdit && (
+                                      <input 
+                                        type="checkbox"
+                                        checked={selectedEmps.includes(emp.id)}
+                                        onChange={(e) => {
+                                          e.stopPropagation();
+                                          if (e.target.checked) {
+                                            setSelectedEmps(prev => [...prev, emp.id]);
+                                          } else {
+                                            setSelectedEmps(prev => prev.filter(id => id !== emp.id));
+                                          }
+                                        }}
+                                        className="w-4.5 h-4.5 rounded-lg border-slate-350 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0 mt-1 select-none"
+                                      />
+                                    )}
+                                    <div>
+                                      <h3 className={`app-card-title transition-colors flex flex-wrap items-center gap-1.5 ${isCellIncharge ? 'text-teal-700 dark:text-teal-400 group-hover:text-teal-800' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400'}`}>
+                                        <span>{emp.name}</span>
+                                        {emp.dutyType === 'INCHARGE' ? (
+                                          <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-450 text-[9px] font-bold rounded-lg border border-teal-200/50 dark:border-teal-955/30">
+                                            সেল ইনচার্জ
+                                          </span>
+                                        ) : emp.dutyType === 'ADDITIONAL' ? (
+                                          <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-455 text-[9px] font-bold rounded-lg border border-amber-200/50 dark:border-amber-950/30">
+                                            অতিরিক্ত দায়িত্ব
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 text-[9px] font-bold rounded-lg border border-indigo-100/50 dark:border-indigo-950/30">
+                                            মূল দায়িত্ব
+                                          </span>
+                                        )}
+                                      </h3>
+                                      <div className="text-[13px] font-medium text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1.5 min-h-[26px]">
+                                        <Briefcase size={12} className="text-slate-400 shrink-0" />
+                                        <InlineEdit
+                                          value={emp.designation}
+                                          placeholder="পদবী লিখুন"
+                                          onSave={(val) => handleInlineSave(emp.id, 'designation', val)}
+                                          canEdit={canUserEdit}
+                                        />
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
 
                                 <div className="mt-3 grid grid-cols-2 gap-2 app-metadata-text text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                                  <div className="flex items-center gap-1">
-                                    <Hash size={12} className="text-slate-400" />
-                                    <span>ব্যাংক আইডি: <strong>{emp.bankId}</strong></span>
+                                  <div className="flex items-center gap-1 min-h-[26px]">
+                                    <Hash size={12} className="text-slate-400 shrink-0" />
+                                    <span className="flex items-center gap-1">আইডি: 
+                                      <InlineEdit
+                                        value={emp.bankId || ''}
+                                        placeholder="আইডি"
+                                        onSave={(val) => handleInlineSave(emp.id, 'bankId', val)}
+                                        canEdit={canUserEdit}
+                                        className="font-bold inline-block"
+                                      />
+                                    </span>
                                   </div>
-                                  <div className="flex items-center gap-1">
-                                    <CreditCard size={12} className="text-slate-400" />
-                                    <span>নথি নং: <strong className="font-mono">{emp.fileNo}</strong></span>
+                                  <div className="flex items-center gap-1 min-h-[26px]">
+                                    <CreditCard size={12} className="text-slate-400 shrink-0" />
+                                    <span className="flex items-center gap-1">নথি: 
+                                      <InlineEdit
+                                        value={emp.fileNo || ''}
+                                        placeholder="নথি"
+                                        onSave={(val) => handleInlineSave(emp.id, 'fileNo', val)}
+                                        canEdit={canUserEdit}
+                                        className="font-mono font-bold inline-block"
+                                      />
+                                    </span>
                                   </div>
-                                  <div className="flex items-center gap-1 col-span-2">
-                                    <Phone size={12} className="text-slate-400" />
-                                    <span>মোবাইল নম্বর: <strong className="font-sans">{emp.mobile || 'প্রদান করা হয়নি'}</strong></span>
+                                  <div className="flex items-center gap-1 col-span-2 min-h-[26px]">
+                                    <Phone size={12} className="text-slate-400 shrink-0" />
+                                    <span className="flex items-center gap-1">মোবাইল: 
+                                      <InlineEdit
+                                        value={emp.mobile || ''}
+                                        placeholder="মোবাইল নম্বর"
+                                        onSave={(val) => handleInlineSave(emp.id, 'mobile', val)}
+                                        canEdit={canUserEdit || !!(emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim())}
+                                        className="font-sans font-bold inline-block"
+                                      />
+                                    </span>
                                   </div>
                                 </div>
                               </div>
@@ -1365,7 +1452,7 @@ export default function EmployeesPage() {
                                         deleteEmployee(emp.id);
                                       }}
                                       className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-650 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
-                                      title="মুছে ফেলুন"
+                                      title="муছে ফেলুন"
                                     >
                                       <Trash2 size={13} />
                                     </button>
@@ -1977,6 +2064,31 @@ export default function EmployeesPage() {
         className="hidden" 
         style={{ width: '0px', height: '0px', border: '0px' }}
       />
+
+      {/* Bulk actions floating toolbar */}
+      {selectedEmps.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-6 animate-in slide-in-from-bottom-4 duration-300 select-none">
+          <div className="text-xs font-bold text-slate-700 dark:text-slate-200">
+            <span className="font-sans text-indigo-600 dark:text-indigo-400 text-sm font-extrabold">{toBanglaDigits(selectedEmps.length)}</span> জন কর্মকর্তা নির্বাচিত
+          </div>
+          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedEmps([])}
+              className="px-3.5 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              বাতিল করুন
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 text-rose-655 dark:text-rose-455 border border-rose-100 dark:border-rose-950/35 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              <Trash2 size={13} />
+              নির্বাচিত মুছুন
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

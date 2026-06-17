@@ -2405,13 +2405,13 @@ export default function DocumentsPage() {
               </div>
 
               {/* Scrollable Printable Wrapper */}
-              <div className="flex-1 overflow-y-auto p-8 bg-slate-105/50 dark:bg-slate-950/20 flex justify-center">
+              <div className="flex-1 overflow-auto p-8 bg-slate-105/50 dark:bg-slate-950/20 flex justify-center">
                 
                 {isBill ? (
                   /* simulated Legal-sized Bill Memo sheet */
                   <div 
                     id="printable-order-sheet"
-                    className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-none text-[10px]"
+                    className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-none text-[10px] shrink-0"
                     style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
                   >
                     <div className="flex flex-col h-full justify-between">
@@ -2568,7 +2568,7 @@ export default function DocumentsPage() {
                   /* simulated A4 Office Order sheet (currently rendered) */
                   <div 
                     id="printable-order-sheet"
-                    className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg p-[0.8in] flex flex-col justify-between relative text-left font-serif leading-relaxed text-[10px]"
+                    className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg p-[0.8in] flex flex-col justify-between relative text-left font-serif leading-relaxed text-[10px] shrink-0"
                     style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', boxSizing: 'border-box' }}
                   >
                     <div>

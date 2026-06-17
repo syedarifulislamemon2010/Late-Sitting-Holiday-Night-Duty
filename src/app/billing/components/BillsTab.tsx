@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   CheckCircle, 
   Eye, 
   FileSignature, 
   Trash2, 
   AlertCircle, 
-  Loader2 
+  Loader2,
+  Printer
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
@@ -41,6 +42,47 @@ export default function BillsTab({
   setViewingOrder
 }: BillsTabProps) {
 
+  const [selectedBills, setSelectedBills] = useState<number[]>([]);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`আপনি কি নির্বাচিত ${selectedBills.length} টি বিল মেমো মুছে ফেলতে চান?`)) return;
+    setActionLoading(true);
+    try {
+      for (const id of selectedBills) {
+        await fetch(`/api/office-orders/${id}`, { method: 'DELETE' });
+      }
+      setSelectedBills([]);
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert('কিছু বিল মেমো মুছে ফেলা সম্ভব হয়নি।');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBulkPrint = async () => {
+    if (!confirm(`আপনি কি নির্বাচিত ${selectedBills.length} টি বিল মেমোকে "মুদ্রিত" (Printed) হিসেবে চিহ্নিত করতে চান?`)) return;
+    setActionLoading(true);
+    try {
+      for (const id of selectedBills) {
+        await fetch(`/api/office-orders/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'Printed' })
+        });
+      }
+      setSelectedBills([]);
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert('কিছু বিল মেমোর স্ট্যাটাস আপডেট করা সম্ভব হয়নি।');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const renderBillMemosGrid = (memosList: OfficeOrder[]) => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -51,10 +93,25 @@ export default function BillsTab({
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-500/20 font-sans">
-                  <CheckCircle size={10} className="text-emerald-555" />
-                  {order.status === 'Generated & Printed' || order.status === 'Printed' ? 'জেনারেটেড এন্ড প্রিন্টেড' : order.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox"
+                    checked={selectedBills.includes(order.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      if (e.target.checked) {
+                        setSelectedBills(prev => [...prev, order.id]);
+                      } else {
+                        setSelectedBills(prev => prev.filter(id => id !== order.id));
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-slate-350 dark:border-slate-750 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0 select-none"
+                  />
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-500/20 font-sans">
+                    <CheckCircle size={10} className="text-emerald-555" />
+                    {order.status === 'Generated & Printed' || order.status === 'Printed' ? 'জেনারেটেড এন্ড প্রিন্টেড' : order.status}
+                  </span>
+                </div>
                 <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-bold uppercase font-sans">
                   {order.category === 'BILL_LATE_SITTING' ? 'লেট সিটিং বিল' : order.category === 'BILL_HOLIDAY' ? 'সরকারি ছুটি বিল' : 'রাত্রীকালীন বিল'}
                 </span>
@@ -110,7 +167,7 @@ export default function BillsTab({
               {hasDeletePermission(order) && (
                 <button 
                   onClick={() => handleDeleteOrder(order.id)}
-                  className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg transition-all cursor-pointer"
+                  className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-955/20 dark:hover:bg-red-955/30 text-red-500 dark:text-red-400 rounded-lg transition-all cursor-pointer"
                   title="আর্কাইভ থেকে মুছে ফেলুন"
                 >
                   <Trash2 size={12} />
@@ -128,10 +185,10 @@ export default function BillsTab({
 
   return (
     <div className="space-y-6">
-      {loading ? (
+      {loading || actionLoading ? (
         <div className="flex flex-col items-center justify-center py-20 space-y-3">
           <Loader2 size={36} className="text-indigo-500 animate-spin" />
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">লোড হচ্ছে...</p>
         </div>
       ) : filteredBillMemos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
@@ -175,6 +232,38 @@ export default function BillsTab({
                 কোনো প্রিন্টেড বিল মেমো নেই।
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Floating Toolbar for bulk actions */}
+      {selectedBills.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-6 animate-in slide-in-from-bottom-4 duration-350 select-none">
+          <div className="text-xs font-bold text-slate-700 dark:text-slate-200">
+            <span className="font-sans text-indigo-650 dark:text-indigo-400 text-sm font-extrabold">{toBanglaDigits(selectedBills.length)}</span> টি বিল নির্বাচিত
+          </div>
+          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedBills([])}
+              className="px-3.5 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              বাতিল
+            </button>
+            <button
+              onClick={handleBulkPrint}
+              className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-105 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/35 rounded-xl text-xs font-bold transition-all cursor-pointer animate-pulse"
+            >
+              <Printer size={13} />
+              বাল্ক প্রিন্ট/অনুমোদন
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 text-rose-655 dark:text-rose-455 border border-rose-100 dark:border-rose-950/35 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              <Trash2 size={13} />
+              মুছে ফেলুন
+            </button>
           </div>
         </div>
       )}

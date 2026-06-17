@@ -1283,12 +1283,14 @@ export default function LeaveGeneratorPage() {
                 )}
               </div>
 
-              {/* Container of simulated sheet */}
-              <div 
-                id="printable-leave-sheet" 
-                className="w-[216mm] min-h-[356mm] bg-white text-black p-[20mm] border-2 border-slate-300 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] relative flex flex-col justify-start"
-                style={{ contentVisibility: 'auto' }}
-              >
+              {/* Scrollable Container for Preview Sheet */}
+              <div className="w-full max-w-full overflow-x-auto flex justify-center pb-4 no-print-scrollbar">
+                {/* Container of simulated sheet */}
+                <div 
+                  id="printable-leave-sheet" 
+                  className="w-[216mm] min-h-[356mm] bg-white text-black p-[20mm] border-2 border-slate-300 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] relative flex flex-col justify-start shrink-0"
+                  style={{ contentVisibility: 'auto' }}
+                >
                 
                 {/* 1. Header (Date + Leaves Table) */}
                 <div className="flex justify-between items-start font-sans leading-tight">
@@ -1513,6 +1515,9 @@ export default function LeaveGeneratorPage() {
                   </div>
                 </div>
 
+              </div>
+
+              {/* Close Scrollable Container */}
               </div>
 
             </div>

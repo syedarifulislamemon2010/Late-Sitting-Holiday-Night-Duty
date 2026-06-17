@@ -310,6 +310,7 @@ export default function RosterPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [duties, setDuties] = useState<Duty[]>([]);
+  const [leaves, setLeaves] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
@@ -599,12 +600,28 @@ export default function RosterPage() {
           {cells.map(c => {
             const holidayInfo = c.isDbHoliday ? c.isDbHoliday.name : ((c.dayOfWeek === 5 || c.dayOfWeek === 6) && !c.isWorking ? 'সাপ্তাহিক ছুটি' : '');
             const isDisabled = isDateDisabledForType(c.isWorking, assignmentForm.type);
+            
+            // Real-time leave conflict warning check
+            const emp = employees.find(e => e.id === empId);
+            const leaveConflict = emp?.bankId ? leaves.find(l => 
+              l.bankId === emp.bankId && 
+              l.startDate <= c.dateStr && 
+              l.endDate >= c.dateStr
+            ) : null;
+            
+            const leaveTypeBn = leaveConflict ? (
+              leaveConflict.leaveType === 'CASUAL' ? 'নৈমিত্তিক ছুটি' : 
+              leaveConflict.leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : 
+              'কর্মস্থল ত্যাগসহ নৈমিত্তিক'
+            ) : '';
+            const leaveTooltip = leaveConflict ? `\n⚠️ ছুটি সংঘর্ষ: ${leaveTypeBn} (${leaveConflict.startDate.split('-').reverse().join('-')} হতে ${leaveConflict.endDate.split('-').reverse().join('-')})` : '';
+
             return (
               <button
                 type="button"
                 key={c.dateStr}
                 disabled={isDisabled}
-                title={`${c.dateStr} (${holidayInfo || 'কর্মদিবস'})${isDisabled ? ' - এই ক্যাটাগরির জন্য ডিজেবল' : ''}`}
+                title={`${c.dateStr} (${holidayInfo || 'কর্মদিবস'})${isDisabled ? ' - এই ক্যাটাগরির জন্য ডিজেবল' : ''}${leaveTooltip}`}
                 onClick={() => {
                   if (c.isSelected) {
                     handleOpt1RemoveDate(empId, c.dateStr);
@@ -617,14 +634,22 @@ export default function RosterPage() {
                     ? 'bg-indigo-650 border-indigo-650 text-white shadow-sm font-extrabold scale-105'
                     : isDisabled
                       ? 'bg-slate-100/50 dark:bg-slate-900/10 border-slate-200/20 dark:border-slate-800/10 text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-40'
-                      : !c.isWorking
-                        ? 'bg-red-50/50 dark:bg-red-950/20 border-red-100/50 dark:border-red-900/10 text-red-500 hover:bg-red-100/60 dark:hover:bg-red-900/30'
-                        : 'bg-slate-50 dark:bg-slate-950/20 border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      : leaveConflict
+                        ? 'bg-amber-50/70 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                        : !c.isWorking
+                          ? 'bg-red-50/50 dark:bg-red-950/20 border-red-100/50 dark:border-red-900/10 text-red-500 hover:bg-red-100/60 dark:hover:bg-red-900/30'
+                          : 'bg-slate-50 dark:bg-slate-950/20 border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
                 <span>{c.day}</span>
                 {c.isDbHoliday && (
                   <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-amber-550 animate-pulse" />
+                )}
+                {leaveConflict && (
+                  <span className="absolute -top-1 -right-1 flex h-2 w-2" title={`ছুটি সংঘর্ষ: ${leaveTypeBn}`}>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </span>
                 )}
               </button>
             );
@@ -1477,16 +1502,18 @@ export default function RosterPage() {
 
   async function loadData() {
     try {
-      const [empRes, cellRes, execRes, holidayRes] = await Promise.all([
+      const [empRes, cellRes, execRes, holidayRes, leavesRes] = await Promise.all([
         fetch('/api/employees'),
         fetch('/api/cells'),
         fetch('/api/executives'),
-        fetch('/api/holidays')
+        fetch('/api/holidays'),
+        fetch('/api/leaves')
       ]);
       const empData = await empRes.json();
       const cellData = await cellRes.json();
       const execData = await execRes.json();
       const holidayData = await holidayRes.json();
+      const leavesData = await leavesRes.json();
       
       const sortedEmps = Array.isArray(empData) ? sortEmployeesBySeniority(empData) : [];
       setEmployees(sortedEmps);
@@ -1496,6 +1523,7 @@ export default function RosterPage() {
         setOpt1CellId(cellsList[0].id.toString());
       }
       setHolidays(Array.isArray(holidayData) ? holidayData : []);
+      setLeaves(Array.isArray(leavesData) ? leavesData : []);
       
       if (Array.isArray(execData)) {
         // Filter to only DGMs based on designation query
@@ -1929,6 +1957,26 @@ export default function RosterPage() {
 
       const preservedOrderRef = editingDuties.find(d => d.orderRef)?.orderRef || null;
 
+      // Client-side Leave Conflict Validator
+      for (const assign of assignments) {
+        const emp = employees.find(e => e.id === assign.employeeId);
+        if (emp && emp.bankId) {
+          const conflict = leaves.find(l => 
+            l.bankId === emp.bankId && 
+            l.startDate <= assign.date && 
+            l.endDate >= assign.date
+          );
+          if (conflict) {
+            const leaveTypeBn = conflict.leaveType === 'CASUAL' ? 'নৈমিত্তিক ছুটি' : 
+                                conflict.leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : 
+                                'কর্মস্থল ত্যাগসহ নৈমিত্তিক';
+            const formattedDate = assign.date.split('-').reverse().join('-');
+            setErrorMessage(`দুঃখিত, ${emp.name} কর্মকর্তাটি ${toBanglaDigits(formattedDate)} তারিখে ছুটিতে (${leaveTypeBn}) আছেন। ওই তারিখে তার জন্য ডিউটি বরাদ্দ করা সম্ভব নয়।`);
+            return;
+          }
+        }
+      }
+
       try {
         setSubmitting(true);
 
@@ -2057,6 +2105,26 @@ export default function RosterPage() {
             description: getDefaultDescription(emp?.name, assignmentForm.type as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT', cellName)
           };
         });
+      }
+    }
+
+    // Client-side Leave Conflict Validator
+    for (const assign of assignments) {
+      const emp = employees.find(e => e.id === assign.employeeId);
+      if (emp && emp.bankId) {
+        const conflict = leaves.find(l => 
+          l.bankId === emp.bankId && 
+          l.startDate <= assign.date && 
+          l.endDate >= assign.date
+        );
+        if (conflict) {
+          const leaveTypeBn = conflict.leaveType === 'CASUAL' ? 'নৈমিত্তিক ছুটি' : 
+                              conflict.leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : 
+                              'কর্মস্থল ত্যাগসহ নৈমিত্তিক';
+          const formattedDate = assign.date.split('-').reverse().join('-');
+          setErrorMessage(`দুঃখিত, ${emp.name} কর্মকর্তাটি ${toBanglaDigits(formattedDate)} তারিখে ছুটিতে (${leaveTypeBn}) আছেন। ওই তারিখে তার জন্য ডিউটি বরাদ্দ করা সম্ভব নয়।`);
+          return;
+        }
       }
     }
 

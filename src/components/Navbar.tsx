@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { 
   Settings,
-  LogOut
+  LogOut,
+  Search
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
@@ -84,6 +85,38 @@ export default function Navbar() {
 
   const pathname = usePathname();
 
+  useEffect(() => {
+    if (!pathname || pathname === '/') return;
+    const routeMap: Record<string, string> = {
+      '/roster': 'ডিউটি রোস্টার',
+      '/billing': 'বিল ও ভাতার বিবরণী',
+      '/leave': 'ছুটি আবেদন',
+      '/employees': 'কর্মকর্তাবৃন্দ',
+      '/audit': 'অডিট লগ',
+      '/users': 'সেটিংস',
+      '/documents': 'আর্কাইভ',
+      '/trash': 'রিসাইকেল বিন',
+      '/lunch-bill': 'লাঞ্চ বিল শিট',
+      '/closing-bill': 'ক্লোজিং বিল শিট'
+    };
+    const cleanPath = '/' + pathname.replace(/^\//, '').split('/')[0];
+    const title = routeMap[cleanPath];
+    if (title) {
+      const stored = localStorage.getItem('recentModules');
+      let list: { title: string; url: string }[] = [];
+      if (stored) {
+        try {
+          list = JSON.parse(stored);
+        } catch {}
+      }
+      list = list.filter(item => item.url !== pathname);
+      list.unshift({ title, url: pathname });
+      list = list.slice(0, 4);
+      localStorage.setItem('recentModules', JSON.stringify(list));
+      window.dispatchEvent(new Event('storage'));
+    }
+  }, [pathname]);
+
   const getBreadcrumbs = () => {
     if (pathname === '/') {
       return (
@@ -136,8 +169,25 @@ export default function Navbar() {
         {getBreadcrumbs()}
       </div>
 
+      {/* Center section: Search Trigger Button */}
+      <div className="hidden sm:flex items-center flex-1 max-w-[200px] md:max-w-xs justify-center mx-4">
+        <button 
+          onClick={() => {
+            const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true });
+            window.dispatchEvent(event);
+          }}
+          className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition-all cursor-pointer text-xs"
+        >
+          <div className="flex items-center gap-2">
+            <Search size={14} className="text-slate-400 dark:text-slate-500" />
+            <span className="font-semibold text-[11px] text-slate-550 dark:text-slate-400">সার্চ করুন...</span>
+          </div>
+          <span className="px-1.5 py-0.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md font-sans text-[9px] font-bold shadow-xs">Ctrl + K</span>
+        </button>
+      </div>
+
       {/* Right section: Corporate Profile Avatar / Janata Bank Badge */}
-      <div className="flex items-center gap-3 justify-end w-[320px] shrink-0">
+      <div className="flex items-center gap-3 justify-end w-[220px] md:w-[300px] shrink-0">
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}

@@ -35,6 +35,7 @@ export default function AuditPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [viewMode, setViewMode] = useState<'timeline' | 'table'>('timeline');
 
   const fetchLogs = async () => {
     try {
@@ -260,11 +261,31 @@ export default function AuditPage() {
           </div>
         </div>
 
-        {/* Audit Log Table */}
+        {/* Audit Log Data Panel */}
         <div className="glass-card p-6 rounded-2xl border border-slate-200">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
+            <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">
+              অ্যাক্টিভিটি ডাটা ({toBanglaDigits(totalCount)}টি রেকর্ড)
+            </h3>
+            <div className="flex bg-slate-100 dark:bg-slate-850 p-0.5 rounded-xl border border-slate-200/50 dark:border-slate-700/60 font-sans">
+              <button 
+                onClick={() => setViewMode('timeline')}
+                className={`px-3 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${viewMode === 'timeline' ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-400 dark:text-slate-500'}`}
+              >
+                টাইমলাইন ভিউ
+              </button>
+              <button 
+                onClick={() => setViewMode('table')}
+                className={`px-3 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${viewMode === 'table' ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-400 dark:text-slate-500'}`}
+              >
+                তালিকা ভিউ
+              </button>
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-3">
-              <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-3 border-indigo-650 border-t-transparent rounded-full animate-spin" />
               <p className="text-sm text-slate-500 font-medium">অডিট লগ লোড হচ্ছে...</p>
             </div>
           ) : filteredLogs.length === 0 ? (
@@ -272,7 +293,7 @@ export default function AuditPage() {
               <Database className="mx-auto text-slate-300" size={40} />
               <p className="text-sm font-bold text-slate-500">কোনো অডিট রেকর্ড পাওয়া যায়নি</p>
             </div>
-          ) : (
+          ) : viewMode === 'table' ? (
             <div className="overflow-x-auto rounded-xl border border-slate-100">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -328,6 +349,82 @@ export default function AuditPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+          ) : (
+            <div className="relative pl-6 border-l-2 border-slate-100 dark:border-slate-800 space-y-6 font-sans">
+              {filteredLogs.map((log, idx) => {
+                const localTimeStr = new Date(log.timestamp).toLocaleString('bn-BD', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: true
+                });
+
+                const isDelete = ['DELETE', 'PURGE', 'REMOVE'].includes(log.actionType?.toUpperCase());
+                const isCreate = ['CREATE', 'RESTORE'].includes(log.actionType?.toUpperCase());
+                const isUpdate = ['UPDATE', 'EDIT'].includes(log.actionType?.toUpperCase());
+
+                let dotColor = 'bg-slate-400';
+                if (isDelete) dotColor = 'bg-rose-500';
+                else if (isCreate) dotColor = 'bg-emerald-555';
+                else if (isUpdate) dotColor = 'bg-amber-500';
+
+                return (
+                  <div key={idx} className="relative group/item cursor-pointer" onClick={() => setSelectedLog(log)}>
+                    <span className={`absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 ${dotColor} group-hover/item:scale-125 transition-transform`} />
+
+                    <div className="bg-slate-50/50 hover:bg-slate-50 dark:bg-slate-900/40 dark:hover:bg-slate-850 p-4 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl transition-colors space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-extrabold text-slate-850 dark:text-slate-150">{log.bankId}</span>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${getActionBadgeColor(log.actionType)}`}>
+                            {log.actionType}
+                          </span>
+                          {log.cell && (
+                            <span className="text-[10px] text-slate-400 font-bold">({log.cell})</span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-450 dark:text-slate-500 font-bold font-sans flex items-center gap-1">
+                          <Clock size={11} />
+                          {toBanglaDigits(localTimeStr)}
+                        </span>
+                      </div>
+
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-relaxed">
+                        {(() => {
+                          const text = log.details;
+                          // Matches standard change formats like "Amount: 8000 -> 9000" or similar change arrows
+                          const diffRegex = /([\w\u0980-\u09FF\s]+):\s*([^\s\-]+)\s*->\s*([^\s]+)/;
+                          const match = text.match(diffRegex);
+                          if (match) {
+                            const [fullMatch, field, before, after] = match;
+                            const index = text.indexOf(fullMatch);
+                            return (
+                              <span>
+                                {text.substring(0, index)}
+                                <span className="font-bold text-slate-900 dark:text-slate-150">{field}: </span>
+                                <span className="line-through text-rose-500 bg-rose-50 dark:bg-rose-950/20 px-1.5 py-0.5 rounded-md font-sans font-bold">{before}</span>
+                                <span className="mx-1 text-slate-400">→</span>
+                                <span className="text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded-md font-sans font-bold">{after}</span>
+                                {text.substring(index + fullMatch.length)}
+                              </span>
+                            );
+                          }
+                          return text;
+                        })()}
+                      </p>
+                      
+                      <div className="flex items-center justify-between text-[10px] text-slate-450 dark:text-slate-500 pt-1 border-t border-dashed border-slate-200/50 dark:border-slate-800/60 font-sans font-semibold">
+                        <span>রেকর্ড আইডি: {log.recordId || 'N/A'}</span>
+                        <span>IP: {log.ipAddress}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
