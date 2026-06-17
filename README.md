@@ -40,33 +40,67 @@ The system manages three primary classes of actors with isolated permission scop
 
 ---
 
-## 5. Functional Requirements
+## 5. Functional Requirements & User Stories
 
-### 5.1 Duty Roster Management
-* System must block duplicate duty logging for the same employee on the same date.
-* System must prevent scheduling a duty for an employee on dates overlapping with their approved leaves.
-* Category lock: The user must select the duty category (Late Sitting, Holiday Duty, Night Shift) before selecting employees or dates.
+### 5.1 System Functional Requirements (FR)
+* **FR-001 (Duty Assignment):** System must block duplicate duty logging for the same employee on the same date.
+* **FR-002 (Leave Validation):** System must prevent scheduling a duty for an employee on dates overlapping with their approved leaves.
+* **FR-003 (Budget Split):** Automatically partition any billing ledger exceeding ৳7,500 into multiple compliant office orders sorted chronologically, assigning staggered unique reference dates.
+* **FR-004 (Category Lock):** The user must select the duty category (Late Sitting, Holiday Duty, Night Shift) before selecting employees or dates.
+* **FR-005 (BOM CSV Exports):** Export report datasets to CSV/Excel format with UTF-8 BOM headers to display Bengali characters properly.
+* **FR-006 (Sandwich Rule):** Calculate leave balances applying the "Sandwich Rule" (sandwiched weekends are deducted from casual leave balances).
+* **FR-007 (Recycle Bin):** Retain soft-deleted records (Employees, Duties, Cells, Users) in an audit-compliant bin, allowing administrators to restore them.
 
-### 5.2 Billing & Splitting Engine
-* Automatically compute allowances: Late Sitting = ৳300, Holiday = ৳500, Night Shift = ৳1,000.
-* Automatically partition any billing ledger exceeding ৳7,500 into multiple compliant office orders sorted chronologically, assigning staggered unique reference dates.
-* Export report datasets to CSV/Excel format with UTF-8 BOM headers to display Bengali characters properly.
+### 5.2 User Stories (US)
 
-### 5.3 Leave Processing
-* Calculate leave balances applying the "Sandwich Rule" (sandwiched weekends are deducted from casual leave balances).
-* Prevent leave submission if date ranges overlap with existing leaves or logged duties.
+#### US-001: Late Sitting Duty Assignment
+* **As a:** Cell Officer
+* **I want to:** Assign Late Sitting duties
+* **So that:** Employees can receive allowances.
 
-### 5.4 Soft Deleted Recycle Bin
-* Retain soft-deleted records (Employees, Duties, Cells, Users) in an audit-compliant bin, allowing administrators to restore them without violating relational constraints.
+**Acceptance Criteria:**
+* No duplicate assignment
+* Leave overlap blocked
+* Cell permission enforced
+
+#### US-002: Leave Scheduling
+* **As a:** Cell Officer
+* **I want to:** Record casual leave applications for cell employees
+* **So that:** Leave balances are updated correctly and duty conflicts are avoided.
+
+**Acceptance Criteria:**
+* Automatically identify and apply the "Sandwich Rule" (weekend days sandwiched between leave days count as leave).
+* Block leave requests that overlap with existing scheduled duties.
+
+### 5.3 Behavior-Driven Development (BDD) Acceptance Criteria
+* **Scenario 1: Duty Assignment Conflict during Active Leave**
+  * **Given:** Employee A has approved leave
+  * **When:** Operator assigns duty
+  * **Then:** System returns HTTP 409 Conflict
+* **Scenario 2: Cell Boundary Access Violations**
+  * **Given:** User B is a Cell Officer mapped only to Cell 7 (CBS Integrated Development Cell)
+  * **When:** User B attempts to delete an employee record belonging to Cell 9 (R09 Development Cell)
+  * **Then:** System returns HTTP 403 Forbidden and logs a security event in the Audit Log
+* **Scenario 3: Duplicate Duty Assignment Check**
+  * **Given:** Employee A is already assigned Late Sitting duty on Date D
+  * **When:** Operator attempts to assign another Late Sitting duty to Employee A on Date D
+  * **Then:** System returns HTTP 409 Conflict
 
 ---
 
-## 6. Non-Functional Requirements
+## 6. Non-Functional Requirements & SLA/SLO
 
+### 6.1 Non-Functional Requirements (NFR)
 * **Performance & Scalability:** Server response times for API requests must be under 200ms under standard loads. Next.js build compilation must be optimized using modular sub-components to limit bundle sizes.
 * **Security & Regulatory Compliance:** Session tokens must be cryptographically signed using JWT. Data in transit must use TLS 1.3, and data at rest must use AES-256-CBC.
 * **Availability & Reliability:** Target 99.9% uptime. System failures must dispatch webhook warning alerts to administrative Slack/Discord channels immediately.
 * **Recovery Targets:** Recovery Time Objective (RTO) must be less than 2 hours. Recovery Point Objective (RPO) must be less than 24 hours.
+
+### 6.2 Service Level Agreement (SLA) & Service Level Objectives (SLO)
+* **Availability SLA:** 99.9%
+* **API Success Rate:** 99.95%
+* **Average Response Time:** <200ms
+* **Document Generation:** <5 sec
 
 ---
 
@@ -155,8 +189,86 @@ graph TD
 
 ---
 
-## 10. ER Diagram
+## 10. Data Flow & Component Diagrams
 
+### 10.1 DFD Level 0 (Context Diagram)
+```mermaid
+graph TD
+    User([System User / Operator]) -->|Input credentials, duty rosters, leaves| LHN["Janata Bank LHN Portal"]
+    Executive([DGM / AGM / GM]) -->|Review, sign-off requests| LHN
+    LHN -->|Generate PDFs, output allowance ledgers| User
+    LHN -->|Consolidated statements, audit summaries| Executive
+```
+
+### 10.2 DFD Level 1 (Process Diagram)
+```mermaid
+graph TD
+    User([Cell Operator / Admin]) -->|Auth Request| P1["1.0 User Authentication (NextAuth)"]
+    P1 -->|Session Token| SessionStore[(JWT Session)]
+    
+    User -->|Duty Assignments| P2["2.0 Duty Roster Controller"]
+    P2 -->|Validation / Leaves Check| P3["3.0 Leave & Validation Engine"]
+    P3 -->|Queries| DB[(PostgreSQL Database)]
+    P2 -->|Persist Duties| DB
+    
+    User -->|Leave Applications| P3
+    P3 -->|Sandwich Calculation| DB
+    
+    User -->|Billing Request| P4["4.0 Billing & Splitter Engine"]
+    P4 -->|Fetch Unbilled Duties| DB
+    P4 -->|Split Rules (7500 limit)| P5["5.0 Document Compiler"]
+    P5 -->|Generate PDF Memos| DocStore[(PDF Storage / Uploads)]
+    P5 -->|Update Duty Ref| DB
+    
+    Executive([DGM / AGM / GM]) -->|Download Reports| P5
+```
+
+### 10.3 Component Diagram
+```mermaid
+graph TD
+    subgraph Client["Next.js Presentation Layer (Client)"]
+        UI["React components (Sidebar, Navbar, Tabs)"]
+        Hooks["Custom Hooks (useRealtime)"]
+        Context["Global State (Layout, Profile)"]
+    end
+    
+    subgraph Server["Next.js Server Layer (API & Services)"]
+        API["API Route Handlers (/api/*)"]
+        AuthG["AuthGuard & NextAuth"]
+        
+        subgraph Services["Business Logic Service Layer"]
+            DutyServ["Duty Service (Allowance calculations)"]
+            LeaveServ["Leave Service (Sandwich rule)"]
+            OrderServ["Office Order Service (Budget splitting)"]
+            EmpServ["Employee Service (Cell boundary enforcement)"]
+        end
+        
+        subgraph Repositories["Data Access Repository Layer"]
+            DutyRepo["Duty Repository"]
+            LeaveRepo["Leave Repository"]
+            OrderRepo["Office Order Repository"]
+            EmpRepo["Employee Repository"]
+        end
+    end
+    
+    subgraph Storage["Database & File Persistence"]
+        DB["PostgreSQL (Drizzle ORM)"]
+        Files["Local File Storage (/uploads)"]
+    end
+
+    UI -->|JSON Fetch| API
+    API -->|Auth check| AuthG
+    API -->|Calls| Services
+    Services -->|Database Mutations| Repositories
+    Repositories -->|Drizzle Client| DB
+    Services -->|Writes PDF| Files
+```
+
+---
+
+## 11. Database Design, ERD & Traceability Matrix
+
+### 11.1 ER Diagram
 ```mermaid
 erDiagram
     CELL ||--o{ EMPLOYEE : contains
@@ -169,13 +281,7 @@ erDiagram
     OFFICE_ORDER ||--o{ DUTY : includes
 ```
 
----
-
-## 11. Database Design & Text-Based ERD
-
-The database utilizes optimized foreign-key relationships to maintain high referential integrity. Alphanumeric indexing is applied to `fileNo`, `bankId`, and `orderRef` columns to optimize querying.
-
-### 11.1 Entity Mappings & Schema Definitions
+### 11.2 Entity Mappings & Schema Definitions
 1. **User (`User`):** Stores credentials for operator logins. Mapped roles are restricted to `ADMIN` and `USER`.
 2. **Cell (`Cell`):** Represents branch operational departments (e.g., R22 Core Banking).
 3. **Employee (`Employee`):** Employee directory. Tracks designations, file numbers, and assigned cell IDs. Cascades deletions to child duties.
@@ -188,13 +294,22 @@ The database utilizes optimized foreign-key relationships to maintain high refer
 10. **LunchBill (`LunchBill`):** Restricts cell monthly bills to a single record using a composite unique constraint (`cellId`, `month`, `year`).
 11. **AuditLog (`AuditLog`):** Stores system-wide changes, containing actions (`CREATE`, `UPDATE`, `DELETE`), user IDs, and timestamps.
 
-### 11.2 Text-Based Schema & Junction Table Relationships
+### 11.3 Text-Based Schema & Junction Table Relationships
 * **User-to-Cell Relation (M:N):** Handled via the implicit many-to-many junction table `_UserCells`.
   * `_UserCells.A` (Foreign Key referencing `Cell.id`, cascade delete)
   * `_UserCells.B` (Foreign Key referencing `User.id`, cascade delete)
 * **Cell-to-Employee Relation (1:N):** `Employee.cellId` (Foreign Key referencing `Cell.id`).
 * **Employee-to-Duty Relation (1:N):** `Duty.employeeId` (Foreign Key referencing `Employee.id`, cascade delete).
 * **Duty-to-OfficeOrder Relation (N:1):** `Duty.orderRef` (Nullable foreign key referencing `OfficeOrder.orderRef`, updates dynamically).
+
+### 11.4 Requirement Traceability Matrix (RTM)
+
+| Req ID | Process / Component | Use Case | ERD Entity | DFD Level 0 | DFD Level 1 | Component | Deployment | API Endpoint | Test Case ID |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **FR-001** | Duty Assignment | UC3 (Manage Duty Rosters) | `EMPLOYEE`, `DUTY` | `User / Operator` -> `LHN Portal` | `2.0 Duty Roster Controller` | `Duty Service` | `Next.js App Node`, `PostgreSQL DB` | `POST /api/duties` (Duty API) | `DUTY-01` |
+| **FR-002** | Leave Validation | UC5 (Validate Leaves) | `EMPLOYEE`, `LEAVE_APPLICATION` | `User / Operator` -> `LHN Portal` | `3.0 Leave & Validation Engine` | `Leave Service` | `Next.js App Node`, `PostgreSQL DB` | `POST /api/leaves` (Leave API) | `LEAVE-02` |
+| **FR-003** | Budget Split | UC4 (Calculate & Split Bills) | `OFFICE_ORDER`, `DUTY` | `User / Operator` -> `LHN Portal` | `4.0 Billing & Splitter Engine` / `5.0 Document Compiler` | `OfficeOrder Service` | `Next.js App Node`, `PostgreSQL DB` | `POST /api/documents/generate-bill-memo` (Generate Bill API) | `BILL-03` |
+| **FR-006** | Sandwich Rule | UC5 (Validate Leaves) | `LEAVE_APPLICATION`, `HOLIDAY` | `User / Operator` -> `LHN Portal` | `3.0 Leave & Validation Engine` | `Leave Service` | `Next.js App Node`, `PostgreSQL DB` | `POST /api/leaves` (Leave API) | `LEAVE-02` |
 
 ---
 
@@ -307,7 +422,52 @@ The database utilizes optimized foreign-key relationships to maintain high refer
 * **Session Hardening:** All private routes are protected using NextAuth.js JWT authentication. Authentication tokens are decrypted server-side to resolve roles and active cell mappings.
 * **Row-Level Cell Boundaries (RBAC):** Users with the `USER` role are blocked from altering records outside their assigned cell boundaries. Database repositories inject user cell maps in SQL queries (e.g. `inArray(employees.cellId, userCellIds)`) to restrict access.
 
-### 13.2 Banking Regulatory Compliance & Data Retention
+### 13.2 Multi-Factor Authentication (MFA) Design
+To comply with enterprise banking security guidelines, the portal integrates **MFA (TOTP-based)**:
+* **TOTP Authentication:** Users must configure a time-based one-time password (TOTP) token matching the RFC 6238 standard.
+* **Google Authenticator Sync:** Registration is conducted via a generated QR code linking secret key parameters to standard authenticator applications (e.g., Google Authenticator, Microsoft Authenticator).
+* **Backup Recovery Codes:** During MFA setup, the system generates **8 immutable recovery codes** (hashed via bcrypt in the database). Each code can only be used once to bypass authenticator challenges during device loss.
+* **Device Trust Period:** Operators can opt to trust their current browser device. The system sets a secure, signed HTTP-only cookie marking the device as trusted for **30 calendar days**, bypass-challenging subsequent MFA checks.
+
+### 13.3 Security & Account Lockout Policies
+* **Account Lockout:** To mitigate automated credential brute-forcing:
+  * An account is automatically locked after **5 consecutive failed login attempts**.
+  * The lockout duration is set to **30 minutes**.
+  * Each lockout event immediately registers a high-priority security event log in the Audit database.
+* **Session Security Controls:**
+  * **Idle Session Timeout:** Sessions automatically invalidate after **15 minutes** of operator inactivity.
+  * **Absolute Session Timeout:** Active session tokens possess an absolute validity window of **8 hours** to prevent persistent session hijack vectors.
+  * **Remember Device Cookie:** HTTP-only cookies storing device signatures have a strict expiration cap of **30 days**.
+
+### 13.4 OWASP Threat Model
+| Threat | Control |
+| :--- | :--- |
+| SQL Injection | Drizzle ORM |
+| XSS | Output Encoding |
+| CSRF | CSRF Token |
+| Session Hijacking | JWT + Secure Cookies |
+| Brute Force | Rate Limiting |
+| Privilege Escalation | RBAC |
+
+### 13.5 Audit Event Matrix
+| Event | Logged |
+| :--- | :---: |
+| Login | Yes |
+| Logout | Yes |
+| User Create | Yes |
+| Employee Delete | Yes |
+| Leave Approve | Yes |
+| Bill Generate | Yes |
+
+### 13.6 Compliance Mapping Table
+| Requirement | Compliance |
+| :--- | :--- |
+| Audit Logs | Bangladesh Bank ICT |
+| Encryption | ISO 27001 |
+| Access Control | NIST |
+| Backups | DR Policy |
+
+### 13.7 Banking Regulatory Compliance & Data Retention
 * **Data Encryption Standards:**
   * **In-Transit:** TLS 1.3 encryption is enforced on all external endpoints.
   * **At-Rest:** Database storage and backup exports (`postgres_dump.json`) are encrypted using AES-256-CBC.
@@ -449,17 +609,29 @@ stateDiagram-v2
 
 ## 17. Testing Strategy
 
-The portal relies on automated unit tests, static type checks, and pre-commit hooks to ensure high system stability.
+The portal relies on automated unit tests, static type checks, integration suites, and pre-commit hooks to ensure high system stability.
 
-### 17.1 Pre-Commit / Pre-Push Pipelines
-Developers must configure git hooks to run the following test commands automatically before code is pushed to remote branches:
-* **TypeScript Integrity Check:** Enforce clean compilation without emitting code:
-  ```bash
-  npx tsc --noEmit
-  ```
-* **Unit Test Runner (Vitest):** Run automated test suites:
+### 17.1 Test Suites Execution
+The portal incorporates multiple tiers of testing to validate codebase robustness:
+* **Vitest Unit Tests:** Validates core math and business logic functions (leave sandwiching, budget splits, and allowance calculations) in isolation:
   ```bash
   npx vitest run
+  ```
+* **Integration Tests:** Verifies database query mappings, relational integrity, transaction rollbacks, and mock service integrations:
+  ```bash
+  npm run test:integration
+  ```
+* **API Contract Tests:** Validates backend REST endpoint responses, headers, RBAC scope enforcement, and JSON payload structures:
+  ```bash
+  npm run test:contract
+  ```
+* **E2E Playwright Tests:** Automates real-world browser paths (operator logins, manual roster scheduling, form overrides, and silent PDF printing) inside headless browsers:
+  ```bash
+  npx playwright test
+  ```
+* **TypeScript Type Check:** Ensures complete compile-time type-safety:
+  ```bash
+  npx tsc --noEmit
   ```
 
 ### 17.2 Strict Quality Gate Requirements
@@ -501,9 +673,9 @@ To ensure business continuity, backup processes are automated. Administrators mu
 
 ---
 
-## 20. Deployment Architecture
+## 20. Deployment Architecture & High Availability
 
-### 20.1 Nginx Reverse Proxy & Firewall Architecture
+### 20.1 Nginx Reverse Proxy Setup
 The production gateway routes incoming port 80/443 traffic through Nginx to the Next.js local port 3000. Firewall rules drop raw requests targeting port 3000 directly.
 ```nginx
 server {
@@ -527,6 +699,34 @@ RHEL's security module blocks Nginx reverse proxy loopback routing. You must ena
 sudo setsebool -P httpd_can_network_connect 1
 ```
 
+### 20.3 Deployment Topology Diagram
+```mermaid
+graph TD
+    ClientBrowser["Client Browser (TLS 1.3)"] -->|HTTPS / Port 443| Nginx["Nginx Reverse Proxy"]
+    Nginx -->|Reverse Proxy / Port 3000| NextJS["Next.js Application (Node.js)"]
+    NextJS -->|TCP / Port 5432| DB[("PostgreSQL Database (Neon / RHEL 15)")]
+    
+    subgraph ServerMachine["Enterprise RHEL Server"]
+        Nginx
+        NextJS
+        DB
+    end
+```
+
+### 20.4 High Availability (HA) Design (Clustered Topology)
+For critical enterprise banking environments demanding failover and high availability, the architecture expands to a distributed clustered topology:
+
+```mermaid
+graph TD
+    Internet(["Internet"]) --> LoadBalancer["Load Balancer"]
+    LoadBalancer --> NginxCluster["Nginx Cluster"]
+    NginxCluster --> NextNodeA["Next.js Node A"]
+    NginxCluster --> NextNodeB["Next.js Node B"]
+    NextNodeA --> PostgresPrimary[("Postgres Primary")]
+    NextNodeB --> PostgresPrimary
+    PostgresPrimary --> PostgresReplica[("Postgres Replica")]
+```
+
 ---
 
 ## 21. CI/CD Pipeline
@@ -542,10 +742,13 @@ The portal utilizes a standard CI/CD workflow to validate code quality and autom
 
 ---
 
-## 22. Monitoring & Logging
+## 22. Monitoring & Observability
 
-* **Audit Logs:** Immutable audit log tables record all database operations, storing operator IDs, action descriptions, timestamps, IP addresses, and User Agents.
-* **Exception Webhooks:** If a server exception (500) occurs, Next.js handles it and dispatches warning payloads to configured administrative Slack/Discord webhooks immediately.
+To guarantee runtime visibility, the application integrates with an enterprise-grade monitoring stack:
+* **Prometheus & OpenTelemetry:** Exposes real-time system metrics (CPU utilization, API response times, request throughput).
+* **Loki & System Logging:** Collects internal application server console traces and database query execution metrics.
+* **Grafana Dashboards:** Aggregates Prometheus metrics and Loki logs into operational dashboards for bank system operators.
+* **AlertManager & Webhooks:** Configured to dispatch immediate error warnings (e.g. database disconnects, API rate-limiting spikes) to administrative Slack/Discord webhooks.
 
 ---
 
@@ -739,7 +942,7 @@ Late-Sitting-Holiday-Night-Duty/
 │   │   ├── auth-wrapper.ts                # Resolves user sessions (NextAuth or custom cookie fallback)
 │   │   ├── bengali-converter.ts           # Bidirectional Bijoy ANSI <-> Unicode font mapper engine
 │   │   ├── db.ts                          # Instantiates and configures PostgreSQL client connector
-│   │   ├── errors.ts                      # Global error codes catalog, handles API error mapping
+ McKay   ├── errors.ts                      # Global error codes catalog, handles API error mapping
 │   │   ├── leave-calculator.ts            # Core logic for dates and sandwich rules
 │   │   ├── seniority.ts                   # Executive seniority sorting engine
 │   │   └── sorting.ts                     # Employee designation ranking classifier
@@ -805,6 +1008,15 @@ The database schema changes are managed sequentially through Drizzle migrations 
 * **UTF-8 BOM CSV Exports:** Added CSV/Excel reporting utility to the billing ledger dashboard with a UTF-8 BOM prefix, ensuring Bengali script renders correctly in spreadsheet applications.
 * **Print Typography Standardization:** Replaced hardcoded `Kalpurush` font references with the standardized `'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif` print stack across billing, roster, documents, and leave print pages, ensuring visual layout stability.
 * **Swap-Panel Architecture (Duty Roster Layout):** Implemented a responsive Swap-Panel Architecture on the Duty Roster scheduler page (`src/app/roster/page.tsx`). It uses a custom `LayoutContext` to dynamically toggle panels between 70% (primary) and 30% (secondary) widths. Secondary panels retain input state without unmounting by using dynamic Tailwind display classes (`xl:hidden`), and apply pointer lock wrapper elements (`xl:pointer-events-none`) to avoid accidental clicks while supporting tab-focus auto-expansion (`onFocusCapture` and `tabIndex={0}`).
+
+### 25.5 Change Management Policy
+* **Change Request (CR) Initiation:** Any codebase modification must initiate with a Change Request logging details, purpose, target components, and author.
+* **Impact Analysis:** Development leads must verify that modifications do not break key business rules (allowances calculations, cell RBAC, sandwich checking).
+* **Approval Workflow:** All CRs require double authorization: approval by Cell Incharge followed by validation by System Administrator.
+* **Release Rollback Procedure:** If an updated build crashes on production:
+  1. Retrieve previous stable git commit ID from log.
+  2. Rollback codebase: `git reset --hard <commit_id>`.
+  3. Re-trigger build and reload PM2 process: `npm run build && pm2 reload lhn-portal`.
 
 ---
 
