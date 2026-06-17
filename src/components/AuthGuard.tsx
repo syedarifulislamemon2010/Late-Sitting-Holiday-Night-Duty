@@ -297,50 +297,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [focusField, setFocusField] = useState<'none' | 'username' | 'password'>('none');
   const [showPassword, setShowPassword] = useState(false);
   const checkBlockStatus = () => {
-    if (typeof window === 'undefined') return { isBlocked: false, timeRemaining: 0 };
-
-    const blockedUntil = localStorage.getItem('login_blocked_until');
-    if (blockedUntil) {
-      const timeRemaining = parseInt(blockedUntil, 10) - Date.now();
-      if (timeRemaining > 0) {
-        return { isBlocked: true, timeRemaining };
-      } else {
-        localStorage.removeItem('login_attempts');
-        localStorage.removeItem('login_blocked_until');
-        setAttempts(0);
-        return { isBlocked: false, timeRemaining: 0 };
-      }
-    }
-
-    // Legacy fallback: if attempts >= 3 but no block timestamp, clear attempts
-    const savedAttempts = localStorage.getItem('login_attempts');
-    if (savedAttempts && parseInt(savedAttempts, 10) >= 3) {
-      localStorage.removeItem('login_attempts');
-      setAttempts(0);
-    }
-
     return { isBlocked: false, timeRemaining: 0 };
   };
 
-  const [attempts, setAttempts] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('login_attempts');
-      const blockedUntil = localStorage.getItem('login_blocked_until');
-      if (blockedUntil) {
-        const timeRemaining = parseInt(blockedUntil, 10) - Date.now();
-        if (timeRemaining <= 0) {
-          localStorage.removeItem('login_attempts');
-          localStorage.removeItem('login_blocked_until');
-          return 0;
-        }
-      } else if (saved && parseInt(saved, 10) >= 3) {
-        localStorage.removeItem('login_attempts');
-        return 0;
-      }
-      return saved ? parseInt(saved, 10) : 0;
-    }
-    return 0;
-  });
+  const [attempts, setAttempts] = useState<number>(0);
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
@@ -387,29 +347,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Handle active block countdown and automatic reset
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const checkBlock = () => {
-        const { isBlocked, timeRemaining } = checkBlockStatus();
-        if (isBlocked) {
-          const minutes = Math.ceil(timeRemaining / 60000);
-          setError(`অতিরিক্ত ভুল প্রচেষ্টার কারণে আপনার লগইন সাময়িকভাবে ব্লক করা হয়েছে। অনুগ্রহ করে ${minutes} মিনিট পর পুনরায় চেষ্টা করুন।`);
-          
-          const timer = setTimeout(() => {
-            localStorage.removeItem('login_attempts');
-            localStorage.removeItem('login_blocked_until');
-            setAttempts(0);
-            setError('');
-          }, timeRemaining);
-          
-          return () => clearTimeout(timer);
-        } else {
-          setError('');
-        }
-      };
-      return checkBlock();
-    }
-  }, [attempts]);
+  // Login block status check removed temporarily
 
   useEffect(() => {
     if (userProfile) {
@@ -459,19 +397,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         }
         window.location.href = '/';
       } else {
-        const savedAttempts = localStorage.getItem('login_attempts');
-        const currentAttempts = savedAttempts ? parseInt(savedAttempts, 10) : 0;
-        const nextAttempts = currentAttempts + 1;
-        setAttempts(nextAttempts);
-        localStorage.setItem('login_attempts', String(nextAttempts));
-        window.dispatchEvent(new Event('storage'));
-        if (nextAttempts >= 3) {
-          const blockedUntil = Date.now() + 5 * 60 * 1000; // 5 minutes block
-          localStorage.setItem('login_blocked_until', String(blockedUntil));
-          setError('অতিরিক্ত ভুল প্রচেষ্টার কারণে আপনার লগইন সাময়িকভাবে ব্লক করা হয়েছে। অনুগ্রহ করে ৫ মিনিট পর পুনরায় চেষ্টা করুন।');
-        } else {
-          setError(`ভুল ইউজারনেম বা পাসওয়ার্ড! (অবশিষ্ট চেষ্টা: ${3 - nextAttempts} বার)`);
-        }
+        setError('ভুল ইউজারনেম বা পাসওয়ার্ড!');
       }
     } catch {
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');

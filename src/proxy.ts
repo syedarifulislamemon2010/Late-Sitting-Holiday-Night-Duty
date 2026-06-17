@@ -7,7 +7,7 @@ const rateLimitMap = new Map<string, { tokens: number; lastRefilled: number }>()
 const BUCKET_CAPACITY = 10;
 const REFILL_RATE_MS = 6000; // Refill 1 token every 6 seconds (10 tokens per minute)
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Rate limit POST logins and any document generation endpoints
