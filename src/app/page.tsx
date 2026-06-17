@@ -173,7 +173,7 @@ export default function Dashboard() {
         <div>
           <h1 className="app-page-title text-slate-800 dark:text-slate-100 tracking-wide font-sans flex items-center gap-3">
             <Compass className="text-indigo-600 animate-spin-slow" size={28} />
-            লেট সিটিং, সরকারি ছুটি ও রাত্রীকালীন ডিউটি পোর্টাল
+            লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
             জনতা ব্যাংক পিএলসি. এর অনলাইন ব্যাংকিং ডিপার্টমেন্টের ডিউটি ও আপ্যায়ন ব্যয়ের রিয়েল-টাইম সারসংক্ষেপ।

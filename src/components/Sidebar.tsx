@@ -145,7 +145,7 @@ export default function Sidebar() {
           className="flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] rounded-lg"
         >
           <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={32} height={32} className="shrink-0 object-contain" />
-          <h1 className="font-semibold text-slate-950 text-sm leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
+          <h1 className="font-semibold text-slate-950 text-xs sm:text-sm leading-tight whitespace-normal">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h1>
         </Link>
         <button 
           onClick={() => setIsOpen(!isOpen)}
@@ -206,12 +206,12 @@ export default function Sidebar() {
               height={36}
               className="shrink-0 object-contain transition-transform group-hover:scale-105" 
             />
-            <div className={`transition-all duration-200 whitespace-nowrap overflow-hidden ${
+            <div className={`transition-all duration-200 overflow-hidden ${
               isMounted && isCollapsed 
-                ? 'opacity-0 w-0 ml-0' 
-                : 'opacity-100 w-auto ml-3'
+                ? 'opacity-0 w-0 ml-0 whitespace-nowrap' 
+                : 'opacity-100 w-full ml-3 whitespace-normal'
             }`}>
-              <h1 className="font-extrabold text-slate-950 text-[15px] sm:text-[16px] leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h1>
+              <h1 className="font-extrabold text-slate-950 text-[13px] sm:text-[14px] leading-tight">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h1>
               <p className="text-[10px] font-bold text-[#0b5e9e] uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
             </div>
           </Link>

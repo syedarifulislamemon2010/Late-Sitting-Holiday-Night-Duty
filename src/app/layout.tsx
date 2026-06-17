@@ -7,7 +7,7 @@ import { ProfileProvider } from "@/context/ProfileContext";
 import { LayoutProvider } from "@/context/LayoutContext";
 
 export const metadata: Metadata = {
-  title: "লেট সিটিং-হলিডে-নাইট পোর্টাল",
+  title: "লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল",
   description: "সরকারি অফিস আদেশ ও আপ্যায়ন বিল অটোমেশন পোর্টাল",
   icons: {
     icon: "/janata-bank-logo-real.svg",

@@ -536,7 +536,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 </div>
                 
                 <div className="space-y-0.5">
-                  <h2 className="text-sm font-black text-slate-800 leading-tight">লেট সিটিং-হলিডে-নাইট পোর্টাল</h2>
+                  <h2 className="text-sm font-black text-slate-800 leading-tight">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h2>
                   <p className="text-[9px] font-bold text-[#0b5e9e] uppercase tracking-wider">জনতা ব্যাংক পিএলসি.</p>
                 </div>
                 
@@ -581,7 +581,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 <div className="space-y-4">
                   {/* Branding Text */}
                   <div className="text-center space-y-1.5">
-                    <h2 className="text-xl sm:text-2xl font-black text-[#1565C0] tracking-wide">লেট সিটিং-হলিডে-নাইট পোর্টাল</h2>
+                    <h2 className="text-lg sm:text-xl font-black text-[#1565C0] tracking-wide">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h2>
                     
                     {/* Duty Types - Styled Tags */}
                     <div className="flex items-center justify-center gap-1.5 pt-1">

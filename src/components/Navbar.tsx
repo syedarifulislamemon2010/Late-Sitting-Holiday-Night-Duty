@@ -112,8 +112,8 @@ export default function Navbar() {
 
     if (!item) {
       return (
-        <span className="text-slate-800 dark:text-slate-200 font-bold text-sm sm:text-base" style={{ letterSpacing: 'normal' }}>
-          লেট সিটিং-হলিডে-নাইট পোর্টাল
+        <span className="text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm" style={{ letterSpacing: 'normal' }}>
+          লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল
         </span>
       );
     }
