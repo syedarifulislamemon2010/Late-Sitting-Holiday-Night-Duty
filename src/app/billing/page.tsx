@@ -2017,7 +2017,7 @@ export default function BillingPage() {
           @media print {
             @page {
               size: A4;
-              margin: 1in;
+              margin: 1in !important;
             }
             .no-print { display: none !important; }
             body {
@@ -2183,7 +2183,7 @@ export default function BillingPage() {
           @media print {
             @page {
               size: A4;
-              margin: 1.5cm;
+              margin: 1.5cm !important;
             }
             .no-print { display: none !important; }
             body {
