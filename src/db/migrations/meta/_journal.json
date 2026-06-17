@@ -36,6 +36,13 @@
       "when": 1781153342044,
       "tag": "0004_tan_purple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781685504796,
+      "tag": "0005_amazing_black_bolt",
+      "breakpoints": true
     }
   ]
 }
