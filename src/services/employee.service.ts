@@ -12,7 +12,7 @@ interface UserSession {
   id: number;
   name: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   cells?: { id: number; name: string; description?: string | null; createdAt?: Date | null }[];
 }
 

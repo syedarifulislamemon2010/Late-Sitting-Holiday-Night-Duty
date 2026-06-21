@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { ShieldCheck, AlertCircle, Eye, EyeOff, Lock } from 'lucide-react';
 import { signIn, signOut } from 'next-auth/react';
+import { usePathname, useRouter } from 'next/navigation';
+import { canAccessRoute } from '@/permissions/rbac';
 
 // ===== INTERACTIVE DOG PHOTO EYE OVERLAY COMPONENT =====
 // Render a highly interactive, animated vector SVG dog mascot that tracks input and hides its eyes
@@ -282,12 +284,14 @@ interface UserProfile {
   id: number;
   name: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   cells?: Cell[];
 }
 
 // ===== MAIN AUTH GUARD COMPONENT =====
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [username, setUsername] = useState('');
@@ -359,6 +363,20 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       window.dispatchEvent(new Event('storage'));
     }
   }, [userProfile]);
+
+  // Route-based role protection redirection
+  useEffect(() => {
+    if (authenticated && userProfile) {
+      const isRouteAllowed = canAccessRoute(userProfile.role, pathname);
+      if (!isRouteAllowed) {
+        if (userProfile.role === 'EMPLOYEE') {
+          router.replace('/my-portal');
+        } else {
+          router.replace('/');
+        }
+      }
+    }
+  }, [authenticated, userProfile, pathname, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

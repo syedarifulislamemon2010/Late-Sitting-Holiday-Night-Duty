@@ -18,16 +18,19 @@ import {
   Languages,
   ChevronLeft,
   ClipboardList,
-  AlertCircle
+  AlertCircle,
+  TrendingUp
 } from 'lucide-react';
+
 
 interface UserSession {
   id: number;
   name: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   cells: { id: number; name: string }[];
 }
+
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -83,16 +86,24 @@ export default function Sidebar() {
     localStorage.setItem('sidebar-collapsed', String(nextState));
   };
 
+  const isEmployee = currentUser?.role === 'EMPLOYEE';
   const isAdmin = currentUser?.role === 'ADMIN';
-
   const currentMonth = new Date().getMonth() + 1; // 1-12
   const showClosingBill = isAdmin || currentMonth === 6 || currentMonth === 12;
 
-  const sections = [
+  const sections = isEmployee ? [
+    {
+      title: 'আমার সার্ভিস',
+      items: [
+        { name: 'আমার পোর্টাল', href: '/my-portal', icon: LayoutDashboard }
+      ]
+    }
+  ] : [
     {
       title: 'ড্যাশবোর্ড',
       items: [
-        { name: 'ড্যাশবোর্ড', href: '/', icon: LayoutDashboard }
+        { name: 'ড্যাশবোর্ড', href: '/', icon: LayoutDashboard },
+        { name: 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
       ]
     },
     {
@@ -124,24 +135,26 @@ export default function Sidebar() {
       title: 'অন্যান্য',
       items: [
         { name: 'আর্কাইভ', href: '/documents', icon: FileText },
-        { name: 'রিসাইকেল বিন', href: '/trash', icon: Trash2 }
+        ...(isAdmin ? [{ name: 'রিসাইকেল বিন', href: '/trash', icon: Trash2 }] : [])
       ]
     }
   ];
+
 
   return (
     <>
       {/* Mobile Top Navigation */}
       <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <Link 
-          href="/" 
+          href={isEmployee ? "/my-portal" : "/"} 
           onClick={(e) => {
             if (typeof window !== 'undefined' && (window as any).__unsavedChanges) {
               e.preventDefault();
-              setTargetHref('/');
+              setTargetHref(isEmployee ? '/my-portal' : '/');
               setShowWarningModal(true);
             }
           }}
+
           className="flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] rounded-lg"
         >
           <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={32} height={32} className="shrink-0 object-contain" />
@@ -189,14 +202,15 @@ export default function Sidebar() {
           isMounted && isCollapsed ? 'lg:px-3 lg:justify-center' : 'px-6 justify-between'
         }`}>
           <Link 
-            href="/" 
+            href={isEmployee ? "/my-portal" : "/"} 
             onClick={(e) => {
               if (typeof window !== 'undefined' && (window as any).__unsavedChanges) {
                 e.preventDefault();
-                setTargetHref('/');
+                setTargetHref(isEmployee ? '/my-portal' : '/');
                 setShowWarningModal(true);
               }
             }}
+
             className="flex items-center group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] focus:ring-offset-2 rounded-lg w-full"
           >
             <Image 

@@ -28,7 +28,7 @@ export async function getCurrentUser() {
             id: user.id,
             username: user.username,
             name: user.name,
-            role: user.role as 'USER' | 'ADMIN',
+            role: user.role as 'USER' | 'ADMIN' | 'EMPLOYEE',
             mobile: user.mobile,
             cells: assignedCells,
           };

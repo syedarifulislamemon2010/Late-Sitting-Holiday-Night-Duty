@@ -8,7 +8,7 @@ interface UserSession {
   id: number;
   name: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
 }
 
 interface ExecutiveInput {

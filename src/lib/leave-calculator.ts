@@ -1,3 +1,5 @@
+export const DEFAULT_CASUAL_LEAVE_ENTITLEMENT = 20;
+
 export interface Holiday {
   id?: number;
   date: string;

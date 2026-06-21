@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'USER';
+export type UserRole = 'ADMIN' | 'USER' | 'EMPLOYEE';
 
 export type PermissionAction =
   | 'CREATE_EMPLOYEE'
@@ -16,6 +16,10 @@ export function hasPermission(role: string, action: PermissionAction): boolean {
   const normRole = role.toUpperCase();
   if (normRole === 'ADMIN') {
     return true;
+  }
+
+  if (normRole === 'EMPLOYEE') {
+    return false; // Employees have no administrative write permissions
   }
 
   // USER role permissions
@@ -36,3 +40,17 @@ export function hasPermission(role: string, action: PermissionAction): boolean {
       return false;
   }
 }
+
+export function canAccessRoute(role: string, route: string): boolean {
+  const normRole = role.toUpperCase();
+  if (normRole === 'ADMIN') {
+    return true;
+  }
+  if (normRole === 'EMPLOYEE') {
+    // EMPLOYEE role can only access /my-portal and its API
+    return route === '/my-portal' || route.startsWith('/my-portal/') || route.startsWith('/api/my-portal');
+  }
+  // ADMIN and USER roles can access other routes, but cannot access employee self-service portal
+  return route !== '/my-portal' && !route.startsWith('/my-portal/');
+}
+
