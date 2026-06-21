@@ -47,8 +47,15 @@ export function canAccessRoute(role: string, route: string): boolean {
     return true;
   }
   if (normRole === 'EMPLOYEE') {
-    // EMPLOYEE role can only access /my-portal and its API
-    return route === '/my-portal' || route.startsWith('/my-portal/') || route.startsWith('/api/my-portal');
+    // EMPLOYEE role can access /my-portal and /analytics (and their APIs)
+    return (
+      route === '/my-portal' ||
+      route.startsWith('/my-portal/') ||
+      route.startsWith('/api/my-portal') ||
+      route === '/analytics' ||
+      route.startsWith('/analytics/') ||
+      route.startsWith('/api/analytics')
+    );
   }
   // ADMIN and USER roles can access other routes, but cannot access employee self-service portal
   return route !== '/my-portal' && !route.startsWith('/my-portal/');

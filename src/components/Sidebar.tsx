@@ -95,7 +95,8 @@ export default function Sidebar() {
     {
       title: 'আমার সার্ভিস',
       items: [
-        { name: 'আমার পোর্টাল', href: '/my-portal', icon: LayoutDashboard }
+        { name: 'আমার পোর্টাল', href: '/my-portal', icon: LayoutDashboard },
+        { name: 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
       ]
     }
   ] : [

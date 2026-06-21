@@ -370,7 +370,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       const isRouteAllowed = canAccessRoute(userProfile.role, pathname);
       if (!isRouteAllowed) {
         if (userProfile.role === 'EMPLOYEE') {
-          router.replace('/my-portal');
+          if (pathname !== '/analytics' && pathname !== '/my-portal') {
+            window.location.href = '/my-portal';
+          }
         } else {
           router.replace('/');
         }

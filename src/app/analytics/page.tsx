@@ -35,7 +35,7 @@ interface AllowanceTrend {
   totalAllowance: number;
 }
 
-interface TopNightPerformer {
+interface TopPerformer {
   employeeId: number;
   employeeName: string;
   designation: string;
@@ -61,12 +61,18 @@ export default function AnalyticsDashboardPage() {
   // Filters
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedYear, setSelectedYear] = useState('2026');
+  const [selectedDutyType, setSelectedDutyType] = useState('');
 
   // Aggregated Data State
   const [allowanceTrend, setAllowanceTrend] = useState<AllowanceTrend[]>([]);
-  const [topNightPerformers, setTopNightPerformers] = useState<TopNightPerformer[]>([]);
+  const [personalAllowanceTrend, setPersonalAllowanceTrend] = useState<AllowanceTrend[]>([]);
+  const [topPerformers, setTopPerformers] = useState<TopPerformer[]>([]);
   const [cellBudget, setCellBudget] = useState<CellBudget[]>([]);
   const [leavePatterns, setLeavePatterns] = useState<LeavePattern[]>([]);
+  const [billReleases, setBillReleases] = useState<any[]>([]);
+  const [employeeBillCounts, setEmployeeBillCounts] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
+  const [role, setRole] = useState('');
 
   // Double Check security redirect for client session
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -77,9 +83,6 @@ export default function AnalyticsDashboardPage() {
       try {
         const parsed = JSON.parse(stored);
         setCurrentUser(parsed);
-        if (parsed.role === 'EMPLOYEE') {
-          window.location.href = '/my-portal';
-        }
       } catch {
         setCurrentUser(null);
       }
@@ -97,6 +100,7 @@ export default function AnalyticsDashboardPage() {
       } else if (selectedYear) {
         queryParams.set('year', selectedYear);
       }
+      queryParams.set('dutyType', selectedDutyType);
 
       const res = await fetch(`/api/analytics?${queryParams.toString()}`);
       if (!res.ok) {
@@ -108,9 +112,14 @@ export default function AnalyticsDashboardPage() {
       
       const data = await res.json();
       setAllowanceTrend(data.allowanceTrend || []);
-      setTopNightPerformers(data.topNightPerformers || []);
+      setPersonalAllowanceTrend(data.personalAllowanceTrend || []);
+      setTopPerformers(data.topPerformers || []);
       setCellBudget(data.cellBudget || []);
       setLeavePatterns(data.leavePatterns || []);
+      setBillReleases(data.billReleases || []);
+      setEmployeeBillCounts(data.employeeBillCounts || []);
+      setSummary(data.summary || null);
+      setRole(data.role || '');
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'ডাটাবেজ সংযোগ ত্রুটি।');
@@ -120,24 +129,16 @@ export default function AnalyticsDashboardPage() {
   };
 
   useEffect(() => {
-    // Only load if user is not employee
-    if (currentUser?.role !== 'EMPLOYEE') {
+    if (currentUser) {
       loadAnalytics();
     }
-  }, [selectedMonth, selectedYear, currentUser]);
+  }, [selectedMonth, selectedYear, selectedDutyType, currentUser]);
 
   const clearFilters = () => {
     setSelectedMonth('');
     setSelectedYear('2026');
+    setSelectedDutyType('');
   };
-
-  if (currentUser?.role === 'EMPLOYEE') {
-    return (
-      <div className="min-h-[300px] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-[#0b5e9e] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
@@ -150,7 +151,9 @@ export default function AnalyticsDashboardPage() {
             সিস্টেম অ্যানালিটিক্স ড্যাশবোর্ড
           </h1>
           <p className="text-xs text-slate-500 font-semibold">
-            ভাতা খরচ, নাইট ডিউটি পারফর্মার এবং সেল-ভিত্তিক বাজেটের সামগ্রিক পরিসংখ্যান
+            {role === 'EMPLOYEE' 
+              ? 'আমার প্রাপ্ত ভাতা এবং সামগ্রিক বিল রিলিজ সংক্রান্ত পরিসংখ্যান ও গ্রাফিকাল চার্ট'
+              : 'ভাতা খরচ, ডিউটি পারফর্মার এবং সেল-ভিত্তিক বাজেটের সামগ্রিক পরিসংখ্যান'}
           </p>
         </div>
         
@@ -164,15 +167,85 @@ export default function AnalyticsDashboardPage() {
         </button>
       </div>
 
+      {/* KPI Summary Cards */}
+      {summary && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
+          {/* Card 1: Total Released Bills */}
+          <div className="bg-gradient-to-br from-white to-blue-50/20 rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">মোট রিলিজ হওয়া বিল</span>
+              <p className="text-2xl font-black text-slate-800">{toBanglaDigits(summary.totalReleasedBills.toString())} টি</p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0b5e9e] flex items-center justify-center text-xl">
+              📊
+            </div>
+          </div>
+
+          {/* Card 2: Total Duties Completed */}
+          <div className="bg-gradient-to-br from-white to-indigo-50/20 rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">মোট ডিউটি সম্পন্ন</span>
+              <p className="text-2xl font-black text-slate-800">{toBanglaDigits(summary.totalDutiesCompleted.toString())} টি</p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+              ✅
+            </div>
+          </div>
+
+          {/* Card 3: Personal Released Bills */}
+          {summary.myBillCount > 0 && (
+            <div className="bg-gradient-to-br from-white to-emerald-50/20 rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">আমার রিলিজ হওয়া বিল</span>
+                <p className="text-2xl font-black text-slate-800">{toBanglaDigits(summary.myBillCount.toString())} টি</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                📄
+              </div>
+            </div>
+          )}
+
+          {/* Card 4: Personal Total Allowance Earnings */}
+          {summary.myTotalEarnings > 0 && (
+            <div className="bg-gradient-to-br from-white to-amber-50/20 rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">আমার মোট প্রাপ্ত ভাতা</span>
+                <p className="text-2xl font-black text-slate-800">৳ {toBanglaDigits(summary.myTotalEarnings.toLocaleString())}/-</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
+                ৳
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 2. Filter Bar */}
       <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-slate-700 font-bold text-xs">
           <Filter size={16} className="text-[#0b5e9e]" />
-          <span>নাইট ডিউটি ফিল্টারিং:</span>
+          <span>ডিউটি ও বিল ফিল্টারিং:</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
           
+          {/* Duty Type Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-slate-400 font-bold uppercase">ডিউটি ধরন</label>
+            <select
+              value={selectedDutyType}
+              onChange={(e) => setSelectedDutyType(e.target.value)}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0b5e9e] font-sans bg-white animate-in fade-in"
+            >
+              <option value="">সিলেক্ট করুন</option>
+              <option value="NIGHT_SHIFT">রাত্রীকালীন ডিউটি (Night Shift)</option>
+              <option value="LATE_SITTING">লেট সিটিং (Late Sitting)</option>
+              <option value="HOLIDAY">ছুটির দিন (Holiday)</option>
+            </select>
+          </div>
+
+          <span className="text-slate-300 hidden sm:inline">|</span>
+
           {/* Month Filter */}
           <div className="flex items-center gap-2">
             <label className="text-[10px] text-slate-400 font-bold uppercase">মাস</label>
@@ -183,7 +256,7 @@ export default function AnalyticsDashboardPage() {
                 setSelectedMonth(e.target.value);
                 if (e.target.value) setSelectedYear(''); // clear year if month is picked
               }}
-              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0b5e9e] font-sans"
+              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0b5e9e] font-sans bg-white"
             />
           </div>
 
@@ -198,7 +271,7 @@ export default function AnalyticsDashboardPage() {
                 setSelectedYear(e.target.value);
                 if (e.target.value) setSelectedMonth(''); // clear month if year is picked
               }}
-              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0b5e9e] font-sans"
+              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0b5e9e] font-sans bg-white"
               disabled={!!selectedMonth}
             >
               <option value="2026">২০২৬</option>
@@ -207,10 +280,10 @@ export default function AnalyticsDashboardPage() {
             </select>
           </div>
 
-          {(selectedMonth || selectedYear !== '2026') && (
+          {(selectedMonth || selectedYear !== '2026' || selectedDutyType !== '') && (
             <button
               onClick={clearFilters}
-              className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 text-[10px] font-bold rounded-xl border border-slate-200 cursor-pointer transition-all"
+              className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 text-[10px] font-bold rounded-xl border border-slate-200 cursor-pointer transition-all animate-in fade-in"
             >
               রিসেট
             </button>
@@ -231,7 +304,7 @@ export default function AnalyticsDashboardPage() {
       ) : (
         <div className="min-h-[400px]">
           {loading ? (
-            <div className="min-h-[400px] w-full flex items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm">
+            <div className="min-h-[400px] w-full flex items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm animate-pulse">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-10 h-10 border-4 border-[#0b5e9e] border-t-transparent rounded-full animate-spin" />
                 <p className="text-xs font-bold text-slate-400">ডাটা বিশ্লেষণ করা হচ্ছে...</p>
@@ -240,9 +313,13 @@ export default function AnalyticsDashboardPage() {
           ) : (
             <AnalyticsCharts 
               allowanceTrend={allowanceTrend}
-              topNightPerformers={topNightPerformers}
+              personalAllowanceTrend={personalAllowanceTrend}
+              topPerformers={topPerformers}
               cellBudget={cellBudget}
               leavePatterns={leavePatterns}
+              billReleases={billReleases}
+              employeeBillCounts={employeeBillCounts}
+              role={role}
             />
           )}
         </div>
