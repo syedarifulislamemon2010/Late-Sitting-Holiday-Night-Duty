@@ -1219,6 +1219,7 @@ Late-Sitting-Holiday-Night-Duty/
 │   │       ├── 0002_stale_bucky.sql       # Lunch bill tables mapping
 │   │       ├── 0003_nice_vance_astro.sql  # Manual documents schema update
 │   │       ├── 0004_tan_purple_man.sql    # Audit log tables mapping
+│   │       ├── 0005_amazing_black_bolt.sql # cellDuties column user mapping
 │   │       └── meta/                      # Kit journal schema snapshots
 │   ├── hooks/                             # Custom React Hooks
 │   │   └── useRealtime.ts                 # Web socket / interval sync hook
@@ -1280,6 +1281,7 @@ The database schema changes are managed sequentially through Drizzle migrations 
 * `0002_stale_bucky.sql` - Maps the composite unique constraint `LunchBill` schema configurations.
 * `0003_nice_vance_astro.sql` - Adds `ManualDocument` upload trackers.
 * `0004_tan_purple_man.sql` - Generates database indices and schema mappings for `AuditLog` table operations.
+* `0005_amazing_black_bolt.sql` - Adds `cellDuties` text column to the `User` table for role-based cell assignments.
 
 ### 25.4 Recent Updates (June 2026)
 * **Branding Single-Source & Collapse Mechanics (Left Sidebar)**: Refactored [Sidebar.tsx](file:///d:/Late-Sitting-Holiday-Night-Duty/src/components/Sidebar.tsx) to support a flawless animated collapsed state (with opacity transition prevention of popping, a floating toggle button, and interactive tooltips) while keeping all bank branding single-sourced to the sidebar.
@@ -1294,6 +1296,8 @@ The database schema changes are managed sequentially through Drizzle migrations 
 * **UTF-8 BOM CSV Exports:** Added CSV/Excel reporting utility to the billing ledger dashboard with a UTF-8 BOM prefix, ensuring Bengali script renders correctly in spreadsheet applications.
 * **Print Typography Standardization:** Replaced hardcoded `Kalpurush` font references with the standardized `'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif` print stack across billing, roster, documents, and leave print pages, ensuring visual layout stability.
 * **Swap-Panel Architecture (Duty Roster Layout):** Implemented a responsive Swap-Panel Architecture on the Duty Roster scheduler page (`src/app/roster/page.tsx`). It uses a custom `LayoutContext` to dynamically toggle panels between 70% (primary) and 30% (secondary) widths. Secondary panels retain input state without unmounting by using dynamic Tailwind display classes (`xl:hidden`), and apply pointer lock wrapper elements (`xl:pointer-events-none`) to avoid accidental clicks while supporting tab-focus auto-expansion (`onFocusCapture` and `tabIndex={0}`).
+* **Gemini 2.5 API Integration & Robust Error Handling:** Upgraded Gemini model from `gemini-1.5-flash` to `gemini-2.5-flash` for employee document OCR and holiday parsing API endpoints. Secured API keys by strictly utilizing server-side `process.env.GEMINI_API_KEY`, eliminating client-supplied key configurations. Standardized error status codes to HTTP 500, and implemented custom exponential backoff retry logic with user-friendly Bengali error descriptions in the image parser to prevent failure on transient rate limit errors.
+
 
 ### 25.5 Change Management Policy
 * **Change Request (CR) Initiation:** Any codebase modification must initiate with a Change Request logging details, purpose, target components, and author.
