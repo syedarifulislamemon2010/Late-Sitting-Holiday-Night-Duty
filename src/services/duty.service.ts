@@ -13,7 +13,7 @@ export interface UserSession {
   id: number;
   username: string;
   name: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   mobile: string | null;
   cells: { id: number; name: string }[];
 }

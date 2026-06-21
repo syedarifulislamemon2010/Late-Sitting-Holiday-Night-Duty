@@ -52,11 +52,13 @@ export const employees = pgTable('Employee', {
   fileNo: text('fileNo'),
   mobile: text('mobile'),
   cellId: integer('cellId').notNull().references(() => cells.id, { onDelete: 'restrict' }),
+  userId: integer('userId').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
 }, (table) => {
   return {
     cellIdIdx: index('Employee_cellId_idx').on(table.cellId),
     bankIdIdx: index('Employee_bankId_idx').on(table.bankId),
+    userIdIdx: index('Employee_userId_idx').on(table.userId),
   };
 });
 
@@ -251,9 +253,10 @@ export const cellsRelations = relations(cells, ({ many }) => ({
   userCells: many(userCells),
 }));
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   leaveApplications: many(leaveApplications),
   userCells: many(userCells),
+  employee: one(employees),
 }));
 
 export const userCellsRelations = relations(userCells, ({ one }) => ({
@@ -263,6 +266,7 @@ export const userCellsRelations = relations(userCells, ({ one }) => ({
 
 export const employeesRelations = relations(employees, ({ one, many }) => ({
   cell: one(cells, { fields: [employees.cellId], references: [cells.id] }),
+  user: one(users, { fields: [employees.userId], references: [users.id] }),
   duties: many(duties),
 }));
 

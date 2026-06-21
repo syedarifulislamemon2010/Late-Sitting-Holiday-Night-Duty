@@ -1220,6 +1220,8 @@ Late-Sitting-Holiday-Night-Duty/
 │   │       ├── 0003_nice_vance_astro.sql  # Manual documents schema update
 │   │       ├── 0004_tan_purple_man.sql    # Audit log tables mapping
 │   │       ├── 0005_amazing_black_bolt.sql # cellDuties column user mapping
+│   │       ├── 0006_clever_jasper_sitwell.sql # employee userId link column mapping
+
 │   │       └── meta/                      # Kit journal schema snapshots
 │   ├── hooks/                             # Custom React Hooks
 │   │   └── useRealtime.ts                 # Web socket / interval sync hook
@@ -1282,6 +1284,8 @@ The database schema changes are managed sequentially through Drizzle migrations 
 * `0003_nice_vance_astro.sql` - Adds `ManualDocument` upload trackers.
 * `0004_tan_purple_man.sql` - Generates database indices and schema mappings for `AuditLog` table operations.
 * `0005_amazing_black_bolt.sql` - Adds `cellDuties` text column to the `User` table for role-based cell assignments.
+* `0006_clever_jasper_sitwell.sql` - Adds `userId` nullable column to `Employee` table linking to user account.
+
 
 ### 25.4 Recent Updates (June 2026)
 * **Branding Single-Source & Collapse Mechanics (Left Sidebar)**: Refactored [Sidebar.tsx](file:///d:/Late-Sitting-Holiday-Night-Duty/src/components/Sidebar.tsx) to support a flawless animated collapsed state (with opacity transition prevention of popping, a floating toggle button, and interactive tooltips) while keeping all bank branding single-sourced to the sidebar.

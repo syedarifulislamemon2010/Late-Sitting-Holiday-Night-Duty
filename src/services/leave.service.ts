@@ -3,14 +3,14 @@ import { logActivity } from '@/lib/audit';
 import { AppError, AuthError } from '@/lib/errors';
 import { leaveCreateSchema } from '@/validations/leave.schema';
 import { eq, and } from 'drizzle-orm';
-import { leaveApplications } from '@/db/schema';
+import { leaveApplications, employees, cells } from '@/db/schema';
 import { db } from '@/lib/db';
 
 interface UserSession {
   id: number;
   name: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
 }
 
 interface LeaveInput {
@@ -63,6 +63,29 @@ export class LeaveService {
   static async createLeave(currentUser: UserSession | null, body: LeaveInput, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('unauthorized', 401, 'unauthorized');
+    }
+
+    if (currentUser.role === 'EMPLOYEE') {
+      const emp = await db.select({
+        id: employees.id,
+        name: employees.name,
+        designation: employees.designation,
+        bankId: employees.bankId,
+        cellName: cells.name
+      })
+      .from(employees)
+      .innerJoin(cells, eq(employees.cellId, cells.id))
+      .where(eq(employees.userId, currentUser.id))
+      .then(r => r[0]);
+
+      if (!emp) {
+        throw new AppError('employee_not_linked', 400, 'প্রোফাইলের সাথে কোনো কর্মকর্তা রেকর্ড লিংক করা নেই।');
+      }
+
+      body.bankId = emp.bankId || currentUser.username;
+      body.applicantName = emp.name;
+      body.designation = emp.designation;
+      body.cellName = emp.cellName;
     }
 
     const validated = leaveCreateSchema.parse(body);
