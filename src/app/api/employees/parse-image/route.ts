@@ -1,15 +1,29 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// Helper function to handle API calls with exponential backoff retries
+async function generateContentWithRetry(model: any, content: any, retries = 2, delayMs = 1000): Promise<any> {
+  try {
+    return await model.generateContent(content);
+  } catch (error) {
+    if (retries > 0) {
+      console.warn(`Gemini API call failed. Retrying in ${delayMs}ms... (Remaining retries: ${retries})`, error);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+      return generateContentWithRetry(model, content, retries - 1, delayMs * 2);
+    }
+    throw error;
+  }
+}
+
 export async function POST(request: Request) {
   try {
-    const { fileData, fileType, customApiKey } = await request.json();
+    const { fileData, fileType } = await request.json();
     
-    const apiKey = customApiKey || process.env.AI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ 
         error: 'api_key_missing', 
-        message: 'ক্লিপবোর্ড থেকে ছবি পেস্ট করে ইম্পোর্ট করার জন্য একটি API Key প্রয়োজন। অনুগ্রহ করে .env ফাইলে AI_API_KEY সেট করুন।' 
+        message: 'ছবি থেকে কর্মকর্তা ইম্পোর্ট করার জন্য সার্ভারে GEMINI_API_KEY সেট থাকা আবশ্যক। অনুগ্রহ করে আপনার সার্ভার এনভায়রনমেন্ট চেক করুন।' 
       }, { status: 400 });
     }
 
@@ -18,9 +32,8 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use generative model which is robust and available everywhere
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       generationConfig: { responseMimeType: 'application/json' }
     });
 
@@ -35,7 +48,9 @@ Return a JSON array of officer objects. Each object MUST have precisely these ke
 Provide only the JSON array as output, no markdown wrappers, no formatting, just raw JSON.`;
 
     const base64Data = fileData.split(',')[1] || fileData;
-    const result = await model.generateContent([
+    
+    // Call Gemini API with automatic retry fallback
+    const result = await generateContentWithRetry(model, [
       prompt,
       {
         inlineData: {
@@ -60,6 +75,9 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
     return NextResponse.json({ success: true, employees: parsedEmployees });
   } catch (error) {
     console.error('Error parsing employee image:', error);
-    return NextResponse.json({ error: 'failed_to_parse_image', message: (error instanceof Error ? error.message : String(error)) }, { status: 550 });
+    return NextResponse.json({ 
+      error: 'failed_to_parse_image', 
+      message: `ইমেজ প্রসেস করতে ব্যর্থ হয়েছে। ছবিটির রেজোলিউশন ঠিক আছে কিনা এবং লেখাগুলো পরিষ্কার কিনা নিশ্চিত করুন। প্রয়োজনে ম্যানুয়ালি ইনপুট দিন। বিস্তারিত ত্রুটি: ${error instanceof Error ? error.message : String(error)}` 
+    }, { status: 500 });
   }
 }

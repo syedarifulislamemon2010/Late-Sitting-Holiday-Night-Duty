@@ -139,14 +139,14 @@ export async function POST(request: Request) {
     
     let parsedHolidays: ParsedHoliday[] = [];
     
-    const apiKey = process.env.AI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (apiKey && (fileData || (text && text.length > 500))) {
       // Use Generative AI for parsing large text or documents/images
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ 
-          model: 'gemini-1.5-flash',
+          model: 'gemini-2.5-flash',
           generationConfig: { responseMimeType: 'application/json' }
         });
 
