@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { holidays as holidaysTable } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
+export const revalidate = 3600; // 1 hour
+
 export async function GET() {
   try {
     const holidayList = await db.select().from(holidaysTable).orderBy(holidaysTable.date);

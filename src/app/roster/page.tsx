@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { useLayout, LayoutPriority } from '@/context/LayoutContext';
+import { TableSkeleton } from "@/components/SkeletonLoader";
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 import { cleanBracketName } from '@/lib/print-helpers';
 import RosterOCRImport from './components/RosterOCRImport';
@@ -308,6 +309,12 @@ export default function RosterPage() {
     copies: string[];
     opt1Assignments: Record<number, string[]>;
   } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' = 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 6000);
+  };
   const [msgBanner, setMsgBanner] = useState<{ type: 'success' | 'cancel'; text: string } | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -1503,6 +1510,7 @@ export default function RosterPage() {
 
 
   async function loadData() {
+    setIsLoading(true);
     try {
       const [empRes, cellRes, execRes, holidayRes, leavesRes] = await Promise.all([
         fetch('/api/employees'),
@@ -1555,6 +1563,8 @@ export default function RosterPage() {
       }
     } catch (err) {
       console.error('Error loading static data:', err);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -1955,7 +1965,7 @@ export default function RosterPage() {
         const err = await res.json();
         if (res.status === 409) {
           setErrorMessage(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।');
-          alert(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।');
+          showToast(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।', 'error');
         } else {
           setErrorMessage(err.error || 'ডিউটি ইম্পোর্ট করতে ব্যর্থ হয়েছে।');
           alert(err.error || 'ডিউটি ইম্পোর্ট করতে ব্যর্থ হয়েছে।');
@@ -2053,7 +2063,7 @@ export default function RosterPage() {
           let msg = 'ডিউটি আপডেট করতে ব্যর্থ হয়েছে।';
           if (res.status === 409) {
             msg = err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।';
-            alert(msg);
+            showToast(msg, 'error');
           } else if (err.error === 'late_sitting_on_holiday') {
             msg = 'ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।';
           } else if (err.error === 'holiday_duty_on_working_day') {
@@ -2206,7 +2216,7 @@ export default function RosterPage() {
         const err = await res.json();
         if (res.status === 409) {
           setErrorMessage(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।');
-          alert(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।');
+          showToast(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।', 'error');
         } else if (err.error === 'duplicate_duty_on_date') {
           setErrorMessage(err.message || 'এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।');
         } else if (err.error === 'late_sitting_on_holiday') {
@@ -2857,6 +2867,12 @@ export default function RosterPage() {
       })
       .sort((a, b) => b.id - a.id);
   }, [officeOrders, selectedCell, activeCellName, selectedCategory]);
+
+  if (isLoading) return (
+    <div className="p-6">
+      <TableSkeleton rows={8} columns={5} />
+    </div>
+  );
 
   return (
     <div className="space-y-6 min-h-screen bg-slate-50/50 -m-4 lg:-m-8 p-4 lg:p-8">
@@ -4064,6 +4080,24 @@ export default function RosterPage() {
 
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-5 right-5 z-50 max-w-[400px] p-4 bg-red-50 text-red-900 border border-red-200 rounded-2xl shadow-xl flex items-start gap-3 animate-in slide-in-from-bottom-5 duration-300"
+             style={{
+               fontFamily: "'SolaimanLipi', 'Nikosh', sans-serif",
+               fontSize: "14px",
+               lineHeight: "1.7",
+             }}>
+          <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+          <div>
+            <div className="font-bold text-red-800">ডিউটি সংঘর্ষ বা ছুটির ওভারল্যাপ</div>
+            <div className="mt-1 text-xs text-red-700">{toast.message}</div>
+          </div>
+          <button onClick={() => setToast(null)} className="text-red-400 hover:text-red-650 ml-auto p-0.5 rounded-lg shrink-0 cursor-pointer">
+            <X size={16} />
+          </button>
         </div>
       )}
     </div>

@@ -4,6 +4,9 @@ import { db } from '@/lib/db';
 import { cells, employees } from '@/db/schema';
 import { and, eq, ne, inArray, sql } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 300; // 5 minutes
+
 export async function GET() {
   try {
     const user = await getCurrentUser();

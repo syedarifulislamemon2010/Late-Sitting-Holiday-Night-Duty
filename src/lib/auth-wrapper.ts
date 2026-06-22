@@ -24,6 +24,21 @@ export async function getCurrentUser() {
             .innerJoin(cells, eq(userCells.A, cells.id))
             .where(eq(userCells.B, user.id));
 
+          const hasR09 = assignedCells.some(c => c.id === 7 || c.name === 'R09 Development & Customization Cell');
+          const hasCBS = assignedCells.some(c => c.id === 9 || c.name === 'CBS Integrated Development Cell');
+
+          if (hasR09 && !hasCBS) {
+            assignedCells.push({
+              id: 9,
+              name: 'CBS Integrated Development Cell'
+            });
+          } else if (hasCBS && !hasR09) {
+            assignedCells.push({
+              id: 7,
+              name: 'R09 Development & Customization Cell'
+            });
+          }
+
           return {
             id: user.id,
             username: user.username,

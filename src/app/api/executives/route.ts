@@ -3,6 +3,8 @@ import { getCurrentUser } from '@/lib/auth-wrapper';
 import { ExecutiveService } from '@/services/executive.service';
 import { handleApiError } from '@/lib/errors';
 
+export const revalidate = 3600; // 1 hour
+
 export async function GET() {
   try {
     const currentUser = await getCurrentUser();

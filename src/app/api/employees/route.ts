@@ -3,6 +3,9 @@ import { getCurrentUser } from '@/lib/auth-wrapper';
 import { EmployeeService } from '@/services/employee.service';
 import { handleApiError } from '@/lib/errors';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 60; // 1 minute
+
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser();

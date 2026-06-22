@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 import { useProfile } from '@/context/ProfileContext';
 import InlineEdit from '@/components/InlineEdit';
+import { TableSkeleton, CardSkeleton } from "@/components/SkeletonLoader";
 
 
 import { 
@@ -1006,6 +1007,13 @@ export default function EmployeesPage() {
 
 
   const sortedFilteredExecutives = sortExecutives(filteredExecutives);
+
+  if (loading) return (
+    <div className="p-6 space-y-6">
+      <CardSkeleton count={3} />
+      <TableSkeleton rows={6} columns={4} />
+    </div>
+  );
 
   return (
     <div className="space-y-6">

@@ -6,6 +6,7 @@ import AuthGuard from "@/components/AuthGuard";
 import CommandCenter from "@/components/CommandCenter";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { LayoutProvider } from "@/context/LayoutContext";
+import { TopProgressBar } from "@/components/TopProgressBar";
 
 export const metadata: Metadata = {
   title: "লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল",
@@ -61,6 +62,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300" suppressHydrationWarning={true}>
+        <TopProgressBar />
         <ProfileProvider>
           <LayoutProvider>
             <AuthGuard>

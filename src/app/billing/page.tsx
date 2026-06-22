@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { useProfile } from '@/context/ProfileContext';
+import { TableSkeleton, CardSkeleton } from "@/components/SkeletonLoader";
 import { 
   Printer, 
   ChevronLeft, 
@@ -2304,6 +2305,13 @@ export default function BillingPage() {
   if (isLedgerPrintMode) {
     return renderPrintableLedger();
   }
+
+  if (loading) return (
+    <div className="p-6 space-y-6">
+      <CardSkeleton count={4} />
+      <TableSkeleton rows={5} columns={6} />
+    </div>
+  );
 
   return (
     <div className="space-y-6">

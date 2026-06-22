@@ -64,6 +64,8 @@ async function getAllowedCellIds(currentUser: UserSession): Promise<number[]> {
   if (emp[0]) {
     cellIds.add(emp[0].cellId);
   }
+  if (cellIds.has(7)) cellIds.add(9);
+  if (cellIds.has(9)) cellIds.add(7);
   return Array.from(cellIds);
 }
 

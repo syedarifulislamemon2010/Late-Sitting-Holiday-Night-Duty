@@ -103,7 +103,7 @@ export default function Sidebar() {
     {
       title: 'ড্যাশবোর্ড',
       items: [
-        { name: 'ড্যাশবোর্ড', href: '/', icon: LayoutDashboard },
+        { name: 'ড্যাশবোর্ড', href: '/dashboard', icon: LayoutDashboard },
         { name: 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
       ]
     },
@@ -147,11 +147,11 @@ export default function Sidebar() {
       {/* Mobile Top Navigation */}
       <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <Link 
-          href={isEmployee ? "/my-portal" : "/"} 
+          href={isEmployee ? "/my-portal" : "/dashboard"} 
           onClick={(e) => {
             if (typeof window !== 'undefined' && (window as any).__unsavedChanges) {
               e.preventDefault();
-              setTargetHref(isEmployee ? '/my-portal' : '/');
+              setTargetHref(isEmployee ? '/my-portal' : '/dashboard');
               setShowWarningModal(true);
             }
           }}
