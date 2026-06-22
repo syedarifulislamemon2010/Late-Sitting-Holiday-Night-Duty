@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 import { trash, cells, employees, duties, leaveApplications } from '@/db/schema';
 import { eq, inArray, and, or, isNull, gte, lte, SQL, like } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
-import { AppError, AuthError } from '@/lib/errors';
+import { AppError, AuthError, ConflictError } from '@/lib/errors';
 import { dutiesBulkCreateSchema, dutyUpdateSchema } from '@/validations/duty.schema';
 
 export interface UserSession {
@@ -262,6 +262,8 @@ export class DutyService {
       }
 
       const duplicateConflicts: string[] = [];
+      const duplicateDates: string[] = [];
+      let conflictingEmployeeName = '';
       for (const assignment of validated.assignments) {
         const duplicate = allExistingDuties.find(d => 
           d.employeeId === assignment.employeeId && 
@@ -271,14 +273,20 @@ export class DutyService {
         if (duplicate) {
           const emp = employeeMap.get(assignment.employeeId);
           const empName = emp ? emp.name : 'কর্মকর্তা';
+          conflictingEmployeeName = empName;
           const dutyTypeBn = assignment.type === 'LATE_SITTING' ? 'লেট সিটিং' : assignment.type === 'HOLIDAY' ? 'হলিডে' : 'নাইট শিফট';
           const formattedDate = assignment.date.split('-').reverse().join('-');
           duplicateConflicts.push(`${empName} (${formattedDate} - ${dutyTypeBn})`);
+          duplicateDates.push(assignment.date);
         }
       }
       if (duplicateConflicts.length > 0) {
         const uniqueConflicts = Array.from(new Set(duplicateConflicts));
-        throw new AppError(`এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।\n\nবিস্তারিত:\n` + uniqueConflicts.map(c => `- ${c}`).join('\n'), 400, 'duplicate_duty_on_date');
+        throw new ConflictError(`এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।\n\nবিস্তারিত:\n` + uniqueConflicts.map(c => `- ${c}`).join('\n'), {
+          conflictType: 'DUTY_DUPLICATE',
+          employeeName: conflictingEmployeeName,
+          dates: duplicateDates
+        });
       }
 
       const dutiesToInsert: {
@@ -293,6 +301,7 @@ export class DutyService {
       }[] = [];
 
       for (const assignment of validated.assignments) {
+        const emp = employeeMap.get(assignment.employeeId);
         const isHoliday = checkIsHolidayLocal(assignment.date);
 
         if (assignment.type === 'LATE_SITTING' && isHoliday) {
@@ -316,19 +325,27 @@ export class DutyService {
             d.type === conflictingType
           );
           if (dbConflict || batchConflict) {
-            throw new AppError('late_sitting_night_shift_conflict', 400, 'late_sitting_night_shift_conflict');
+            throw new ConflictError('late_sitting_night_shift_conflict', {
+              conflictType: 'DUTY_DUPLICATE',
+              employeeName: emp ? emp.name : undefined,
+              dates: [assignment.date]
+            });
           }
         }
-
-        const emp = employeeMap.get(assignment.employeeId);
         if (emp && emp.bankId) {
-          const hasLeaveConflict = leaves.some(l => 
+          const overlappingLeave = leaves.find(l => 
             l.bankId === emp.bankId && 
             l.startDate <= assignment.date && 
             l.endDate >= assignment.date
           );
-          if (hasLeaveConflict) {
-            throw new AppError('leave_conflict', 400, 'leave_conflict');
+          if (overlappingLeave) {
+            throw new ConflictError('leave_conflict', {
+              conflictType: 'LEAVE_OVERLAP',
+              employeeName: emp.name,
+              dates: [assignment.date],
+              existingLeaveStart: overlappingLeave.startDate,
+              existingLeaveEnd: overlappingLeave.endDate
+            });
           }
         }
 
@@ -433,12 +450,18 @@ export class DutyService {
 
     if (targetEmp && targetEmp.bankId) {
       const leaves = await db.select().from(leaveApplications).where(eq(leaveApplications.bankId, targetEmp.bankId));
-      const hasLeaveConflict = leaves.some(l => 
+      const overlappingLeave = leaves.find(l => 
         l.startDate <= targetDate && 
         l.endDate >= targetDate
       );
-      if (hasLeaveConflict) {
-        throw new AppError('leave_conflict', 400, 'leave_conflict');
+      if (overlappingLeave) {
+        throw new ConflictError('leave_conflict', {
+          conflictType: 'LEAVE_OVERLAP',
+          employeeName: targetEmp.name,
+          dates: [targetDate],
+          existingLeaveStart: overlappingLeave.startDate,
+          existingLeaveEnd: overlappingLeave.endDate
+        });
       }
     }
 
@@ -447,7 +470,11 @@ export class DutyService {
       const conflictList = await DutyRepository.findDuplicateDutyForEmployee(targetEmployeeId, targetDate, id);
       const hasConflict = conflictList.some(d => d.type === conflictingType);
       if (hasConflict) {
-        throw new AppError('late_sitting_night_shift_conflict', 400, 'late_sitting_night_shift_conflict');
+        throw new ConflictError('late_sitting_night_shift_conflict', {
+          conflictType: 'DUTY_DUPLICATE',
+          employeeName: targetEmp ? targetEmp.name : undefined,
+          dates: [targetDate]
+        });
       }
     }
 
@@ -457,7 +484,11 @@ export class DutyService {
       const empName = targetEmp ? targetEmp.name : 'কর্মকর্তা';
       const dutyTypeBn = targetType === 'LATE_SITTING' ? 'লেট সিটিং' : targetType === 'HOLIDAY' ? 'হলিডে' : 'নাইট শিফট';
       const formattedDate = targetDate.split('-').reverse().join('-');
-      throw new AppError(`উক্ত কর্মকর্তার জন্য ইতিমধ্যে এই তারিখে ডিউটি বরাদ্দ রয়েছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।\n\nবিস্তারিত:\n- ${empName} (${formattedDate} - ${dutyTypeBn})`, 400, 'duplicate_duty_on_date');
+      throw new ConflictError(`উক্ত কর্মকর্তার জন্য ইতিমধ্যে এই তারিখে ডিউটি বরাদ্দ রয়েছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।\n\nবিস্তারিত:\n- ${empName} (${formattedDate} - ${dutyTypeBn})`, {
+        conflictType: 'DUTY_DUPLICATE',
+        employeeName: empName,
+        dates: [targetDate]
+      });
     }
 
     const { allowance1, allowance2, totalBill } = this.calculateAllowances(targetType);

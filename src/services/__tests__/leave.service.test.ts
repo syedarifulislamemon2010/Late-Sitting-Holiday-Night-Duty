@@ -25,9 +25,13 @@ vi.mock('@/lib/audit', () => {
 vi.mock('@/lib/db', () => {
   return {
     db: {
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      then: vi.fn((cb) => cb([])),
       update: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
       returning: vi.fn(),
       transaction: vi.fn((cb) => cb(null)),
     },

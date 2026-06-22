@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { LeaveService } from '@/services/leave.service';
-import { handleApiError, AppError } from '@/lib/errors';
+import { handleApiError, AppError, ConflictError } from '@/lib/errors';
+import { explainConflictInBengali } from '@/lib/ai-explainer';
 
 export async function PUT(
   request: Request,
@@ -24,6 +25,28 @@ export async function PUT(
     const result = await LeaveService.updateLeave(user, leaveId, body, { ipAddress, userAgent });
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof ConflictError) {
+      const conflictType = error.details?.conflictType || 'LEAVE_OVERLAP';
+      const formattedDates = error.details?.dates?.map((d: string) => d.split('-').reverse().join('-'));
+
+      const bengaliExplanation = await explainConflictInBengali({
+        type: conflictType,
+        employeeName: error.details?.employeeName,
+        dates: formattedDates,
+        existingLeaveStart: error.details?.existingLeaveStart ? new Date(error.details.existingLeaveStart).toLocaleDateString("bn-BD") : undefined,
+        existingLeaveEnd: error.details?.existingLeaveEnd ? new Date(error.details.existingLeaveEnd).toLocaleDateString("bn-BD") : undefined,
+        cellName: error.details?.cellName
+      });
+
+      return NextResponse.json(
+        {
+          error: "leave_collision",
+          message: bengaliExplanation,
+          conflictType
+        },
+        { status: 409 }
+      );
+    }
     return handleApiError(error);
   }
 }

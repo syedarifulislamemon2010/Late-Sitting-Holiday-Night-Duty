@@ -1,16 +1,17 @@
 import { LeaveRepository } from '@/repositories/leave.repository';
 import { logActivity } from '@/lib/audit';
-import { AppError, AuthError } from '@/lib/errors';
+import { AppError, AuthError, ConflictError } from '@/lib/errors';
 import { leaveCreateSchema } from '@/validations/leave.schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, ne, lte, gte } from 'drizzle-orm';
 import { leaveApplications, employees, cells } from '@/db/schema';
 import { db } from '@/lib/db';
 
 interface UserSession {
   id: number;
-  name: string;
   username: string;
+  name: string;
   role: 'ADMIN' | 'USER' | 'EMPLOYEE';
+  cells?: { id: number; name: string }[];
 }
 
 interface LeaveInput {
@@ -90,6 +91,45 @@ export class LeaveService {
 
     const validated = leaveCreateSchema.parse(body);
 
+    // 1. Check CELL_FORBIDDEN for USER role operators
+    if (currentUser.role === 'USER') {
+      const emp = await db.select({
+        cellId: employees.cellId,
+        cellName: cells.name
+      })
+      .from(employees)
+      .leftJoin(cells, eq(employees.cellId, cells.id))
+      .where(eq(employees.bankId, validated.bankId))
+      .then(r => r[0]);
+
+      const userCellIds = currentUser.cells?.map((c: any) => c.id) || [];
+      if (emp && !userCellIds.includes(emp.cellId)) {
+        throw new ConflictError('cell_forbidden', {
+          conflictType: 'CELL_FORBIDDEN',
+          cellName: emp.cellName || 'অনুমোদিত সেল'
+        });
+      }
+    }
+
+    // 2. Check LEAVE_OVERLAP conflict
+    const existingOverlap = await db.select().from(leaveApplications).where(
+      and(
+        eq(leaveApplications.bankId, validated.bankId),
+        lte(leaveApplications.startDate, validated.endDate),
+        gte(leaveApplications.endDate, validated.startDate)
+      )
+    ).then(r => r[0]);
+
+    if (existingOverlap) {
+      throw new ConflictError('leave_conflict', {
+        conflictType: 'LEAVE_OVERLAP',
+        employeeName: validated.applicantName,
+        dates: [validated.startDate, validated.endDate],
+        existingLeaveStart: existingOverlap.startDate,
+        existingLeaveEnd: existingOverlap.endDate
+      });
+    }
+
     return db.transaction(async (tx) => {
       const newLeave = await LeaveRepository.create({
         leaveType: validated.leaveType,
@@ -143,6 +183,46 @@ export class LeaveService {
     }
 
     const validated = leaveCreateSchema.parse(body);
+
+    // 1. Check CELL_FORBIDDEN for USER role operators
+    if (currentUser.role === 'USER') {
+      const emp = await db.select({
+        cellId: employees.cellId,
+        cellName: cells.name
+      })
+      .from(employees)
+      .leftJoin(cells, eq(employees.cellId, cells.id))
+      .where(eq(employees.bankId, validated.bankId))
+      .then(r => r[0]);
+
+      const userCellIds = currentUser.cells?.map((c: any) => c.id) || [];
+      if (emp && !userCellIds.includes(emp.cellId)) {
+        throw new ConflictError('cell_forbidden', {
+          conflictType: 'CELL_FORBIDDEN',
+          cellName: emp.cellName || 'অনুমোদিত সেল'
+        });
+      }
+    }
+
+    // 2. Check LEAVE_OVERLAP conflict (excluding this leave application ID)
+    const existingOverlap = await db.select().from(leaveApplications).where(
+      and(
+        eq(leaveApplications.bankId, validated.bankId),
+        lte(leaveApplications.startDate, validated.endDate),
+        gte(leaveApplications.endDate, validated.startDate),
+        ne(leaveApplications.id, id)
+      )
+    ).then(r => r[0]);
+
+    if (existingOverlap) {
+      throw new ConflictError('leave_conflict', {
+        conflictType: 'LEAVE_OVERLAP',
+        employeeName: validated.applicantName,
+        dates: [validated.startDate, validated.endDate],
+        existingLeaveStart: existingOverlap.startDate,
+        existingLeaveEnd: existingOverlap.endDate
+      });
+    }
 
     return db.transaction(async (tx) => {
       const updatedLeaveList = await tx.update(leaveApplications)

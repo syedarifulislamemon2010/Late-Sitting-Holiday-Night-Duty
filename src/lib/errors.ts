@@ -31,6 +31,12 @@ export class DatabaseError extends AppError {
   }
 }
 
+export class ConflictError extends AppError {
+  constructor(message: string, public details?: any) {
+    super(message, 409, 'conflict');
+  }
+}
+
 export function handleApiError(error: unknown) {
   if (error instanceof AppError) {
     return NextResponse.json(

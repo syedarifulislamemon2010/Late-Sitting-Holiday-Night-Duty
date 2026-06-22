@@ -1993,7 +1993,10 @@ export default function RosterPage() {
         if (!res.ok) {
           const err = await res.json();
           let msg = 'ডিউটি আপডেট করতে ব্যর্থ হয়েছে।';
-          if (err.error === 'late_sitting_on_holiday') {
+          if (res.status === 409) {
+            msg = err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।';
+            alert(msg);
+          } else if (err.error === 'late_sitting_on_holiday') {
             msg = 'ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।';
           } else if (err.error === 'holiday_duty_on_working_day') {
             msg = 'কার্যদিবসে সরকারি ছুটির ডিউটি দেওয়া সম্ভব নয়।';
@@ -2143,7 +2146,10 @@ export default function RosterPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        if (err.error === 'duplicate_duty_on_date') {
+        if (res.status === 409) {
+          setErrorMessage(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।');
+          alert(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।');
+        } else if (err.error === 'duplicate_duty_on_date') {
           setErrorMessage(err.message || 'এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।');
         } else if (err.error === 'late_sitting_on_holiday') {
           setErrorMessage('ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।');
