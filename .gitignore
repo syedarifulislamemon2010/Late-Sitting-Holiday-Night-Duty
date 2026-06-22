@@ -67,3 +67,7 @@ public/uploads/
 
 # scratch directory for reference code
 scratch/
+
+# Database dumps
+postgres_dump.json
+
