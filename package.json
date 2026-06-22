@@ -8,12 +8,13 @@
     "start": "node --no-deprecation --require ./polyfill.js node_modules/next/dist/bin/next start",
     "lint": "eslint",
     "db:seed": "npx tsx src/db/seed.ts",
-    "db:dump": "npx tsx src/db/dump.ts",
-    "postinstall": "node -e \"const fs = require('fs'); const path = require('path'); const p = path.join('node_modules', 'next', 'dist', 'bin', 'next'); if (fs.existsSync(p)) { let c = fs.readFileSync(p, 'utf8'); c = c.replace(/>=20.9.0/g, '>=18.0.0'); fs.writeFileSync(p, c); console.log('Successfully patched Next.js Node version check for compatibility with Node v18!'); }\""
+    "db:dump": "npx tsx src/db/dump.ts"
+  },
+  "engines": {
+    "node": ">=24.0.0"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "@supabase/supabase-js": "^2.107.0",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
