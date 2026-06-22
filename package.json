@@ -8,7 +8,12 @@
     "start": "node --no-deprecation --require ./polyfill.js node_modules/next/dist/bin/next start",
     "lint": "eslint",
     "db:seed": "npx tsx src/db/seed.ts",
-    "db:dump": "npx tsx src/db/dump.ts"
+    "db:dump": "npx tsx src/db/dump.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:contract": "vitest run src/**/*.contract.test.ts",
+    "test:coverage": "vitest run --coverage"
   },
   "engines": {
     "node": ">=24.0.0"
