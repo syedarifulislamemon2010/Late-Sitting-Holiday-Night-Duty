@@ -39,6 +39,7 @@ interface Employee {
   designation: string;
   bankId: string | null;
   fileNo: string | null;
+  mobile: string | null;
   cellId: number;
   cell?: {
     id: number;
@@ -107,7 +108,7 @@ export default function LeaveGeneratorPage() {
   const [fileNo, setFileNo] = useState('');
   const [cellName, setCellName] = useState('অনলাইন ব্যাংকিং ডিপার্টমেন্ট');
   const [leaveLocation, setLeaveLocation] = useState('ঢাকা');
-  const [mobileNo, setMobileNo] = useState('০১৬৭৪০৫৭৫২৯');
+  const [mobileNo, setMobileNo] = useState('');
 
   // Leave Archive & CRUD States
   const [activeTab, setActiveTab] = useState<'NEW' | 'ARCHIVE'>('NEW');
@@ -422,6 +423,7 @@ export default function LeaveGeneratorPage() {
         setDesignation(cleanDesignationForLeave(firstNonAdminEmp.designation));
         setBankId(firstNonAdminEmp.bankId || '');
         setFileNo(firstNonAdminEmp.fileNo || '');
+        setMobileNo(firstNonAdminEmp.mobile || '');
         if (firstNonAdminEmp.cell && firstNonAdminEmp.cell.name) {
           setCellName(firstNonAdminEmp.cell.name);
         }
@@ -443,6 +445,7 @@ export default function LeaveGeneratorPage() {
         if (matchedEmp.fileNo) {
           setFileNo(matchedEmp.fileNo);
         }
+        setMobileNo(matchedEmp.mobile || '');
         if (matchedEmp.cell && matchedEmp.cell.name) {
           setCellName(matchedEmp.cell.name);
         }
@@ -788,6 +791,7 @@ export default function LeaveGeneratorPage() {
                             setDesignation(cleanDesignationForLeave(emp.designation));
                             setBankId(emp.bankId || '');
                             setFileNo(emp.fileNo || '');
+                            setMobileNo(emp.mobile || '');
                             if (emp.cell && emp.cell.name) {
                               setCellName(emp.cell.name);
                             }

@@ -154,6 +154,12 @@ export class LeaveService {
         userId: currentUser.id
       }, tx);
 
+      if (validated.bankId && validated.mobileNo) {
+        await tx.update(employees)
+          .set({ mobile: validated.mobileNo })
+          .where(eq(employees.bankId, validated.bankId));
+      }
+
       await logActivity({
         username: currentUser.username,
         action: 'CREATE',
@@ -250,6 +256,12 @@ export class LeaveService {
         .where(eq(leaveApplications.id, id))
         .returning();
       const updatedLeave = updatedLeaveList[0];
+
+      if (validated.bankId && validated.mobileNo) {
+        await tx.update(employees)
+          .set({ mobile: validated.mobileNo })
+          .where(eq(employees.bankId, validated.bankId));
+      }
 
       await logActivity({
         username: currentUser.username,

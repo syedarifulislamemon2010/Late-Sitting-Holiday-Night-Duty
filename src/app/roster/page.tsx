@@ -5,6 +5,7 @@ import { useProfile } from '@/context/ProfileContext';
 import { useLayout, LayoutPriority } from '@/context/LayoutContext';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 import { cleanBracketName } from '@/lib/print-helpers';
+import RosterOCRImport from './components/RosterOCRImport';
 
 import { 
   Trash2, 
@@ -36,6 +37,7 @@ interface Employee {
   designation: string;
   bankId: string | null;
   fileNo: string | null;
+  mobile: string | null;
   cellId: number;
   cell: Cell;
 }
@@ -1914,6 +1916,62 @@ export default function RosterPage() {
 
 
 
+  const handleBulkDutyImport = async (entries: { bankId: string; employeeName: string; dates: string[] }[]) => {
+    const assignmentsToImport: any[] = [];
+    const targetType = assignmentForm.type || 'LATE_SITTING';
+    
+    for (const entry of entries) {
+      const emp = employees.find(e => e.bankId && e.bankId.trim() === entry.bankId.trim());
+      if (emp) {
+        const cellName = emp.cell?.name || '';
+        for (const date of entry.dates) {
+          assignmentsToImport.push({
+            employeeId: emp.id,
+            type: targetType,
+            date: date,
+            description: getDefaultDescription(emp.name, targetType, cellName)
+          });
+        }
+      }
+    }
+
+    if (assignmentsToImport.length === 0) {
+      alert('দুঃখিত, স্ক্যান করা কোনো কর্মকর্তার ব্যাংক আইডি প্রজেক্টের কর্মকর্তাদের তালিকার সাথে মেলেনি।');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setErrorMessage('');
+      const res = await fetch('/api/duties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          assignments: assignmentsToImport
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        if (res.status === 409) {
+          setErrorMessage(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।');
+          alert(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।');
+        } else {
+          setErrorMessage(err.error || 'ডিউটি ইম্পোর্ট করতে ব্যর্থ হয়েছে।');
+          alert(err.error || 'ডিউটি ইম্পোর্ট করতে ব্যর্থ হয়েছে।');
+        }
+      } else {
+        alert('রোস্টার ডিউটি সফলভাবে ইম্পোর্ট ও সংরক্ষণ করা হয়েছে!');
+        loadDuties();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('ডিউটি ইম্পোর্ট করতে সমস্যা হয়েছে।');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleAssignmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -3296,6 +3354,15 @@ export default function RosterPage() {
                   </>
                 )}
               </form>
+              {!editingDuty && !isEditingArchive && (
+                <div className="mt-6 border-t border-slate-105 pt-6">
+                  <RosterOCRImport
+                    cellId={parseInt(opt1CellId) || (cells && cells[0] ? cells[0].id : 7)}
+                    dutyType={(assignmentForm.type || 'LATE_SITTING') as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'}
+                    onImportConfirmed={handleBulkDutyImport}
+                  />
+                </div>
+              )}
               </div>
             </div>
 

@@ -33,7 +33,11 @@ vi.mock('@/lib/db', () => {
       update: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
       returning: vi.fn(),
-      transaction: vi.fn((cb) => cb(null)),
+      transaction: vi.fn((cb) => cb({
+        update: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis()
+      })),
     },
   };
 });
@@ -120,7 +124,7 @@ describe('LeaveService', () => {
 
       const result = await LeaveService.deleteLeave(mockUserNormal, 15, mockHeaders);
       expect(result.success).toBe(true);
-      expect(LeaveRepository.delete).toHaveBeenCalledWith(15, null);
+      expect(LeaveRepository.delete).toHaveBeenCalledWith(15, expect.any(Object));
     });
 
     it('should throw AppError if leave does not exist', async () => {
