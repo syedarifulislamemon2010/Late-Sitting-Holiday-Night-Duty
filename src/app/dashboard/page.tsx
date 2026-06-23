@@ -576,7 +576,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <BarChart3 className="text-indigo-650" size={20} />
               <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">
-                {activeChart === 'LATE_SITTING' ? 'লেট সিটিং ডিউটি' : activeChart === 'HOLIDAY' ? 'ছুটির দিন ডিউটি' : 'রাত্রীকালীন ডিউটি'} विश्लेषण ও ট্রেন্ড
+                {activeChart === 'LATE_SITTING' ? 'লেট সিটিং ডিউটি' : activeChart === 'HOLIDAY' ? 'ছুটির দিন ডিউটি' : 'রাত্রীকালীন ডিউটি'} বিশ্লেষণ ও ট্রেন্ড
               </h3>
             </div>
             <button 
