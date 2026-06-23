@@ -62,6 +62,8 @@ export default function AnalyticsDashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedYear, setSelectedYear] = useState('2026');
   const [selectedDutyType, setSelectedDutyType] = useState('');
+  const [cellsList, setCellsList] = useState<{ id: number; name: string }[]>([]);
+  const [selectedCellId, setSelectedCellId] = useState('all');
 
   // Aggregated Data State
   const [allowanceTrend, setAllowanceTrend] = useState<AllowanceTrend[]>([]);
@@ -101,6 +103,9 @@ export default function AnalyticsDashboardPage() {
         queryParams.set('year', selectedYear);
       }
       queryParams.set('dutyType', selectedDutyType);
+      if (selectedCellId && selectedCellId !== 'all') {
+        queryParams.set('cellId', selectedCellId);
+      }
 
       const res = await fetch(`/api/analytics?${queryParams.toString()}`);
       if (!res.ok) {
@@ -129,15 +134,33 @@ export default function AnalyticsDashboardPage() {
   };
 
   useEffect(() => {
+    const fetchCells = async () => {
+      if (currentUser && currentUser.role === 'ADMIN') {
+        try {
+          const res = await fetch('/api/cells');
+          if (res.ok) {
+            const data = await res.json();
+            setCellsList(data);
+          }
+        } catch (e) {
+          console.error('Error fetching cells for analytics filter:', e);
+        }
+      }
+    };
+    fetchCells();
+  }, [currentUser]);
+
+  useEffect(() => {
     if (currentUser) {
       loadAnalytics();
     }
-  }, [selectedMonth, selectedYear, selectedDutyType, currentUser]);
+  }, [selectedMonth, selectedYear, selectedDutyType, selectedCellId, currentUser]);
 
   const clearFilters = () => {
     setSelectedMonth('');
     setSelectedYear('2026');
     setSelectedDutyType('');
+    setSelectedCellId('all');
   };
 
   return (
@@ -229,6 +252,28 @@ export default function AnalyticsDashboardPage() {
 
         <div className="flex flex-wrap items-center gap-4">
           
+          {/* Cell Filter - Only shown for ADMIN role */}
+          {currentUser?.role === 'ADMIN' && (
+            <>
+              <div className="flex items-center gap-2 animate-in fade-in">
+                <label className="text-[10px] text-slate-400 font-bold uppercase font-sans">সেল</label>
+                <select
+                  value={selectedCellId}
+                  onChange={(e) => setSelectedCellId(e.target.value)}
+                  className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0b5e9e] font-sans bg-white"
+                >
+                  <option value="all">ওভারল (সব সেল)</option>
+                  {cellsList.map((cell) => (
+                    <option key={cell.id} value={String(cell.id)}>
+                      {cell.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <span className="text-slate-300 hidden sm:inline">|</span>
+            </>
+          )}
+
           {/* Duty Type Filter */}
           <div className="flex items-center gap-2">
             <label className="text-[10px] text-slate-400 font-bold uppercase">ডিউটি ধরন</label>
@@ -280,7 +325,7 @@ export default function AnalyticsDashboardPage() {
             </select>
           </div>
 
-          {(selectedMonth || selectedYear !== '2026' || selectedDutyType !== '') && (
+          {(selectedMonth || selectedYear !== '2026' || selectedDutyType !== '' || selectedCellId !== 'all') && (
             <button
               onClick={clearFilters}
               className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 text-[10px] font-bold rounded-xl border border-slate-200 cursor-pointer transition-all animate-in fade-in"

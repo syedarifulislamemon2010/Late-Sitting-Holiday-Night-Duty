@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { duties, employees, cells, leaveApplications, officeOrders } from '@/db/schema';
-import { eq, and, desc, asc, sql, like } from 'drizzle-orm';
+import { eq, and, desc, asc, sql, like, inArray } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { headers } from 'next/headers';
 
@@ -18,6 +18,63 @@ export async function GET(request: Request) {
     const filterMonth = searchParams.get('month'); // YYYY-MM
     const filterYear = searchParams.get('year');   // YYYY
     const dutyType = searchParams.get('dutyType') || ''; // LATE_SITTING, HOLIDAY, NIGHT_SHIFT or empty
+    const cellIdParam = searchParams.get('cellId');
+
+    const allowedCellIds = user.cells?.map((c: any) => c.id) || [];
+    const allowedCellNames = user.cells?.map((c: any) => c.name) || [];
+
+    let cellFilterId: number | null = null;
+    let cellFilterName: string | null = null;
+
+    if (user.role === 'ADMIN') {
+      if (cellIdParam && cellIdParam !== 'all') {
+        const cId = parseInt(cellIdParam, 10);
+        if (!isNaN(cId)) {
+          const cellRec = await db.select().from(cells).where(eq(cells.id, cId)).limit(1);
+          if (cellRec[0]) {
+            cellFilterId = cellRec[0].id;
+            cellFilterName = cellRec[0].name;
+          }
+        }
+      }
+    } else if (user.role === 'USER') {
+      if (cellIdParam && cellIdParam !== 'all') {
+        const cId = parseInt(cellIdParam, 10);
+        if (!isNaN(cId) && allowedCellIds.includes(cId)) {
+          const cellRec = await db.select().from(cells).where(eq(cells.id, cId)).limit(1);
+          if (cellRec[0]) {
+            cellFilterId = cellRec[0].id;
+            cellFilterName = cellRec[0].name;
+          }
+        }
+      }
+    }
+
+    const getEmployeeCellCondition = () => {
+      if (user.role === 'ADMIN') {
+        return cellFilterId ? eq(employees.cellId, cellFilterId) : undefined;
+      }
+      if (user.role === 'USER') {
+        if (cellFilterId) {
+          return eq(employees.cellId, cellFilterId);
+        }
+        return allowedCellIds.length > 0 ? inArray(employees.cellId, allowedCellIds) : eq(employees.id, -1);
+      }
+      return undefined;
+    };
+
+    const getCellNameCondition = (field: any) => {
+      if (user.role === 'ADMIN') {
+        return cellFilterName ? eq(field, cellFilterName) : undefined;
+      }
+      if (user.role === 'USER') {
+        if (cellFilterName) {
+          return eq(field, cellFilterName);
+        }
+        return allowedCellNames.length > 0 ? inArray(field, allowedCellNames) : eq(field, 'NON_EXISTENT_CELL_NAME');
+      }
+      return undefined;
+    };
 
     const isEmployee = user.role === 'EMPLOYEE';
 
@@ -77,19 +134,31 @@ export async function GET(request: Request) {
     // ----------------------------------------------------
     // KPI Summary Metrics
     // ----------------------------------------------------
-    // Total Released Bills (overall)
+    // Total Released Bills (overall or cell-scoped)
+    const totalReleasedBillsConditions = [like(officeOrders.category, 'BILL_%')];
+    const releasedBillsCellCond = getCellNameCondition(officeOrders.cellName);
+    if (releasedBillsCellCond) {
+      totalReleasedBillsConditions.push(releasedBillsCellCond);
+    }
     const totalReleasedBillsRaw = await db.select({
       count: sql<number>`count(${officeOrders.id})`
     })
     .from(officeOrders)
-    .where(like(officeOrders.category, 'BILL_%'));
+    .where(and(...totalReleasedBillsConditions));
     const totalReleasedBills = Number(totalReleasedBillsRaw[0]?.count || 0);
 
-    // Total Duties Completed (overall)
+    // Total Duties Completed (overall or cell-scoped)
+    const totalDutiesConditions = [];
+    const dutyCellCond = getEmployeeCellCondition();
+    if (dutyCellCond) {
+      totalDutiesConditions.push(dutyCellCond);
+    }
     const totalDutiesRaw = await db.select({
       count: sql<number>`count(${duties.id})`
     })
-    .from(duties);
+    .from(duties)
+    .innerJoin(employees, eq(duties.employeeId, employees.id))
+    .where(totalDutiesConditions.length > 0 ? and(...totalDutiesConditions) : undefined);
     const totalDutiesCompleted = Number(totalDutiesRaw[0]?.count || 0);
 
     // Logged-in employee's personal released bills count
@@ -137,11 +206,18 @@ export async function GET(request: Request) {
         .orderBy(asc(sql`substring(${duties.date}, 1, 7)`));
       }
     } else {
+      const trendConditions = [];
+      const trendCellCond = getEmployeeCellCondition();
+      if (trendCellCond) {
+        trendConditions.push(trendCellCond);
+      }
       allowanceTrendRaw = await db.select({
         month: sql<string>`substring(${duties.date}, 1, 7)`,
         totalAllowance: sql<number>`COALESCE(sum(${duties.totalBill}), 0)`
       })
       .from(duties)
+      .innerJoin(employees, eq(duties.employeeId, employees.id))
+      .where(trendConditions.length > 0 ? and(...trendConditions) : undefined)
       .groupBy(sql`substring(${duties.date}, 1, 7)`)
       .orderBy(asc(sql`substring(${duties.date}, 1, 7)`));
     }
@@ -187,6 +263,10 @@ export async function GET(request: Request) {
     } else if (filterYear) {
       dutyConditions.push(sql`substring(${duties.date}, 1, 4) = ${filterYear}`);
     }
+    const performersCellCond = getEmployeeCellCondition();
+    if (performersCellCond) {
+      dutyConditions.push(performersCellCond);
+    }
 
     const topPerformersRaw = await db.select({
       employeeId: duties.employeeId,
@@ -214,6 +294,11 @@ export async function GET(request: Request) {
     // ----------------------------------------------------
     let cellBudget: { cellId: number | null; cellName: string | null; totalAllowance: number }[] = [];
     if (!isEmployee) {
+      const budgetConditions = [];
+      const budgetCellCond = getEmployeeCellCondition();
+      if (budgetCellCond) {
+        budgetConditions.push(budgetCellCond);
+      }
       const cellBudgetRaw = await db.select({
         cellId: employees.cellId,
         cellName: cells.name,
@@ -222,6 +307,7 @@ export async function GET(request: Request) {
       .from(duties)
       .innerJoin(employees, eq(duties.employeeId, employees.id))
       .innerJoin(cells, eq(employees.cellId, cells.id))
+      .where(budgetConditions.length > 0 ? and(...budgetConditions) : undefined)
       .groupBy(employees.cellId, cells.name)
       .orderBy(desc(sql`COALESCE(sum(${duties.totalBill}), 0)`));
 
@@ -255,12 +341,18 @@ export async function GET(request: Request) {
         asc(sql`substring(${leaveApplications.startDate}, 6, 2)`)
       );
     } else {
+      const leaveConditions = [];
+      const leaveCellCond = getCellNameCondition(leaveApplications.cellName);
+      if (leaveCellCond) {
+        leaveConditions.push(leaveCellCond);
+      }
       leavePatternsRaw = await db.select({
         year: sql<string>`substring(${leaveApplications.startDate}, 1, 4)`,
         month: sql<string>`substring(${leaveApplications.startDate}, 6, 2)`,
         count: sql<number>`count(${leaveApplications.id})`
       })
       .from(leaveApplications)
+      .where(leaveConditions.length > 0 ? and(...leaveConditions) : undefined)
       .groupBy(
         sql`substring(${leaveApplications.startDate}, 1, 4)`,
         sql`substring(${leaveApplications.startDate}, 6, 2)`
@@ -286,6 +378,10 @@ export async function GET(request: Request) {
       billConditions.push(sql`substring(${officeOrders.orderDate}, 1, 7) = ${filterMonth}`);
     } else if (filterYear) {
       billConditions.push(sql`substring(${officeOrders.orderDate}, 1, 4) = ${filterYear}`);
+    }
+    const billReleasesCellCond = getCellNameCondition(officeOrders.cellName);
+    if (billReleasesCellCond) {
+      billConditions.push(billReleasesCellCond);
     }
 
     const billReleasesRaw = await db.select({

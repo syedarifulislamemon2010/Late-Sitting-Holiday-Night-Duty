@@ -114,6 +114,7 @@ export default function UserManagement() {
   const [selectedCellIds, setSelectedCellIds] = useState<number[]>([]);
   const [cellRoles, setCellRoles] = useState<Record<number, string>>({});
   const [profileUser, setProfileUser] = useState<User | null>(null);
+  const [isProfileInitialized, setIsProfileInitialized] = useState(false);
 
   // Tab State
   const [activeSettingsTab, setActiveSettingsTab] = useState<'profile' | 'users' | 'logs'>('profile');
@@ -326,11 +327,12 @@ export default function UserManagement() {
 
   // Sync profile details when currentUser changes
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !isProfileInitialized) {
       setProfileName(currentUser.name);
       setProfileMobile(currentUser.mobile || '');
+      setIsProfileInitialized(true);
     }
-  }, [currentUser]);
+  }, [currentUser, isProfileInitialized]);
 
   const loadData = async () => {
     try {
@@ -390,7 +392,7 @@ export default function UserManagement() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [currentUser, activeSettingsTab]);
+  }, [currentUser?.id, currentUser?.role, activeSettingsTab]);
 
   const handleOpenCreateModal = () => {
     setEditingUser(null);
@@ -609,6 +611,7 @@ export default function UserManagement() {
         setProfileSuccess('আপনার প্রোফাইল তথ্য ও পাসওয়ার্ড সফলভাবে আপডেট হয়েছে!');
         setNewPassword('');
         setConfirmPassword('');
+        setIsProfileInitialized(false);
         await refetchProfile();
         window.dispatchEvent(new Event('user-profile-updated'));
       } else {

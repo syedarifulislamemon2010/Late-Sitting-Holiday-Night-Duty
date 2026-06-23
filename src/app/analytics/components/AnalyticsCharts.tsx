@@ -105,7 +105,7 @@ export default function AnalyticsCharts({
             <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-extrabold rounded-full uppercase tracking-wider border border-emerald-100">ব্যক্তিগত</span>
           </div>
           <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart data={formattedPersonalTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
@@ -144,7 +144,7 @@ export default function AnalyticsCharts({
               কোনো তথ্য পাওয়া যায়নি।
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart data={formattedTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
@@ -182,7 +182,7 @@ export default function AnalyticsCharts({
                 কোনো তথ্য পাওয়া যায়নি।
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <BarChart data={topPerformers} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis 
@@ -224,7 +224,7 @@ export default function AnalyticsCharts({
           <h3 className="text-sm font-bold text-slate-800">সামগ্রিক সেল-ভিত্তিক বাজেট খরচ বিভাজন (Cell Budget)</h3>
           <div className="h-72 w-full flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="h-56 w-full md:w-1/2">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
                   <Pie
                     data={cellBudget}
@@ -277,7 +277,7 @@ export default function AnalyticsCharts({
               কোনো তথ্য পাওয়া যায়নি।
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart data={formattedLeaveData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
@@ -318,7 +318,7 @@ export default function AnalyticsCharts({
               কোনo তথ্য পাওয়া যায়নি।
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={billReleases.map(d => ({ name: formatOrderDate(d.orderDate), count: d.count }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />

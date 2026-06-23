@@ -91,7 +91,7 @@ export default function Sidebar() {
   const currentMonth = new Date().getMonth() + 1; // 1-12
   const showClosingBill = isAdmin || currentMonth === 6 || currentMonth === 12;
 
-  const sections = isEmployee ? [
+  const rawSections = isEmployee ? [
     {
       title: 'আমার সার্ভিস',
       items: [
@@ -110,18 +110,14 @@ export default function Sidebar() {
     {
       title: 'প্রশাসনিক কার্যক্রম',
       items: [
-        ...(isAdmin ? [
-          { name: 'নির্বাহী প্যানেল', href: '/executive', icon: Users },
-          { name: 'অডিট লগ', href: '/audit', icon: ClipboardList }
-        ] : []),
         { name: 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
-        { name: 'অফিস অর্ডার', href: '/roster', icon: CalendarRange }
+        { name: 'লেট হলি নাইট অর্ডার', href: '/roster', icon: CalendarRange }
       ]
     },
     {
       title: 'বিল ও ভাতাসমূহ',
       items: [
-        { name: 'বিল', href: '/billing', icon: Receipt },
+        { name: 'বিল নথি', href: '/billing', icon: Receipt },
         { name: 'লাঞ্চ বিল শিট', href: '/lunch-bill', icon: Utensils },
         ...(showClosingBill ? [{ name: 'ক্লোজিং বিল শিট', href: '/closing-bill', icon: CalendarCheck }] : [])
       ]
@@ -133,6 +129,15 @@ export default function Sidebar() {
       ]
     },
     {
+      title: 'সিস্টেম/সেটিংস',
+      items: [
+        ...(isAdmin ? [
+          { name: 'নির্বাহী প্যানেল', href: '/executive', icon: Users },
+          { name: 'অডিট লগ', href: '/audit', icon: ClipboardList }
+        ] : [])
+      ]
+    },
+    {
       title: 'অন্যান্য',
       items: [
         { name: 'আর্কাইভ', href: '/documents', icon: FileText },
@@ -140,6 +145,8 @@ export default function Sidebar() {
       ]
     }
   ];
+
+  const sections = rawSections.filter(section => section.items.length > 0);
 
 
   return (
