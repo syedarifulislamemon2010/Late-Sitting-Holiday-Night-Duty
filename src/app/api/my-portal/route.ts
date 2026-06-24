@@ -20,6 +20,8 @@ export async function GET(request: Request) {
       name: employees.name,
       designation: employees.designation,
       bankId: employees.bankId,
+      fileNo: employees.fileNo,
+      mobile: employees.mobile,
       cellId: employees.cellId,
       cellName: cells.name,
       userId: employees.userId
@@ -37,6 +39,8 @@ export async function GET(request: Request) {
         name: employees.name,
         designation: employees.designation,
         bankId: employees.bankId,
+        fileNo: employees.fileNo,
+        mobile: employees.mobile,
         cellId: employees.cellId,
         cellName: cells.name,
         userId: employees.userId
