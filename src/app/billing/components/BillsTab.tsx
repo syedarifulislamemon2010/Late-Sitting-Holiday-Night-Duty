@@ -30,6 +30,7 @@ interface BillsTabProps {
   hasDeletePermission: (order: OfficeOrder) => boolean;
   handleDeleteOrder: (id: number) => Promise<void> | void;
   setViewingOrder: (order: OfficeOrder) => void;
+  onBulkPrintPreview: (orders: OfficeOrder[]) => void;
 }
 
 export default function BillsTab({
@@ -39,7 +40,8 @@ export default function BillsTab({
   hasEditPermission,
   hasDeletePermission,
   handleDeleteOrder,
-  setViewingOrder
+  setViewingOrder,
+  onBulkPrintPreview
 }: BillsTabProps) {
 
   const [selectedBills, setSelectedBills] = useState<number[]>([]);
@@ -62,25 +64,9 @@ export default function BillsTab({
     }
   };
 
-  const handleBulkPrint = async () => {
-    if (!confirm(`আপনি কি নির্বাচিত ${selectedBills.length} টি বিল মেমোকে "মুদ্রিত" (Printed) হিসেবে চিহ্নিত করতে চান?`)) return;
-    setActionLoading(true);
-    try {
-      for (const id of selectedBills) {
-        await fetch(`/api/office-orders/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'Printed' })
-        });
-      }
-      setSelectedBills([]);
-      window.location.reload();
-    } catch (err) {
-      console.error(err);
-      alert('কিছু বিল মেমোর স্ট্যাটাস আপডেট করা সম্ভব হয়নি।');
-    } finally {
-      setActionLoading(false);
-    }
+  const handleBulkPrintPreview = () => {
+    const selectedOrders = filteredBillMemos.filter(order => selectedBills.includes(order.id));
+    onBulkPrintPreview(selectedOrders);
   };
 
   const renderBillMemosGrid = (memosList: OfficeOrder[]) => {
@@ -251,7 +237,7 @@ export default function BillsTab({
               বাতিল
             </button>
             <button
-              onClick={handleBulkPrint}
+              onClick={handleBulkPrintPreview}
               className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-105 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/35 rounded-xl text-xs font-bold transition-all cursor-pointer animate-pulse"
             >
               <Printer size={13} />
