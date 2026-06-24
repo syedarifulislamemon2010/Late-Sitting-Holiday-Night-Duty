@@ -32,6 +32,7 @@ import OrdersTab from './components/OrdersTab';
 import BillsTab from './components/BillsTab';
 import ReportsTab from './components/ReportsTab';
 import BillPrintLayout from './components/BillPrintLayout';
+import BulkBillPrintLayout from './components/BulkBillPrintLayout';
 import { toBanglaDigits, getBanglaDate, getBanglaMonthYearLabel, getBanglaNumberWords } from '@/lib/bengali-converter';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
 
@@ -212,12 +213,63 @@ const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGH
     apyaonRate = 600;
   }
   return { transportRate, apyaonRate };
+};const userHasAccessToOrder = (o: OfficeOrder, currentUser: any, employees: Employee[]) => {
+  if (!currentUser) return false;
+  if (currentUser.role === 'ADMIN') return true;
+
+  const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+
+  // If order cellName matches user cells directly
+  if (o.cellName && userCellNames.includes(o.cellName)) {
+    return true;
+  }
+
+  // If cellName is "All Cells" or "সকল সেল", check involved employees
+  if (o.cellName === 'All Cells' || o.cellName === 'সকল সেল' || !o.cellName) {
+    let dutiesList: any[] = o.duties || [];
+    if (dutiesList.length === 0 && o.dutiesJson) {
+      try {
+        dutiesList = JSON.parse(o.dutiesJson);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (dutiesList.length === 0) {
+      if (o.employeeName) {
+        const matched = employees.find(e => e.name === o.employeeName);
+        if (matched && matched.cell?.name && userCellNames.includes(matched.cell.name)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    return dutiesList.some((d: any) => {
+      const empIdStr = d.employeeId ? d.employeeId.toString() : '';
+      const empName = d.employeeName || '';
+      
+      const matched = employees.find(e => 
+        (e.id && e.id.toString() === empIdStr) || 
+        (e.bankId && e.bankId.toString() === empIdStr) || 
+        (e.name && e.name === empName)
+      );
+
+      return matched && matched.cell?.name && userCellNames.includes(matched.cell.name);
+    });
+  }
+
+  return false;
 };
 
 export default function BillingPage() {
   const { currentUser } = useProfile();
+  const userCellNamesString = currentUser?.cells?.map(c => c.name).sort().join(',') || '';
+  const userRole = currentUser?.role || '';
+  const userUsername = currentUser?.username || '';
   const [activeTab, setActiveTab] = useState<'ledger' | 'orders' | 'bills' | 'reports'>('ledger');
   const [viewingOrder, setViewingOrder] = useState<OfficeOrder | null>(null);
+  const [viewingOrders, setViewingOrders] = useState<OfficeOrder[] | null>(null);
   const [reportDate, setReportDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [isReportPrintMode, setIsReportPrintMode] = useState(false);
   const [billGenerated, setBillGenerated] = useState(false);
@@ -703,10 +755,19 @@ export default function BillingPage() {
         activeList = Array.isArray(data) ? data : [];
       }
 
+      if (currentUser && currentUser.role !== 'ADMIN') {
+        const userCellNames = currentUser.cells?.map(c => c.name) || [];
+        activeList = activeList.filter(d => d.employee?.cell?.name && userCellNames.includes(d.employee.cell.name));
+      }
+
       // Fetch all archived office orders and bills
       const ordersRes = await fetch('/api/office-orders');
       const ordersData = await ordersRes.json();
-      const archivedOrdersList: OfficeOrder[] = Array.isArray(ordersData) ? ordersData : [];
+      let archivedOrdersList: OfficeOrder[] = Array.isArray(ordersData) ? ordersData : [];
+
+      if (currentUser && currentUser.role !== 'ADMIN') {
+        archivedOrdersList = archivedOrdersList.filter(o => userHasAccessToOrder(o, currentUser, employees));
+      }
       setArchivedOrders(archivedOrdersList);
 
 
@@ -796,7 +857,7 @@ export default function BillingPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth, selectedCell, printCategory, selectedOrderRef]);
+  }, [selectedMonth, selectedCell, printCategory, selectedOrderRef, userCellNamesString, userRole, userUsername, employees]);
 
   const handleBackToLedger = () => {
     setIsPrintMode(false);
@@ -1681,6 +1742,13 @@ export default function BillingPage() {
       if (type === 'orders' && isBill) return false;
       if (type === 'bills' && !isBill) return false;
       
+      // Enforce cell visibility restrictions for non-admin users
+      if (currentUser && currentUser.role !== 'ADMIN') {
+        if (!userHasAccessToOrder(order, currentUser, employees)) {
+          return false;
+        }
+      }
+
       // Cell filter
       if (selectedCell !== 'all') {
         const targetCellObj = cells.find(c => c.id.toString() === selectedCell);
@@ -1720,7 +1788,7 @@ export default function BillingPage() {
       
       return true;
     });
-  }, [archivedOrders, selectedCell, selectedCategory, selectedMonth, cells, getNormalizedRef]);
+  }, [archivedOrders, selectedCell, selectedCategory, selectedMonth, cells, getNormalizedRef, userCellNamesString, userRole, userUsername, employees]);
 
   const filteredOrdersList = useMemo(() => getFilteredOrders('orders'), [getFilteredOrders]);
   const pendingBillingOfficeOrders = useMemo(() => {
@@ -2589,6 +2657,9 @@ export default function BillingPage() {
               setViewingOrder={setViewingOrder}
               handleDeleteOrder={handleDeleteOrder}
               hasDeletePermission={hasDeletePermission}
+              employees={employees}
+              currentUser={currentUser}
+              selectedCell={selectedCell}
             />
           )}
 
@@ -2617,6 +2688,7 @@ export default function BillingPage() {
               hasDeletePermission={hasDeletePermission}
               handleDeleteOrder={handleDeleteOrder}
               setViewingOrder={setViewingOrder}
+              onBulkPrintPreview={(orders) => setViewingOrders(orders)}
             />
           )}
 
@@ -3117,6 +3189,14 @@ export default function BillingPage() {
         <BillPrintLayout
           viewingOrder={viewingOrder}
           onClose={() => setViewingOrder(null)}
+          fetchDutiesForBilling={fetchDutiesForBilling}
+        />
+      )}
+
+      {viewingOrders && (
+        <BulkBillPrintLayout
+          viewingOrders={viewingOrders}
+          onClose={() => setViewingOrders(null)}
           fetchDutiesForBilling={fetchDutiesForBilling}
         />
       )}
