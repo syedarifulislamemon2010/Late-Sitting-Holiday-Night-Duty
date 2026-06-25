@@ -78,7 +78,7 @@ export default function RootLayout({
                   
                   {/* Premium Dashboard Footer */}
                   <footer className="no-print print:hidden py-4 mt-auto text-slate-400 text-center app-footer-text text-xs font-sans">
-                    ডিজাইন ও ডেভেলপমেন্ট: <span className="text-[#0b5e9e] dark:text-[#38bdf8] font-semibold">অনлайн ব্যাংকিং ডিপার্টমেন্ট</span> <span className="mx-2 text-slate-300">|</span> সংস্করণ ১.০.০
+                    ডিজাইন ও ডেভেলপমেন্ট: অনলাইন ব্যাংকিং ডিপার্টমেন্ট | সংস্করণ ১.০.০
                   </footer>
                 </div>
                 </main>
