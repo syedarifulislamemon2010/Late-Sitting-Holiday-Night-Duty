@@ -490,6 +490,28 @@ export default function LeaveGeneratorPage() {
     }
   }, [currentUser, employees]);
 
+  // Prepopulate balance sheet editor when latestLeave changes (only when not editing an existing archive record)
+  useEffect(() => {
+    if (!editingLeaveId) {
+      if (latestLeave) {
+        setCasualTotal(latestLeave.casualTotal ?? 20);
+        setCasualUsed(latestLeave.casualUsed ?? 0);
+        setOrdinaryTotal(latestLeave.ordinaryTotal ?? 0);
+        setOrdinaryUsed(latestLeave.ordinaryUsed ?? 0);
+        setSpecialTotal(latestLeave.specialTotal ?? 0);
+        setSpecialUsed(latestLeave.specialUsed ?? 0);
+      } else {
+        // Reset to default starting entitlements
+        setCasualTotal(20);
+        setCasualUsed(0);
+        setOrdinaryTotal(0);
+        setOrdinaryUsed(0);
+        setSpecialTotal(0);
+        setSpecialUsed(0);
+      }
+    }
+  }, [latestLeave, editingLeaveId]);
+
   // Format YYYY-MM-DD date to DD/MM/YYYY
   const toDisplayDateStr = (dateStr: string): string => {
     if (!dateStr) return '';
@@ -521,6 +543,24 @@ export default function LeaveGeneratorPage() {
   const isNonWorkingDay = (dateStr: string): boolean => {
     return libIsNonWorkingDay(dateStr, dbHolidays);
   };
+
+  // Validate selected start/end dates against weekends/public holidays
+  useEffect(() => {
+    if (startDate && isNonWorkingDay(startDate)) {
+      setErrorMsg('ছুটির শুরুর তারিখ কোনো ছুটির দিন (যেমন: শুক্র, শনি বা সরকারি ছুটির দিন) হতে পারবে না। অনুগ্রহ করে একটি কর্মদিবস নির্বাচন করুন।');
+      setStartDate('');
+      setEndDate('');
+      setTimeout(() => setErrorMsg(''), 5000);
+    }
+  }, [startDate]);
+
+  useEffect(() => {
+    if (endDate && isNonWorkingDay(endDate)) {
+      setErrorMsg('ছুটির শেষের তারিখ কোনো ছুটির দিন (যেমন: শুক্র, শনি বা সরকারি ছুটির দিন) হতে পারবে না। অনুগ্রহ করে একটি কর্মদিবস নির্বাচন করুন।');
+      setEndDate('');
+      setTimeout(() => setErrorMsg(''), 5000);
+    }
+  }, [endDate]);
 
   // Get contiguous holiday days starting from a specific date forward
   const getSucceedingContiguousHolidaysCount = (startDateStr: string): number => {
@@ -653,6 +693,19 @@ export default function LeaveGeneratorPage() {
       return {
         isValid: false,
         message: `আপনি ড্রপডাউন মেন্যু থেকে এই ইনফোরমেশন (${missing.join(' ও ')}) সিলেক্ট করতে ভুলে গিয়েছেন।`
+      };
+    }
+
+    if (startDate && isNonWorkingDay(startDate)) {
+      return {
+        isValid: false,
+        message: 'ছুটির শুরুর তারিখ কোনো ছুটির দিন (যেমন: শুক্র, শনি বা সরকারি ছুটির দিন) হতে পারবে না। অনুগ্রহ করে একটি কর্মদিবস নির্বাচন করুন।'
+      };
+    }
+    if (endDate && isNonWorkingDay(endDate)) {
+      return {
+        isValid: false,
+        message: 'ছুটির শেষের তারিখ কোনো ছুটির দিন (যেমন: শুক্র, শনি বা সরকারি ছুটির দিন) হতে পারবে না। অনুগ্রহ করে একটি কর্মদিবস নির্বাচন করুন।'
       };
     }
     
