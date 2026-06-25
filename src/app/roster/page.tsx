@@ -2873,7 +2873,7 @@ export default function RosterPage() {
   );
 
   return (
-    <div className="space-y-6 min-h-screen bg-slate-50/50 -m-4 lg:-m-8 p-4 lg:p-8">
+    <div className="space-y-6 min-h-screen bg-slate-50/50 dark:bg-transparent -m-4 lg:-m-8 p-4 lg:p-8">
       {msgBanner && (
         <div className={`p-4 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 ${
           msgBanner.type === 'success' 

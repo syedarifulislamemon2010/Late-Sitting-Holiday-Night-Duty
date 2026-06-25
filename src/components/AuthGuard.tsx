@@ -628,10 +628,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         {/* Footer */}
         <footer className="w-full max-w-[420px] mx-auto text-center space-y-1 text-slate-500 select-none no-print print:hidden font-sans pb-4 z-10 px-4">
           <div className="flex flex-col gap-0.5 text-[10px] font-bold">
-            <span>সংস্করণ ১.০.০</span>
-            <span>
-              ডিজাইন ও ডেভেলপমেন্ট: <span className="text-[#1565C0]">সিবিএস ইন্টিগ্রেটেড ডেভেলপমেন্ট সেল</span>, অনলাইন ব্যাংকিং ডিপার্টমেন্ট
-            </span>
+            <span>ডিজাইন ও ডেভেলপমেন্ট: <span className="text-[#1565C0]">অনлайн ব্যাংকিং ডিপার্টমেন্ট</span> <span className="mx-1 text-slate-400">|</span> সংস্করণ ১.০.০</span>
           </div>
         </footer>
 
