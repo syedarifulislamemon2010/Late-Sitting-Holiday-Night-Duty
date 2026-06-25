@@ -76,6 +76,17 @@ export async function POST(request: Request) {
 <meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
+<script>
+  (function() {
+    try {
+      const theme = localStorage.getItem('theme');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (theme === 'dark' || (!theme && systemDark)) {
+        document.documentElement.classList.add('dark');
+      }
+    } catch (e) {}
+  })();
+</script>
 <style>
   *, *:before, *:after {
     box-sizing: border-box;
@@ -219,6 +230,36 @@ export async function POST(request: Request) {
   .footer-copy ol {
     margin: 4px 0 0 12px;
     padding: 0;
+  }
+  @media screen {
+    html.dark body {
+      background-color: #0b0f19 !important;
+      color: #f8fafc !important;
+    }
+    html.dark th {
+      background-color: #1e293b !important;
+      color: #f8fafc !important;
+      border-color: #334155 !important;
+    }
+    html.dark td, html.dark tr, html.dark table {
+      border-color: #334155 !important;
+    }
+    html.dark .header-table {
+      border-bottom: 2px solid #38bdf8 !important;
+    }
+    html.dark .header-left *, 
+    html.dark .header-right *,
+    html.dark .ref-date-table *, 
+    html.dark .title-content, 
+    html.dark .body-content, 
+    html.dark h1, html.dark h2, html.dark h3, html.dark h4, 
+    html.dark p, html.dark span, html.dark strong, html.dark b,
+    html.dark td *, html.dark th *,
+    html.dark .signature-container *,
+    html.dark .footer-copy, html.dark .footer-copy * {
+      color: #f8fafc !important;
+      border-color: #334155 !important;
+    }
   }
 </style>
 </head>

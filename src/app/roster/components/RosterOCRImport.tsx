@@ -53,40 +53,40 @@ export default function RosterOCRImport({
         setScanMessage(data.message || "স্ক্যান করতে সমস্যা হয়েছে।");
       }
     } catch {
-      setScanMessage("নেটওয়ার্ক সমস্যা। আবার চেষ্টা করুন।");
+      setScanMessage("নেটওয়ার্ক সমস্যা। আবার চেষ্টা করুন।");
     } finally {
       setIsScanning(false);
     }
   };
 
   return (
-    <div className={`border border-dashed rounded-lg p-4 transition-all duration-300 ${disabled ? 'border-slate-200 bg-slate-50/50' : 'border-blue-300 bg-blue-50/30'}`}>
+    <div className={`border border-dashed rounded-xl p-4 transition-all duration-300 ${disabled ? 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10' : 'border-blue-300 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/20'}`}>
       <div className="flex items-center gap-2 mb-2">
-        <ScanLine className={disabled ? 'text-slate-400' : 'text-blue-600'} size={18} />
-        <h3 className={`font-semibold ${disabled ? 'text-slate-500' : 'text-blue-800'}`} style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+        <ScanLine className={disabled ? 'text-slate-400 dark:text-slate-650' : 'text-blue-600 dark:text-blue-400'} size={18} />
+        <h3 className={`font-semibold ${disabled ? 'text-slate-500 dark:text-slate-455' : 'text-blue-800 dark:text-blue-200'}`} style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
           রোস্টার ইমেজ থেকে স্বয়ংক্রিয় আমদানি (AI OCR)
         </h3>
       </div>
       {disabled && (
-        <p className="text-[11px] text-amber-600 dark:text-amber-500 font-bold mb-3 flex items-center gap-1 font-sans">
-          <span>⚠️ ইমেজ থেকে ইম্পোর্ট করতে প্রথমে উপরে ডিউটির ক্যাটাগরি ও সেল সিলেক্ট করুন</span>
+        <p className="text-[11px] text-amber-600 dark:text-amber-505 font-bold mb-3 flex items-center gap-1 font-sans">
+          <span>⚠️ ইমেজ থেকে ইম্পোর্ট করতে প্রথমে উপরে ডিউটির ক্যাটাগরি সিলেক্ট করুন</span>
         </p>
       )}
 
       {/* Upload area */}
       <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+        className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
           disabled 
-            ? "border-slate-200 bg-slate-100/40 opacity-60 cursor-not-allowed pointer-events-none" 
-            : "border-blue-200 cursor-pointer hover:bg-blue-50 hover:border-blue-300 text-blue-600"
+            ? "border-slate-200 dark:border-slate-800 bg-slate-100/40 dark:bg-slate-900/20 opacity-60 cursor-not-allowed pointer-events-none" 
+            : "border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-300 dark:hover:border-blue-700 text-blue-600 dark:text-blue-400"
         }`}
         onClick={() => !disabled && fileInputRef.current?.click()}
       >
-        <Upload className={`mx-auto mb-2 ${disabled ? 'text-slate-350' : 'text-blue-400'}`} size={24} />
-        <p className={`text-sm font-semibold ${disabled ? 'text-slate-400' : 'text-blue-600'}`} style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+        <Upload className={`mx-auto mb-2 ${disabled ? 'text-slate-350 dark:text-slate-650' : 'text-blue-400 dark:text-blue-500'}`} size={24} />
+        <p className={`text-sm font-semibold ${disabled ? 'text-slate-400 dark:text-slate-500' : 'text-blue-600 dark:text-blue-400'}`} style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
           কাগজের রোস্টারের ছবি এখানে আপলোড করুন
         </p>
-        <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP সমর্থিত</p>
+        <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">JPG, PNG, WEBP সমর্থিত</p>
       </div>
 
       <input
@@ -107,8 +107,8 @@ export default function RosterOCRImport({
 
       {/* Scanning state */}
       {isScanning && (
-        <div className="mt-3 flex items-center gap-2 text-blue-600">
-          <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full" />
+        <div className="mt-3 flex items-center gap-2 text-blue-600 dark:text-blue-400">
+          <div className="animate-spin w-4 h-4 border-2 border-blue-600 dark:border-blue-500 border-t-transparent rounded-full" />
           <span className="text-sm" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
             AI স্ক্যান করছে...
           </span>
@@ -118,16 +118,16 @@ export default function RosterOCRImport({
       {/* Extracted entries */}
       {extractedEntries.length > 0 && (
         <div className="mt-3">
-          <p className="text-sm text-green-700 mb-2" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+          <p className="text-sm text-green-700 dark:text-green-400 mb-2" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
             ✅ {scanMessage}
           </p>
           <div className="max-h-48 overflow-y-auto space-y-2">
             {extractedEntries.map((entry, idx) => (
-              <div key={idx} className="bg-white border border-green-200 rounded p-2 text-xs">
-                <p className="font-medium" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+              <div key={idx} className="bg-white dark:bg-slate-950 border border-green-200 dark:border-green-900/40 rounded-xl p-2 text-xs">
+                <p className="font-medium text-slate-800 dark:text-slate-200" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
                   {entry.employeeName} ({entry.bankId})
                 </p>
-                <p className="text-gray-500">{entry.dates.join(", ")}</p>
+                <p className="text-gray-500 dark:text-slate-400">{entry.dates.join(", ")}</p>
               </div>
             ))}
           </div>

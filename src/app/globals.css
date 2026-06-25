@@ -244,6 +244,28 @@ body {
     page-break-before: avoid !important;
     overflow: hidden !important;
   }
+
+  /* Print Reset Rule for all preview layouts to ensure pure black on white printing */
+  .print-a4-layout,
+  .print-a4-layout *,
+  .print-legal-layout,
+  .print-legal-layout *,
+  .print-report-layout,
+  .print-report-layout *,
+  #printable-leave-sheet,
+  #printable-leave-sheet * {
+    background: transparent !important;
+    background-color: transparent !important;
+    color: #000000 !important;
+    border-color: #000000 !important;
+  }
+  .print-a4-layout,
+  .print-legal-layout,
+  .print-report-layout,
+  #printable-leave-sheet {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
   
   @page {
     margin: 0 !important;
@@ -277,5 +299,84 @@ input[type="date"]::-webkit-datetime-edit-year-field {
 }
 .dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1) !important;
+}
+
+/* Screen-only Dark Mode overrides for A4/Legal mock sheets, Print Report Layouts, Leave sheet, and preview iframes */
+@media screen {
+  html.dark .print-a4-layout,
+  html.dark .print-legal-layout,
+  html.dark .print-report-layout,
+  html.dark #printable-leave-sheet {
+    background-color: #0b0f19 !important;
+    background: #0b0f19 !important;
+    color: #f8fafc !important;
+    border-color: #1e293b !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  }
+  html.dark .print-a4-layout *,
+  html.dark .print-legal-layout *,
+  html.dark .print-report-layout *,
+  html.dark #printable-leave-sheet * {
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+  }
+  
+  /* Reset background of table columns/headers/divs inside sheets to transparent/dark */
+  html.dark .print-a4-layout div,
+  html.dark .print-a4-layout p,
+  html.dark .print-a4-layout span,
+  html.dark .print-legal-layout div,
+  html.dark .print-legal-layout p,
+  html.dark .print-legal-layout span,
+  html.dark .print-report-layout div,
+  html.dark .print-report-layout p,
+  html.dark .print-report-layout span,
+  html.dark #printable-leave-sheet div,
+  html.dark #printable-leave-sheet p,
+  html.dark #printable-leave-sheet span {
+    background-color: transparent !important;
+  }
+  html.dark .print-a4-layout table,
+  html.dark .print-a4-layout tr,
+  html.dark .print-a4-layout th,
+  html.dark .print-a4-layout td,
+  html.dark .print-legal-layout table,
+  html.dark .print-legal-layout tr,
+  html.dark .print-legal-layout th,
+  html.dark .print-legal-layout td,
+  html.dark .print-report-layout table,
+  html.dark .print-report-layout tr,
+  html.dark .print-report-layout th,
+  html.dark .print-report-layout td,
+  html.dark #printable-leave-sheet table,
+  html.dark #printable-leave-sheet tr,
+  html.dark #printable-leave-sheet th,
+  html.dark #printable-leave-sheet td {
+    background-color: transparent !important;
+    border-color: #334155 !important;
+  }
+  
+  html.dark .print-a4-layout .bg-slate-50,
+  html.dark .print-a4-layout th,
+  html.dark .print-legal-layout .bg-slate-50,
+  html.dark .print-legal-layout th,
+  html.dark .print-report-layout .bg-slate-50,
+  html.dark .print-report-layout th,
+  html.dark #printable-leave-sheet .bg-slate-50,
+  html.dark #printable-leave-sheet th {
+    background-color: #1e293b !important;
+  }
+
+  html.dark .print-report-layout thead tr,
+  html.dark .print-report-layout tfoot tr {
+    background-color: #1e293b !important;
+  }
+
+  /* Preview Iframe color inversion filter on screen in dark mode */
+  html.dark iframe,
+  html.dark #preview-print-iframe {
+    filter: invert(0.9) hue-rotate(180deg) !important;
+    background-color: #030712 !important;
+  }
 }
 

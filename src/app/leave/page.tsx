@@ -1334,7 +1334,7 @@ export default function LeaveGeneratorPage() {
                 {/* Container of simulated sheet */}
                 <div 
                   id="printable-leave-sheet" 
-                  className="w-[216mm] min-h-[356mm] bg-white text-black p-[20mm] border-2 border-slate-300 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] relative flex flex-col justify-start shrink-0"
+                  className="print-legal-layout w-[216mm] min-h-[356mm] bg-white text-black p-[20mm] border-2 border-slate-300 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] relative flex flex-col justify-start shrink-0"
                   style={{ contentVisibility: 'auto' }}
                 >
                 

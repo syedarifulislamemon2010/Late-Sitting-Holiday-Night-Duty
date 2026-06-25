@@ -381,6 +381,17 @@ export async function POST(request: Request) {
 <link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
 <link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
 <link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
+  <script>
+    (function() {
+      try {
+        const theme = localStorage.getItem('theme');
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (theme === 'dark' || (!theme && systemDark)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <style>
     * {
       margin: 0;
@@ -467,6 +478,37 @@ export async function POST(request: Request) {
     }
     .font-mono {
       font-family: monospace, sans-serif;
+    }
+    @media screen {
+      html.dark body {
+        background-color: #0b0f19 !important;
+        color: #f8fafc !important;
+      }
+      html.dark th {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+        border-color: #334155 !important;
+      }
+      html.dark td, html.dark tr, html.dark table {
+        border-color: #334155 !important;
+      }
+      html.dark .cell-header {
+        background-color: #1e293b !important;
+        color: #38bdf8 !important;
+        border-color: #334155 !important;
+      }
+      html.dark .cell-block {
+        border-color: #1e293b !important;
+      }
+      html.dark .report-meta, html.dark .report-meta *, html.dark .cell-title, html.dark .report-title-box, html.dark .report-title {
+        color: #f8fafc !important;
+        border-color: #334155 !important;
+      }
+      html.dark span[style*="background-color"] {
+        background-color: #1e293b !important;
+        color: #38bdf8 !important;
+        border-color: #0284c7 !important;
+      }
     }
   </style>
 </head>

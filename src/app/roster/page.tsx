@@ -2541,6 +2541,71 @@ export default function RosterPage() {
 
 
 
+  const isSubmitDisabled = () => {
+    if (!assignmentForm.type) return true;
+    if (editingDuty) {
+      if (entryMode === 'EMPLOYEE_WISE') {
+        const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+        if (activeEmployeeIds.length === 0) return true;
+        
+        let hasDates = false;
+        const isLateSitting = assignmentForm.type === 'LATE_SITTING';
+        const isHoliday = assignmentForm.type === 'HOLIDAY';
+        for (const empId of activeEmployeeIds) {
+          const empDates = opt1Assignments[empId] || [];
+          if (empDates.length > 0) {
+            hasDates = true;
+            for (const date of empDates) {
+              const isWorking = checkIsWorkingDay(date, holidays);
+              if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
+                return true;
+              }
+            }
+          }
+        }
+        return !hasDates;
+      } else {
+        if (!assignmentForm.date) return true;
+        if (assignmentForm.selectedEmployeeIds.length === 0) return true;
+        
+        // Also validate date eligibility for the type
+        const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
+        const isLateSitting = assignmentForm.type === 'LATE_SITTING';
+        const isHoliday = assignmentForm.type === 'HOLIDAY';
+        if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Normal mode check
+    if (entryMode === 'EMPLOYEE_WISE') {
+      const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+      if (activeEmployeeIds.length === 0) return true;
+      let hasDates = false;
+      for (const empId of activeEmployeeIds) {
+        if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
+          hasDates = true;
+          break;
+        }
+      }
+      return !hasDates;
+    } else {
+      if (!assignmentForm.date) return true;
+      const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
+      const isLateSitting = assignmentForm.type === 'LATE_SITTING';
+      const isHoliday = assignmentForm.type === 'HOLIDAY';
+      if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
+        return true;
+      }
+      if (assignmentForm.selectedEmployeeIds.length === 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const renderOfficeOrdersList = (ordersList: OfficeOrder[], isAssignmentPrimary: boolean) => {
     return (
       <div className="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-xl">
@@ -2755,14 +2820,14 @@ export default function RosterPage() {
                   <td className={`px-5 py-3.5 no-print flex items-center gap-1.5 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
                     <button
                       onClick={() => handleStartEdit(group.duties)}
-                      className="p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-400 hover:text-indigo-500 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-955/20 text-slate-400 hover:text-indigo-500 transition-colors"
                       title="সম্পাদনা (Edit)"
                     >
                       <Edit2 size={13} />
                     </button>
                     <button
                       onClick={() => deleteGroupedDuties(group.duties)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-400 hover:text-red-500 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-955/20 text-slate-400 hover:text-red-500 transition-colors"
                       title="মুছে ফেলুন"
                     >
                       <Trash2 size={13} />
@@ -2775,73 +2840,6 @@ export default function RosterPage() {
         </table>
       </div>
     );
-  };
-
-
-
-  const isSubmitDisabled = () => {
-    if (!assignmentForm.type) return true;
-    if (editingDuty) {
-      if (entryMode === 'EMPLOYEE_WISE') {
-        const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
-        if (activeEmployeeIds.length === 0) return true;
-        
-        let hasDates = false;
-        const isLateSitting = assignmentForm.type === 'LATE_SITTING';
-        const isHoliday = assignmentForm.type === 'HOLIDAY';
-        for (const empId of activeEmployeeIds) {
-          const empDates = opt1Assignments[empId] || [];
-          if (empDates.length > 0) {
-            hasDates = true;
-            for (const date of empDates) {
-              const isWorking = checkIsWorkingDay(date, holidays);
-              if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
-                return true;
-              }
-            }
-          }
-        }
-        return !hasDates;
-      } else {
-        if (!assignmentForm.date) return true;
-        if (assignmentForm.selectedEmployeeIds.length === 0) return true;
-        
-        // Also validate date eligibility for the type
-        const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
-        const isLateSitting = assignmentForm.type === 'LATE_SITTING';
-        const isHoliday = assignmentForm.type === 'HOLIDAY';
-        if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    // Normal mode check
-    if (entryMode === 'EMPLOYEE_WISE') {
-      const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
-      if (activeEmployeeIds.length === 0) return true;
-      let hasDates = false;
-      for (const empId of activeEmployeeIds) {
-        if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
-          hasDates = true;
-          break;
-        }
-      }
-      return !hasDates;
-    } else {
-      if (!assignmentForm.date) return true;
-      const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
-      const isLateSitting = assignmentForm.type === 'LATE_SITTING';
-      const isHoliday = assignmentForm.type === 'HOLIDAY';
-      if ((isLateSitting && !isWorking) || (isHoliday && isWorking)) {
-        return true;
-      }
-      if (assignmentForm.selectedEmployeeIds.length === 0) {
-        return true;
-      }
-    }
-    return false;
   };
 
   const pendingDuties = useMemo(() => {
@@ -3376,7 +3374,7 @@ export default function RosterPage() {
                     cellId={parseInt(opt1CellId) || (cells && cells[0] ? cells[0].id : 7)}
                     dutyType={(assignmentForm.type || 'LATE_SITTING') as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'}
                     onImportConfirmed={handleBulkDutyImport}
-                    disabled={!assignmentForm.type || opt1CellId === 'all'}
+                    disabled={!assignmentForm.type}
                   />
                 </div>
               )}
@@ -3396,14 +3394,14 @@ export default function RosterPage() {
                   setLayoutPriority(LayoutPriority.ROSTER);
                 }
               }}
-              className={`bg-white rounded-2xl shadow-sm border border-slate-100 p-6 transition-all duration-500 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40 select-none ${
+              className={`bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 transition-all duration-500 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40 select-none ${
                 !isAssignmentPrimary 
                   ? 'w-full xl:w-[70%] space-y-6 opacity-100' 
                   : 'w-full xl:w-[30%] space-y-3 xl:hover:border-blue-300 opacity-50 blur-[0.5px] scale-[0.99]'
               }`}
             >
               {/* Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex flex-col">
                   <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">ডিউটি রোস্টার তালিকা</h3>
                   <p className="text-xs text-slate-400 mt-0.5">মাসিক ভিউ ফিল্টার এবং বরাদ্দ তালিকা।</p>
@@ -3415,7 +3413,7 @@ export default function RosterPage() {
                       e.stopPropagation();
                       setLayoutPriority(LayoutPriority.ROSTER);
                     }}
-                    className="hidden xl:flex items-center gap-1.5 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                    className="hidden xl:flex items-center gap-1.5 px-3 py-1 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-all cursor-pointer"
                   >
                     <ChevronRight size={14} className="animate-pulse" />
                     প্যানেল বড় করুন

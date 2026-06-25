@@ -252,8 +252,17 @@ export async function POST(request: Request) {
 <meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
-<link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
-<link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
+<script>
+  (function() {
+    try {
+      const theme = localStorage.getItem('theme');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (theme === 'dark' || (!theme && systemDark)) {
+        document.documentElement.classList.add('dark');
+      }
+    } catch (e) {}
+  })();
+</script>
 <style>
   * {
     margin: 0;

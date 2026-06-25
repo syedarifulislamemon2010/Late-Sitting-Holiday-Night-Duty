@@ -90,6 +90,17 @@ export async function POST(request: Request) {
 <meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
+<script>
+  (function() {
+    try {
+      const theme = localStorage.getItem('theme');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (theme === 'dark' || (!theme && systemDark)) {
+        document.documentElement.classList.add('dark');
+      }
+    } catch (e) {}
+  })();
+</script>
 <style>
   * {
     margin: 0;
@@ -209,6 +220,32 @@ export async function POST(request: Request) {
     border-bottom: 1px solid #000;
     padding-bottom: 2px;
     line-height: 1.0;
+  }
+  @media screen {
+    html.dark body {
+      background-color: #0b0f19 !important;
+      color: #f8fafc !important;
+    }
+    html.dark th {
+      background-color: #1e293b !important;
+      color: #f8fafc !important;
+      border-color: #334155 !important;
+    }
+    html.dark td, html.dark tr, html.dark table {
+      border-color: #334155 !important;
+    }
+    html.dark .header-container *, 
+    html.dark .header-title,
+    html.dark .header-date,
+    html.dark .subject, 
+    html.dark .body-text, 
+    html.dark h1, html.dark h2, html.dark h3, html.dark h4, 
+    html.dark p, html.dark span, html.dark strong, html.dark b,
+    html.dark td *, html.dark th *,
+    html.dark .signature-block *, html.dark .routing-list *, html.dark .routing-text {
+      color: #f8fafc !important;
+      border-color: #334155 !important;
+    }
   }
 </style>
 </head>
