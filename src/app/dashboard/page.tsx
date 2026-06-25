@@ -595,14 +595,14 @@ export default function DashboardPage() {
           {chartLoading ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-3">
               <Loader2 className="animate-spin text-indigo-505" size={28} />
-              <p className="text-xs text-slate-500 font-medium">অ্যানালিটিক্স লোড হচ্ছে...</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">অ্যানালিটিক্স লোড হচ্ছে...</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               
               {/* Cell Split (Bar Chart) */}
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                   <Building2 size={13} className="text-indigo-500 shrink-0" />
                   <span>সেল ভিত্তিক ডিউটি বিভাজন (Cell Split)</span>
                 </h4>
@@ -634,7 +634,7 @@ export default function DashboardPage() {
 
               {/* Monthly Trend (Line Graph SVG) */}
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                   <TrendingUp size={13} className="text-emerald-500 shrink-0" />
                   <span>মাসিক ট্রেন্ড গ্রাফ (Monthly Trend)</span>
                 </h4>

@@ -491,11 +491,11 @@ export default function LedgerTab({
                       <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm leading-tight">
                         {emp.name}
                       </h4>
-                      <p className="text-[10px] text-slate-450 dark:text-slate-500 font-semibold mt-0.5">
+                      <p className="text-[10px] text-slate-450 dark:text-slate-400 font-semibold mt-0.5">
                         {emp.designation}
                       </p>
                     </div>
-                    <span className="shrink-0 px-2 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 dark:bg-slate-900 text-slate-500">
+                    <span className="shrink-0 px-2 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400">
                       ID: {emp.bankId || emp.id}
                     </span>
                   </div>
@@ -530,7 +530,7 @@ export default function LedgerTab({
 
                   {/* Duties Detail List */}
                   <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                    <p className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider font-sans">ডিউটিসমূহের বিবরণী:</p>
+                    <p className="text-[10px] font-bold text-slate-450 dark:text-slate-400 uppercase tracking-wider font-sans">ডিউটিসমূহের বিবরণী:</p>
                     {empDuties.length > 0 ? (
                       <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                         {empDuties.map((duty, idx) => {
@@ -568,7 +568,7 @@ export default function LedgerTab({
                         })}
                       </div>
                     ) : (
-                      <p className="text-[10px] text-slate-405 dark:text-slate-500 italic font-sans py-1">এই মাসে কোনো ডিউটি করেননি।</p>
+                      <p className="text-[10px] text-slate-405 dark:text-slate-400 italic font-sans py-1">এই মাসে কোনো ডিউটি করেননি।</p>
                     )}
                   </div>
 
@@ -681,7 +681,7 @@ export default function LedgerTab({
                         <div className="font-bold text-slate-800 dark:text-slate-200">
                           {toBanglaDigits(totalDays)} দিন (৳{toBanglaDigits(billTotal)}/- টাকা)
                         </div>
-                        <div className="mt-1 text-[10px] text-slate-450 dark:text-slate-500 font-sans space-y-0.5 text-center flex flex-col items-center">
+                        <div className="mt-1 text-[10px] text-slate-450 dark:text-slate-400 font-sans space-y-0.5 text-center flex flex-col items-center">
                           <div>• {apyaonName} (৳{toBanglaDigits(apyaonRate)}): ৳{toBanglaDigits(totalDays * apyaonRate)}/-</div>
                           <div>• {transportName} (৳{toBanglaDigits(transportRate)}): ৳{toBanglaDigits(totalDays * transportRate)}/-</div>
                         </div>
@@ -747,7 +747,7 @@ export default function LedgerTab({
             </table>
           </div>
         ) : (
-          <div className="p-16 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 italic">
+          <div className="p-16 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-400 italic">
             কোনো অপেক্ষমান বিল অফিস আদেশ পাওয়া যায়নি।
           </div>
         )}

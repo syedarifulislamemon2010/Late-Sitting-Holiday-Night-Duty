@@ -263,7 +263,7 @@ export default function MyDutySummaryCard() {
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl flex flex-col justify-between space-y-3 shadow-xs">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">চলতি মাসের ডিউটি</p>
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">চলতি মাসের ডিউটি</p>
               <p className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
                 {toBanglaDigits(currentMonthCount)} টি
               </p>
@@ -290,7 +290,7 @@ export default function MyDutySummaryCard() {
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl flex flex-col justify-between space-y-3 shadow-xs">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">অমীমাংসিত (অ-বিল্ড) ডিউটি</p>
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">অমীমাংসিত (অ-বিল্ড) ডিউটি</p>
               <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
                 {toBanglaDigits(pendingCount)} টি
               </p>
@@ -315,7 +315,7 @@ export default function MyDutySummaryCard() {
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl flex flex-col justify-between space-y-3 shadow-xs">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">অবশিষ্ট নৈমিত্তিক ছুটি</p>
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">অবশিষ্ট নৈমিত্তিক ছুটি</p>
               <p className="text-xl font-black text-rose-600 dark:text-rose-455 mt-1">
                 {toBanglaDigits(remainingLeave)} দিন
               </p>
@@ -325,7 +325,7 @@ export default function MyDutySummaryCard() {
             </span>
           </div>
 
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 text-[10px] text-slate-400 dark:text-slate-500 font-bold leading-normal">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-bold leading-normal">
             * স্টেশন ত্যাগ ও ঘটনোত্তর আবেদন এই ছুটির হিসাবের অন্তর্ভুক্ত।
           </div>
         </div>
@@ -484,7 +484,7 @@ export default function MyDutySummaryCard() {
               </span>
               <div>
                 <p className="font-bold text-slate-800 dark:text-slate-200">লেট সিটিং বিল (Snacks + Travel)</p>
-                <p className="text-[10px] text-slate-405 dark:text-slate-500 mt-0.5">নাস্তা ৳১০০ + যাতায়াত ৳২০০ (৳৩০০/দিন)</p>
+                <p className="text-[10px] text-slate-405 dark:text-slate-400 mt-0.5">নাস্তা ৳১০০ + যাতায়াত ৳২০০ (৳৩০০/দিন)</p>
               </div>
             </div>
             <div className="text-right flex items-center gap-8">
@@ -505,7 +505,7 @@ export default function MyDutySummaryCard() {
               </span>
               <div>
                 <p className="font-bold text-slate-800 dark:text-slate-200">হলিডে ডিউটি বিল (Lunch + Travel)</p>
-                <p className="text-[10px] text-slate-405 dark:text-slate-500 mt-0.5">দুপুরের খাবার ৳২৫০ + যাতায়াত ৳২৫০ (৳৫০০/দিন)</p>
+                <p className="text-[10px] text-slate-405 dark:text-slate-400 mt-0.5">দুপুরের খাবার ৳২৫০ + যাতায়াত ৳২৫০ (৳৫০০/দিন)</p>
               </div>
             </div>
             <div className="text-right flex items-center gap-8">
@@ -526,7 +526,7 @@ export default function MyDutySummaryCard() {
               </span>
               <div>
                 <p className="font-bold text-slate-800 dark:text-slate-200">নাইট শিফট বিল (Dinner + Travel)</p>
-                <p className="text-[10px] text-slate-405 dark:text-slate-500 mt-0.5">রাতের খাবার ৳৬০০ + যাতায়াত ৳৪০০ (৳১০০০/দিন)</p>
+                <p className="text-[10px] text-slate-405 dark:text-slate-400 mt-0.5">রাতের খাবার ৳৬০০ + যাতায়াত ৳৪০০ (৳১০০০/দিন)</p>
               </div>
             </div>
             <div className="text-right flex items-center gap-8">

@@ -2905,7 +2905,7 @@ export default function RosterPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="app-page-title text-slate-800 dark:text-slate-100 font-sans tracking-wide">ডিউটি রোস্টার ও অফিস আদেশ</h1>
-              <p className="text-sm text-slate-500 mt-1">কর্মকর্তাদের রোস্টার তৈরি করুন এবং সরকারি প্রটোকলে অফিস আদেশ (জিও) জেনারেট করুন।</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">কর্মকর্তাদের রোস্টার তৈরি করুন এবং সরকারি প্রটোকলে অফিস আদেশ (জিও) জেনারেট করুন।</p>
             </div>
             
             <button
@@ -3090,7 +3090,7 @@ export default function RosterPage() {
                     </div>
 
                     <div className="space-y-2 pt-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         ৪. কর্মকর্তা ও তারিখসমূহ নির্বাচন করুন
                       </label>
                       
@@ -3215,7 +3215,7 @@ export default function RosterPage() {
                     {/* Officer Selector Multi-select checkboxes */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           ৪. কর্মকর্তা নির্বাচন করুন ({assignmentForm.selectedEmployeeIds.length} জন সিলেক্টেড)
                         </label>
                       </div>
@@ -3789,7 +3789,7 @@ export default function RosterPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">১. ডিউটির ক্যাটাগরি (Category)</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">১. ডিউটির ক্যাটাগরি (Category)</label>
                   <select
                     value={printCategory}
                     onChange={(e) => changePrintCategory(e.target.value as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT')}
@@ -3802,7 +3802,7 @@ export default function RosterPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">২. বিল যার অনুকূলে হবে (Bill Favoring To)</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">২. বিল যার অনুকূলে হবে (Bill Favoring To)</label>
                   <select
                     value={payeeEmployeeId}
                     onChange={(e) => {
@@ -3821,7 +3821,7 @@ export default function RosterPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">৩. আদেশ অনুমোদনকারী জিএম/ডিজিএম</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৩. আদেশ অনুমোদনকারী জিএম/ডিজিএম</label>
                   <select
                     value={selectedExecutiveId}
                     onChange={(e) => {
@@ -3845,7 +3845,7 @@ export default function RosterPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500">৪. স্মারক/সূত্র নম্বর (Order Ref)</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৪. স্মারক/সূত্র নম্বর (Order Ref)</label>
                   <input
                     type="text"
                     value={orderRef}
@@ -3855,7 +3855,7 @@ export default function RosterPage() {
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-500">৫. আদেশের তারিখ (Order Date)</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৫. আদেশের তারিখ (Order Date)</label>
                   <input
                     type="date"
                     value={orderDate}
@@ -3865,7 +3865,7 @@ export default function RosterPage() {
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-500">৬. আদেশের মূল বক্তব্য (Order Text)</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৬. আদেশের মূল বক্তব্য (Order Text)</label>
                   <textarea
                     rows={4}
                     value={orderText}
@@ -3875,7 +3875,7 @@ export default function RosterPage() {
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-500">৭. হেডার প্রিন্ট অপশন (Header Option)</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৭. হেডার প্রিন্ট অপশন (Header Option)</label>
                   <select
                     value={headerMode}
                     onChange={(e) => setHeaderMode(e.target.value as 'with_header' | 'without_header')}

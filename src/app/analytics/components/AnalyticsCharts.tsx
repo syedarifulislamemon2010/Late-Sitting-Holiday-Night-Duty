@@ -178,7 +178,7 @@ export default function AnalyticsCharts({
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">সর্বোচ্চ ডিউটি সম্পাদনকারী (Top Performers - Count Only)</h3>
           <div className="h-72 w-full">
             {topPerformers.length === 0 ? (
-              <div className="h-full w-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+              <div className="h-full w-full flex items-center justify-center text-slate-400 dark:text-slate-400 text-xs">
                 কোনো তথ্য পাওয়া যায়নি।
               </div>
             ) : (
@@ -273,7 +273,7 @@ export default function AnalyticsCharts({
         </h3>
         <div className="h-72 w-full">
           {formattedLeaveData.every(item => Object.keys(item).length <= 1) ? (
-            <div className="h-full w-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+            <div className="h-full w-full flex items-center justify-center text-slate-400 dark:text-slate-400 text-xs">
               কোনো তথ্য পাওয়া যায়নি।
             </div>
           ) : (
@@ -314,7 +314,7 @@ export default function AnalyticsCharts({
         <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">তারিখ অনুযায়ী বিল ছাড়ার পরিমাণ (Daily Bill Releases)</h3>
         <div className="h-72 w-full">
           {billReleases.length === 0 ? (
-            <div className="h-full w-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+            <div className="h-full w-full flex items-center justify-center text-slate-400 dark:text-slate-400 text-xs">
               কোনো তথ্য পাওয়া যায়নি।
             </div>
           ) : (
@@ -349,7 +349,7 @@ export default function AnalyticsCharts({
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">কর্মকর্তা অনুযায়ী বিল ছাড়ার সংখ্যা (Released Bills per Employee)</h3>
           <div className="overflow-y-auto max-h-72 pr-2 no-scrollbar space-y-2.5">
             {employeeBillCounts.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+              <div className="h-48 flex items-center justify-center text-slate-400 dark:text-slate-400 text-xs">
                 কোনো তথ্য পাওয়া যায়নি।
               </div>
             ) : (

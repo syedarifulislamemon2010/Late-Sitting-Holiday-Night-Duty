@@ -450,14 +450,14 @@ export default function ReportsTab({
               <div className="p-5 bg-gradient-to-br from-indigo-50 to-indigo-100/30 dark:from-indigo-950/20 dark:to-indigo-900/10 border border-indigo-100/50 dark:border-indigo-950/50 rounded-2xl shadow-sm">
                 <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 font-sans">মোট জেনারেটকৃত বিল</p>
                 <h4 className="text-2xl font-extrabold text-indigo-950 dark:text-indigo-350 mt-1.5 font-sans">{toBanglaDigits(reportData.totalBillsCount)} টি</h4>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-sans">আজকের জেনারেটকৃত মোট বিলের সংখ্যা</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1 font-sans">আজকের জেনারেটকৃত মোট বিলের সংখ্যা</p>
               </div>
 
               {/* Card 2: Total Worked Days */}
               <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100/30 dark:from-purple-950/20 dark:to-purple-900/10 border border-purple-100/50 dark:border-purple-950/50 rounded-2xl shadow-sm">
                 <p className="text-xs font-bold text-purple-600 dark:text-purple-400 font-sans">মোট ডিউটি দিন</p>
                 <h4 className="text-2xl font-extrabold text-purple-950 dark:text-indigo-350 mt-1.5 font-sans">{toBanglaDigits(reportData.totalDaysSum)} দিন</h4>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-sans">কর্মকর্তাদের মোট পালিত দায়িত্বের পরিমাণ</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1 font-sans">কর্মকর্তাদের মোট পালিত দায়িত্বের পরিমাণ</p>
               </div>
 
               {/* Card 3: Allowances Breakdown */}
@@ -492,7 +492,7 @@ export default function ReportsTab({
                 <div>
                   <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-sans">সর্বমোট প্রদেয় বিল</p>
                   <h4 className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1.5 font-sans">{toBanglaDigits(reportData.grandTotalSum)}/- BDT</h4>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium font-sans">{getBanglaNumberWords(reportData.grandTotalSum)}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1 font-medium font-sans">{getBanglaNumberWords(reportData.grandTotalSum)}</p>
                 </div>
                 <div className="absolute right-[-10px] bottom-[-10px] text-emerald-500/10 dark:text-emerald-500/5 pointer-events-none">
                   <Banknote size={80} />
@@ -505,7 +505,7 @@ export default function ReportsTab({
               <div className="flex items-center gap-2.5">
                 <span className="w-3 h-3 rounded-full bg-amber-500" />
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider font-sans">লেট-সিটিং বিল</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider font-sans">লেট-সিটিং বিল</p>
                   <p className="text-xs font-extrabold text-slate-700 dark:text-slate-350 font-sans">{toBanglaDigits(reportData.totalLateAmount)}/- টাকা</p>
                 </div>
               </div>
@@ -513,7 +513,7 @@ export default function ReportsTab({
               <div className="flex items-center gap-2.5">
                 <span className="w-3 h-3 rounded-full bg-teal-500" />
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider font-sans">ছুটির দিনের বিল</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider font-sans">ছুটির দিনের বিল</p>
                   <p className="text-xs font-extrabold text-slate-700 dark:text-slate-350 font-sans">{toBanglaDigits(reportData.totalHolidayAmount)}/- টাকা</p>
                 </div>
               </div>
@@ -521,7 +521,7 @@ export default function ReportsTab({
               <div className="flex items-center gap-2.5">
                 <span className="w-3 h-3 rounded-full bg-indigo-500" />
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider font-sans">রাত্রিকালীন শিফট বিল</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider font-sans">রাত্রিকালীন শিফট বিল</p>
                   <p className="text-xs font-extrabold text-slate-700 dark:text-slate-350 font-sans">{toBanglaDigits(reportData.totalNightAmount)}/- টাকা</p>
                 </div>
               </div>

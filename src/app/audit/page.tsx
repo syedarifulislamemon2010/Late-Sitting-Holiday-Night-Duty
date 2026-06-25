@@ -270,13 +270,13 @@ export default function AuditPage() {
             <div className="flex bg-slate-100 dark:bg-slate-850 p-0.5 rounded-xl border border-slate-200/50 dark:border-slate-700/60 font-sans">
               <button 
                 onClick={() => setViewMode('timeline')}
-                className={`px-3 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${viewMode === 'timeline' ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-400 dark:text-slate-500'}`}
+                className={`px-3 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${viewMode === 'timeline' ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-400 dark:text-slate-400'}`}
               >
                 টাইমলাইন ভিউ
               </button>
               <button 
                 onClick={() => setViewMode('table')}
-                className={`px-3 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${viewMode === 'table' ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-400 dark:text-slate-500'}`}
+                className={`px-3 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${viewMode === 'table' ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-400 dark:text-slate-400'}`}
               >
                 তালিকা ভিউ
               </button>
@@ -286,12 +286,12 @@ export default function AuditPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-3">
               <div className="w-8 h-8 border-3 border-indigo-650 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-slate-500 font-medium">অডিট লগ লোড হচ্ছে...</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">অডিট লগ লোড হচ্ছে...</p>
             </div>
           ) : filteredLogs.length === 0 ? (
             <div className="text-center py-20 bg-slate-50/30 border border-dashed border-slate-200 rounded-xl space-y-3">
               <Database className="mx-auto text-slate-300" size={40} />
-              <p className="text-sm font-bold text-slate-500">কোনো অডিট রেকর্ড পাওয়া যায়নি</p>
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">কোনো অডিট রেকর্ড পাওয়া যায়নি</p>
             </div>
           ) : viewMode === 'table' ? (
             <div className="overflow-x-auto rounded-xl border border-slate-100">
@@ -387,7 +387,7 @@ export default function AuditPage() {
                             <span className="text-[10px] text-slate-400 font-bold">({log.cell})</span>
                           )}
                         </div>
-                        <span className="text-[10px] text-slate-450 dark:text-slate-500 font-bold font-sans flex items-center gap-1">
+                        <span className="text-[10px] text-slate-450 dark:text-slate-400 font-bold font-sans flex items-center gap-1">
                           <Clock size={11} />
                           {toBanglaDigits(localTimeStr)}
                         </span>
@@ -417,7 +417,7 @@ export default function AuditPage() {
                         })()}
                       </p>
                       
-                      <div className="flex items-center justify-between text-[10px] text-slate-450 dark:text-slate-500 pt-1 border-t border-dashed border-slate-200/50 dark:border-slate-800/60 font-sans font-semibold">
+                      <div className="flex items-center justify-between text-[10px] text-slate-450 dark:text-slate-400 pt-1 border-t border-dashed border-slate-200/50 dark:border-slate-800/60 font-sans font-semibold">
                         <span>রেকর্ড আইডি: {log.recordId || 'N/A'}</span>
                         <span>IP: {log.ipAddress}</span>
                       </div>

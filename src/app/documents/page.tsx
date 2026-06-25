@@ -1383,7 +1383,7 @@ export default function DocumentsPage() {
                           কম্পিউটার থেকে ব্রাউজ করুন
                         </p>
                       </div>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                      <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
                         শুধুমাত্র পিডিএফ (.pdf) ফাইল, সর্বোচ্চ ১০ এমবি
                       </p>
                     </div>
@@ -1558,7 +1558,7 @@ export default function DocumentsPage() {
                               {doc.name}
                             </h4>
                             
-                            <div className="flex flex-col gap-1 text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                            <div className="flex flex-col gap-1 text-[10px] text-slate-400 dark:text-slate-400 font-medium">
                               <span className="flex items-center gap-1">
                                 <Calendar size={11} />
                                 {formatDateBengali(doc.uploadedAt)}
@@ -1712,7 +1712,7 @@ export default function DocumentsPage() {
                           কম্পিউটার থেকে ব্রাউজ করুন
                         </p>
                       </div>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                      <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
                         PDF, Word, Excel, JPG, PNG, GIF, ZIP (সর্বোচ্চ ১০ এমবি)
                       </p>
                     </div>
@@ -1921,7 +1921,7 @@ export default function DocumentsPage() {
                               {doc.name}
                             </h4>
                             
-                            <div className="flex flex-col gap-1 text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                            <div className="flex flex-col gap-1 text-[10px] text-slate-400 dark:text-slate-400 font-medium">
                               <span className="flex items-center gap-1">
                                 <Calendar size={11} />
                                 {formatDateBengali(doc.uploadedAt)}
@@ -2165,7 +2165,7 @@ export default function DocumentsPage() {
                     {pendingBillingOfficeOrders.length > 0 ? (
                       renderOrdersGrid(pendingBillingOfficeOrders)
                     ) : (
-                      <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-450 dark:text-slate-500 italic text-xs">
+                      <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-450 dark:text-slate-400 italic text-xs">
                         কোনো বিল অপেক্ষমাণ অফিস আদেশ নেই।
                       </div>
                     )}
@@ -2180,7 +2180,7 @@ export default function DocumentsPage() {
                     {billedOfficeOrders.length > 0 ? (
                       renderOrdersGrid(billedOfficeOrders)
                     ) : (
-                      <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-450 dark:text-slate-500 italic text-xs">
+                      <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-450 dark:text-slate-400 italic text-xs">
                         কোনো বিল প্রস্তুতকৃত অফিস আদেশ নেই।
                       </div>
                     )}
