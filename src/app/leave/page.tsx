@@ -33,6 +33,170 @@ const cleanDesignationForLeave = (desig: string): string => {
   return desig.replace(/\s*\([^)]*\)/g, '').trim();
 };
 
+interface CalendarDatePickerProps {
+  value: string;
+  onChange: (date: string) => void;
+  isNonWorkingDay: (dateStr: string) => boolean;
+  toBanglaDigits: (num: number | string) => string;
+  minDate?: string;
+  maxDate?: string;
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+function CalendarDatePicker({
+  value,
+  onChange,
+  isNonWorkingDay,
+  toBanglaDigits,
+  minDate,
+  maxDate,
+  placeholder = 'তারিখ নির্বাচন করুন',
+  disabled = false
+}: CalendarDatePickerProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentDate, setCurrentDate] = useState(() => {
+    const val = value ? new Date(value) : new Date();
+    return isNaN(val.getTime()) ? new Date() : val;
+  });
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.calendar-picker-container')) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('click', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [isOpen]);
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayIndex = new Date(year, month, 1).getDay();
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
+
+  const handleSelectDay = (day: number) => {
+    const selectedDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    onChange(selectedDateStr);
+    setIsOpen(false);
+  };
+
+  const monthNamesBN = [
+    'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+    'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+  ];
+
+  const getDisplayDate = () => {
+    if (!value) return placeholder;
+    const parts = value.split('-');
+    if (parts.length !== 3) return value;
+    const [y, m, d] = parts;
+    return `${toBanglaDigits(parseInt(d, 10).toString())}ই ${monthNamesBN[parseInt(m, 10) - 1]} ${toBanglaDigits(y)}`;
+  };
+
+  const days = [];
+  for (let i = 0; i < firstDayIndex; i++) {
+    days.push(<div key={`empty-${i}`} className="w-8 h-8" />);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const isWeekendOrHoliday = isNonWorkingDay(dateStr);
+    
+    let isOutOfRange = false;
+    if (minDate && dateStr < minDate) isOutOfRange = true;
+    if (maxDate && dateStr > maxDate) isOutOfRange = true;
+
+    const isDisabled = isWeekendOrHoliday || isOutOfRange;
+    const isSelected = value === dateStr;
+
+    days.push(
+      <button
+        key={`day-${d}`}
+        type="button"
+        disabled={isDisabled}
+        onClick={() => handleSelectDay(d)}
+        className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-lg transition-all ${
+          isSelected 
+            ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30' 
+            : isDisabled 
+              ? 'text-rose-500/40 dark:text-rose-900/40 bg-rose-50/10 dark:bg-rose-950/5 cursor-not-allowed font-medium' 
+              : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer'
+        }`}
+        title={isWeekendOrHoliday ? 'ছুটির দিন (ডিজেবল)' : undefined}
+      >
+        {toBanglaDigits(d)}
+      </button>
+    );
+  }
+
+  return (
+    <div className="relative calendar-picker-container font-sans w-full">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-semibold text-left cursor-pointer transition-all disabled:bg-slate-100 disabled:dark:bg-slate-950 disabled:cursor-not-allowed flex items-center justify-between shadow-sm"
+      >
+        <span>{getDisplayDate()}</span>
+        <span className="text-xs text-slate-450 dark:text-slate-400">📅</span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 mt-1.5 w-68 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-3 animate-in fade-in slide-in-from-top-1 duration-150 select-none">
+          <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-900 pb-2">
+            <button
+              type="button"
+              onClick={prevMonth}
+              className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer text-xs font-extrabold"
+            >
+              ◀
+            </button>
+            <span className="text-xs font-bold text-slate-805 dark:text-slate-200">
+              {monthNamesBN[month]} {toBanglaDigits(year)}
+            </span>
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer text-xs font-extrabold"
+            >
+              ▶
+            </button>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 text-center mb-1 text-[10px] font-bold text-slate-400 dark:text-slate-500">
+            <span>র</span>
+            <span>সো</span>
+            <span>ম</span>
+            <span>বু</span>
+            <span>বৃ</span>
+            <span className="text-rose-500/70 font-bold">শু</span>
+            <span className="text-rose-500/70 font-bold">শ</span>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {days}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Employee {
   id: number;
   name: string;
@@ -518,6 +682,31 @@ export default function LeaveGeneratorPage() {
     const parts = dateStr.split('-');
     if (parts.length !== 3) return dateStr;
     return `${toBanglaDigits(parts[2])}/${toBanglaDigits(parts[1])}/${toBanglaDigits(parts[0])}`;
+  };
+
+  // Format YYYY-MM-DD date to full Bengali date string (e.g. ২৫ই জুন ২০২৬)
+  const toBanglaFullDateStr = (dateStr: string): string => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const [y, m, d] = parts;
+    const monthNamesBN = [
+      'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+      'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+    ];
+    const dayVal = parseInt(d, 10);
+    const bnDay = toBanglaDigits(dayVal.toString());
+    const bnYear = toBanglaDigits(y);
+    const bnMonth = monthNamesBN[parseInt(m, 10) - 1] || m;
+    
+    let suffix = 'ই';
+    if (dayVal === 1) suffix = 'লা';
+    else if (dayVal === 2) suffix = 'রা';
+    else if (dayVal === 3) suffix = 'রা';
+    else if (dayVal === 4) suffix = 'ঠা';
+    else if (dayVal === 18 || dayVal === 28 || dayVal === 29 || dayVal === 31) suffix = 'শে';
+    
+    return `${bnDay}${suffix} ${bnMonth} ${bnYear}`;
   };
 
   // Convert numbers to Bengali digits
@@ -1066,32 +1255,30 @@ export default function LeaveGeneratorPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {/* Start Date */}
                     <div className="space-y-1">
-                      <label htmlFor="startDate" className="font-bold text-slate-700 dark:text-slate-300">শুরুর তারিখ:</label>
-                      <input 
-                        id="startDate"
-                        type="date" 
+                      <label className="font-bold text-slate-700 dark:text-slate-300">শুরুর তারিখ:</label>
+                      <CalendarDatePicker 
                         value={startDate}
-                        min={dateLimits.min}
-                        max={dateLimits.max}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-semibold"
-                        required
+                        onChange={setStartDate}
+                        isNonWorkingDay={isNonWorkingDay}
+                        toBanglaDigits={toBanglaDigits}
+                        minDate={dateLimits.min}
+                        maxDate={dateLimits.max}
+                        placeholder="শুরুর তারিখ নির্বাচন..."
                       />
                     </div>
 
                     {/* End Date */}
                     <div className="space-y-1">
-                      <label htmlFor="endDate" className="font-bold text-slate-700 dark:text-slate-300">শেষের তারিখ:</label>
-                      <input 
-                        id="endDate"
-                        type="date" 
+                      <label className="font-bold text-slate-700 dark:text-slate-300">শেষের তারিখ:</label>
+                      <CalendarDatePicker 
                         value={endDate}
-                        min={startDate || dateLimits.min}
-                        max={dateLimits.max}
+                        onChange={setEndDate}
+                        isNonWorkingDay={isNonWorkingDay}
+                        toBanglaDigits={toBanglaDigits}
+                        minDate={startDate || dateLimits.min}
+                        maxDate={dateLimits.max}
                         disabled={!startDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-semibold disabled:bg-slate-100 disabled:dark:bg-slate-950 disabled:cursor-not-allowed"
-                        required
+                        placeholder="শেষের তারিখ নির্বাচন..."
                       />
                     </div>
                   </div>
@@ -1416,7 +1603,7 @@ export default function LeaveGeneratorPage() {
                   {/* Left block (Date and To address) */}
                   <div className="space-y-4 pt-1 text-xs">
                     <p className="font-semibold text-black">
-                      তারিখ: {toDisplayDateStr(applicationDate)} ইং
+                      তারিখ: {toBanglaFullDateStr(applicationDate)} ইং
                     </p>
                     <div className="space-y-0.5 font-bold text-black text-xs font-sans">
                       <p>উপ-মহাব্যবস্থাপক</p>
