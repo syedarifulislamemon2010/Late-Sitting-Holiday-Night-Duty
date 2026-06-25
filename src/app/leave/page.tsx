@@ -130,12 +130,12 @@ function CalendarDatePicker({
         type="button"
         disabled={isDisabled}
         onClick={() => handleSelectDay(d)}
-        className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-lg transition-all ${
+        className={`w-8 h-8 flex items-center justify-center text-xs rounded-xl transition-all ${
           isSelected 
-            ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30' 
+            ? 'bg-indigo-650 text-white font-bold shadow-sm shadow-indigo-500/30' 
             : isDisabled 
-              ? 'text-rose-500/40 dark:text-rose-900/40 bg-rose-50/10 dark:bg-rose-950/5 cursor-not-allowed font-medium' 
-              : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer'
+              ? 'text-rose-500 bg-rose-50/10 dark:bg-rose-950/5 cursor-not-allowed opacity-90 font-medium' 
+              : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100 cursor-pointer font-black'
         }`}
         title={isWeekendOrHoliday ? 'ছুটির দিন (ডিজেবল)' : undefined}
       >
@@ -157,7 +157,7 @@ function CalendarDatePicker({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 mt-1.5 w-68 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-3 animate-in fade-in slide-in-from-top-1 duration-150 select-none">
+        <div className="absolute left-0 mt-1.5 w-72 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-3 animate-in fade-in slide-in-from-top-1 duration-150 select-none">
           <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-900 pb-2">
             <button
               type="button"
@@ -178,17 +178,17 @@ function CalendarDatePicker({
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 text-center mb-1 text-[10px] font-bold text-slate-400 dark:text-slate-500">
+          <div className="grid grid-cols-7 gap-1.5 text-center mb-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">
             <span>র</span>
             <span>সো</span>
             <span>ম</span>
             <span>বু</span>
             <span>বৃ</span>
-            <span className="text-rose-500/70 font-bold">শু</span>
-            <span className="text-rose-500/70 font-bold">শ</span>
+            <span className="text-rose-500 font-bold">শু</span>
+            <span className="text-rose-500 font-bold">শ</span>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 text-center">
+          <div className="grid grid-cols-7 gap-1.5 text-center">
             {days}
           </div>
         </div>
@@ -751,6 +751,29 @@ export default function LeaveGeneratorPage() {
     }
   }, [endDate]);
 
+  useEffect(() => {
+    if (applicationDate && isNonWorkingDay(applicationDate)) {
+      // Find nearest previous working day
+      let checkDate = new Date(applicationDate);
+      let found = false;
+      for (let i = 0; i < 30; i++) {
+        checkDate.setDate(checkDate.getDate() - 1);
+        const formatted = checkDate.toISOString().split('T')[0];
+        if (!isNonWorkingDay(formatted)) {
+          setApplicationDate(formatted);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        setApplicationDate('');
+      }
+      setErrorMsg('আবেদনের তারিখ কোনো ছুটির দিন হতে পারবে না। তারিখটি স্বয়ংক্রিয়ভাবে নিকটবর্তী কর্মদিবসে পরিবর্তন করা হয়েছে।');
+      const timer = setTimeout(() => setErrorMsg(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [applicationDate, dbHolidays]);
+
   // Get contiguous holiday days starting from a specific date forward
   const getSucceedingContiguousHolidaysCount = (startDateStr: string): number => {
     return libGetSucceedingContiguousHolidaysCount(startDateStr, dbHolidays);
@@ -1285,13 +1308,13 @@ export default function LeaveGeneratorPage() {
 
                   {/* Application Date Picker */}
                   <div className="space-y-1">
-                    <label htmlFor="applicationDate" className="font-bold text-slate-700 dark:text-slate-300">আবেদনের তারিখ (চিঠির উপরে প্রদর্শিত হবে):</label>
-                    <input 
-                      id="applicationDate"
-                      type="date" 
+                    <label className="font-bold text-slate-700 dark:text-slate-300">আবেদনের তারিখ (চিঠির উপরে প্রদর্শিত হবে):</label>
+                    <CalendarDatePicker 
                       value={applicationDate}
-                      onChange={(e) => setApplicationDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-semibold"
+                      onChange={setApplicationDate}
+                      isNonWorkingDay={isNonWorkingDay}
+                      toBanglaDigits={toBanglaDigits}
+                      placeholder="আবেদনের তারিখ নির্বাচন..."
                     />
                   </div>
 
