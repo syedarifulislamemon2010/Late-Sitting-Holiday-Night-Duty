@@ -15,9 +15,11 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const filterMonth = searchParams.get('month'); // YYYY-MM
+    const filterMonthParam = searchParams.get('month'); // Comma-separated YYYY-MM
+    const filterMonths = filterMonthParam ? filterMonthParam.split(',').filter(Boolean) : [];
     const filterYear = searchParams.get('year');   // YYYY
-    const dutyType = searchParams.get('dutyType') || ''; // LATE_SITTING, HOLIDAY, NIGHT_SHIFT or empty
+    const dutyTypeParam = searchParams.get('dutyType'); // Comma-separated duty types
+    const dutyTypes = dutyTypeParam ? dutyTypeParam.split(',').filter(Boolean) : [];
     const cellIdParam = searchParams.get('cellId');
 
     const allowedCellIds = user.cells?.map((c: any) => c.id) || [];
@@ -228,12 +230,16 @@ export async function GET(request: Request) {
       if (!employee) {
         allowanceTrendRaw = [];
       } else {
+        const trendConditions = [eq(duties.employeeId, employee.id)];
+        if (dutyTypes.length > 0) {
+          trendConditions.push(inArray(duties.type, dutyTypes));
+        }
         allowanceTrendRaw = await db.select({
           month: sql<string>`substring(${duties.date}, 1, 7)`,
           totalAllowance: sql<number>`COALESCE(sum(${duties.totalBill}), 0)`
         })
         .from(duties)
-        .where(eq(duties.employeeId, employee.id))
+        .where(and(...trendConditions))
         .groupBy(sql`substring(${duties.date}, 1, 7)`)
         .orderBy(asc(sql`substring(${duties.date}, 1, 7)`));
       }
@@ -242,6 +248,9 @@ export async function GET(request: Request) {
       const trendCellCond = getEmployeeCellCondition();
       if (trendCellCond) {
         trendConditions.push(trendCellCond);
+      }
+      if (dutyTypes.length > 0) {
+        trendConditions.push(inArray(duties.type, dutyTypes));
       }
       allowanceTrendRaw = await db.select({
         month: sql<string>`substring(${duties.date}, 1, 7)`,
@@ -265,12 +274,16 @@ export async function GET(request: Request) {
     // ----------------------------------------------------
     let personalAllowanceTrend: { month: string; totalAllowance: number }[] = [];
     if (employee) {
+      const personalTrendConditions = [eq(duties.employeeId, employee.id)];
+      if (dutyTypes.length > 0) {
+        personalTrendConditions.push(inArray(duties.type, dutyTypes));
+      }
       const personalTrendRaw = await db.select({
         month: sql<string>`substring(${duties.date}, 1, 7)`,
         totalAllowance: sql<number>`COALESCE(sum(${duties.totalBill}), 0)`
       })
       .from(duties)
-      .where(eq(duties.employeeId, employee.id))
+      .where(and(...personalTrendConditions))
       .groupBy(sql`substring(${duties.date}, 1, 7)`)
       .orderBy(asc(sql`substring(${duties.date}, 1, 7)`));
 
@@ -287,11 +300,11 @@ export async function GET(request: Request) {
     // - Accessible by everyone (including employees).
     // ----------------------------------------------------
     const dutyConditions = [];
-    if (dutyType && dutyType !== 'SELECT') {
-      dutyConditions.push(eq(duties.type, dutyType));
+    if (dutyTypes.length > 0) {
+      dutyConditions.push(inArray(duties.type, dutyTypes));
     }
-    if (filterMonth) {
-      dutyConditions.push(sql`substring(${duties.date}, 1, 7) = ${filterMonth}`);
+    if (filterMonths.length > 0) {
+      dutyConditions.push(inArray(sql`substring(${duties.date}, 1, 7)`, filterMonths));
     } else if (filterYear) {
       dutyConditions.push(sql`substring(${duties.date}, 1, 4) = ${filterYear}`);
     }
@@ -330,6 +343,14 @@ export async function GET(request: Request) {
       const budgetCellCond = getEmployeeCellCondition();
       if (budgetCellCond) {
         budgetConditions.push(budgetCellCond);
+      }
+      if (dutyTypes.length > 0) {
+        budgetConditions.push(inArray(duties.type, dutyTypes));
+      }
+      if (filterMonths.length > 0) {
+        budgetConditions.push(inArray(sql`substring(${duties.date}, 1, 7)`, filterMonths));
+      } else if (filterYear) {
+        budgetConditions.push(sql`substring(${duties.date}, 1, 4) = ${filterYear}`);
       }
       const cellBudgetRaw = await db.select({
         cellId: employees.cellId,
@@ -409,8 +430,8 @@ export async function GET(request: Request) {
     if (targetReleaseDate) {
       billConditions.push(eq(officeOrders.orderDate, targetReleaseDate));
     } else {
-      if (filterMonth) {
-        billConditions.push(sql`substring(${officeOrders.orderDate}, 1, 7) = ${filterMonth}`);
+      if (filterMonths.length > 0) {
+        billConditions.push(inArray(sql`substring(${officeOrders.orderDate}, 1, 7)`, filterMonths));
       } else if (filterYear) {
         billConditions.push(sql`substring(${officeOrders.orderDate}, 1, 4) = ${filterYear}`);
       }

@@ -9,7 +9,8 @@ import {
   Filter, 
   Calendar, 
   RefreshCw, 
-  AlertCircle 
+  AlertCircle,
+  ChevronDown
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
@@ -33,6 +34,128 @@ const AnalyticsCharts = dynamic(
 interface AllowanceTrend {
   month: string;
   totalAllowance: number;
+}
+
+const DUTY_TYPE_OPTIONS = [
+  { value: 'NIGHT_SHIFT', label: 'রাত্রীকালীন ডিউটি (Night Shift)' },
+  { value: 'LATE_SITTING', label: 'লেট সিটিং (Late Sitting)' },
+  { value: 'HOLIDAY', label: 'ছুটির দিন (Holiday)' },
+];
+
+const MONTH_OPTIONS_BASE = [
+  { monthNum: '01', label: 'জানুয়ারি' },
+  { monthNum: '02', label: 'ফেব্রুয়ারি' },
+  { monthNum: '03', label: 'মার্চ' },
+  { monthNum: '04', label: 'এপ্রিল' },
+  { monthNum: '05', label: 'মে' },
+  { monthNum: '06', label: 'জুন' },
+  { monthNum: '07', label: 'জুলাই' },
+  { monthNum: '08', label: 'আগস্ট' },
+  { monthNum: '09', label: 'সেপ্টেম্বর' },
+  { monthNum: '10', label: 'অক্টোবর' },
+  { monthNum: '11', label: 'নভেম্বর' },
+  { monthNum: '12', label: 'ডিসেম্বর' },
+];
+
+interface MultiSelectProps {
+  options: { value: string; label: string }[];
+  selectedValues: string[];
+  onChange: (values: string[]) => void;
+  placeholder?: string;
+}
+
+function MultiSelect({ options, selectedValues, onChange, placeholder = 'সিলেক্ট করুন' }: MultiSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.multi-select-container')) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('click', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [isOpen]);
+
+  const toggleOption = (val: string) => {
+    if (selectedValues.includes(val)) {
+      onChange(selectedValues.filter(v => v !== val));
+    } else {
+      onChange([...selectedValues, val]);
+    }
+  };
+
+  const selectAll = () => {
+    if (selectedValues.length === options.length) {
+      onChange([]);
+    } else {
+      onChange(options.map(o => o.value));
+    }
+  };
+
+  const displayLabel = () => {
+    if (selectedValues.length === 0) return placeholder;
+    if (selectedValues.length === options.length) return 'সবগুলো সিলেক্টেড';
+    return options
+      .filter(o => selectedValues.includes(o.value))
+      .map(o => o.label)
+      .join(', ');
+  };
+
+  return (
+    <div className="relative multi-select-container font-sans select-none">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between gap-2 px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-w-[130px] max-w-[200px] text-left cursor-pointer transition-all shadow-sm"
+      >
+        <span className="truncate pr-1">{displayLabel()}</span>
+        <ChevronDown size={12} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-1.5 w-60 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-2 max-h-64 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-150">
+          <div 
+            onClick={selectAll}
+            className="flex items-center gap-2.5 px-2.5 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-900 mb-1 pb-2"
+          >
+            <input 
+              type="checkbox" 
+              checked={selectedValues.length === options.length}
+              onChange={() => {}}
+              className="accent-primary h-4 w-4 rounded-md border-slate-350 dark:border-slate-700" 
+            />
+            <span>সবগুলো (Select All)</span>
+          </div>
+          <div className="space-y-0.5">
+            {options.map((opt) => {
+              const isChecked = selectedValues.includes(opt.value);
+              return (
+                <div
+                  key={opt.value}
+                  onClick={() => toggleOption(opt.value)}
+                  className="flex items-center gap-2.5 px-2.5 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {}}
+                    className="accent-primary h-4 w-4 rounded-md border-slate-350 dark:border-slate-700"
+                  />
+                  <span className="truncate">{opt.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface TopPerformer {
@@ -59,9 +182,14 @@ export default function AnalyticsDashboardPage() {
   const [error, setError] = useState('');
   
   // Filters
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
   const [selectedYear, setSelectedYear] = useState('2026');
-  const [selectedDutyType, setSelectedDutyType] = useState('');
+  const [selectedDutyTypes, setSelectedDutyTypes] = useState<string[]>([]);
+
+  const monthsOptions = MONTH_OPTIONS_BASE.map(m => ({
+    value: `${selectedYear}-${m.monthNum}`,
+    label: `${m.label} ${toBanglaDigits(selectedYear)}`
+  }));
   const [cellsList, setCellsList] = useState<{ id: number; name: string }[]>([]);
   const [selectedCellId, setSelectedCellId] = useState('all');
   const [selectedReleaseDate, setSelectedReleaseDate] = useState('');
@@ -100,12 +228,14 @@ export default function AnalyticsDashboardPage() {
       setError('');
       
       const queryParams = new URLSearchParams();
-      if (selectedMonth) {
-        queryParams.set('month', selectedMonth);
+      if (selectedMonths.length > 0) {
+        queryParams.set('month', selectedMonths.join(','));
       } else if (selectedYear) {
         queryParams.set('year', selectedYear);
       }
-      queryParams.set('dutyType', selectedDutyType);
+      if (selectedDutyTypes.length > 0) {
+        queryParams.set('dutyType', selectedDutyTypes.join(','));
+      }
       if (selectedCellId && selectedCellId !== 'all') {
         queryParams.set('cellId', selectedCellId);
       }
@@ -162,12 +292,12 @@ export default function AnalyticsDashboardPage() {
     if (currentUser) {
       loadAnalytics();
     }
-  }, [selectedMonth, selectedYear, selectedDutyType, selectedCellId, selectedReleaseDate, currentUser]);
+  }, [selectedMonths.join(','), selectedYear, selectedDutyTypes.join(','), selectedCellId, selectedReleaseDate, currentUser]);
 
   const clearFilters = () => {
-    setSelectedMonth('');
+    setSelectedMonths([]);
     setSelectedYear('2026');
-    setSelectedDutyType('');
+    setSelectedDutyTypes([]);
     setSelectedCellId('all');
     setSelectedReleaseDate('');
   };
@@ -293,49 +423,41 @@ export default function AnalyticsDashboardPage() {
           )}
 
           {/* Duty Type Filter */}
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] text-slate-400 font-bold uppercase">ডিউটি ধরন</label>
-            <select
-              value={selectedDutyType}
-              onChange={(e) => setSelectedDutyType(e.target.value)}
-              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 animate-in fade-in"
-            >
-              <option value="">সিলেক্ট করুন</option>
-              <option value="NIGHT_SHIFT">রাত্রীকালীন ডিউটি (Night Shift)</option>
-              <option value="LATE_SITTING">লেট সিটিং (Late Sitting)</option>
-              <option value="HOLIDAY">ছুটির দিন (Holiday)</option>
-            </select>
-          </div>
-
-          <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
-
-          {/* Month Filter */}
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] text-slate-400 font-bold uppercase">মাস</label>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => {
-                setSelectedMonth(e.target.value);
-                if (e.target.value) setSelectedYear(''); // clear year if month is picked
-              }}
-              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100"
+          <div className="flex items-center gap-2 animate-in fade-in">
+            <label className="text-[10px] text-slate-450 font-bold uppercase dark:text-slate-400">ডিউটি ধরন</label>
+            <MultiSelect
+              options={DUTY_TYPE_OPTIONS}
+              selectedValues={selectedDutyTypes}
+              onChange={setSelectedDutyTypes}
+              placeholder="সিলেক্ট করুন"
             />
           </div>
 
-          <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
+          <span className="text-slate-355 dark:text-slate-700 hidden sm:inline">|</span>
+
+          {/* Month Filter */}
+          <div className="flex items-center gap-2 animate-in fade-in">
+            <label className="text-[10px] text-slate-455 font-bold uppercase dark:text-slate-400">মাস</label>
+            <MultiSelect
+              options={monthsOptions}
+              selectedValues={selectedMonths}
+              onChange={setSelectedMonths}
+              placeholder="সিলেক্ট করুন"
+            />
+          </div>
+
+          <span className="text-slate-355 dark:text-slate-700 hidden sm:inline">|</span>
 
           {/* Year Filter */}
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-slate-400 font-bold uppercase">বছর</label>
+            <label className="text-[10px] text-slate-450 font-bold uppercase dark:text-slate-400">বছর</label>
             <select
               value={selectedYear}
               onChange={(e) => {
                 setSelectedYear(e.target.value);
-                if (e.target.value) setSelectedMonth(''); // clear month if year is picked
+                setSelectedMonths([]); // clear selected months when year changes
               }}
-              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100"
-              disabled={!!selectedMonth}
+              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 cursor-pointer"
             >
               <option value="2026">২০২৬</option>
               <option value="2025">২০২৫</option>
@@ -343,15 +465,15 @@ export default function AnalyticsDashboardPage() {
             </select>
           </div>
 
-          <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
+          <span className="text-slate-355 dark:text-slate-700 hidden sm:inline">|</span>
 
           {/* Bill Release Date Filter */}
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-slate-400 font-bold uppercase font-sans">বিল ছাড়ার তারিখ</label>
+            <label className="text-[10px] text-slate-450 font-bold uppercase font-sans dark:text-slate-400">বিল ছাড়ার তারিখ</label>
             <select
               value={selectedReleaseDate}
               onChange={(e) => setSelectedReleaseDate(e.target.value)}
-              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 animate-in fade-in"
+              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 animate-in fade-in cursor-pointer"
             >
               <option value="">সর্বশেষ তারিখ {resolvedReleaseDate ? `(${formatBengaliDate(resolvedReleaseDate)})` : ''}</option>
               {availableReleaseDates.map((date) => (
@@ -363,10 +485,10 @@ export default function AnalyticsDashboardPage() {
             </select>
           </div>
 
-          {(selectedMonth || selectedYear !== '2026' || selectedDutyType !== '' || selectedCellId !== 'all' || selectedReleaseDate !== '') && (
+          {(selectedMonths.length > 0 || selectedYear !== '2026' || selectedDutyTypes.length > 0 || selectedCellId !== 'all' || selectedReleaseDate !== '') && (
             <button
               onClick={clearFilters}
-              className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 text-[10px] font-bold rounded-xl border border-slate-200 cursor-pointer transition-all animate-in fade-in"
+              className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all animate-in fade-in"
             >
               রিসেট
             </button>
