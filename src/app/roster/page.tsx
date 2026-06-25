@@ -3041,11 +3041,11 @@ export default function RosterPage() {
 
                 {/* Common Field 1: Duty Type Selection */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
                   <select
                     value={assignmentForm.type}
                     onChange={(e) => setAssignmentForm({ ...assignmentForm, type: e.target.value as any })}
-                    className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-11 px-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                   >
                     <option value="">সিলেক্ট করুন</option>
                     <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
@@ -3069,15 +3069,15 @@ export default function RosterPage() {
                   /* ========================================================
                      OPTION 1: Cell & Employee wise (Multi-date picker)
                      ======================================================== */
-                  <div className="space-y-3 border-t border-slate-100 pt-4">
+                  <div className="space-y-3 border-t border-slate-100 dark:border-slate-800 pt-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">৩. সেল সিলেক্ট করুন</label>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">৩. সেল সিলেক্ট করুন</label>
                       <select
                         value={opt1CellId}
                         onChange={(e) => {
                           setOpt1CellId(e.target.value);
                         }}
-                        className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full h-11 px-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                       >
                         {(currentUser?.role === 'ADMIN' || (currentUser?.cells && currentUser.cells.length > 1)) && (
                           <option value="all">সকল সেল (All Cells)</option>
@@ -3159,16 +3159,16 @@ export default function RosterPage() {
                   /* ========================================================
                      OPTION 2: Date wise (Multi-employee checkboxes)
                      ======================================================== */
-                  <div className="space-y-3 border-t border-slate-100 pt-4">
+                  <div className="space-y-3 border-t border-slate-100 dark:border-slate-800 pt-4">
                     {/* Duty Date Selection */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">৩. ডিউটির তারিখ</label>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">৩. ডিউটির তারিখ</label>
                       <input
                         type="date"
                         required
                         value={assignmentForm.date}
                         onChange={(e) => setAssignmentForm({ ...assignmentForm, date: e.target.value })}
-                        className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans cursor-pointer"
+                        className="w-full h-11 px-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans cursor-pointer text-slate-800 dark:text-slate-100"
                       />
                       {assignmentForm.date && (() => {
                         const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
@@ -3229,12 +3229,12 @@ export default function RosterPage() {
                           placeholder="খুঁজুন..."
                           value={formSearchQuery}
                           onChange={(e) => setFormSearchQuery(e.target.value)}
-                          className="flex-1 h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="flex-1 h-9 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                         />
                         <select
                           value={formCellFilter}
                           onChange={(e) => setFormCellFilter(e.target.value)}
-                          className="h-9 px-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          className="h-9 px-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer text-slate-800 dark:text-slate-100"
                         >
                           <option value="all">সকল সেল</option>
                           {cells.map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)}

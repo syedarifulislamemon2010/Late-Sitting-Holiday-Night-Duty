@@ -20,10 +20,10 @@ const AnalyticsCharts = dynamic(
   { 
     ssr: false,
     loading: () => (
-      <div className="min-h-[400px] w-full flex items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm">
+      <div className="min-h-[400px] w-full flex items-center justify-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-[#0b5e9e] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-bold text-slate-400">গ্রাফিক্যাল চার্ট লোড হচ্ছে...</p>
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-bold text-slate-400 dark:text-slate-500">গ্রাফিক্যাল চার্ট লোড হচ্ছে...</p>
         </div>
       </div>
     )
@@ -169,11 +169,11 @@ export default function AnalyticsDashboardPage() {
       {/* 1. Header Block */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-xl font-black text-slate-800 flex items-center gap-2">
-            <BarChart2 className="text-[#0b5e9e]" size={24} />
+          <h1 className="text-xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <BarChart2 className="text-primary" size={24} />
             সিস্টেম অ্যানালিটিক্স ড্যাশবোর্ড
           </h1>
-          <p className="text-xs text-slate-500 font-semibold">
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
             {role === 'EMPLOYEE' 
               ? 'আমার প্রাপ্ত ভাতা এবং সামগ্রিক বিল রিলিজ সংক্রান্ত পরিসংখ্যান ও গ্রাফিকাল চার্ট'
               : 'ভাতা খরচ, ডিউটি পারফর্মার এবং সেল-ভিত্তিক বাজেটের সামগ্রিক পরিসংখ্যান'}
@@ -183,7 +183,7 @@ export default function AnalyticsDashboardPage() {
         <button 
           onClick={loadAnalytics}
           disabled={loading}
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 border border-slate-200"
+          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 border border-slate-200 dark:border-slate-700"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           রিফ্রেশ করুন
@@ -194,35 +194,35 @@ export default function AnalyticsDashboardPage() {
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
           {/* Card 1: Total Released Bills */}
-          <div className="bg-gradient-to-br from-white to-blue-50/20 rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+          <div className="bg-gradient-to-br from-white to-blue-50/20 dark:from-slate-900 dark:to-blue-950/20 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">মোট রিলিজ হওয়া বিল</span>
-              <p className="text-2xl font-black text-slate-800">{toBanglaDigits(summary.totalReleasedBills.toString())} টি</p>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">মোট রিলিজ হওয়া বিল</span>
+              <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{toBanglaDigits(summary.totalReleasedBills.toString())} টি</p>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0b5e9e] flex items-center justify-center text-xl">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-primary flex items-center justify-center text-xl">
               📊
             </div>
           </div>
 
           {/* Card 2: Total Duties Completed */}
-          <div className="bg-gradient-to-br from-white to-indigo-50/20 rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+          <div className="bg-gradient-to-br from-white to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/20 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">মোট ডিউটি সম্পন্ন</span>
-              <p className="text-2xl font-black text-slate-800">{toBanglaDigits(summary.totalDutiesCompleted.toString())} টি</p>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">মোট ডিউটি সম্পন্ন</span>
+              <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{toBanglaDigits(summary.totalDutiesCompleted.toString())} টি</p>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl">
               ✅
             </div>
           </div>
 
           {/* Card 3: Personal Released Bills */}
           {summary.myBillCount > 0 && (
-            <div className="bg-gradient-to-br from-white to-emerald-50/20 rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+            <div className="bg-gradient-to-br from-white to-emerald-50/20 dark:from-slate-900 dark:to-emerald-950/20 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">আমার রিলিজ হওয়া বিল</span>
-                <p className="text-2xl font-black text-slate-800">{toBanglaDigits(summary.myBillCount.toString())} টি</p>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">আমার রিলিজ হওয়া বিল</span>
+                <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{toBanglaDigits(summary.myBillCount.toString())} টি</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl">
                 📄
               </div>
             </div>
@@ -230,12 +230,12 @@ export default function AnalyticsDashboardPage() {
 
           {/* Card 4: Personal Total Allowance Earnings */}
           {summary.myTotalEarnings > 0 && (
-            <div className="bg-gradient-to-br from-white to-amber-50/20 rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+            <div className="bg-gradient-to-br from-white to-amber-50/20 dark:from-slate-900 dark:to-amber-950/20 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">আমার মোট প্রাপ্ত ভাতা</span>
-                <p className="text-2xl font-black text-slate-800">৳ {toBanglaDigits(summary.myTotalEarnings.toLocaleString())}/-</p>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">আমার মোট প্রাপ্ত ভাতা</span>
+                <p className="text-2xl font-black text-slate-800 dark:text-slate-100">৳ {toBanglaDigits(summary.myTotalEarnings.toLocaleString())}/-</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl font-bold">
                 ৳
               </div>
             </div>
@@ -244,9 +244,9 @@ export default function AnalyticsDashboardPage() {
       )}
 
       {/* 2. Filter Bar */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-20">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-20">
         <div className="flex items-center gap-2 text-slate-700 font-bold text-xs">
-          <Filter size={16} className="text-[#0b5e9e]" />
+          <Filter size={16} className="text-primary" />
           <span>ডিউটি ও বিল ফিল্টারিং:</span>
         </div>
 
@@ -260,7 +260,7 @@ export default function AnalyticsDashboardPage() {
                 <select
                   value={selectedCellId}
                   onChange={(e) => setSelectedCellId(e.target.value)}
-                  className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0b5e9e] font-sans bg-white"
+                  className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100"
                 >
                   <option value="all">ওভারল (সব সেল)</option>
                   {cellsList.map((cell) => (
@@ -270,7 +270,7 @@ export default function AnalyticsDashboardPage() {
                   ))}
                 </select>
               </div>
-              <span className="text-slate-300 hidden sm:inline">|</span>
+              <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
             </>
           )}
 
@@ -280,7 +280,7 @@ export default function AnalyticsDashboardPage() {
             <select
               value={selectedDutyType}
               onChange={(e) => setSelectedDutyType(e.target.value)}
-              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0b5e9e] font-sans bg-white animate-in fade-in"
+              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 animate-in fade-in"
             >
               <option value="">সিলেক্ট করুন</option>
               <option value="NIGHT_SHIFT">রাত্রীকালীন ডিউটি (Night Shift)</option>
@@ -289,7 +289,7 @@ export default function AnalyticsDashboardPage() {
             </select>
           </div>
 
-          <span className="text-slate-300 hidden sm:inline">|</span>
+          <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
 
           {/* Month Filter */}
           <div className="flex items-center gap-2">
@@ -301,11 +301,11 @@ export default function AnalyticsDashboardPage() {
                 setSelectedMonth(e.target.value);
                 if (e.target.value) setSelectedYear(''); // clear year if month is picked
               }}
-              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0b5e9e] font-sans bg-white"
+              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100"
             />
           </div>
 
-          <span className="text-slate-300 hidden sm:inline">|</span>
+          <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
 
           {/* Year Filter */}
           <div className="flex items-center gap-2">
@@ -316,7 +316,7 @@ export default function AnalyticsDashboardPage() {
                 setSelectedYear(e.target.value);
                 if (e.target.value) setSelectedMonth(''); // clear month if year is picked
               }}
-              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0b5e9e] font-sans bg-white"
+              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100"
               disabled={!!selectedMonth}
             >
               <option value="2026">২০২৬</option>
@@ -339,20 +339,20 @@ export default function AnalyticsDashboardPage() {
 
       {/* 3. Main Data Content Area */}
       {error ? (
-        <div className="p-8 max-w-lg mx-auto bg-white rounded-3xl shadow-md border border-red-100 space-y-4 text-center mt-12">
-          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
+        <div className="p-8 max-w-lg mx-auto bg-white dark:bg-slate-900 rounded-3xl shadow-md border border-red-100 dark:border-red-950/40 space-y-4 text-center mt-12">
+          <div className="w-16 h-16 bg-red-50 dark:bg-red-950/30 text-red-500 dark:text-red-400 rounded-full flex items-center justify-center mx-auto">
             <AlertCircle size={32} />
           </div>
-          <h2 className="text-lg font-bold text-slate-800">ডাটা লোড সমস্যা</h2>
-          <p className="text-sm text-slate-500">{error}</p>
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">ডাটা লোড সমস্যা</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{error}</p>
         </div>
       ) : (
         <div className="min-h-[400px] relative z-10">
           {loading ? (
-            <div className="min-h-[400px] w-full flex items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm animate-pulse">
+            <div className="min-h-[400px] w-full flex items-center justify-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm animate-pulse">
               <div className="flex flex-col items-center gap-3">
-                <div className="w-10 h-10 border-4 border-[#0b5e9e] border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs font-bold text-slate-400">ডাটা বিশ্লেষণ করা হচ্ছে...</p>
+                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500">ডাটা বিশ্লেষণ করা হচ্ছে...</p>
               </div>
             </div>
           ) : (

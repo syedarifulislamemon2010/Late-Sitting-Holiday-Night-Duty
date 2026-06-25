@@ -7,7 +7,9 @@ import { usePathname } from 'next/navigation';
 import { 
   Settings,
   LogOut,
-  Search
+  Search,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
@@ -22,6 +24,7 @@ interface UserSession {
 export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load user from localStorage
@@ -44,23 +47,32 @@ export default function Navbar() {
     return () => window.removeEventListener('storage', loadUser);
   }, []);
 
-  // Theme Syncing - Strictly blue theme
+  // Theme Syncing - checks and sets dark mode class
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark') || 
-      localStorage.getItem('theme') === 'dark';
+    const storedTheme = localStorage.getItem('theme');
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldBeDark = storedTheme === 'dark' || (!storedTheme && systemDark);
     
-    // Explicitly clean and set variables to the requested light blue theme on initial load
-    const root = document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-      root.style.setProperty('--primary', '#38bdf8');
-      root.style.setProperty('--primary-hover', '#0ea5e9');
+    if (shouldBeDark) {
+      document.documentElement.classList.add('dark');
+      setIsDark(true);
     } else {
-      root.classList.remove('dark');
-      root.style.setProperty('--primary', '#0b5e9e');
-      root.style.setProperty('--primary-hover', '#094d82');
+      document.documentElement.classList.remove('dark');
+      setIsDark(false);
     }
   }, []);
+
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    if (nextDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -208,12 +220,21 @@ export default function Navbar() {
 
       {/* Right section: Corporate Profile Avatar / Janata Bank Badge */}
       <div className="flex items-center gap-3 justify-end w-[220px] md:w-[300px] shrink-0">
+        {/* Theme Toggle Button */}
+        <button 
+          onClick={toggleTheme}
+          className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all cursor-pointer shadow-xs flex items-center justify-center"
+          title={isDark ? "লাইট মোড" : "ডার্ক মোড"}
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-slate-100 dark:border-slate-800/80 shadow-sm"
           >
-            <div className="w-8 h-8 rounded-lg bg-blue-50/80 flex items-center justify-center overflow-hidden shrink-0 border border-blue-100">
+            <div className="w-8 h-8 rounded-lg bg-blue-50/80 dark:bg-blue-950/20 flex items-center justify-center overflow-hidden shrink-0 border border-blue-100 dark:border-blue-900/30">
               <Image src="/janata-bank-logo-real.svg" alt="JB Brand Avatar" width={24} height={24} className="object-contain" />
             </div>
             <span className="hidden md:inline text-xs font-bold text-slate-700 dark:text-slate-200 max-w-[280px] truncate">{userDisplayName}</span>
@@ -224,7 +245,7 @@ export default function Navbar() {
             <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xl p-4 text-slate-800 dark:text-slate-100 animate-in fade-in slide-in-from-top-4 duration-200 z-50">
               {/* Dropdown Profile Header */}
               <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50/80 flex items-center justify-center overflow-hidden shrink-0 border border-blue-100">
+                <div className="w-10 h-10 rounded-xl bg-blue-50/80 dark:bg-blue-950/20 flex items-center justify-center overflow-hidden shrink-0 border border-blue-100 dark:border-blue-900/30">
                   <Image src="/janata-bank-logo-real.svg" alt="JB Brand Avatar" width={32} height={32} className="object-contain" />
                 </div>
                 <div className="leading-tight flex-1 min-w-0">

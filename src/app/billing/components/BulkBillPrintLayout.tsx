@@ -432,31 +432,31 @@ export default function BulkBillPrintLayout({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header Panel */}
-        <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-slate-950/40 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#0b5e9e]/10 text-[#0b5e9e] rounded-lg">
+            <div className="p-2 bg-primary/10 text-primary rounded-lg">
               <FileText className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 text-lg">বাল্ক প্রিন্ট প্রিভিউ ({toBanglaDigits(viewingOrders.length)} টি)</h3>
-              <p className="text-xs text-slate-500">একত্রে সকল বিল/অফিস আদেশ প্রিন্ট করার লেআউট</p>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">বাল্ক প্রিন্ট প্রিভিউ ({toBanglaDigits(viewingOrders.length)} টি)</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">একত্রে সকল বিল/অফিস আদেশ প্রিন্ট করার লেআউট</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrintAll}
-              className="flex items-center gap-2 px-4 py-2 bg-[#0b5e9e] hover:bg-[#094c80] text-white rounded-xl font-medium text-sm transition-all duration-200 shadow-md shadow-[#0b5e9e]/20"
+              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl font-medium text-sm transition-all duration-200 shadow-md shadow-primary/20 cursor-pointer"
             >
               <Printer className="h-4 w-4" />
               একত্রে প্রিন্ট করুন
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
@@ -464,7 +464,7 @@ export default function BulkBillPrintLayout({
         </div>
 
         {/* Preview Area */}
-        <div className="flex-1 overflow-y-auto bg-slate-100 p-8 flex flex-col items-center gap-8">
+        <div className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-950 p-8 flex flex-col items-center gap-8">
           {viewingOrders.map((order, idx) => {
             const isBill = order.category?.startsWith('BILL_');
             let dutiesList: any[] = [];

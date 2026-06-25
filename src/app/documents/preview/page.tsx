@@ -334,6 +334,22 @@ function PreviewContent() {
 }
 
 export default function PreviewPage() {
+  useEffect(() => {
+    const syncTheme = () => {
+      const storedTheme = localStorage.getItem('theme');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const shouldBeDark = storedTheme === 'dark' || (!storedTheme && systemDark);
+      if (shouldBeDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+    syncTheme();
+    window.addEventListener('storage', syncTheme);
+    return () => window.removeEventListener('storage', syncTheme);
+  }, []);
+
   return (
     <Suspense
       fallback={
@@ -342,6 +358,54 @@ export default function PreviewPage() {
         </div>
       }
     >
+      <style>{`
+        /* Global Theme Override for Previews */
+        @media screen {
+          aside, nav, footer, header, [role="navigation"], .no-print {
+            display: none !important;
+          }
+          body, html, main, 
+          main > div,
+          main > div > div {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 100vh !important;
+            max-width: none !important;
+            background: #f4f4f5 !important;
+          }
+          .dark body, .dark html, .dark main,
+          .dark main > div,
+          .dark main > div > div {
+            background: #030712 !important;
+          }
+        }
+        .dark iframe {
+          filter: invert(0.9) hue-rotate(180deg) !important;
+          background-color: #030712 !important;
+        }
+        .dark body, .dark .pdf-preview-container, .dark .image-preview-container {
+          background-color: #030712 !important;
+        }
+        .dark .page-container {
+          background-color: #0f172a !important;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important;
+          border-color: #1e293b !important;
+        }
+        .dark img.pdf-page-img {
+          filter: invert(0.9) hue-rotate(180deg) !important;
+        }
+        @media print {
+          iframe, img.pdf-page-img, img {
+            filter: none !important;
+          }
+          .page-container {
+            background-color: #ffffff !important;
+            box-shadow: none !important;
+          }
+        }
+      `}</style>
       <PreviewContent />
     </Suspense>
   );

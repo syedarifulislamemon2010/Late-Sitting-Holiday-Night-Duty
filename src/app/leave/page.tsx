@@ -853,60 +853,60 @@ export default function LeaveGeneratorPage() {
                   )}
                   {/* Name field */}
                   <div className="space-y-1">
-                    <label htmlFor="applicantName" className="font-bold text-slate-500">নাম:</label>
+                    <label htmlFor="applicantName" className="font-bold text-slate-700 dark:text-slate-300">নাম:</label>
                     <input 
                       id="applicantName"
                       type="text" 
                       value={applicantName}
                       onChange={(e) => setApplicantName(e.target.value)}
                       readOnly={currentUser?.role !== 'ADMIN'}
-                      className={`w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-bold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`}
+                      className={`w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-indigo-550 text-slate-800 dark:text-slate-100 font-bold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 dark:bg-slate-950 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-900'}`}
                     />
                   </div>
 
                   {/* Designation */}
                   <div className="space-y-1">
-                    <label htmlFor="designation" className="font-bold text-slate-500">পদবী:</label>
+                    <label htmlFor="designation" className="font-bold text-slate-700 dark:text-slate-300">পদবী:</label>
                     <input 
                       id="designation"
                       type="text" 
                       value={designation}
                       onChange={(e) => setDesignation(e.target.value)}
                       readOnly={currentUser?.role !== 'ADMIN'}
-                      className={`w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`}
+                      className={`w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-indigo-550 text-slate-800 dark:text-slate-100 font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 dark:bg-slate-950 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-900'}`}
                     />
                   </div>
 
                   {/* Cell Name */}
                   <div className="space-y-1">
-                    <label htmlFor="cellName" className="font-bold text-slate-500">বিভাগ/সেল:</label>
+                    <label htmlFor="cellName" className="font-bold text-slate-700 dark:text-slate-300">বিভাগ/সেল:</label>
                     <input 
                       id="cellName"
                       type="text" 
                       value={cellName}
                       onChange={(e) => setCellName(e.target.value)}
                       readOnly={currentUser?.role !== 'ADMIN'}
-                      className={`w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`}
+                      className={`w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-indigo-550 text-slate-800 dark:text-slate-100 font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 dark:bg-slate-950 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-900'}`}
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     {/* Bank ID */}
                     <div className="space-y-1">
-                      <label htmlFor="bankId" className="font-bold text-slate-500">ব্যাংক আইডি:</label>
+                      <label htmlFor="bankId" className="font-bold text-slate-700 dark:text-slate-300">ব্যাংক আইডি:</label>
                       <input 
                         id="bankId"
                         type="text" 
                         value={bankId}
                         onChange={(e) => setBankId(e.target.value)}
                         readOnly={currentUser?.role !== 'ADMIN'}
-                        className={`w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-mono font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`}
+                        className={`w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-indigo-550 text-slate-800 dark:text-slate-100 font-mono font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 dark:bg-slate-950 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-900'}`}
                       />
                     </div>
 
                     {/* File No */}
                     <div className="space-y-1">
-                      <label htmlFor="fileNo" className="font-bold text-slate-500">নথি নম্বর:</label>
+                      <label htmlFor="fileNo" className="font-bold text-slate-700 dark:text-slate-300">নথি নম্বর:</label>
                       <input 
                         id="fileNo"
                         type="text" 
@@ -914,26 +914,26 @@ export default function LeaveGeneratorPage() {
                         onChange={(e) => setFileNo(e.target.value)}
                         placeholder="যেমন: এসও (কম)-১৪৫১৯"
                         readOnly={currentUser?.role !== 'ADMIN'}
-                        className={`w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`}
+                        className={`w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-indigo-550 text-slate-800 dark:text-slate-100 font-semibold ${currentUser?.role !== 'ADMIN' ? 'bg-slate-100 dark:bg-slate-950 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-900'}`}
                       />
                     </div>
                   </div>
 
                   {/* Mobile No */}
                   <div className="space-y-1">
-                    <label htmlFor="mobileNo" className="font-bold text-slate-500">মোবাইল নম্বর:</label>
+                    <label htmlFor="mobileNo" className="font-bold text-slate-700 dark:text-slate-300">মোবাইল নম্বর:</label>
                     <input 
                       id="mobileNo"
                       type="text" 
                       value={mobileNo}
                       onChange={(e) => setMobileNo(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-mono font-semibold"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-mono font-semibold"
                     />
                   </div>
 
                   {/* District Selection Section */}
-                  <div className="space-y-2 border-t border-slate-100 pt-3">
-                    <label htmlFor="selectedDistrict" className="font-bold text-slate-500 text-xs block">ছুটিতে থাকাকালীন অবস্থান (জেলা):</label>
+                  <div className="space-y-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <label htmlFor="selectedDistrict" className="font-bold text-slate-700 dark:text-slate-300 text-xs block">ছুটিতে থাকাকালীন অবস্থান (জেলা):</label>
                     <select
                       id="selectedDistrict"
                       value={selectedDistrict}
@@ -943,10 +943,10 @@ export default function LeaveGeneratorPage() {
                           setShowValidationErrors(false);
                         }
                       }}
-                      className={`w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs font-bold outline-none cursor-pointer transition-all ${
+                      className={`w-full px-3 py-2 border rounded-xl text-xs font-bold outline-none cursor-pointer transition-all ${
                         !selectedDistrict && showValidationErrors 
-                          ? 'border-red-500 focus:border-red-500 dark:border-red-900/80 bg-red-50/50 dark:bg-red-950/20' 
-                          : 'border-slate-200 focus:border-indigo-550'
+                          ? 'border-red-500 focus:border-red-500 dark:border-red-900/80 bg-red-50/50 dark:bg-red-950/20 text-red-900 dark:text-red-300' 
+                          : 'border-slate-200 dark:border-slate-800 focus:border-indigo-550 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100'
                       }`}
                     >
                       <option value="">জেলা সিলেক্ট করুন...</option>
@@ -977,12 +977,12 @@ export default function LeaveGeneratorPage() {
                 <div className="space-y-3.5 text-xs font-sans">
                   {/* Leave Type */}
                   <div className="space-y-1">
-                    <label htmlFor="leaveType" className="font-bold text-slate-500">আবেদনের ধরণ:</label>
+                    <label htmlFor="leaveType" className="font-bold text-slate-700 dark:text-slate-300">আবেদনের ধরণ:</label>
                     <select
                       id="leaveType"
                       value={leaveType}
                       onChange={(e) => setLeaveType(e.target.value as 'CASUAL' | 'POST_FACTO' | 'STATION_LEAVE')}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-bold"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-bold"
                     >
                       <option value="CASUAL">ক) নৈমিত্তিক ছুটি</option>
                       <option value="POST_FACTO">খ) ঘটনাত্তোর নৈমিত্তিক ছুটি</option>
@@ -993,7 +993,7 @@ export default function LeaveGeneratorPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {/* Start Date */}
                     <div className="space-y-1">
-                      <label htmlFor="startDate" className="font-bold text-slate-500">শুরুর তারিখ:</label>
+                      <label htmlFor="startDate" className="font-bold text-slate-700 dark:text-slate-300">শুরুর তারিখ:</label>
                       <input 
                         id="startDate"
                         type="date" 
@@ -1001,14 +1001,14 @@ export default function LeaveGeneratorPage() {
                         min={dateLimits.min}
                         max={dateLimits.max}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-semibold"
                         required
                       />
                     </div>
 
                     {/* End Date */}
                     <div className="space-y-1">
-                      <label htmlFor="endDate" className="font-bold text-slate-500">শেষের তারিখ:</label>
+                      <label htmlFor="endDate" className="font-bold text-slate-700 dark:text-slate-300">শেষের তারিখ:</label>
                       <input 
                         id="endDate"
                         type="date" 
@@ -1017,7 +1017,7 @@ export default function LeaveGeneratorPage() {
                         max={dateLimits.max}
                         disabled={!startDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-semibold disabled:bg-slate-100 disabled:dark:bg-slate-950 disabled:cursor-not-allowed"
                         required
                       />
                     </div>
@@ -1025,19 +1025,19 @@ export default function LeaveGeneratorPage() {
 
                   {/* Application Date Picker */}
                   <div className="space-y-1">
-                    <label htmlFor="applicationDate" className="font-bold text-slate-500">আবেদনের তারিখ (চিঠির উপরে প্রদর্শিত হবে):</label>
+                    <label htmlFor="applicationDate" className="font-bold text-slate-700 dark:text-slate-300">আবেদনের তারিখ (চিঠির উপরে প্রদর্শিত হবে):</label>
                     <input 
                       id="applicationDate"
                       type="date" 
                       value={applicationDate}
                       onChange={(e) => setApplicationDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-550 font-semibold"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-semibold"
                     />
                   </div>
 
                   {/* Delegate Officer dropdown */}
                   <div className="space-y-1">
-                    <label htmlFor="delegateId" className="font-bold text-slate-500">ছুটিতে দায়িত্ব পালনকারী কর্মকর্তা:</label>
+                    <label htmlFor="delegateId" className="font-bold text-slate-700 dark:text-slate-300">ছুটিতে দায়িত্ব পালনকারী কর্মকর্তা:</label>
                     <select
                       id="delegateId"
                       value={delegateId}
@@ -1047,10 +1047,10 @@ export default function LeaveGeneratorPage() {
                           setShowValidationErrors(false);
                         }
                       }}
-                      className={`w-full px-3 py-2 bg-slate-50 border rounded-xl outline-none font-bold cursor-pointer transition-all ${
+                      className={`w-full px-3 py-2 border rounded-xl outline-none font-bold cursor-pointer transition-all ${
                         eligibleCoveringOfficers.length > 0 && !delegateId && showValidationErrors
-                          ? 'border-red-500 focus:border-red-500 dark:border-red-900/80 bg-red-50/50 dark:bg-red-950/20'
-                          : 'border-slate-200 focus:border-indigo-550'
+                          ? 'border-red-500 focus:border-red-500 dark:border-red-900/80 bg-red-50/50 dark:bg-red-950/20 text-red-900 dark:text-red-300'
+                          : 'border-slate-200 dark:border-slate-800 focus:border-indigo-550 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100'
                       }`}
                     >
                       <option value="">দায়িত্বপ্রাপ্ত কর্মকর্তা নির্বাচন করুন...</option>
@@ -1078,81 +1078,81 @@ export default function LeaveGeneratorPage() {
 
                 <div className="space-y-3.5 text-xs font-sans">
                   {/* Row 1 Casual leaves config */}
-                  <div className="p-3 bg-indigo-50/20 border border-indigo-100 rounded-xl space-y-2">
-                    <p className="font-extrabold text-indigo-900">নৈমিত্তিক ছুটি ব্যালেন্স:</p>
+                  <div className="p-3 bg-indigo-50/20 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 rounded-xl space-y-2">
+                    <p className="font-extrabold text-indigo-900 dark:text-indigo-400">নৈমিত্তিক ছুটি ব্যালেন্স:</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <label htmlFor="casualTotal" className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
+                        <label htmlFor="casualTotal" className="text-[10px] text-slate-500 dark:text-slate-300 font-bold">প্রাপ্তব্য:</label>
                         <input 
                           id="casualTotal"
                           type="text" 
                           value={casualTotal}
                           onChange={(e) => setCasualTotal(e.target.value)}
-                          className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
+                          className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label htmlFor="casualUsed" className="text-[10px] text-slate-400 font-bold">ভোগকৃত (আগের):</label>
+                        <label htmlFor="casualUsed" className="text-[10px] text-slate-500 dark:text-slate-300 font-bold">ভোগকৃত (আগের):</label>
                         <input 
                           id="casualUsed"
                           type="text" 
                           value={casualUsed}
                           onChange={(e) => setCasualUsed(e.target.value)}
-                          className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
+                          className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Row 2 Earned leaves config */}
-                  <div className="p-3 bg-teal-50/20 border border-teal-100 rounded-xl space-y-2">
-                    <p className="font-extrabold text-teal-900">সাধারণ ছুটি ব্যালেন্স:</p>
+                  <div className="p-3 bg-teal-50/20 dark:bg-teal-950/20 border border-teal-100 dark:border-teal-900/50 rounded-xl space-y-2">
+                    <p className="font-extrabold text-teal-900 dark:text-teal-400">সাধারণ ছুটি ব্যালেন্স:</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <label htmlFor="ordinaryTotal" className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
+                        <label htmlFor="ordinaryTotal" className="text-[10px] text-slate-500 dark:text-slate-300 font-bold">প্রাপ্তব্য:</label>
                         <input 
                           id="ordinaryTotal"
                           type="text" 
                           value={ordinaryTotal}
                           onChange={(e) => setOrdinaryTotal(e.target.value)}
-                          className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
+                          className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label htmlFor="ordinaryUsed" className="text-[10px] text-slate-400 font-bold">ভোগকৃত:</label>
+                        <label htmlFor="ordinaryUsed" className="text-[10px] text-slate-500 dark:text-slate-300 font-bold">ভোগকৃত:</label>
                         <input 
                           id="ordinaryUsed"
                           type="text" 
                           value={ordinaryUsed}
                           onChange={(e) => setOrdinaryUsed(e.target.value)}
-                          className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
+                          className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Row 3 Special leaves config */}
-                  <div className="p-3 bg-purple-50/20 border border-purple-100 rounded-xl space-y-2">
-                    <p className="font-extrabold text-purple-900">বিশেষ ছুটি ব্যালেন্স:</p>
+                  <div className="p-3 bg-purple-50/20 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/50 rounded-xl space-y-2">
+                    <p className="font-extrabold text-purple-900 dark:text-purple-400">বিশেষ ছুটি ব্যালেন্স:</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <label htmlFor="specialTotal" className="text-[10px] text-slate-400 font-bold">প্রাপ্তব্য:</label>
+                        <label htmlFor="specialTotal" className="text-[10px] text-slate-500 dark:text-slate-300 font-bold">প্রাপ্তব্য:</label>
                         <input 
                           id="specialTotal"
                           type="text" 
                           value={specialTotal}
                           onChange={(e) => setSpecialTotal(e.target.value)}
-                          className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
+                          className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label htmlFor="specialUsed" className="text-[10px] text-slate-400 font-bold">ভোগকৃত:</label>
+                        <label htmlFor="specialUsed" className="text-[10px] text-slate-500 dark:text-slate-300 font-bold">ভোগকৃত:</label>
                         <input 
                           id="specialUsed"
                           type="text" 
                           value={specialUsed}
                           onChange={(e) => setSpecialUsed(e.target.value)}
-                          className="w-full px-2 py-1 border border-slate-200 rounded outline-none font-bold"
+                          className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
                     </div>
@@ -1583,10 +1583,31 @@ export default function LeaveGeneratorPage() {
           font-size: 13px !important;
           font-style: normal !important;
           line-height: 1.45 !important;
-          color: #000000 !important;
+          color: #000000;
           text-decoration: none !important;
           letter-spacing: normal !important;
           word-spacing: normal !important;
+        }
+        .dark #printable-leave-sheet {
+          background-color: #090d16 !important;
+          border-color: #1e293b !important;
+        }
+        .dark #printable-leave-sheet .bg-white {
+          background-color: transparent !important;
+        }
+        .dark #printable-leave-sheet * {
+          color: #f8fafc !important;
+          border-color: #334155 !important;
+        }
+        .dark #printable-leave-sheet .bg-slate-50,
+        .dark #printable-leave-sheet th {
+          background-color: #1e293b !important;
+        }
+        .dark #printable-leave-sheet table,
+        .dark #printable-leave-sheet tr,
+        .dark #printable-leave-sheet th,
+        .dark #printable-leave-sheet td {
+          border-color: #334155 !important;
         }
         #printable-leave-sheet, #printable-leave-sheet *:not(.bold-text) {
           font-weight: normal !important;
@@ -1656,17 +1677,15 @@ export default function LeaveGeneratorPage() {
             page-break-inside: avoid !important;
           }
 
-          /* Ensure high fidelity text colors */
-          p, td, th, span, div {
+          /* Force high fidelity black on white print text colors and borders */
+          #printable-leave-sheet,
+          #printable-leave-sheet * {
+            background-color: transparent !important;
             color: #000000 !important;
-          }
-
-          table {
             border-color: #000000 !important;
           }
-
-          th, td {
-            border-color: #000000 !important;
+          #printable-leave-sheet {
+            background-color: #ffffff !important;
           }
         }
       `}</style>

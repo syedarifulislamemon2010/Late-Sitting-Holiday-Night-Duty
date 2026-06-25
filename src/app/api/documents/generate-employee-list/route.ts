@@ -94,37 +94,91 @@ export async function POST(request: Request) {
       }
     });
 
+    const userCellDutiesMap = new Map<string, Record<string, string>>();
     const userCellsMap = new Map<string, { id: number; name: string }[]>();
     usersForExpansion.forEach(u => {
       if (u.username) {
+        const usernameKey = u.username.trim().toLowerCase();
         userCellsMap.set(
-          u.username.trim().toLowerCase(),
+          usernameKey,
           u.userCells.map(uc => ({ id: uc.cell.id, name: uc.cell.name }))
         );
+        
+        let parsedDuties: Record<string, string> = {};
+        if (u.cellDuties) {
+          try {
+            parsedDuties = JSON.parse(u.cellDuties);
+          } catch (e) {
+            console.warn('Failed to parse cellDuties for user', u.username, e);
+          }
+        }
+        userCellDutiesMap.set(usernameKey, parsedDuties);
       }
     });
 
     const allEmployeesForExpansion = await db.select().from(employees);
 
     const cellsListWithEmployees = cellsList.map(cell => {
-      const cellEmps = [...cell.employees];
+      const cellEmps: any[] = [];
       
+      // 1. Process primary cell employees
+      for (const emp of cell.employees) {
+        let dutyType = 'PRIMARY';
+        if (emp.bankId) {
+          const duties = userCellDutiesMap.get(emp.bankId.trim().toLowerCase());
+          if (duties && duties[String(cell.id)]) {
+            dutyType = duties[String(cell.id)];
+          } else if (emp.designation.includes('ইনচার্জ') || emp.designation.includes('Incharge')) {
+            dutyType = 'INCHARGE';
+          }
+        } else if (emp.designation.includes('ইনচার্জ') || emp.designation.includes('Incharge')) {
+          dutyType = 'INCHARGE';
+        }
+        
+        cellEmps.push({
+          ...emp,
+          dutyType
+        });
+      }
+      
+      // 2. Process expanded cell employees (additional cells)
       for (const emp of allEmployeesForExpansion) {
         if (emp.cellId === cell.id) continue;
         
         if (emp.bankId) {
-          const assignedCells = userCellsMap.get(emp.bankId.trim().toLowerCase());
+          const usernameKey = emp.bankId.trim().toLowerCase();
+          const assignedCells = userCellsMap.get(usernameKey);
           if (assignedCells && assignedCells.some(c => c.id === cell.id)) {
             if (!cellEmps.some(e => e.id === emp.id)) {
-              cellEmps.push(emp);
+              let dutyType = 'ADDITIONAL';
+              const duties = userCellDutiesMap.get(usernameKey);
+              if (duties && duties[String(cell.id)]) {
+                dutyType = duties[String(cell.id)];
+              }
+              
+              cellEmps.push({
+                ...emp,
+                dutyType
+              });
             }
           }
         }
       }
       
+      // 3. Apply the visibility filtering:
+      // If dutyType is 'ADDITIONAL', and current user is not ADMIN, and it's not the employee themselves:
+      const visibleEmps = cellEmps.filter(emp => {
+        const isAdditional = emp.dutyType === 'ADDITIONAL';
+        const isSelf = !!(emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim());
+        if (isAdditional && currentUser?.role !== 'ADMIN' && !isSelf) {
+          return false;
+        }
+        return true;
+      });
+      
       return {
         ...cell,
-        employees: cellEmps
+        employees: visibleEmps
       };
     });
 
@@ -255,20 +309,28 @@ export async function POST(request: Request) {
 
       let rowsHtml = '';
       let hasFoundFirstSPO = false;
-      sortedEmployees.forEach((emp, index) => {
-        let isCellIncharge = false;
-        if (emp.designation === 'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)' && !hasFoundFirstSPO) {
-          isCellIncharge = true;
-          hasFoundFirstSPO = true;
+      sortedEmployees.forEach((emp: any, index) => {
+        let isCellIncharge = emp.dutyType === 'INCHARGE';
+        if (!emp.dutyType) {
+          if (emp.designation === 'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)' && !hasFoundFirstSPO) {
+            isCellIncharge = true;
+            hasFoundFirstSPO = true;
+          }
         }
 
         const textColor = isCellIncharge ? '#0f766e' : '#000000';
-        const inchargeBadge = isCellIncharge ? ' <span style="font-size: 14px; font-weight: bold; background-color: #ccfbf1; color: #0f766e; padding: 1px 3px; border-radius: 4px; margin-left: 4px; display: inline-block; vertical-align: middle;">ইনচার্জ</span>' : '';
+        
+        let badgeHtml = '';
+        if (isCellIncharge) {
+          badgeHtml = ' <span style="font-size: 11px; font-weight: bold; background-color: #ccfbf1; color: #0f766e; padding: 1.5px 4px; border-radius: 4px; margin-left: 6px; display: inline-block; vertical-align: middle; border: 1px solid #99f6e4;">ইনচার্জ</span>';
+        } else if (emp.dutyType === 'ADDITIONAL') {
+          badgeHtml = ' <span style="font-size: 11px; font-weight: bold; background-color: #fef3c7; color: #92400e; padding: 1.5px 4px; border-radius: 4px; margin-left: 6px; display: inline-block; vertical-align: middle; border: 1px solid #fde68a;">অতিরিক্ত দায়িত্ব</span>';
+        }
 
         rowsHtml += `
           <tr style="color: ${textColor};">
             <td style="font-weight: ${isCellIncharge ? 'bold' : 'normal'};">${toBnDigits(index + 1)}</td>
-            <td class="text-left font-bold" style="color: ${textColor};">${emp.name}${inchargeBadge}</td>
+            <td class="text-left font-bold" style="color: ${textColor};">${emp.name}${badgeHtml}</td>
             <td style="font-weight: ${isCellIncharge ? 'bold' : 'normal'};">${emp.designation}</td>
             <td class="font-mono" style="color: ${textColor};">${emp.bankId || '-'}</td>
             <td class="font-mono" style="color: ${textColor};">${emp.fileNo || '-'}</td>

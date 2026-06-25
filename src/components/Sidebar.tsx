@@ -74,11 +74,6 @@ export default function Sidebar() {
     };
   }, []);
 
-  useEffect(() => {
-    // Keep white theme active by default
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', 'light');
-  }, []);
 
   const toggleCollapse = () => {
     const nextState = !isCollapsed;
@@ -152,7 +147,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Top Navigation */}
-      <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+      <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm">
         <Link 
           href={isEmployee ? "/my-portal" : "/dashboard"} 
           onClick={(e) => {
@@ -163,14 +158,14 @@ export default function Sidebar() {
             }
           }}
 
-          className="flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] rounded-lg"
+          className="flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
         >
           <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={32} height={32} className="shrink-0 object-contain" />
-          <h1 className="font-semibold text-slate-950 text-xs sm:text-sm leading-tight whitespace-normal">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h1>
+          <h1 className="font-semibold text-slate-950 dark:text-slate-100 text-xs sm:text-sm leading-tight whitespace-normal">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h1>
         </Link>
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer"
           aria-label="Toggle navigation menu"
         >
           {isOpen ? <X size={20} /> : <Menu size={20} />}
@@ -187,7 +182,7 @@ export default function Sidebar() {
 
       {/* Sidebar Navigation Panel */}
       <aside 
-        className={`no-print fixed top-0 lg:top-0 bottom-0 left-0 z-30 flex flex-col bg-white/90 backdrop-blur-sm border-r border-slate-200/80 transition-all duration-300 ease-in-out lg:translate-x-0 relative ${
+        className={`no-print fixed top-0 lg:top-0 bottom-0 left-0 z-30 flex flex-col bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-r border-slate-200/80 dark:border-slate-800/80 transition-all duration-300 ease-in-out lg:translate-x-0 relative ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:sticky lg:h-screen'
         } ${
           isMounted && isCollapsed ? 'lg:w-20' : 'lg:w-64'
@@ -196,7 +191,7 @@ export default function Sidebar() {
         {/* Collapse toggle button on desktop - Floats on the right middle edge */}
         <button 
           onClick={toggleCollapse}
-          className={`hidden lg:flex absolute top-1/2 -translate-y-1/2 -right-3 items-center justify-center w-6 h-6 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-slate-800 shadow-sm z-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] transition-transform duration-300 ${
+          className={`hidden lg:flex absolute top-1/2 -translate-y-1/2 -right-3 items-center justify-center w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 shadow-sm z-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition-transform duration-300 ${
             isCollapsed ? 'rotate-180' : ''
           }`}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -206,7 +201,7 @@ export default function Sidebar() {
         </button>
 
         {/* Sidebar Header Logo */}
-        <div className={`flex items-center py-5 border-b border-slate-100 ${
+        <div className={`flex items-center py-5 border-b border-slate-100 dark:border-slate-800 ${
           isMounted && isCollapsed ? 'lg:px-3 lg:justify-center' : 'px-6 justify-between'
         }`}>
           <Link 
@@ -219,7 +214,7 @@ export default function Sidebar() {
               }
             }}
 
-            className="flex items-center group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] focus:ring-offset-2 rounded-lg w-full"
+            className="flex items-center group cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg w-full"
           >
             <Image 
               src="/janata-bank-logo-real.svg" 
@@ -233,14 +228,14 @@ export default function Sidebar() {
                 ? 'opacity-0 w-0 ml-0 whitespace-nowrap' 
                 : 'opacity-100 w-full ml-3 whitespace-normal'
             }`}>
-              <h1 className="font-extrabold text-slate-950 text-[13px] sm:text-[14px] leading-tight">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h1>
-              <p className="text-[10px] font-bold text-[#0b5e9e] uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
+              <h1 className="font-extrabold text-slate-950 dark:text-slate-100 text-[13px] sm:text-[14px] leading-tight">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h1>
+              <p className="text-[10px] font-bold text-primary dark:text-blue-400 uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
             </div>
           </Link>
           
           <button 
             onClick={() => setIsOpen(false)}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer"
+            className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-pointer"
             aria-label="Close menu"
           >
             <X size={18} />
@@ -257,13 +252,13 @@ export default function Sidebar() {
               <div className="transition-all duration-300">
                 {isMounted && isCollapsed ? (
                   secIdx > 0 ? (
-                    <div className="border-t border-slate-100 my-2 mx-3" />
+                    <div className="border-t border-slate-100 dark:border-slate-800 my-2 mx-3" />
                   ) : (
                     <div className="h-2" />
                   )
                 ) : (
                   section.items.length > 1 && (
-                    <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider pt-2 whitespace-nowrap">
+                    <h3 className="px-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pt-2 whitespace-nowrap">
                       {section.title}
                     </h3>
                   )
@@ -286,21 +281,21 @@ export default function Sidebar() {
                           setShowWarningModal(true);
                         }
                       }}
-                      className={`flex items-center transition-all duration-200 group relative border-l-4 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-[#0b5e9e] ${
+                      className={`flex items-center transition-all duration-200 group relative border-l-4 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-primary ${
                         isMounted && isCollapsed 
                           ? 'justify-center py-2.5 px-0' 
                           : 'px-3 py-2.5'
                       } ${
                         isActive 
-                          ? 'bg-slate-50 text-[#0b5e9e] border-[#0b5e9e] font-bold' 
-                          : 'text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-900'
+                          ? 'bg-slate-50 dark:bg-slate-800/40 text-primary border-primary font-bold' 
+                          : 'text-slate-600 dark:text-slate-400 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/30 hover:text-slate-900 dark:hover:text-slate-100'
                       }`}
                       aria-current={isActive ? 'page' : undefined}
                     >
                       <Icon 
                         size={18} 
                         className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${
-                          isActive ? 'text-[#0b5e9e]' : 'text-slate-400 group-hover:text-slate-600'
+                          isActive ? 'text-primary' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'
                         }`} 
                       />
                       
@@ -330,16 +325,16 @@ export default function Sidebar() {
       {/* Styled Unsaved Changes Warning Modal */}
       {showWarningModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-6 text-center transform scale-100 transition-all font-sans">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800 space-y-6 text-center transform scale-100 transition-all font-sans">
             <div className="mx-auto w-16 h-16 bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center">
               <AlertCircle size={32} />
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-base font-bold text-slate-800">
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
                 আপনি যে পেইজে আছেন, সেখানে থাকতে চান?
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 আপনার কোনো পরিবর্তন অসংরক্ষিত থাকতে পারে। পেজ পরিবর্তন করলে পরিবর্তনগুলো মুছে যাবে।
               </p>
             </div>
@@ -349,7 +344,7 @@ export default function Sidebar() {
                 onClick={() => {
                   setShowWarningModal(false);
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer border border-transparent"
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer border border-transparent"
               >
                 হ্যাঁ
               </button>
@@ -361,7 +356,7 @@ export default function Sidebar() {
                   setShowWarningModal(false);
                   window.location.href = targetHref;
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-all border border-red-100 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 text-xs font-bold transition-all border border-red-100 dark:border-red-900/40 cursor-pointer"
               >
                 না
               </button>

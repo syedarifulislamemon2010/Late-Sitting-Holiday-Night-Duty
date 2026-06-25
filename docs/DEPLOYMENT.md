@@ -289,3 +289,61 @@ Useful commands to manage and monitor the server environment:
 * **Nginx error log trace:** `sudo tail -f /var/log/nginx/error.log`
 * **Stop application:** `pm2 stop lhn-portal`
 * **PostgreSQL service status:** `sudo systemctl status postgresql`
+
+---
+
+## 🌐 16. Deployment Topology & High Availability (HA)
+
+### A. Local Standalone RHEL Machine
+The production gateway routes incoming port 80/443 traffic through Nginx to the Next.js local port 3000. Firewall rules drop raw requests targeting port 3000 directly.
+
+```mermaid
+graph TD
+    ClientBrowser["Client Browser (TLS 1.3)"] -->|HTTPS / Port 443| Nginx["Nginx Reverse Proxy"]
+    Nginx -->|Reverse Proxy / Port 3000| NextJS["Next.js Application (Node.js)"]
+    NextJS -->|TCP / Port 5432| DB[("PostgreSQL Database (Neon / RHEL 15)")]
+    
+    subgraph ServerMachine["Enterprise RHEL Server"]
+        Nginx
+        NextJS
+        DB
+    end
+```
+
+### B. High Availability Clustered Design
+For critical enterprise banking environments demanding failover and high availability, the architecture expands to a distributed clustered topology:
+
+```mermaid
+graph TD
+    Internet(["Internet"]) --> LoadBalancer["Load Balancer"]
+    LoadBalancer --> NginxCluster["Nginx Cluster"]
+    NginxCluster --> NextNodeA["Next.js Node A"]
+    NginxCluster --> NextNodeB["Next.js Node B"]
+    NextNodeA --> PostgresPrimary[("Postgres Primary")]
+    NextNodeB --> PostgresPrimary
+    PostgresPrimary --> PostgresReplica[("Postgres Replica")]
+```
+
+---
+
+## 🔄 17. CI/CD Pipeline
+
+The portal utilizes a standard CI/CD workflow to validate code quality and automate deployment:
+
+```text
+[Code Commit] -> [Lint & Format Checks] -> [Vitest Unit Test Suite] -> [Next.js Compilation] -> [PM2 Deploy/Reload]
+```
+1. **Lint Phase:** Code style is validated using `npx eslint .`.
+2. **Build Test:** Compilation validation using `npm run build`.
+3. **Deployment Trigger:** Triggers webhook to reload PM2 runtime wrapper (`pm2 reload lhn-portal`).
+
+---
+
+## 📊 18. Planned Monitoring Roadmap (Future Implementations)
+
+To guarantee runtime visibility in future enterprise clusters, the following integrations are scheduled:
+* **Prometheus & OpenTelemetry:** Exposes real-time system metrics (CPU utilization, API response times, request throughput).
+* **Loki & System Logging:** Collects internal application server console traces and database query execution metrics.
+* **Grafana Dashboards:** Aggregates Prometheus metrics and Loki logs into operational dashboards for bank system operators.
+* **AlertManager & Webhooks:** Configured to dispatch immediate error warnings (e.g. database disconnects, API rate-limiting spikes) to administrative Slack/Discord webhooks.
+

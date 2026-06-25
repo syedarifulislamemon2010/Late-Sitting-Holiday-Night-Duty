@@ -521,7 +521,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               <div className="flex justify-between items-center border-b border-indigo-100/30 pb-2">
                 <h4 className="font-extrabold text-indigo-700 dark:text-indigo-400 text-sm">Late Sitting (লেট সিটিং)</h4>
-                <span className="text-xs font-bold text-indigo-650 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100/60 shadow-xs">৳৩০০</span>
+                <span className="text-xs font-bold text-indigo-650 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded-full border border-indigo-100/60 dark:border-indigo-900/40 shadow-xs">৳৩০০</span>
               </div>
               <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
                 <p className="flex justify-between"><span>• নাস্তা ভাতা:</span> <span className="font-bold">৳১০০</span></p>
@@ -541,7 +541,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               <div className="flex justify-between items-center border-b border-emerald-100/30 pb-2">
                 <h4 className="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">Holiday Duty (সরকারি ছুটি)</h4>
-                <span className="text-xs font-bold text-emerald-650 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100/60 shadow-xs">৳৫০০</span>
+                <span className="text-xs font-bold text-emerald-650 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-100/60 dark:border-emerald-900/40 shadow-xs">৳৫০০</span>
               </div>
               <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
                 <p className="flex justify-between"><span>• দুপুরের খাবার:</span> <span className="font-bold">৳২৫০</span></p>
@@ -561,7 +561,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               <div className="flex justify-between items-center border-b border-rose-100/30 pb-2">
                 <h4 className="font-extrabold text-rose-700 dark:text-rose-400 text-sm">Night Shift (রাত্রীকালীন ডিউটি)</h4>
-                <span className="text-xs font-bold text-rose-650 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100/60 shadow-xs">৳১,০০০</span>
+                <span className="text-xs font-bold text-rose-650 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50 px-2 py-0.5 rounded-full border border-rose-100/60 dark:border-rose-900/40 shadow-xs">৳১,০০০</span>
               </div>
               <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
                 <p className="flex justify-between"><span>• রাতের খাবার (ডিনার):</span> <span className="font-bold">৳৬০০</span></p>
