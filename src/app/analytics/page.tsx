@@ -64,6 +64,9 @@ export default function AnalyticsDashboardPage() {
   const [selectedDutyType, setSelectedDutyType] = useState('');
   const [cellsList, setCellsList] = useState<{ id: number; name: string }[]>([]);
   const [selectedCellId, setSelectedCellId] = useState('all');
+  const [selectedReleaseDate, setSelectedReleaseDate] = useState('');
+  const [availableReleaseDates, setAvailableReleaseDates] = useState<string[]>([]);
+  const [resolvedReleaseDate, setResolvedReleaseDate] = useState('');
 
   // Aggregated Data State
   const [allowanceTrend, setAllowanceTrend] = useState<AllowanceTrend[]>([]);
@@ -106,6 +109,9 @@ export default function AnalyticsDashboardPage() {
       if (selectedCellId && selectedCellId !== 'all') {
         queryParams.set('cellId', selectedCellId);
       }
+      if (selectedReleaseDate) {
+        queryParams.set('releaseDate', selectedReleaseDate);
+      }
 
       const res = await fetch(`/api/analytics?${queryParams.toString()}`);
       if (!res.ok) {
@@ -125,6 +131,8 @@ export default function AnalyticsDashboardPage() {
       setEmployeeBillCounts(data.employeeBillCounts || []);
       setSummary(data.summary || null);
       setRole(data.role || '');
+      setAvailableReleaseDates(data.availableReleaseDates || []);
+      setResolvedReleaseDate(data.selectedReleaseDate || '');
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'ডাটাবেজ সংযোগ ত্রুটি।');
@@ -154,13 +162,23 @@ export default function AnalyticsDashboardPage() {
     if (currentUser) {
       loadAnalytics();
     }
-  }, [selectedMonth, selectedYear, selectedDutyType, selectedCellId, currentUser]);
+  }, [selectedMonth, selectedYear, selectedDutyType, selectedCellId, selectedReleaseDate, currentUser]);
 
   const clearFilters = () => {
     setSelectedMonth('');
     setSelectedYear('2026');
     setSelectedDutyType('');
     setSelectedCellId('all');
+    setSelectedReleaseDate('');
+  };
+
+  const formatBengaliDate = (dateStr: string) => {
+    if (!dateStr || !dateStr.includes('-')) return dateStr;
+    const [y, m, d] = dateStr.split('-');
+    const months = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+    const bnDay = toBanglaDigits(parseInt(d, 10).toString());
+    const bnYear = toBanglaDigits(y);
+    return `${bnDay}ই ${months[parseInt(m, 10) - 1]} ${bnYear}`;
   };
 
   return (
@@ -325,7 +343,27 @@ export default function AnalyticsDashboardPage() {
             </select>
           </div>
 
-          {(selectedMonth || selectedYear !== '2026' || selectedDutyType !== '' || selectedCellId !== 'all') && (
+          <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
+
+          {/* Bill Release Date Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-slate-400 font-bold uppercase font-sans">বিল ছাড়ার তারিখ</label>
+            <select
+              value={selectedReleaseDate}
+              onChange={(e) => setSelectedReleaseDate(e.target.value)}
+              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 animate-in fade-in"
+            >
+              <option value="">সর্বশেষ তারিখ {resolvedReleaseDate ? `(${formatBengaliDate(resolvedReleaseDate)})` : ''}</option>
+              {availableReleaseDates.map((date) => (
+                <option key={date} value={date}>
+                  {formatBengaliDate(date)}
+                </option>
+              ))}
+              <option value="all">সকল তারিখের বিল (All Bills)</option>
+            </select>
+          </div>
+
+          {(selectedMonth || selectedYear !== '2026' || selectedDutyType !== '' || selectedCellId !== 'all' || selectedReleaseDate !== '') && (
             <button
               onClick={clearFilters}
               className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 text-[10px] font-bold rounded-xl border border-slate-200 cursor-pointer transition-all animate-in fade-in"

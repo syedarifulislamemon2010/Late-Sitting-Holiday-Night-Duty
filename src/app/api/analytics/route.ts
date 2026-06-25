@@ -134,14 +134,43 @@ export async function GET(request: Request) {
       }
     }
 
+    // Fetch unique bill release dates (overall or cell-scoped)
+    const availableDatesConditions = [like(officeOrders.category, 'BILL_%')];
+    const availableDatesCellCond = getCellNameCondition(officeOrders.cellName);
+    if (availableDatesCellCond) {
+      availableDatesConditions.push(availableDatesCellCond);
+    }
+    const availableDatesRaw = await db.select({
+      orderDate: officeOrders.orderDate
+    })
+    .from(officeOrders)
+    .where(and(...availableDatesConditions))
+    .groupBy(officeOrders.orderDate)
+    .orderBy(desc(officeOrders.orderDate));
+    const availableReleaseDates = availableDatesRaw.map(d => d.orderDate);
+
+    const filterReleaseDate = searchParams.get('releaseDate'); // YYYY-MM-DD or empty or 'all'
+    let targetReleaseDate: string | null = null;
+    if (filterReleaseDate && filterReleaseDate !== 'all') {
+      targetReleaseDate = filterReleaseDate;
+    } else if (filterReleaseDate === 'all') {
+      targetReleaseDate = null;
+    } else {
+      // Default to latest date if available
+      targetReleaseDate = availableReleaseDates[0] || null;
+    }
+
     // ----------------------------------------------------
     // KPI Summary Metrics
     // ----------------------------------------------------
-    // Total Released Bills (overall or cell-scoped)
+    // Total Released Bills (overall or cell-scoped, filtered by date)
     const totalReleasedBillsConditions = [like(officeOrders.category, 'BILL_%')];
     const releasedBillsCellCond = getCellNameCondition(officeOrders.cellName);
     if (releasedBillsCellCond) {
       totalReleasedBillsConditions.push(releasedBillsCellCond);
+    }
+    if (targetReleaseDate) {
+      totalReleasedBillsConditions.push(eq(officeOrders.orderDate, targetReleaseDate));
     }
     const totalReleasedBillsRaw = await db.select({
       count: sql<number>`count(${officeOrders.id})`
@@ -377,10 +406,14 @@ export async function GET(request: Request) {
     // - Public metric showing released bills counts by date.
     // ----------------------------------------------------
     const billConditions = [like(officeOrders.category, 'BILL_%')];
-    if (filterMonth) {
-      billConditions.push(sql`substring(${officeOrders.orderDate}, 1, 7) = ${filterMonth}`);
-    } else if (filterYear) {
-      billConditions.push(sql`substring(${officeOrders.orderDate}, 1, 4) = ${filterYear}`);
+    if (targetReleaseDate) {
+      billConditions.push(eq(officeOrders.orderDate, targetReleaseDate));
+    } else {
+      if (filterMonth) {
+        billConditions.push(sql`substring(${officeOrders.orderDate}, 1, 7) = ${filterMonth}`);
+      } else if (filterYear) {
+        billConditions.push(sql`substring(${officeOrders.orderDate}, 1, 4) = ${filterYear}`);
+      }
     }
     const billReleasesCellCond = getCellNameCondition(officeOrders.cellName);
     if (billReleasesCellCond) {
@@ -427,6 +460,8 @@ export async function GET(request: Request) {
         myBillCount,
         myTotalEarnings
       },
+      availableReleaseDates,
+      selectedReleaseDate: targetReleaseDate || 'all',
       allowanceTrend,
       personalAllowanceTrend,
       topPerformers,
