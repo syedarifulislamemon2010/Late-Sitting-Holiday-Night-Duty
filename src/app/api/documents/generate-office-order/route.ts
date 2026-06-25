@@ -84,6 +84,15 @@ export async function POST(request: Request) {
       if (theme === 'dark' || (!theme && systemDark)) {
         document.documentElement.classList.add('dark');
       }
+      window.addEventListener('storage', function(e) {
+        if (e.key === 'theme') {
+          if (e.newValue === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
+      });
     } catch (e) {}
   })();
 </script>

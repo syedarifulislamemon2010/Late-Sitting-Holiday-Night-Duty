@@ -389,6 +389,16 @@ export async function POST(request: Request) {
         if (theme === 'dark' || (!theme && systemDark)) {
           document.documentElement.classList.add('dark');
         }
+        
+        window.addEventListener('storage', function(e) {
+          if (e.key === 'theme') {
+            if (e.newValue === 'dark') {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+          }
+        });
       } catch (e) {}
     })();
   </script>
@@ -504,10 +514,30 @@ export async function POST(request: Request) {
         color: #f8fafc !important;
         border-color: #334155 !important;
       }
-      html.dark span[style*="background-color"] {
-        background-color: #1e293b !important;
-        color: #38bdf8 !important;
-        border-color: #0284c7 !important;
+      /* Override inline style colors in dark mode for readable contrast */
+      html.dark tr[style*="color: #000000"],
+      html.dark tr[style*="color:#000000"],
+      html.dark td[style*="color: #000000"],
+      html.dark td[style*="color:#000000"] {
+        color: #f8fafc !important;
+      }
+      html.dark tr[style*="color: #0f766e"],
+      html.dark tr[style*="color:#0f766e"],
+      html.dark td[style*="color: #0f766e"],
+      html.dark td[style*="color:#0f766e"] {
+        color: #2dd4bf !important;
+      }
+      /* Incharge Badge Dark Theme */
+      html.dark span[style*="#ccfbf1"] {
+        background-color: #0f2d29 !important;
+        color: #2dd4bf !important;
+        border-color: #0f766e !important;
+      }
+      /* Additional Duties Badge Dark Theme */
+      html.dark span[style*="#fef3c7"] {
+        background-color: #3b2a1a !important;
+        color: #fbbf24 !important;
+        border-color: #b45309 !important;
       }
     }
   </style>

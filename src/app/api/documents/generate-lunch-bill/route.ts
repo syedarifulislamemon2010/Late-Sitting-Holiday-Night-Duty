@@ -316,6 +316,15 @@ export async function POST(request: Request) {
       if (theme === 'dark' || (!theme && systemDark)) {
         document.documentElement.classList.add('dark');
       }
+      window.addEventListener('storage', function(e) {
+        if (e.key === 'theme') {
+          if (e.newValue === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
+      });
     } catch (e) {}
   })();
 </script>
@@ -450,6 +459,64 @@ export async function POST(request: Request) {
   .signature-title {
     font-weight: bold;
     font-size: 12px;
+  }
+  @media screen {
+    html.dark body {
+      background-color: #0b0f19 !important;
+      color: #f8fafc !important;
+    }
+    html.dark th {
+      background-color: #1e293b !important;
+      color: #f8fafc !important;
+      border-color: #334155 !important;
+    }
+    html.dark td, html.dark tr, html.dark table {
+      border-color: #334155 !important;
+    }
+    html.dark .header-container *,
+    html.dark .report-meta,
+    html.dark .report-meta *,
+    html.dark .cell-title,
+    html.dark .report-title-box,
+    html.dark .report-title,
+    html.dark .bill-summary-text,
+    html.dark .bill-summary-text * {
+      color: #f8fafc !important;
+      border-color: #334155 !important;
+    }
+    html.dark .total-row {
+      background-color: #1e293b !important;
+      color: #f8fafc !important;
+    }
+    html.dark .signature-line {
+      border-color: #334155 !important;
+    }
+    html.dark .signature-container * {
+      color: #f8fafc !important;
+    }
+    /* Override inline style colors in dark mode for readable contrast */
+    html.dark [style*="color: #000000"],
+    html.dark [style*="color:#000000"],
+    html.dark [style*="color: #000"],
+    html.dark [style*="color:#000"] {
+      color: #f8fafc !important;
+    }
+    html.dark [style*="color: #c2185b"],
+    html.dark [style*="color:#c2185b"] {
+      color: #f472b6 !important;
+    }
+    html.dark [style*="color: #db2777"],
+    html.dark [style*="color:#db2777"] {
+      color: #f472b6 !important;
+    }
+    html.dark [style*="color: #b45309"],
+    html.dark [style*="color:#b45309"] {
+      color: #fbbf24 !important;
+    }
+    html.dark [style*="color: #15803d"],
+    html.dark [style*="color:#15803d"] {
+      color: #4ade80 !important;
+    }
   }
 </style>
 </head>

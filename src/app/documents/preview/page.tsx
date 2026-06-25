@@ -382,8 +382,7 @@ export default function PreviewPage() {
           }
         }
         .dark iframe {
-          filter: invert(0.9) hue-rotate(180deg) !important;
-          background-color: #030712 !important;
+          background-color: #0b0f19 !important;
         }
         .dark body, .dark .pdf-preview-container, .dark .image-preview-container {
           background-color: #030712 !important;

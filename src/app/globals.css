@@ -372,11 +372,10 @@ input[type="date"]::-webkit-datetime-edit-year-field {
     background-color: #1e293b !important;
   }
 
-  /* Preview Iframe color inversion filter on screen in dark mode */
+  /* Preview Iframe styling on screen in dark mode */
   html.dark iframe,
   html.dark #preview-print-iframe {
-    filter: invert(0.9) hue-rotate(180deg) !important;
-    background-color: #030712 !important;
+    background-color: #0b0f19 !important;
   }
 }
 
