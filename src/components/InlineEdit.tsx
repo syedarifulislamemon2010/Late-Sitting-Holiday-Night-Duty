@@ -39,7 +39,7 @@ export default function InlineEdit({
   }, [isEditing]);
 
   if (!canEdit) {
-    return <span className={`${className}`}>{value || <span className="text-slate-400 italic">ফাঁকা</span>}</span>;
+    return <span className={`${className}`}>{value || <span className="text-slate-400 dark:text-slate-650 italic">{placeholder}</span>}</span>;
   }
 
   const handleSave = async () => {

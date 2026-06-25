@@ -77,13 +77,8 @@ export default function RootLayout({
                   </div>
                   
                   {/* Premium Dashboard Footer */}
-                  <footer className="no-print print:hidden py-6 mt-auto text-slate-400 text-center app-footer-text flex flex-col items-center gap-1 font-sans">
-                    <p className="font-semibold">
-                      ডিজাইন ও ডেভেলপমেন্ট: <span className="text-[#0b5e9e] dark:text-[#38bdf8]">সিবিএস ইন্টিগ্রেটেড ডেভেলপমেন্ট সেল</span>, অনলাইন ব্যাংকিং ডিপার্টমেন্ট
-                    </p>
-                    <p>
-                      সংস্করণ ১.০.০
-                    </p>
+                  <footer className="no-print print:hidden py-4 mt-auto text-slate-400 text-center app-footer-text text-xs font-sans">
+                    ডিজাইন ও ডেভেলপমেন্ট: <span className="text-[#0b5e9e] dark:text-[#38bdf8] font-semibold">সিবিএস ইন্টিগ্রেটেড ডেভেলপমেন্ট সেল</span>, অনলাইন ব্যাংকিং ডিপার্টমেন্ট <span className="mx-2 text-slate-300">|</span> সংস্করণ ১.০.০
                   </footer>
                 </div>
                 </main>

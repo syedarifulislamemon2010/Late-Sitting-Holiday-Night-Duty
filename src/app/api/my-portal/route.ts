@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { employees, duties, leaveApplications, holidays, cells } from '@/db/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { employees, duties, leaveApplications, holidays, cells, officeOrders } from '@/db/schema';
+import { eq, and, desc, sql, like } from 'drizzle-orm';
 import { getCalculatedLeaveDetails, DEFAULT_CASUAL_LEAVE_ENTITLEMENT } from '@/lib/leave-calculator';
 import { logActivity } from '@/lib/audit';
 import { headers } from 'next/headers';
@@ -145,6 +145,29 @@ export async function GET(request: Request) {
       sql`${employees.id} != ${employee.id}`
     ));
 
+    // 7. Fetch approved bill office orders for this employee
+    const allBillOrders = await db.select({
+      id: officeOrders.id,
+      orderRef: officeOrders.orderRef,
+      orderDate: officeOrders.orderDate,
+      category: officeOrders.category,
+      dutiesJson: officeOrders.dutiesJson
+    })
+    .from(officeOrders)
+    .where(like(officeOrders.category, 'BILL_%'));
+
+    const userBills = allBillOrders.filter(o => {
+      try {
+        const ds = JSON.parse(o.dutiesJson || '[]');
+        return ds.some((d: any) => 
+          String(d.employeeId) === String(employee.bankId) || 
+          String(d.employeeId) === String(employee.id)
+        );
+      } catch {
+        return false;
+      }
+    });
+
     return NextResponse.json({
       employee,
       duties: employeeDuties,
@@ -155,7 +178,8 @@ export async function GET(request: Request) {
         remaining: casualRemaining
       },
       monthlyLedger,
-      coveringOfficers
+      coveringOfficers,
+      bills: userBills
     });
   } catch (error) {
     console.error('My Portal GET Error:', error);

@@ -36,6 +36,7 @@ interface Duty {
   date: string;
   totalBill: number;
   orderRef?: string | null;
+  orderDate?: string | null;
 }
 
 interface LeaveBalance {
@@ -62,7 +63,8 @@ export default function MyDutySummaryCard() {
   const [isEmployee, setIsEmployee] = useState(false);
 
   const [filterType, setFilterType] = useState<'all' | 'month' | 'latest_bill'>('all');
-  const [chosenMonth, setChosenMonth] = useState<string>('');
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     async function loadSummaryData() {
@@ -75,18 +77,93 @@ export default function MyDutySummaryCard() {
         }
         const data = await res.json();
         if (data.employee) {
-          setEmployee(data.employee);
-          const retrievedDuties = data.duties || [];
-          setDuties(retrievedDuties);
+          const emp = data.employee;
+          setEmployee(emp);
+          
+          const rawDuties = data.duties || [];
+          const bills = data.bills || [];
+          
+          const mergedDuties: Duty[] = [];
+
+          // Helper to parse DD-MM-YYYY to YYYY-MM-DD
+          const parseBanglaDateToEnglishStr = (dStr: string) => {
+            const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+            const engDigits = dStr.trim().replace(/[০-৯]/g, (w) => String(banglaDigits.indexOf(w)));
+            const parts = engDigits.split('-');
+            if (parts.length === 3) {
+              return `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
+            }
+            return '';
+          };
+
+          // 1. Extract duties from bills
+          bills.forEach((bill: any) => {
+            try {
+              const ds = JSON.parse(bill.dutiesJson || '[]');
+              const myEntry = ds.find((d: any) => 
+                String(d.employeeId) === String(emp.bankId) || 
+                String(d.employeeId) === String(emp.id)
+              );
+              if (myEntry) {
+                const type = bill.category === 'BILL_LATE_SITTING'
+                  ? 'LATE_SITTING'
+                  : bill.category === 'BILL_HOLIDAY'
+                  ? 'HOLIDAY'
+                  : bill.category === 'BILL_NIGHT_SHIFT'
+                  ? 'NIGHT_SHIFT'
+                  : 'LATE_SITTING';
+                
+                const dailyRate = type === 'LATE_SITTING' ? 300 : type === 'HOLIDAY' ? 500 : 1000;
+                const datesStr = myEntry.datesFormatted || '';
+                const dates = datesStr.split(',').map((s: string) => s.trim()).filter(Boolean);
+                
+                dates.forEach((dStr: string) => {
+                  const formattedDate = parseBanglaDateToEnglishStr(dStr);
+                  if (formattedDate) {
+                    mergedDuties.push({
+                      id: Math.random(),
+                      type,
+                      date: formattedDate,
+                      totalBill: dailyRate,
+                      orderRef: bill.orderRef,
+                      orderDate: bill.orderDate
+                    });
+                  }
+                });
+              }
+            } catch (e) {
+              console.error('Error parsing bill dutiesJson:', e);
+            }
+          });
+
+          // 2. Add unbilled duties from rawDuties (avoiding duplicates by date and type)
+          rawDuties.forEach((d: any) => {
+            const isAlreadyBilled = mergedDuties.some(bd => bd.date === d.date && bd.type === d.type);
+            if (!isAlreadyBilled) {
+              mergedDuties.push({
+                id: d.id,
+                type: d.type,
+                date: d.date,
+                totalBill: d.totalBill,
+                orderRef: d.orderRef || null,
+                orderDate: null
+              });
+            }
+          });
+
+          // Sort descending by date
+          mergedDuties.sort((a, b) => b.date.localeCompare(a.date));
+
+          setDuties(mergedDuties);
           setLeaveBalance(data.leaveBalance || null);
           setIsEmployee(true);
 
-          // Default chosenMonth to the most recent month in the duties list
+          // Default selectedMonths to the most recent month in the merged duties list
           const months = Array.from(
-            new Set(retrievedDuties.map((d: any) => d.date ? d.date.substring(0, 7) : null).filter(Boolean))
+            new Set(mergedDuties.map((d: any) => d.date ? d.date.substring(0, 7) : null).filter(Boolean))
           ).sort().reverse() as string[];
           if (months.length > 0) {
-            setChosenMonth(months[0]);
+            setSelectedMonths([months[0]]);
           }
         }
       } catch (err) {
@@ -103,8 +180,8 @@ export default function MyDutySummaryCard() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-pulse">
         <div className="h-32 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
-        <div className="h-32 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
-        <div className="h-32 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
+        <div className="h-32 bg-slate-105 dark:bg-slate-800 rounded-2xl" />
+        <div className="h-32 bg-slate-105 dark:bg-slate-800 rounded-2xl" />
       </div>
     );
   }
@@ -135,9 +212,16 @@ export default function MyDutySummaryCard() {
     new Set(duties.map(d => d.date ? d.date.substring(0, 7) : null).filter(Boolean))
   ).sort().reverse() as string[];
 
-  // Find the latest orderRef from the employee's duties
-  const latestDutyWithRef = duties.find(d => d.orderRef);
-  const latestBillRef = latestDutyWithRef?.orderRef || '';
+  // Find the latest bill release date
+  const billedDuties = duties.filter(d => d.orderDate);
+  const latestBillDate = billedDuties.length > 0 
+    ? billedDuties.map(d => d.orderDate as string).sort().reverse()[0] 
+    : '';
+
+  // Get all unique order references for the latest bill date
+  const latestBillRefs = Array.from(new Set(
+    duties.filter(d => d.orderDate === latestBillDate).map(d => d.orderRef).filter(Boolean)
+  )) as string[];
 
   // Dynamic filter query resolution
   const filteredDuties = (() => {
@@ -145,12 +229,12 @@ export default function MyDutySummaryCard() {
       return duties;
     }
     if (filterType === 'month') {
-      const targetMonth = chosenMonth || (availableMonths[0] || currentMonthStr);
-      return duties.filter(d => d.date && d.date.startsWith(targetMonth));
+      if (selectedMonths.length === 0) return [];
+      return duties.filter(d => d.date && selectedMonths.some(m => d.date.startsWith(m)));
     }
     if (filterType === 'latest_bill') {
-      if (!latestBillRef) return [];
-      return duties.filter(d => d.orderRef === latestBillRef);
+      if (!latestBillDate) return [];
+      return duties.filter(d => d.orderDate === latestBillDate);
     }
     return duties;
   })();
@@ -196,7 +280,7 @@ export default function MyDutySummaryCard() {
             <span className="px-2 py-0.5 bg-sky-50/50 dark:bg-sky-950/20 text-sky-700 dark:text-sky-400 rounded-md border border-sky-100/40 dark:border-sky-900/30">
               ছুটি: {toBanglaDigits(staticHolidayCount)}
             </span>
-            <span className="px-2 py-0.5 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 rounded-md border border-emerald-100/40 dark:border-emerald-900/30">
+            <span className="px-2 py-0.5 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 rounded-md border border-emerald-100/40 dark:border-indigo-900/30">
               নাইট: {toBanglaDigits(staticNightShiftCount)}
             </span>
           </div>
@@ -232,11 +316,11 @@ export default function MyDutySummaryCard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">অবশিষ্ট নৈমিত্তিক ছুটি</p>
-              <p className="text-xl font-black text-rose-600 dark:text-rose-450 mt-1">
+              <p className="text-xl font-black text-rose-600 dark:text-rose-455 mt-1">
                 {toBanglaDigits(remainingLeave)} দিন
               </p>
             </div>
-            <span className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-450 shrink-0">
+            <span className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-455 shrink-0">
               <CalendarCheck size={18} />
             </span>
           </div>
@@ -263,6 +347,7 @@ export default function MyDutySummaryCard() {
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700/50 text-[11px] font-bold font-sans">
               <button
+                type="button"
                 onClick={() => setFilterType('all')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                   filterType === 'all'
@@ -273,6 +358,7 @@ export default function MyDutySummaryCard() {
                 সর্বমোট
               </button>
               <button
+                type="button"
                 onClick={() => setFilterType('month')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                   filterType === 'month'
@@ -282,34 +368,91 @@ export default function MyDutySummaryCard() {
               >
                 মাস ভিত্তিক
               </button>
-              {latestBillRef && (
+              {latestBillDate && (
                 <button
+                  type="button"
                   onClick={() => setFilterType('latest_bill')}
                   className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     filterType === 'latest_bill'
                       ? 'bg-white dark:bg-slate-700 text-indigo-650 dark:text-indigo-400 shadow-xs'
                       : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                   }`}
-                  title={`লেটেস্ট বিল: ${latestBillRef}`}
+                  title={`লেটেস্ট বিলের তারিখ: ${latestBillDate}`}
                 >
                   লেটেস্ট বিল
                 </button>
               )}
             </div>
 
-            {/* Dropdown for Month Selection */}
+            {/* Custom Checkbox Dropdown for Month Selection */}
             {filterType === 'month' && availableMonths.length > 0 && (
-              <select
-                value={chosenMonth}
-                onChange={(e) => setChosenMonth(e.target.value)}
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-hidden focus:ring-1 focus:ring-indigo-500 transition-all font-sans cursor-pointer shadow-xs"
-              >
-                {availableMonths.map((m) => (
-                  <option key={m} value={m}>
-                    {getBanglaMonthLabel(m)}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-750 dark:text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500 transition-all font-sans cursor-pointer shadow-xs flex items-center gap-1.5 min-w-[140px] justify-between"
+                >
+                  <span>
+                    {selectedMonths.length === 0
+                      ? 'কোনো মাস নয়'
+                      : selectedMonths.length === 1
+                      ? getBanglaMonthLabel(selectedMonths[0])
+                      : `${toBanglaDigits(selectedMonths.length)}টি মাস নির্বাচিত`}
+                  </span>
+                  <span className="text-[10px] text-slate-400">▼</span>
+                </button>
+
+                {isDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setIsDropdownOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-20 p-2.5 flex flex-col gap-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-150">
+                      <div className="flex items-center justify-between px-2 pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-700 text-[10px] font-bold text-slate-400">
+                        <span>মাস নির্বাচন করুন</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (selectedMonths.length === availableMonths.length) {
+                              setSelectedMonths([]);
+                            } else {
+                              setSelectedMonths([...availableMonths]);
+                            }
+                          }}
+                          className="text-indigo-650 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-pointer"
+                        >
+                          {selectedMonths.length === availableMonths.length ? 'সব মুছুন' : 'সব সিলেক্ট'}
+                        </button>
+                      </div>
+                      
+                      {availableMonths.map((m) => {
+                        const isChecked = selectedMonths.includes(m);
+                        return (
+                          <label
+                            key={m}
+                            className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-350 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setSelectedMonths(selectedMonths.filter(x => x !== m));
+                                } else {
+                                  setSelectedMonths([...selectedMonths, m]);
+                                }
+                              }}
+                              className="rounded border-slate-300 text-indigo-655 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer accent-indigo-655"
+                            />
+                            <span>{getBanglaMonthLabel(m)}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
             )}
 
             <Link 
@@ -323,10 +466,10 @@ export default function MyDutySummaryCard() {
         </div>
 
         {/* Selected Bill Metadata Banner */}
-        {filterType === 'latest_bill' && latestBillRef && (
-          <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/40 dark:border-indigo-900/30 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-400 flex items-center justify-between font-sans animate-fade-in">
-            <span>স্মারক রেফারেন্স: <span className="font-mono text-indigo-850 dark:text-indigo-300 font-black">{latestBillRef}</span></span>
-            <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/50 px-2.5 py-0.5 rounded-full font-bold">লেটেস্ট বিলের বিবরণী</span>
+        {filterType === 'latest_bill' && latestBillDate && (
+          <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/40 dark:border-indigo-900/30 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-sans animate-fade-in">
+            <span>স্মারক রেফারেন্সসমূহ: <span className="font-mono text-indigo-850 dark:text-indigo-300 font-black break-all">{latestBillRefs.join(', ')}</span></span>
+            <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/50 px-2.5 py-0.5 rounded-full font-bold shrink-0">লেটেস্ট বিলের বিবরণী ({toBanglaDigits(latestBillDate)})</span>
           </div>
         )}
 
@@ -378,7 +521,7 @@ export default function MyDutySummaryCard() {
           {/* Row 3: Night Shift */}
           <div className="flex items-center justify-between p-3.5 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-850">
             <div className="flex items-center gap-3">
-              <span className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
+              <span className="p-2.5 rounded-xl bg-emerald-55/65 dark:bg-emerald-950/40 text-emerald-650 dark:text-emerald-400 shrink-0">
                 <ShieldCheck size={16} />
               </span>
               <div>
@@ -402,7 +545,13 @@ export default function MyDutySummaryCard() {
         <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4 mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
             {filterType === 'all' && 'অর্জিত সর্বমোট ব্যক্তিগত ডিউটি ও প্রদেয় ভাতা:'}
-            {filterType === 'month' && `${getBanglaMonthLabel(chosenMonth || availableMonths[0])} মাসের ডিউটি ও প্রদেয় ভাতা:`}
+            {filterType === 'month' && (
+              selectedMonths.length === 0
+                ? 'কোনো মাস নির্বাচন করা হয়নি:'
+                : selectedMonths.length === 1
+                ? `${getBanglaMonthLabel(selectedMonths[0])} মাসের ডিউটি ও প্রদেয় ভাতা:`
+                : `${toBanglaDigits(selectedMonths.length)}টি মাসের অর্জিত ডিউটি ও প্রদেয় ভাতা:`
+            )}
             {filterType === 'latest_bill' && 'লেটেস্ট অফিস আদেশের আওতাধীন প্রদেয় ভাতা:'}
           </div>
           <div className="text-right flex items-center justify-end gap-6 text-xs font-sans">

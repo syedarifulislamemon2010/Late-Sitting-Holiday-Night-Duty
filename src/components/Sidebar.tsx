@@ -262,9 +262,11 @@ export default function Sidebar() {
                     <div className="h-2" />
                   )
                 ) : (
-                  <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider pt-2 whitespace-nowrap">
-                    {section.title}
-                  </h3>
+                  section.items.length > 1 && (
+                    <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider pt-2 whitespace-nowrap">
+                      {section.title}
+                    </h3>
+                  )
                 )}
               </div>
               

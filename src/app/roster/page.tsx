@@ -3376,6 +3376,7 @@ export default function RosterPage() {
                     cellId={parseInt(opt1CellId) || (cells && cells[0] ? cells[0].id : 7)}
                     dutyType={(assignmentForm.type || 'LATE_SITTING') as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'}
                     onImportConfirmed={handleBulkDutyImport}
+                    disabled={!assignmentForm.type || opt1CellId === 'all'}
                   />
                 </div>
               )}

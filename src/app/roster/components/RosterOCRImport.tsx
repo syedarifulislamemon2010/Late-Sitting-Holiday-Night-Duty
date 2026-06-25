@@ -13,12 +13,14 @@ interface RosterOCRImportProps {
   cellId: number;
   dutyType: "LATE_SITTING" | "HOLIDAY" | "NIGHT_SHIFT";
   onImportConfirmed: (entries: ExtractedEntry[]) => void;
+  disabled?: boolean;
 }
 
 export default function RosterOCRImport({
   cellId,
   dutyType,
   onImportConfirmed,
+  disabled = false,
 }: RosterOCRImportProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [extractedEntries, setExtractedEntries] = useState<ExtractedEntry[]>([]);
@@ -58,21 +60,30 @@ export default function RosterOCRImport({
   };
 
   return (
-    <div className="border border-dashed border-blue-300 rounded-lg p-4 bg-blue-50/30">
-      <div className="flex items-center gap-2 mb-3">
-        <ScanLine className="text-blue-600" size={18} />
-        <h3 className="font-semibold text-blue-800" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+    <div className={`border border-dashed rounded-lg p-4 transition-all duration-300 ${disabled ? 'border-slate-200 bg-slate-50/50' : 'border-blue-300 bg-blue-50/30'}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <ScanLine className={disabled ? 'text-slate-400' : 'text-blue-600'} size={18} />
+        <h3 className={`font-semibold ${disabled ? 'text-slate-500' : 'text-blue-800'}`} style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
           রোস্টার ইমেজ থেকে স্বয়ংক্রিয় আমদানি (AI OCR)
         </h3>
       </div>
+      {disabled && (
+        <p className="text-[11px] text-amber-600 dark:text-amber-500 font-bold mb-3 flex items-center gap-1 font-sans">
+          <span>⚠️ ইমেজ থেকে ইম্পোর্ট করতে প্রথমে উপরে ডিউটির ক্যাটাগরি ও সেল সিলেক্ট করুন</span>
+        </p>
+      )}
 
       {/* Upload area */}
       <div
-        className="border-2 border-dashed border-blue-200 rounded-lg p-6 text-center cursor-pointer hover:bg-blue-50 transition-colors"
-        onClick={() => fileInputRef.current?.click()}
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+          disabled 
+            ? "border-slate-200 bg-slate-100/40 opacity-60 cursor-not-allowed pointer-events-none" 
+            : "border-blue-200 cursor-pointer hover:bg-blue-50 hover:border-blue-300 text-blue-600"
+        }`}
+        onClick={() => !disabled && fileInputRef.current?.click()}
       >
-        <Upload className="mx-auto mb-2 text-blue-400" size={24} />
-        <p className="text-sm text-blue-600" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+        <Upload className={`mx-auto mb-2 ${disabled ? 'text-slate-350' : 'text-blue-400'}`} size={24} />
+        <p className={`text-sm font-semibold ${disabled ? 'text-slate-400' : 'text-blue-600'}`} style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
           কাগজের রোস্টারের ছবি এখানে আপলোড করুন
         </p>
         <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP সমর্থিত</p>

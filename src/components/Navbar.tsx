@@ -118,11 +118,12 @@ export default function Navbar() {
   }, [pathname]);
 
   const getBreadcrumbs = () => {
-    if (pathname === '/') {
+    const cleanPath = pathname.replace(/^\//, '').split('/')[0];
+    if (pathname === '/' || cleanPath === 'dashboard' || cleanPath === '') {
       return (
-        <span className="text-slate-800 dark:text-slate-200 font-bold text-sm sm:text-base" style={{ letterSpacing: 'normal' }}>
+        <Link href="/dashboard" className="text-slate-800 dark:text-slate-200 font-bold text-sm sm:text-base hover:text-[#0b5e9e] dark:hover:text-sky-400 transition-colors" style={{ letterSpacing: 'normal' }}>
           ড্যাশবোর্ড
-        </span>
+        </Link>
       );
     }
 
@@ -140,7 +141,6 @@ export default function Navbar() {
       'users': { section: 'সেটিংস', title: 'ব্যবহারকারী সেটিংস' }
     };
 
-    const cleanPath = pathname.replace(/^\//, '').split('/')[0];
     const item = routeMap[cleanPath];
 
     if (!item) {
@@ -151,11 +151,31 @@ export default function Navbar() {
       );
     }
 
+    const sectionUrls: Record<string, string> = {
+      'প্রশাসনিক কার্যক্রম': '/employees',
+      'বিল ও ভাতাসমূহ': '/billing',
+      'আবেদনপত্র': '/leave',
+      'অন্যান্য': '/documents',
+      'সেটিংস': '/users'
+    };
+
     return (
       <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 select-none">
-        <span className="hover:text-slate-700 dark:hover:text-slate-350 transition-colors" style={{ letterSpacing: 'normal' }}>{item.section}</span>
+        <Link 
+          href={sectionUrls[item.section] || '#'} 
+          className="hover:text-[#0b5e9e] dark:hover:text-sky-400 transition-colors" 
+          style={{ letterSpacing: 'normal' }}
+        >
+          {item.section}
+        </Link>
         <span className="text-slate-300 dark:text-slate-700">/</span>
-        <span className="text-slate-800 dark:text-slate-200 font-bold" style={{ letterSpacing: 'normal' }}>{item.title}</span>
+        <Link 
+          href={pathname} 
+          className="text-slate-800 dark:text-slate-200 font-bold hover:text-[#0b5e9e] dark:hover:text-sky-400 transition-colors" 
+          style={{ letterSpacing: 'normal' }}
+        >
+          {item.title}
+        </Link>
       </div>
     );
   };

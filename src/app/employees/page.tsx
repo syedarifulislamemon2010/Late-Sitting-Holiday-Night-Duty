@@ -1375,15 +1375,15 @@ export default function EmployeesPage() {
                                       <h3 className={`app-card-title transition-colors flex flex-wrap items-center gap-1.5 ${isCellIncharge ? 'text-teal-700 dark:text-teal-400 group-hover:text-teal-800' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400'}`}>
                                         <span>{emp.name}</span>
                                         {emp.dutyType === 'INCHARGE' ? (
-                                          <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-450 text-[9px] font-bold rounded-lg border border-teal-200/50 dark:border-teal-955/30">
+                                          <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 text-[9px] font-extrabold rounded-lg">
                                             সেল ইনচার্জ
                                           </span>
                                         ) : emp.dutyType === 'ADDITIONAL' ? (
-                                          <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-455 text-[9px] font-bold rounded-lg border border-amber-200/50 dark:border-amber-950/30">
+                                          <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-[9px] font-extrabold rounded-lg">
                                             অতিরিক্ত দায়িত্ব
                                           </span>
                                         ) : (
-                                          <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 text-[9px] font-bold rounded-lg border border-indigo-100/50 dark:border-indigo-950/30">
+                                          <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800 text-[9px] font-extrabold rounded-lg">
                                             মূল দায়িত্ব
                                           </span>
                                         )}
@@ -1431,7 +1431,7 @@ export default function EmployeesPage() {
                                     <span className="flex items-center gap-1">মোবাইল: 
                                       <InlineEdit
                                         value={emp.mobile || ''}
-                                        placeholder="মোবাইল নম্বর"
+                                        placeholder="তথ্য নেই"
                                         onSave={(val) => handleInlineSave(emp.id, 'mobile', val)}
                                         canEdit={canUserEdit || !!(emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim())}
                                         className="font-sans font-bold inline-block"

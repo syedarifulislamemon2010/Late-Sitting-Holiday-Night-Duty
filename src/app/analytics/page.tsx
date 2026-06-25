@@ -244,7 +244,7 @@ export default function AnalyticsDashboardPage() {
       )}
 
       {/* 2. Filter Bar */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-20">
         <div className="flex items-center gap-2 text-slate-700 font-bold text-xs">
           <Filter size={16} className="text-[#0b5e9e]" />
           <span>ডিউটি ও বিল ফিল্টারিং:</span>
@@ -347,7 +347,7 @@ export default function AnalyticsDashboardPage() {
           <p className="text-sm text-slate-500">{error}</p>
         </div>
       ) : (
-        <div className="min-h-[400px]">
+        <div className="min-h-[400px] relative z-10">
           {loading ? (
             <div className="min-h-[400px] w-full flex items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm animate-pulse">
               <div className="flex flex-col items-center gap-3">

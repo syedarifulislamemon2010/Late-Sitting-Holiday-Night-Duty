@@ -6,7 +6,8 @@ import {
   Trash2, 
   AlertCircle, 
   Loader2,
-  Printer
+  Printer,
+  Download
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
@@ -47,18 +48,84 @@ export default function BillsTab({
   const [selectedBills, setSelectedBills] = useState<number[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const handleBulkDelete = async () => {
-    if (!confirm(`আপনি কি নির্বাচিত ${selectedBills.length} টি বিল মেমো মুছে ফেলতে চান?`)) return;
+  const handleBulkExportCSV = () => {
+    const selectedOrders = filteredBillMemos.filter(order => selectedBills.includes(order.id));
+    const exportData = selectedOrders.map((order, idx) => {
+      let dutiesList = order.duties || [];
+      if (dutiesList.length === 0 && order.dutiesJson) {
+        try {
+          dutiesList = JSON.parse(order.dutiesJson);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
+      
+      let transportRate = 200;
+      let apyaonRate = 100;
+      if (order.category === 'HOLIDAY') {
+        transportRate = 250;
+        apyaonRate = 250;
+      } else if (order.category === 'NIGHT_SHIFT') {
+        transportRate = 400;
+        apyaonRate = 600;
+      }
+      const billTotal = totalDays * (apyaonRate + transportRate);
+      const categoryLabel = order.category === 'LATE_SITTING' ? 'লেট সিটিং' : order.category === 'HOLIDAY' ? 'ছুটির দিন' : 'নাইট শিফট';
+
+      return {
+        sl: idx + 1,
+        ref: order.orderRef,
+        date: order.orderDate,
+        category: categoryLabel,
+        payee: order.employeeName,
+        days: totalDays,
+        total: billTotal
+      };
+    });
+
+    const headers = ['ক্রমিক নং', 'স্মারক নম্বর', 'আদেশের তারিখ', 'ক্যাটাগরি', 'কর্মকর্তা (Payee)', 'ডিউটি দিন', 'সর্বমোট বিল'];
+    const rows = exportData.map(item => [
+      item.sl,
+      item.ref,
+      item.date,
+      item.category,
+      item.payee,
+      item.days,
+      item.total
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Selected_Bills_Export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleBulkPrint = async () => {
     setActionLoading(true);
     try {
       for (const id of selectedBills) {
-        await fetch(`/api/office-orders/${id}`, { method: 'DELETE' });
+        await fetch(`/api/office-orders/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'Printed' })
+        });
       }
       setSelectedBills([]);
       window.location.reload();
     } catch (err) {
       console.error(err);
-      alert('কিছু বিল মেমো মুছে ফেলা সম্ভব হয়নি।');
+      alert('কিছু বিল মেমো প্রিন্টেড চিহ্নিত করা সম্ভব হয়নি।');
     } finally {
       setActionLoading(false);
     }
@@ -241,14 +308,20 @@ export default function BillsTab({
               className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-105 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/35 rounded-xl text-xs font-bold transition-all cursor-pointer animate-pulse"
             >
               <Printer size={13} />
-              বাল্ক প্রিন্ট/অনুমোদন
+              বাল্ক প্রিন্ট প্রিভিউ
             </button>
             <button
-              onClick={handleBulkDelete}
-              className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 text-rose-655 dark:text-rose-455 border border-rose-100 dark:border-rose-950/35 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              onClick={handleBulkExportCSV}
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-955/20 text-emerald-655 dark:text-emerald-455 border border-emerald-100 dark:border-emerald-950/35 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
-              <Trash2 size={13} />
-              মুছে ফেলুন
+              <Download size={13} />
+              বাল্ক এক্সপোর্ট
+            </button>
+            <button
+              onClick={handleBulkPrint}
+              className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              মুদ্রিত চিহ্নিত করুন
             </button>
           </div>
         </div>

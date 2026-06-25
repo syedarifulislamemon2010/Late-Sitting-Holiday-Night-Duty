@@ -15,6 +15,8 @@ import {
   Sparkles
 } from 'lucide-react';
 
+import MyDutySummaryCard from './components/MyDutySummaryCard';
+
 // Custom Bangla digit converter
 function toBanglaDigits(num: number | string): string {
   const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
@@ -278,6 +280,9 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Personal Summary Card Widget */}
+      <MyDutySummaryCard />
 
       {/* Styled Quick Access Section */}
       <div className="bg-slate-50/40 dark:bg-slate-900/10 rounded-2xl p-6 border border-gray-200/50 dark:border-slate-800/80">
