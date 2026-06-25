@@ -133,9 +133,11 @@ function CalendarDatePicker({
         className={`w-8 h-8 flex items-center justify-center text-xs rounded-xl transition-all ${
           isSelected 
             ? 'bg-indigo-650 text-white font-bold shadow-sm shadow-indigo-500/30' 
-            : isDisabled 
+            : isWeekendOrHoliday 
               ? 'text-rose-500 bg-rose-50/10 dark:bg-rose-950/5 cursor-not-allowed opacity-90 font-medium' 
-              : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100 cursor-pointer font-black'
+              : isOutOfRange
+                ? 'text-slate-405 dark:text-slate-600 bg-slate-50/5 dark:bg-slate-900/5 cursor-not-allowed font-medium'
+                : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100 cursor-pointer font-black'
         }`}
         title={isWeekendOrHoliday ? 'ছুটির দিন (ডিজেবল)' : undefined}
       >
@@ -179,13 +181,13 @@ function CalendarDatePicker({
           </div>
 
           <div className="grid grid-cols-7 gap-1.5 text-center mb-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-            <span>র</span>
-            <span>সো</span>
-            <span>ম</span>
-            <span>বু</span>
-            <span>বৃ</span>
-            <span className="text-rose-500 font-bold">শু</span>
-            <span className="text-rose-500 font-bold">শ</span>
+            <span>রবি</span>
+            <span>সোম</span>
+            <span>মঙ্গল</span>
+            <span>বুধ</span>
+            <span>বৃহ</span>
+            <span className="text-rose-500 font-bold">শুক্র</span>
+            <span className="text-rose-500 font-bold">শনি</span>
           </div>
 
           <div className="grid grid-cols-7 gap-1.5 text-center">
