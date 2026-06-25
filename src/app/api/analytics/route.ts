@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { duties, employees, cells, leaveApplications, officeOrders } from '@/db/schema';
-import { eq, and, desc, asc, sql, like, inArray } from 'drizzle-orm';
+import { eq, and, or, desc, asc, sql, like, inArray } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { headers } from 'next/headers';
 
@@ -65,13 +65,16 @@ export async function GET(request: Request) {
 
     const getCellNameCondition = (field: any) => {
       if (user.role === 'ADMIN') {
-        return cellFilterName ? eq(field, cellFilterName) : undefined;
+        return cellFilterName 
+          ? or(eq(field, cellFilterName), inArray(field, ['All Cells', 'all', 'All'])) 
+          : undefined;
       }
       if (user.role === 'USER') {
         if (cellFilterName) {
-          return eq(field, cellFilterName);
+          return or(eq(field, cellFilterName), inArray(field, ['All Cells', 'all', 'All']));
         }
-        return allowedCellNames.length > 0 ? inArray(field, allowedCellNames) : eq(field, 'NON_EXISTENT_CELL_NAME');
+        const cellList = [...allowedCellNames, 'All Cells', 'all', 'All'];
+        return allowedCellNames.length > 0 ? inArray(field, cellList) : eq(field, 'NON_EXISTENT_CELL_NAME');
       }
       return undefined;
     };
