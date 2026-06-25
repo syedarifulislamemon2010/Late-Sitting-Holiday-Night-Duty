@@ -942,6 +942,12 @@ export default function EmployeesPage() {
 
   // Filter lists
   const filteredEmployees = employees.filter(emp => {
+    const isAdditional = emp.dutyType === 'ADDITIONAL';
+    const isSelf = !!(emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim());
+    if (isAdditional && currentUser?.role !== 'ADMIN' && !isSelf) {
+      return false;
+    }
+
     const matchesSearch = emp.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           emp.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (emp.bankId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1350,6 +1356,8 @@ export default function EmployeesPage() {
                           const isCellIncharge = emp.dutyType === 'INCHARGE' || emp.id === firstSpoId;
                           const pal = getPalette(emp.cellId);
                           const canUserEdit = currentUser?.role === 'ADMIN' || allowedCellIds.includes(emp.cellId);
+                          const isSelf = !!(emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim());
+                          const canInlineEdit = currentUser?.role === 'ADMIN' || isSelf;
                           
                           return (
                             <div key={emp.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group border-l-3 ${isCellIncharge ? 'border-teal-200 dark:border-teal-900/50 bg-teal-50/10 dark:bg-teal-955/5 shadow-xs' : pal.border} ${isCellIncharge ? '' : pal.bg}`} style={isCellIncharge ? { borderLeft: '3px solid #0d9488' } : {}}>
@@ -1394,7 +1402,7 @@ export default function EmployeesPage() {
                                           value={emp.designation}
                                           placeholder="পদবী লিখুন"
                                           onSave={(val) => handleInlineSave(emp.id, 'designation', val)}
-                                          canEdit={canUserEdit}
+                                          canEdit={canInlineEdit}
                                         />
                                       </div>
                                     </div>
@@ -1409,7 +1417,7 @@ export default function EmployeesPage() {
                                         value={emp.bankId || ''}
                                         placeholder="আইডি"
                                         onSave={(val) => handleInlineSave(emp.id, 'bankId', val)}
-                                        canEdit={canUserEdit}
+                                        canEdit={canInlineEdit}
                                         className="font-bold inline-block"
                                       />
                                     </span>
@@ -1421,7 +1429,7 @@ export default function EmployeesPage() {
                                         value={emp.fileNo || ''}
                                         placeholder="নথি"
                                         onSave={(val) => handleInlineSave(emp.id, 'fileNo', val)}
-                                        canEdit={canUserEdit}
+                                        canEdit={canInlineEdit}
                                         className="font-mono font-bold inline-block"
                                       />
                                     </span>
@@ -1433,7 +1441,7 @@ export default function EmployeesPage() {
                                         value={emp.mobile || ''}
                                         placeholder="তথ্য নেই"
                                         onSave={(val) => handleInlineSave(emp.id, 'mobile', val)}
-                                        canEdit={canUserEdit || !!(emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim())}
+                                        canEdit={canInlineEdit}
                                         className="font-sans font-bold inline-block"
                                       />
                                     </span>
