@@ -787,22 +787,48 @@ export default function LeaveGeneratorPage() {
   const leaveDetails = getCalculatedLeaveDetails();
 
   // Handle Dynamic changes on leave type (adjust date picker limits)
-  const todayStr = new Date().toISOString().split('T')[0];
-  const dateLimits = {
-    min: (leaveType === 'CASUAL' || leaveType === 'STATION_LEAVE') ? todayStr : undefined,
-    max: leaveType === 'POST_FACTO' ? todayStr : undefined
+  const todayVal = new Date();
+  
+  // Helper to format Date to YYYY-MM-DD in local time
+  const getLocalDateStr = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${date}`;
   };
 
-  // Automatically reset invalid dates when type changes
+  const todayStr = getLocalDateStr(todayVal);
+
+  const tomorrowVal = new Date(todayVal);
+  tomorrowVal.setDate(tomorrowVal.getDate() + 1);
+  const tomorrowStr = getLocalDateStr(tomorrowVal);
+
+  const yesterdayVal = new Date(todayVal);
+  yesterdayVal.setDate(yesterdayVal.getDate() - 1);
+  const yesterdayStr = getLocalDateStr(yesterdayVal);
+
+  const dateLimits = {
+    min: (leaveType === 'CASUAL' || leaveType === 'STATION_LEAVE') ? tomorrowStr : undefined,
+    max: leaveType === 'POST_FACTO' ? yesterdayStr : undefined
+  };
+
+  // Automatically reset invalid dates when type changes or if today is selected
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (startDate) {
-      if (leaveType === 'POST_FACTO' && startDate > todayStr) {
+      if (startDate === todayStr) {
+        timer = setTimeout(() => {
+          setStartDate('');
+          setEndDate('');
+          setErrorMsg('আজকের তারিখে ছুটি নেওয়া যাবে না। অনুগ্রহ করে অন্য দিন নির্বাচন করুন।');
+          setTimeout(() => setErrorMsg(''), 5000);
+        }, 0);
+      } else if (leaveType === 'POST_FACTO' && startDate > yesterdayStr) {
         timer = setTimeout(() => {
           setStartDate('');
           setEndDate('');
         }, 0);
-      } else if ((leaveType === 'CASUAL' || leaveType === 'STATION_LEAVE') && startDate < todayStr) {
+      } else if ((leaveType === 'CASUAL' || leaveType === 'STATION_LEAVE') && startDate < tomorrowStr) {
         timer = setTimeout(() => {
           setStartDate('');
           setEndDate('');
@@ -812,7 +838,7 @@ export default function LeaveGeneratorPage() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [leaveType, startDate, todayStr]);
+  }, [leaveType, startDate, todayStr, tomorrowStr, yesterdayStr]);
 
   // Dynamically calculate remaining leaves
   const getRemaining = (total: number | string, used: number | string) => {
