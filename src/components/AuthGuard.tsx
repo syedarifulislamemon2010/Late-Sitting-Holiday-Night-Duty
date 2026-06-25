@@ -340,7 +340,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (err) {
-        console.error('Auth verification error:', err);
+        console.warn('Auth verification failed (transient network error)');
         setAuthenticated(false);
         setUserProfile(null);
       }

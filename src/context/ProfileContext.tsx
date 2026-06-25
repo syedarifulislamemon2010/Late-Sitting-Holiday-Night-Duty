@@ -46,7 +46,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser(null);
       }
     } catch (err) {
-      console.error('Error fetching profile context:', err);
+      console.warn('Profile fetch failed (transient network error)');
       setCurrentUser(null);
     } finally {
       setLoading(false);
