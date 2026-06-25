@@ -239,6 +239,26 @@ export default function LeaveGeneratorPage() {
         // Refresh archive list
         const activeBankId = selectedApplicantEmp?.bankId || (currentUser?.role === 'ADMIN' ? '' : currentUser?.username);
         await fetchArchivedLeaves(activeBankId);
+
+        // Refetch employees list to get the updated mobile numbers dynamically
+        try {
+          const empsRes = await fetch('/api/employees');
+          if (empsRes.ok) {
+            const empsData = await empsRes.json();
+            const empsArray = Array.isArray(empsData) ? empsData : [];
+            setEmployees(empsArray);
+            
+            // Also update selectedApplicantEmp state to keep it in sync
+            if (selectedApplicantEmp?.bankId) {
+              const updatedApplicant = empsArray.find((emp: any) => emp.bankId === selectedApplicantEmp.bankId);
+              if (updatedApplicant) {
+                setSelectedApplicantEmp(updatedApplicant);
+              }
+            }
+          }
+        } catch (empsErr) {
+          console.error('Error refreshing employees list after leave save:', empsErr);
+        }
         
         // Auto switch tab
         setActiveTab('ARCHIVE');
