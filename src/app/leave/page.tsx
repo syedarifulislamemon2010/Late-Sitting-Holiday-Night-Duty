@@ -548,6 +548,63 @@ export default function LeaveGeneratorPage() {
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
+  // Helper to validate and restrict Leave Balance inputs (positive integers only, spent <= allowed)
+  const validateAndSetTotal = (
+    value: string,
+    setter: (val: number | string) => void,
+    currentUsed: number | string,
+    setUsed: (val: number | string) => void
+  ) => {
+    if (value === '' || value.trim() === '-') {
+      setter(value);
+      return;
+    }
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned === '') {
+      setter('');
+      return;
+    }
+    const num = parseInt(cleaned, 10);
+    setter(num);
+
+    const usedValStr = String(currentUsed).trim();
+    if (usedValStr !== '-' && usedValStr !== '') {
+      const usedNum = parseInt(usedValStr, 10);
+      if (!isNaN(usedNum) && usedNum > num) {
+        setUsed(num);
+      }
+    }
+  };
+
+  const validateAndSetUsed = (
+    value: string,
+    setter: (val: number | string) => void,
+    total: number | string
+  ) => {
+    if (value === '' || value.trim() === '-') {
+      setter(value);
+      return;
+    }
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned === '') {
+      setter('');
+      return;
+    }
+    const num = parseInt(cleaned, 10);
+
+    const totalValStr = String(total).trim();
+    if (totalValStr !== '-' && totalValStr !== '') {
+      const totalNum = parseInt(totalValStr, 10);
+      if (!isNaN(totalNum)) {
+        if (num > totalNum) {
+          setter(totalNum);
+          return;
+        }
+      }
+    }
+    setter(num);
+  };
+
   // Stayed Location State (Only District is needed)
   const [selectedDistrict, setSelectedDistrict] = useState('');
 
@@ -1398,7 +1455,7 @@ export default function LeaveGeneratorPage() {
                           id="casualTotal"
                           type="text" 
                           value={casualTotal}
-                          onChange={(e) => setCasualTotal(e.target.value)}
+                          onChange={(e) => validateAndSetTotal(e.target.value, setCasualTotal, casualUsed, setCasualUsed)}
                           className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
@@ -1408,7 +1465,7 @@ export default function LeaveGeneratorPage() {
                           id="casualUsed"
                           type="text" 
                           value={casualUsed}
-                          onChange={(e) => setCasualUsed(e.target.value)}
+                          onChange={(e) => validateAndSetUsed(e.target.value, setCasualUsed, casualTotal)}
                           className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
@@ -1425,7 +1482,7 @@ export default function LeaveGeneratorPage() {
                           id="ordinaryTotal"
                           type="text" 
                           value={ordinaryTotal}
-                          onChange={(e) => setOrdinaryTotal(e.target.value)}
+                          onChange={(e) => validateAndSetTotal(e.target.value, setOrdinaryTotal, ordinaryUsed, setOrdinaryUsed)}
                           className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
@@ -1435,7 +1492,7 @@ export default function LeaveGeneratorPage() {
                           id="ordinaryUsed"
                           type="text" 
                           value={ordinaryUsed}
-                          onChange={(e) => setOrdinaryUsed(e.target.value)}
+                          onChange={(e) => validateAndSetUsed(e.target.value, setOrdinaryUsed, ordinaryTotal)}
                           className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
@@ -1452,7 +1509,7 @@ export default function LeaveGeneratorPage() {
                           id="specialTotal"
                           type="text" 
                           value={specialTotal}
-                          onChange={(e) => setSpecialTotal(e.target.value)}
+                          onChange={(e) => validateAndSetTotal(e.target.value, setSpecialTotal, specialUsed, setSpecialUsed)}
                           className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
@@ -1462,7 +1519,7 @@ export default function LeaveGeneratorPage() {
                           id="specialUsed"
                           type="text" 
                           value={specialUsed}
-                          onChange={(e) => setSpecialUsed(e.target.value)}
+                          onChange={(e) => validateAndSetUsed(e.target.value, setSpecialUsed, specialTotal)}
                           className="w-full px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded outline-none font-bold focus:border-indigo-550"
                         />
                       </div>
@@ -1892,10 +1949,10 @@ export default function LeaveGeneratorPage() {
         #printable-leave-sheet, #printable-leave-sheet * {
           font-family: 'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif !important;
           font-size: 13px !important;
-          font-style: normal !important;
+          font-style: normal;
           line-height: 1.45 !important;
           color: #000000;
-          text-decoration: none !important;
+          text-decoration: none;
           letter-spacing: normal !important;
           word-spacing: normal !important;
         }
@@ -1920,7 +1977,7 @@ export default function LeaveGeneratorPage() {
         .dark #printable-leave-sheet td {
           border-color: #334155 !important;
         }
-        #printable-leave-sheet, #printable-leave-sheet *:not(.bold-text) {
+        #printable-leave-sheet, #printable-leave-sheet *:not(.bold-text):not(strong):not(b) {
           font-weight: normal !important;
         }
         #printable-leave-sheet .bold-text, #printable-leave-sheet .bold-text * {
