@@ -137,7 +137,7 @@ function CalendarDatePicker({
               ? 'text-rose-500 bg-rose-50/10 dark:bg-rose-950/5 cursor-not-allowed opacity-90 font-medium' 
               : isOutOfRange
                 ? 'text-slate-405 dark:text-slate-600 bg-slate-50/5 dark:bg-slate-900/5 cursor-not-allowed font-medium'
-                : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100 cursor-pointer font-black'
+                : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/30 cursor-pointer font-black'
         }`}
         title={isWeekendOrHoliday ? 'ছুটির দিন (ডিজেবল)' : undefined}
       >
