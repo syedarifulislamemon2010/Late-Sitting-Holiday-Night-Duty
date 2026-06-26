@@ -895,7 +895,7 @@ export default function LeaveGeneratorPage() {
     if (cleanName.includes('কিবরিয়া') || cleanName.includes('কিবর')) {
       return <span className="italic" style={{ fontStyle: 'italic' }}>জনাব জি.এস.কিবরিয়া, সিনিয়র অফিসার-আইটি</span>;
     }
-    return <span>জনাব {cleanName}, {delegateDesignation}</span>;
+    return <span className="italic" style={{ fontStyle: 'italic' }}>জনাব {cleanName}, {delegateDesignation}</span>;
   };
 
   // Format stay location dynamic text
@@ -1725,17 +1725,17 @@ export default function LeaveGeneratorPage() {
                         {isSingleDay ? (
                           <>
                             যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত{' '}
-                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখে{' '}
-                            <strong>০১ (এক)</strong> দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত{' '}
-                            <strong>০১ (এক)</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখে{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>০১ (এক)</strong> দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>০১ (এক)</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।
                           </>
                         ) : (
                           <>
                             যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত{' '}
-                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখ হতে{' '}
-                            <strong>{endDate ? `${toDisplayDateStr(endDate)} ইং` : ''}</strong> তারিখ পর্যন্ত মোট{' '}
-                            <strong>{displayDaysWord}</strong> দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত{' '}
-                            <strong>{displayDaysWord}</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখ হতে{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{endDate ? `${toDisplayDateStr(endDate)} ইং` : ''}</strong> তারিখ পর্যন্ত মোট{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{displayDaysWord}</strong> দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{displayDaysWord}</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।
                           </>
                         )}
                         {' '}উল্লেখ্য যে, আমি ছুটিতে থাকাকালীন, অত্র ডিপার্টমেন্টের{' '}
@@ -1744,7 +1744,7 @@ export default function LeaveGeneratorPage() {
 
                       <p className="text-black text-xs leading-relaxed text-justify">
                         অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত{' '}
-                        <strong>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
+                        <strong className="underline" style={{ textDecoration: 'underline' }}>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
                       </p>
                     </>
                   ) : leaveType === 'STATION_LEAVE' ? (
@@ -1753,15 +1753,15 @@ export default function LeaveGeneratorPage() {
                         {isSingleDay ? (
                           <>
                             যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী{' '}
-                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখে{' '}
-                            <strong>০১ (এক)</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখে{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>০১ (এক)</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।
                           </>
                         ) : (
                           <>
                             যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী{' '}
-                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখ হতে{' '}
-                            <strong>{endDate ? `${toDisplayDateStr(endDate)} ইং` : ''}</strong> তারিখ পর্যন্ত{' '}
-                            <strong>{displayDaysWord}</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখ হতে{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{endDate ? `${toDisplayDateStr(endDate)} ইং` : ''}</strong> তারিখ পর্যন্ত{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{displayDaysWord}</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।
                           </>
                         )}
                       </p>
@@ -1773,7 +1773,7 @@ export default function LeaveGeneratorPage() {
 
                       <p className="text-black text-xs leading-relaxed text-justify">
                         অতএব, মহোদয় সমীপে আবেদন এই যে, আমার অনুকূলে উক্ত{' '}
-                        <strong>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরপূর্বক বাধিত করবেন।
+                        <strong className="underline" style={{ textDecoration: 'underline' }}>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরপূর্বক বাধিত করবেন।
                       </p>
                     </>
                   ) : (
@@ -1782,15 +1782,15 @@ export default function LeaveGeneratorPage() {
                         {isSingleDay ? (
                           <>
                             যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী{' '}
-                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখে{' '}
-                            <strong>০১ (এক)</strong> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখে{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>০১ (এক)</strong> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
                           </>
                         ) : (
                           <>
                             যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী{' '}
-                            <strong>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখ হতে{' '}
-                            <strong>{endDate ? `${toDisplayDateStr(endDate)} ইং` : ''}</strong> তারিখ পর্যন্ত মোট{' '}
-                            <strong>{displayDaysWord}</strong> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{startDate ? `${toDisplayDateStr(startDate)} ইং` : ''}</strong> তারিখ হতে{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{endDate ? `${toDisplayDateStr(endDate)} ইং` : ''}</strong> তারিখ পর্যন্ত মোট{' '}
+                            <strong className="underline" style={{ textDecoration: 'underline' }}>{displayDaysWord}</strong> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
                           </>
                         )}
                       </p>
@@ -1802,7 +1802,7 @@ export default function LeaveGeneratorPage() {
 
                       <p className="text-black text-xs leading-relaxed text-justify">
                         অতএব মহোদয় সমীপে আবেদন যে, আমার অনুকূলে উক্ত{' '}
-                        <strong>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
+                        <strong className="underline" style={{ textDecoration: 'underline' }}>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
                       </p>
                     </>
                   )}
