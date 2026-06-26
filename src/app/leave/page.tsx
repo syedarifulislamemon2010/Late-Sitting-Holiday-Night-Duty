@@ -957,7 +957,14 @@ export default function LeaveGeneratorPage() {
 
   // Format stay location dynamic text
   const formatStayLocationText = () => {
-    return selectedDistrict || leaveLocation;
+    if (!selectedDistrict) {
+      return (
+        <strong className="text-red-600 dark:text-red-400 font-bold bold-text" style={{ color: 'red', fontWeight: 'bold' }}>
+          [জেলা নির্বাচন করুন]
+        </strong>
+      );
+    }
+    return selectedDistrict;
   };
 
   // Format Subject

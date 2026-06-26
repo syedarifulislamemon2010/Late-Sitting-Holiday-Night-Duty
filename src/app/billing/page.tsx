@@ -229,47 +229,43 @@ const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGH
 
   const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
 
-  // If order cellName matches user cells directly
+  // 1. Direct cell name match
   if (o.cellName && userCellNames.includes(o.cellName)) {
     return true;
   }
 
-  // If cellName is "All Cells" or "সকল সেল", check involved employees
-  if (o.cellName === 'All Cells' || o.cellName === 'সকল সেল' || !o.cellName) {
-    let dutiesList: any[] = o.duties || [];
-    if (dutiesList.length === 0 && o.dutiesJson) {
-      try {
-        dutiesList = JSON.parse(o.dutiesJson);
-      } catch (e) {
-        console.error(e);
-      }
+  // 2. Fallback: Check involved employees
+  let dutiesList: any[] = o.duties || [];
+  if (dutiesList.length === 0 && o.dutiesJson) {
+    try {
+      dutiesList = JSON.parse(o.dutiesJson);
+    } catch (e) {
+      console.error(e);
     }
-
-    if (dutiesList.length === 0) {
-      if (o.employeeName) {
-        const matched = employees.find(e => e.name === o.employeeName);
-        if (matched && matched.cell?.name && userCellNames.includes(matched.cell.name)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    return dutiesList.some((d: any) => {
-      const empIdStr = d.employeeId ? d.employeeId.toString() : '';
-      const empName = d.employeeName || '';
-      
-      const matched = employees.find(e => 
-        (e.id && e.id.toString() === empIdStr) || 
-        (e.bankId && e.bankId.toString() === empIdStr) || 
-        (e.name && e.name === empName)
-      );
-
-      return matched && matched.cell?.name && userCellNames.includes(matched.cell.name);
-    });
   }
 
-  return false;
+  if (dutiesList.length === 0) {
+    if (o.employeeName) {
+      const matched = employees.find(e => e.name === o.employeeName);
+      if (matched && matched.cell?.name && userCellNames.includes(matched.cell.name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  return dutiesList.some((d: any) => {
+    const empIdStr = d.employeeId ? d.employeeId.toString() : '';
+    const empName = d.employeeName || '';
+    
+    const matched = employees.find(e => 
+      (e.id && e.id.toString() === empIdStr) || 
+      (e.bankId && e.bankId.toString() === empIdStr) || 
+      (e.name && e.name === empName)
+    );
+
+    return matched && matched.cell?.name && userCellNames.includes(matched.cell.name);
+  });
 };
 
 export default function BillingPage() {
@@ -1763,7 +1759,38 @@ export default function BillingPage() {
       if (selectedCell !== 'all') {
         const targetCellObj = cells.find(c => c.id.toString() === selectedCell);
         if (targetCellObj && order.cellName !== targetCellObj.name && order.cellName !== 'All Cells' && order.cellName !== 'সকল সেল') {
-          return false;
+          // Fallback: check if the involved employees belong to the selected cell
+          let dutiesList: any[] = order.duties || [];
+          if (dutiesList.length === 0 && order.dutiesJson) {
+            try {
+              dutiesList = JSON.parse(order.dutiesJson);
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          let hasTargetCellEmployee = false;
+          if (dutiesList.length === 0) {
+            if (order.employeeName) {
+              const matched = employees.find(e => e.name === order.employeeName);
+              if (matched && matched.cell?.name === targetCellObj.name) {
+                hasTargetCellEmployee = true;
+              }
+            }
+          } else {
+            hasTargetCellEmployee = dutiesList.some((d: any) => {
+              const empIdStr = d.employeeId ? d.employeeId.toString() : '';
+              const empName = d.employeeName || '';
+              const matched = employees.find(e => 
+                (e.id && e.id.toString() === empIdStr) || 
+                (e.bankId && e.bankId.toString() === empIdStr) || 
+                (e.name && e.name === empName)
+              );
+              return matched && matched.cell?.name === targetCellObj.name;
+            });
+          }
+          if (!hasTargetCellEmployee) {
+            return false;
+          }
         }
       }
       
