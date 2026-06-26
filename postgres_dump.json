@@ -479,17 +479,6 @@
       "createdAt": "2026-05-23T07:41:25.116Z"
     },
     {
-      "id": 15,
-      "name": "জনাব মোঃ বাহার উদ্দিন",
-      "designation": "প্রিন্সিপাল অফিসার (পিও)",
-      "bankId": "021911",
-      "fileNo": "PO(Com)-5993",
-      "mobile": null,
-      "cellId": 7,
-      "userId": null,
-      "createdAt": "2026-05-23T07:41:23.939Z"
-    },
-    {
       "id": 14,
       "name": "জনাব মোঃ রিয়াজুল হাসান",
       "designation": "সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)",
@@ -653,6 +642,17 @@
       "cellId": 9,
       "userId": null,
       "createdAt": "2026-05-23T07:38:30.680Z"
+    },
+    {
+      "id": 15,
+      "name": "জনাব মোঃ বাহার উদ্দিন",
+      "designation": "প্রিন্সিপাল অফিসার (পিও)",
+      "bankId": "021911",
+      "fileNo": "PO(Com)-5993",
+      "mobile": null,
+      "cellId": 7,
+      "userId": 12,
+      "createdAt": "2026-05-23T07:41:23.939Z"
     }
   ],
   "duties": [
@@ -1114,6 +1114,13 @@
     }
   ],
   "documents": [
+    {
+      "id": 28,
+      "name": "কর্মকর্তা সেল ডিরেক্টরি রিপোর্ট (২৬-০৬-২০২৬)",
+      "filePath": "/uploads/employee_directory_1782501537.html",
+      "fileSize": 10583,
+      "uploadedAt": "2026-06-26T19:20:00.265Z"
+    },
     {
       "id": 13,
       "name": "সমন্বিত ক্লোজিং বিল: জুন ২০২৬",
@@ -2242,33 +2249,9 @@
       "createdAt": "2026-06-10T07:34:56.574Z"
     },
     {
-      "id": 59,
-      "orderRef": "৯১০৩/ডেভ/মোঃ বাহার উদ্দিন/নাইট/অফিস-নির্দেশ/২০২৬০৪০৯/৩০",
-      "orderDate": "2026-06-10",
-      "category": "NIGHT_SHIFT",
-      "employeeName": "জনাব মোঃ বাহার উদ্দিন",
-      "cellName": "All Cells",
-      "dutiesJson": "[{\"employeeId\":15,\"employeeName\":\"জনাব মোঃ বাহার উদ্দিন\",\"designation\":\"প্রিন্সিপাল অফিসার (পিও)\",\"dates\":[\"2026-04-11\",\"2026-04-18\"],\"description\":\"Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)\"},{\"employeeId\":17,\"employeeName\":\"জনাব দেবাশীষ কুমার দে\",\"designation\":\"সিনিয়র অফিসার-আইটি (এসও-আইটি)\",\"dates\":[\"2026-04-11\",\"2026-04-18\"],\"description\":\"Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)\"}]",
-      "contentJson": "{\"orderText\":\"T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>রাত্রিকালীন (Night Shift)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ\",\"signingOfficer\":\"জনাব মোহাম্মদ সোহরাব হোসেন\",\"signingDesignation\":\"উপ-মহাব্যবস্থাপক\",\"copies\":[],\"cellName\":\"All Cells\"}",
-      "status": "Modified",
-      "createdAt": "2026-06-11T17:55:52.230Z"
-    },
-    {
-      "id": 63,
-      "orderRef": "৯১০৩/ডেভ/মোঃ রিয়াজুল হাসান/নাইট/অফিস-নির্দেশ/২০২৬০৫০৭/৮৯",
-      "orderDate": "2026-06-10",
-      "category": "NIGHT_SHIFT",
-      "employeeName": "জনাব মোঃ রিয়াজুল হাসান",
-      "cellName": "All Cells",
-      "dutiesJson": "[{\"employeeId\":14,\"employeeName\":\"জনাব মোঃ রিয়াজুল হাসান\",\"designation\":\"সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)\",\"dates\":[\"2026-05-19\"],\"description\":\"Customization এবং Development সংক্রান্ত কাজ (R09 Development & Customization Cell)\"},{\"employeeId\":15,\"employeeName\":\"জনাব মোঃ বাহার উদ্দিন\",\"designation\":\"প্রিন্সিপাল অফিসার (পিও)\",\"dates\":[\"2026-05-23\",\"2026-05-18\",\"2026-05-16\",\"2026-05-09\"],\"description\":\"Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)\"},{\"employeeId\":17,\"employeeName\":\"জনাব দেবাশীষ কুমার দে\",\"designation\":\"সিনিয়র অফিসার-আইটি (এসও-আইটি)\",\"dates\":[\"2026-06-01\",\"2026-05-23\",\"2026-05-20\",\"2026-05-18\",\"2026-05-16\",\"2026-05-09\"],\"description\":\"Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)\"}]",
-      "contentJson": "{\"orderText\":\"T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>রাত্রিকালীন (Night Shift)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ\",\"signingOfficer\":\"জনাব মীর জাহিদুল ইসলাম\",\"signingDesignation\":\"উপ-মহাব্যবস্থাপক\",\"copies\":[],\"cellName\":\"All Cells\"}",
-      "status": "Generated & Printed",
-      "createdAt": "2026-06-12T10:16:25.515Z"
-    },
-    {
       "id": 61,
       "orderRef": "৯১০৩/ডেভ/মোঃ বাহার উদ্দিন/নাইট/অফিস-নির্দেশ/২০২৬০৬০৩/১৫",
-      "orderDate": "2026-06-10",
+      "orderDate": "2026-06-03",
       "category": "NIGHT_SHIFT",
       "employeeName": "জনাব মোঃ বাহার উদ্দিন",
       "cellName": "All Cells",
@@ -2278,21 +2261,21 @@
       "createdAt": "2026-06-11T18:25:44.500Z"
     },
     {
-      "id": 45,
-      "orderRef": "৯১০৩/ডেভ/মোঃ বাহার উদ্দিন/নাইট/অফিস-নির্দেশ/২০২৬০৪০৯/৩০/বিল",
-      "orderDate": "2026-06-10",
-      "category": "BILL_NIGHT_SHIFT",
+      "id": 59,
+      "orderRef": "৯১০৩/ডেভ/মোঃ বাহার উদ্দিন/নাইট/অফিস-নির্দেশ/২০২৬০৪০৯/৩০",
+      "orderDate": "2026-04-09",
+      "category": "NIGHT_SHIFT",
       "employeeName": "জনাব মোঃ বাহার উদ্দিন",
       "cellName": "All Cells",
-      "dutiesJson": "[{\"employeeId\":\"026762\",\"employeeName\":\"জনাব দেবাশীষ কুমার দে\",\"designation\":\"সিনিয়র অফিসার-আইটি (এসও-আইটি)\",\"days\":2,\"apyaonRate\":600,\"totalApyaon\":1200,\"totalTransport\":800,\"grandTotal\":2000,\"datesFormatted\":\"১১-০৪-২০২৬, ১৮-০৪-২০২৬\"},{\"employeeId\":\"021911\",\"employeeName\":\"জনাব মোঃ বাহার উদ্দিন\",\"designation\":\"প্রিন্সিপাল অফিসার (পিও)\",\"days\":2,\"apyaonRate\":600,\"totalApyaon\":1200,\"totalTransport\":800,\"grandTotal\":2000,\"datesFormatted\":\"১১-০৪-২০২৬, ১৮-০৪-২০২৬\"}]",
-      "contentJson": "{\"openingParagraph\":\"কর্তৃপক্ষের নির্দেশক্রমে Online Banking Software T-24 বাস্তবায়ন ও উক্ত Software দ্বারা পরিচালিত শাখা সমুহে অপারেশনাল সহায়তা প্রদানের নিমিত্তে অত্র ডিপার্টমেন্টের নিম্নবর্ণিত কর্মকর্তাগণ তাদের নামের পার্শ্বে বর্নিত তারিখে রাত্রীকালীন শিফটে অফিসে অবস্থান করেছেন। উল্লেখ্য, গত ০৪/০৯/২০১৪ ইং তারিখে অনুষ্ঠিত র্বোড অব ডিরেক্টরস এর ৩৩৪ তম সভার সিদ্ধান্ত \\\"ঙ\\\" মোতাবেক আইটি কার্যক্রম 24 ঘন্টা নিরবিচ্ছিন্ন সাপোর্ট প্রদানের ক্ষেত্রে রাত্রী জাগরনের জন্য রাত্রীকালীন শিফটের দায়িত্ব পালনকারী নির্বাহী/কর্মকতাদের অনুকুলে ১০০০/- (যাতায়াত- ৪০০/-+আপ্যায়ন-৬০০/-) হারে ভাতা প্রদান অনুমোদিত আছে। নিম্নে বর্ণিত নির্বাহী/কর্মকতাদের অনুকূলে যাতায়াত ও আপ্যায়ন ভাতা বাবদ খরচ উল্লেখ করা হলঃ\",\"totalDays\":4,\"totalApyaon\":2400,\"totalTransport\":1600,\"grandTotal\":4000,\"grandTotalInWords\":\"চার হাজার টাকা মাত্র\",\"signingOfficer\":\"জনাব মোহাম্মদ সোহরাব হোসেন\",\"signingDesignation\":\"উপ-মহাব্যবস্থাপক\",\"subjectText\":\"যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।\",\"representativeName\":\"জনাব দেবাশীষ কুমার দে\",\"representativeDesignation\":\"এসও-আইটি\",\"backingOrderId\":44,\"backingOrderRef\":\"৯১০৩/ডেভ/দেবাশীষ কুমার দে/নাইট/অফিস-নির্দেশ/২০২৬০৪০৯/৩১\",\"backingOrderDate\":\"2026-04-09\"}",
-      "status": "Generated & Printed",
-      "createdAt": "2026-06-09T10:31:20.880Z"
+      "dutiesJson": "[{\"employeeId\":15,\"employeeName\":\"জনাব মোঃ বাহার উদ্দিন\",\"designation\":\"প্রিন্সিপাল অফিসার (পিও)\",\"dates\":[\"2026-04-11\",\"2026-04-18\"],\"description\":\"Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)\"},{\"employeeId\":17,\"employeeName\":\"জনাব দেবাশীষ কুমার দে\",\"designation\":\"সিনিয়র অফিসার-আইটি (এসও-আইটি)\",\"dates\":[\"2026-04-11\",\"2026-04-18\"],\"description\":\"Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)\"}]",
+      "contentJson": "{\"orderText\":\"T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>রাত্রিকালীন (Night Shift)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ\",\"signingOfficer\":\"জনাব মোহাম্মদ সোহরাব হোসেন\",\"signingDesignation\":\"উপ-মহাব্যবস্থাপক\",\"copies\":[],\"cellName\":\"All Cells\"}",
+      "status": "Modified",
+      "createdAt": "2026-06-11T17:55:52.230Z"
     },
     {
       "id": 62,
       "orderRef": "৯১০৩/ডেভ/মোঃ রিয়াজুল হাসান/নাইট/অফিস-নির্দেশ/২০২৬০৫০৭/৮৯/বিল",
-      "orderDate": "2026-06-10",
+      "orderDate": "2026-05-07",
       "category": "BILL_NIGHT_SHIFT",
       "employeeName": "জনাব মোঃ রিয়াজুল হাসান",
       "cellName": "All Cells",
@@ -2304,7 +2287,7 @@
     {
       "id": 46,
       "orderRef": "৯১০৩/ডেভ/মোঃ বাহার উদ্দিন/নাইট/অফিস-নির্দেশ/২০২৬০৬০৩/১৫/বিল",
-      "orderDate": "2026-06-10",
+      "orderDate": "2026-06-03",
       "category": "BILL_NIGHT_SHIFT",
       "employeeName": "জনাব মোঃ বাহার উদ্দিন",
       "cellName": "All Cells",
@@ -2312,6 +2295,30 @@
       "contentJson": "{\"openingParagraph\":\"কর্তৃপক্ষের নির্দেশক্রমে Online Banking Software T-24 বাস্তবায়ন ও উক্ত Software দ্বারা পরিচালিত শাখা সমুহে অপারেশনাল সহায়তা প্রদানের নিমিত্তে অত্র ডিপার্টমেন্টের নিম্নবর্ণিত কর্মকর্তাগণ তাদের নামের পার্শ্বে বর্নিত তারিখে রাত্রীকালীন শিফটে অফিসে অবস্থান করেছেন। উল্লেখ্য, গত ০৪/০৯/২০১৪ ইং তারিখে অনুষ্ঠিত র্বোড অব ডিরেক্টরস এর ৩৩৪ তম সভার সিদ্ধান্ত \\\"ঙ\\\" মোতাবেক আইটি কার্যক্রম 24 ঘন্টা নিরবিচ্ছিন্ন সাপোর্ট প্রদানের ক্ষেত্রে রাত্রী জাগরনের জন্য রাত্রীকালীন শিফটের দায়িত্ব পালনকারী নির্বাহী/কর্মকতাদের অনুকুলে ১০০০/- (যাতায়াত- ৪০০/-+আপ্যায়ন-৬০০/-) হারে ভাতা প্রদান অনুমোদিত আছে। নিম্নে বর্ণিত নির্বাহী/কর্মকতাদের অনুকূলে যাতায়াত ও আপ্যায়ন ভাতা বাবদ খরচ উল্লেখ করা হলঃ\",\"totalDays\":2,\"totalApyaon\":1200,\"totalTransport\":800,\"grandTotal\":2000,\"grandTotalInWords\":\"দুই হাজার টাকা মাত্র\",\"signingOfficer\":\"জনাব মোহাম্মদ সোহরাব হোসেন\",\"signingDesignation\":\"উপ-মহাব্যবস্থাপক\",\"subjectText\":\"যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।\",\"representativeName\":\"জনাব দেবাশীষ কুমার দে\",\"representativeDesignation\":\"এসও-আইটি\",\"backingOrderId\":38,\"backingOrderRef\":\"৯১০৩/ডেভ/দেবাশীষ কুমার দে/নাইট/অফিস-নির্দেশ/২০২৬০৬০৩/৯২\",\"backingOrderDate\":\"2026-06-03\"}",
       "status": "Generated & Printed",
       "createdAt": "2026-06-09T10:33:57.432Z"
+    },
+    {
+      "id": 63,
+      "orderRef": "৯১০৩/ডেভ/মোঃ রিয়াজুল হাসান/নাইট/অফিস-নির্দেশ/২০২৬০৫০৭/৮৯",
+      "orderDate": "2026-05-07",
+      "category": "NIGHT_SHIFT",
+      "employeeName": "জনাব মোঃ রিয়াজুল হাসান",
+      "cellName": "All Cells",
+      "dutiesJson": "[{\"employeeId\":14,\"employeeName\":\"জনাব মোঃ রিয়াজুল হাসান\",\"designation\":\"সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)\",\"dates\":[\"2026-05-19\"],\"description\":\"Customization এবং Development সংক্রান্ত কাজ (R09 Development & Customization Cell)\"},{\"employeeId\":15,\"employeeName\":\"জনাব মোঃ বাহার উদ্দিন\",\"designation\":\"প্রিন্সিপাল অফিসার (পিও)\",\"dates\":[\"2026-05-23\",\"2026-05-18\",\"2026-05-16\",\"2026-05-09\"],\"description\":\"Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)\"},{\"employeeId\":17,\"employeeName\":\"জনাব দেবাশীষ কুমার দে\",\"designation\":\"সিনিয়র অফিসার-আইটি (এসও-আইটি)\",\"dates\":[\"2026-06-01\",\"2026-05-23\",\"2026-05-20\",\"2026-05-18\",\"2026-05-16\",\"2026-05-09\"],\"description\":\"Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)\"}]",
+      "contentJson": "{\"orderText\":\"T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>রাত্রিকালীন (Night Shift)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ\",\"signingOfficer\":\"জনাব মীর জাহিদুল ইসলাম\",\"signingDesignation\":\"উপ-মহাব্যবস্থাপক\",\"copies\":[],\"cellName\":\"All Cells\"}",
+      "status": "Generated & Printed",
+      "createdAt": "2026-06-12T10:16:25.515Z"
+    },
+    {
+      "id": 45,
+      "orderRef": "৯১০৩/ডেভ/মোঃ বাহার উদ্দিন/নাইট/অফিস-নির্দেশ/২০২৬০৪০৯/৩০/বিল",
+      "orderDate": "2026-04-09",
+      "category": "BILL_NIGHT_SHIFT",
+      "employeeName": "জনাব মোঃ বাহার উদ্দিন",
+      "cellName": "All Cells",
+      "dutiesJson": "[{\"employeeId\":\"026762\",\"employeeName\":\"জনাব দেবাশীষ কুমার দে\",\"designation\":\"সিনিয়র অফিসার-আইটি (এসও-আইটি)\",\"days\":2,\"apyaonRate\":600,\"totalApyaon\":1200,\"totalTransport\":800,\"grandTotal\":2000,\"datesFormatted\":\"১১-০৪-২০২৬, ১৮-০৪-২০২৬\"},{\"employeeId\":\"021911\",\"employeeName\":\"জনাব মোঃ বাহার উদ্দিন\",\"designation\":\"প্রিন্সিপাল অফিসার (পিও)\",\"days\":2,\"apyaonRate\":600,\"totalApyaon\":1200,\"totalTransport\":800,\"grandTotal\":2000,\"datesFormatted\":\"১১-০৪-২০২৬, ১৮-০৪-২০২৬\"}]",
+      "contentJson": "{\"openingParagraph\":\"কর্তৃপক্ষের নির্দেশক্রমে Online Banking Software T-24 বাস্তবায়ন ও উক্ত Software দ্বারা পরিচালিত শাখা সমুহে অপারেশনাল সহায়তা প্রদানের নিমিত্তে অত্র ডিপার্টমেন্টের নিম্নবর্ণিত কর্মকর্তাগণ তাদের নামের পার্শ্বে বর্নিত তারিখে রাত্রীকালীন শিফটে অফিসে অবস্থান করেছেন। উল্লেখ্য, গত ০৪/০৯/২০১৪ ইং তারিখে অনুষ্ঠিত র্বোড অব ডিরেক্টরস এর ৩৩৪ তম সভার সিদ্ধান্ত \\\"ঙ\\\" মোতাবেক আইটি কার্যক্রম 24 ঘন্টা নিরবিচ্ছিন্ন সাপোর্ট প্রদানের ক্ষেত্রে রাত্রী জাগরনের জন্য রাত্রীকালীন শিফটের দায়িত্ব পালনকারী নির্বাহী/কর্মকতাদের অনুকুলে ১০০০/- (যাতায়াত- ৪০০/-+আপ্যায়ন-৬০০/-) হারে ভাতা প্রদান অনুমোদিত আছে। নিম্নে বর্ণিত নির্বাহী/কর্মকতাদের অনুকূলে যাতায়াত ও আপ্যায়ন ভাতা বাবদ খরচ উল্লেখ করা হলঃ\",\"totalDays\":4,\"totalApyaon\":2400,\"totalTransport\":1600,\"grandTotal\":4000,\"grandTotalInWords\":\"চার হাজার টাকা মাত্র\",\"signingOfficer\":\"জনাব মোহাম্মদ সোহরাব হোসেন\",\"signingDesignation\":\"উপ-মহাব্যবস্থাপক\",\"subjectText\":\"যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।\",\"representativeName\":\"জনাব দেবাশীষ কুমার দে\",\"representativeDesignation\":\"এসও-আইটি\",\"backingOrderId\":44,\"backingOrderRef\":\"৯১০৩/ডেভ/দেবাশীষ কুমার দে/নাইট/অফিস-নির্দেশ/২০২৬০৪০৯/৩১\",\"backingOrderDate\":\"2026-04-09\"}",
+      "status": "Generated & Printed",
+      "createdAt": "2026-06-09T10:31:20.880Z"
     }
   ],
   "leaveApplications": [
@@ -2950,6 +2957,116 @@
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
       "details": "জনাব মোঃ বাহার উদ্দিন (@021911) সিস্টেমে সফলভাবে লগইন করেছেন (NextAuth)।",
       "createdAt": "2026-06-21T09:08:37.448Z"
+    },
+    {
+      "id": 50,
+      "username": "021911",
+      "action": "LOGIN",
+      "entityType": "USER",
+      "entityId": "12",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "details": "জনাব মোঃ বাহার উদ্দিন (@021911) সিস্টেমে সফলভাবে লগইন করেছেন (NextAuth)।",
+      "createdAt": "2026-06-26T18:42:59.023Z"
+    },
+    {
+      "id": 51,
+      "username": "021911",
+      "action": "UPDATE",
+      "entityType": "EMPLOYEE",
+      "entityId": "15",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "details": "System auto-linked User account @021911 to Employee record: জনাব মোঃ বাহার উদ্দিন (021911) (Exact case-sensitive match bankId).",
+      "createdAt": "2026-06-26T18:43:02.744Z"
+    },
+    {
+      "id": 53,
+      "username": "021911",
+      "action": "EDIT_OFFICE_ORDER",
+      "entityType": "OFFICE_ORDER",
+      "entityId": "63",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "details": "জনাব মোঃ বাহার উদ্দিন (@021911) অফিস আদেশ সংশোধন করেছেন (সূত্র: ৯১০৩/ডেভ/মোঃ রিয়াজুল হাসান/নাইট/অফিস-নির্দেশ/২০২৬০৫০৭/৮৯)।",
+      "createdAt": "2026-06-26T19:22:11.627Z"
+    },
+    {
+      "id": 55,
+      "username": "021911",
+      "action": "PRINT_OFFICE_ORDER",
+      "entityType": "OFFICE_ORDER",
+      "entityId": "63",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "details": "জনাব মোঃ বাহার উদ্দিন (@021911) অফিস আদেশ প্রিন্ট/ডাউনলোড করেছেন (সূত্র: ৯১০৩/ডেভ/মোঃ রিয়াজুল হাসান/নাইট/অফিস-নির্দেশ/২০২৬০৫০৭/৮৯)।",
+      "createdAt": "2026-06-26T19:22:13.966Z"
+    },
+    {
+      "id": 59,
+      "username": "021911",
+      "action": "PRINT_BILL",
+      "entityType": "OFFICE_ORDER",
+      "entityId": "45",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "details": "জনাব মোঃ বাহার উদ্দিন (@021911) বিল মেমো প্রিন্ট/ডাউনলোড করেছেন (সূত্র: ৯১০৩/ডেভ/মোঃ বাহার উদ্দিন/নাইট/অফিস-নির্দেশ/২০২৬০৪০৯/৩০/বিল)।",
+      "createdAt": "2026-06-26T19:23:49.195Z"
+    },
+    {
+      "id": 52,
+      "username": "021911",
+      "action": "PRINT_OFFICE_ORDER",
+      "entityType": "OFFICE_ORDER",
+      "entityId": "63",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "details": "জনাব মোঃ বাহার উদ্দিন (@021911) অফিস আদেশ প্রিন্ট/ডাউনলোড করেছেন (সূত্র: ৯১০৩/ডেভ/মোঃ রিয়াজুল হাসান/নাইট/অফিস-নির্দেশ/২০২৬০৫০৭/৮৯)।",
+      "createdAt": "2026-06-26T19:21:28.583Z"
+    },
+    {
+      "id": 54,
+      "username": "021911",
+      "action": "PRINT_BILL",
+      "entityType": "OFFICE_ORDER",
+      "entityId": "62",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "details": "জনাব মোঃ বাহার উদ্দিন (@021911) বিল মেমো প্রিন্ট/ডাউনলোড করেছেন (সূত্র: ৯১০৩/ডেভ/মোঃ রিয়াজুল হাসান/নাইট/অফিস-নির্দেশ/২০২৬০৫০৭/৮৯/বিল)।",
+      "createdAt": "2026-06-26T19:22:13.947Z"
+    },
+    {
+      "id": 56,
+      "username": "021911",
+      "action": "EDIT_OFFICE_ORDER",
+      "entityType": "OFFICE_ORDER",
+      "entityId": "61",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "details": "জনাব মোঃ বাহার উদ্দিন (@021911) অফিস আদেশ সংশোধন করেছেন (সূত্র: ৯১০৩/ডেভ/মোঃ বাহার উদ্দিন/নাইট/অফিস-নির্দেশ/২০২৬০৬০৩/১৫)।",
+      "createdAt": "2026-06-26T19:23:01.684Z"
+    },
+    {
+      "id": 57,
+      "username": "021911",
+      "action": "PRINT_BILL",
+      "entityType": "OFFICE_ORDER",
+      "entityId": "46",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "details": "জনাব মোঃ বাহার উদ্দিন (@021911) বিল মেমো প্রিন্ট/ডাউনলোড করেছেন (সূত্র: ৯১০৩/ডেভ/মোঃ বাহার উদ্দিন/নাইট/অফিস-নির্দেশ/২০২৬০৬০৩/১৫/বিল)।",
+      "createdAt": "2026-06-26T19:23:03.640Z"
+    },
+    {
+      "id": 58,
+      "username": "021911",
+      "action": "EDIT_OFFICE_ORDER",
+      "entityType": "OFFICE_ORDER",
+      "entityId": "59",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "details": "জনাব মোঃ বাহার উদ্দিন (@021911) অফিস আদেশ সংশোধন করেছেন (সূত্র: ৯১০৩/ডেভ/মোঃ বাহার উদ্দিন/নাইট/অফিস-নির্দেশ/২০২৬০৪০৯/৩০)।",
+      "createdAt": "2026-06-26T19:23:47.165Z"
     }
   ]
 }
