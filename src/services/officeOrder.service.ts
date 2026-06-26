@@ -429,15 +429,23 @@ export class OfficeOrderService {
       if (existingOrder.cellName && userCellNames.includes(existingOrder.cellName)) {
         hasAccess = true;
       } else {
+        const cleanRef = existingOrder.orderRef.replace(/\/বিল$/, '');
         const dutiesForOrder = await db.select({
           cellName: cells.name
         })
         .from(duties)
         .innerJoin(employees, eq(duties.employeeId, employees.id))
         .innerJoin(cells, eq(employees.cellId, cells.id))
-        .where(eq(duties.orderRef, existingOrder.orderRef));
+        .where(inArray(duties.orderRef, [existingOrder.orderRef, cleanRef]));
         
         hasAccess = dutiesForOrder.some(d => userCellNames.includes(d.cellName));
+
+        if (!hasAccess) {
+          const backingOrder = await db.select().from(officeOrders).where(eq(officeOrders.orderRef, cleanRef)).limit(1);
+          if (backingOrder[0]?.cellName && userCellNames.includes(backingOrder[0].cellName)) {
+            hasAccess = true;
+          }
+        }
       }
 
       if (!hasAccess) {

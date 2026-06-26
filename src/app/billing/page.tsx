@@ -161,16 +161,26 @@ interface EmployeeBillingSummary {
 const getSlotName = (dateStr: string) => {
   if (!dateStr) return '';
   const parts = dateStr.split('-');
-  if (parts.length < 3) return dateStr + 'BillOrder';
+  if (parts.length < 3) return dateStr;
   const year = parts[0];
   const monthNum = parseInt(parts[1], 10);
   const day = parseInt(parts[2], 10);
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+  
+  const banglaMonths = [
+    'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+    'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
   ];
-  const monthName = months[monthNum - 1] || 'Month';
-  return `${monthName}${day}${year}BillOrder`;
+  const monthName = banglaMonths[monthNum - 1] || '';
+  
+  let dayStr = '';
+  if (day === 1) dayStr = '১লা';
+  else if (day === 2) dayStr = '২রা';
+  else if (day === 3) dayStr = '৩রা';
+  else if (day === 4) dayStr = '৪ঠা';
+  else if (day >= 5 && day <= 18) dayStr = `${toBanglaDigits(day)}ই`;
+  else dayStr = `${toBanglaDigits(day)}শে`;
+  
+  return `${dayStr} ${monthName}, ${toBanglaDigits(year)}`;
 };
 
 const getNormalizedRef = (ref: string) => {
@@ -1837,8 +1847,8 @@ export default function BillingPage() {
 
   const billGroups = useMemo(() => {
     const groupsMap = new Map<string, OfficeOrder[]>();
-    archivedOrders.forEach(o => {
-      if (o.category?.startsWith('BILL_') && o.status !== 'Deleted' && o.orderDate) {
+    filteredBillMemos.forEach(o => {
+      if (o.orderDate) {
         if (!groupsMap.has(o.orderDate)) {
           groupsMap.set(o.orderDate, []);
         }
@@ -1856,7 +1866,7 @@ export default function BillingPage() {
         bills: bills
       };
     });
-  }, [archivedOrders]);
+  }, [filteredBillMemos]);
 
   const metrics = useMemo(() => {
     let totalLateSittingBill = 0;
