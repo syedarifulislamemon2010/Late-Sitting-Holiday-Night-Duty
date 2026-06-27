@@ -14,7 +14,7 @@ export const authOptions: NextAuthOptions = {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.username || !credentials?.password) {
           return null;
         }
@@ -65,9 +65,19 @@ export const authOptions: NextAuthOptions = {
 
         if (user && user.password === password) {
           try {
-            const reqHeaders = await headers();
-            const ipAddress = reqHeaders.get('x-forwarded-for') || reqHeaders.get('x-real-ip') || '127.0.0.1';
-            const userAgent = reqHeaders.get('user-agent') || 'Unknown';
+            let ipAddress = '127.0.0.1';
+            let userAgent = 'Unknown';
+
+            if (req && req.headers) {
+              ipAddress = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || ipAddress;
+              userAgent = req.headers['user-agent'] || userAgent;
+            } else {
+              try {
+                const reqHeaders = await headers();
+                ipAddress = reqHeaders.get('x-forwarded-for') || reqHeaders.get('x-real-ip') || ipAddress;
+                userAgent = reqHeaders.get('user-agent') || userAgent;
+              } catch {}
+            }
 
             await logActivity({
               username: user.username,
@@ -107,15 +117,19 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token) {
         const sessionUser = session.user as {
           id?: number;
           role?: string;
           username?: string | null;
           email?: string | null;
         };
-        sessionUser.id = parseInt(token.id as string, 10);
-        sessionUser.role = token.role as string;
+        if (token.id) {
+          sessionUser.id = parseInt(token.id as string, 10);
+        }
+        if (token.role) {
+          sessionUser.role = token.role as string;
+        }
         sessionUser.username = sessionUser.email;
       }
       return session;
@@ -125,6 +139,15 @@ export const authOptions: NextAuthOptions = {
     signIn: '/',
   },
   secret: process.env.NEXTAUTH_SECRET || 'NextAuthSecretSecretKey2026',
+  logger: {
+    error(code, ...metadata) {
+      if (code === 'JWT_SESSION_ERROR' && metadata.some(m => String(m).includes('decryption operation failed'))) {
+        console.warn('NextAuth: Session decryption failed (likely due to expired or mismatched browser cookies). Redirecting to login.');
+        return;
+      }
+      console.error(code, ...metadata);
+    }
+  }
 };
 
 const handler = NextAuth(authOptions);
