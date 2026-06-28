@@ -206,6 +206,7 @@ export default function AnalyticsDashboardPage() {
   const [employeeBillCounts, setEmployeeBillCounts] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [role, setRole] = useState('');
+  const [hasEmployeeProfile, setHasEmployeeProfile] = useState(false);
 
   // Double Check security redirect for client session
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -261,6 +262,7 @@ export default function AnalyticsDashboardPage() {
       setEmployeeBillCounts(data.employeeBillCounts || []);
       setSummary(data.summary || null);
       setRole(data.role || '');
+      setHasEmployeeProfile(data.hasEmployeeProfile || false);
       setAvailableReleaseDates(data.availableReleaseDates || []);
       setResolvedReleaseDate(data.selectedReleaseDate || '');
     } catch (err: any) {
@@ -364,11 +366,11 @@ export default function AnalyticsDashboardPage() {
           </div>
 
           {/* Card 3: Personal Released Bills */}
-          {summary.myBillCount > 0 && (
+          {hasEmployeeProfile && (
             <div className="bg-gradient-to-br from-white to-emerald-50/20 dark:from-slate-900 dark:to-emerald-950/20 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">আমার রিলিজ হওয়া বিল</span>
-                <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{toBanglaDigits(summary.myBillCount.toString())} টি</p>
+                <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{toBanglaDigits((summary.myBillCount || 0).toString())} টি</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl">
                 📄
@@ -377,11 +379,11 @@ export default function AnalyticsDashboardPage() {
           )}
 
           {/* Card 4: Personal Total Allowance Earnings */}
-          {summary.myTotalEarnings > 0 && (
+          {hasEmployeeProfile && (
             <div className="bg-gradient-to-br from-white to-amber-50/20 dark:from-slate-900 dark:to-amber-950/20 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">আমার মোট প্রাপ্ত ভাতা</span>
-                <p className="text-2xl font-black text-slate-800 dark:text-slate-100">৳ {toBanglaDigits(summary.myTotalEarnings.toLocaleString())}/-</p>
+                <p className="text-2xl font-black text-slate-800 dark:text-slate-100">৳ {toBanglaDigits((summary.myTotalEarnings || 0).toLocaleString())}/-</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl font-bold">
                 ৳

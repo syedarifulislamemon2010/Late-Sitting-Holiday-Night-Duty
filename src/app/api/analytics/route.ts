@@ -475,6 +475,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       role: user.role,
+      hasEmployeeProfile: !!employee,
       summary: {
         totalReleasedBills,
         totalDutiesCompleted,

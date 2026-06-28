@@ -223,45 +223,53 @@ export default function AnalyticsCharts({
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">সামগ্রিক সেল-ভিত্তিক বাজেট খরচ বিভাজন (Cell Budget)</h3>
           <div className="h-72 w-full flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="h-56 w-full md:w-1/2">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                <PieChart>
-                  <Pie
-                    data={cellBudget}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={4}
-                    dataKey="totalAllowance"
-                    nameKey="cellName"
-                  >
-                    {cellBudget.map((entry, index) => (
-                      <RechartsCell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(val) => [`৳${toBanglaDigits(Number(val).toLocaleString())}`, 'মোট খরচ']}
-                    contentStyle={{ borderRadius: '16px', border: '1px solid var(--card-border)', backgroundColor: 'var(--surface-bright)', color: 'var(--foreground)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            
-            {/* Custom Legend */}
-            <div className="w-full md:w-1/2 overflow-y-auto max-h-56 space-y-2 text-xs">
-              {cellBudget.map((item, idx) => (
-                <div key={item.cellName} className="flex items-center justify-between gap-2 border-b border-slate-50 dark:border-slate-800 pb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">{item.cellName}</span>
-                  </div>
-                  <span className="font-sans font-semibold text-slate-500 dark:text-slate-400">
-                    ৳{toBanglaDigits(item.totalAllowance.toLocaleString())}/-
-                  </span>
+            {cellBudget.length === 0 ? (
+              <div className="h-full w-full flex items-center justify-center text-slate-400 dark:text-slate-400 text-xs">
+                কোনো তথ্য পাওয়া যায়নি।
+              </div>
+            ) : (
+              <>
+                <div className="h-56 w-full md:w-1/2">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    <PieChart>
+                      <Pie
+                        data={cellBudget}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={4}
+                        dataKey="totalAllowance"
+                        nameKey="cellName"
+                      >
+                        {cellBudget.map((entry, index) => (
+                          <RechartsCell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(val) => [`৳${toBanglaDigits(Number(val).toLocaleString())}`, 'মোট খরচ']}
+                        contentStyle={{ borderRadius: '16px', border: '1px solid var(--card-border)', backgroundColor: 'var(--surface-bright)', color: 'var(--foreground)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
+                
+                {/* Custom Legend */}
+                <div className="w-full md:w-1/2 overflow-y-auto max-h-56 space-y-2 text-xs">
+                  {cellBudget.map((item, idx) => (
+                    <div key={item.cellName} className="flex items-center justify-between gap-2 border-b border-slate-50 dark:border-slate-800 pb-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">{item.cellName}</span>
+                      </div>
+                      <span className="font-sans font-semibold text-slate-500 dark:text-slate-400">
+                        ৳{toBanglaDigits(item.totalAllowance.toLocaleString())}/-
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
