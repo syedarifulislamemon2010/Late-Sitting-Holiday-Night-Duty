@@ -247,8 +247,8 @@ export default function HardwareRequisitionPage() {
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
-  const [hardwareType, setHardwareType] = useState('UPS');
-  const [upsAction, setUpsAction] = useState<'REPAIR' | 'NEW_SUPPLY'>('REPAIR');
+  const [hardwareType, setHardwareType] = useState('');
+  const [upsAction, setUpsAction] = useState<string>('');
   const [selectedCellId, setSelectedCellId] = useState<number | ''>('');
   const [selectedApplicantEmp, setSelectedApplicantEmp] = useState<Employee | null>(null);
   
@@ -373,7 +373,7 @@ export default function HardwareRequisitionPage() {
         officerUserId: currentUser?.id,
         officerNameSnapshot: selectedApplicantEmp.name,
         officerDesignationSnapshot: cleanDesignation(selectedApplicantEmp.designation),
-        hardwareLabel: upsAction === 'REPAIR' ? 'ইউপিএস মেরামত' : 'নতুন ইউপিএস সরবরাহ'
+        hardwareLabel: upsAction === 'REPAIR' ? 'ইউপিএস মেরামত' : upsAction === 'NEW_SUPPLY' ? 'নতুন ইউপিএস সরবরাহ' : ''
       }];
     } else {
       // Multiple mode
@@ -387,7 +387,7 @@ export default function HardwareRequisitionPage() {
           serialNo: bnSerial,
           officerNameSnapshot: emp.name,
           officerDesignationSnapshot: cleanDesignation(emp.designation),
-          hardwareLabel: upsAction === 'REPAIR' ? 'ইউপিএস মেরামত' : 'নতুন ইউপিএস সরবরাহ'
+          hardwareLabel: upsAction === 'REPAIR' ? 'ইউপিএস মেরামত' : upsAction === 'NEW_SUPPLY' ? 'নতুন ইউপিএস সরবরাহ' : ''
         };
       });
     }
@@ -408,9 +408,12 @@ export default function HardwareRequisitionPage() {
     if (upsAction === 'REPAIR') {
       subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত প্রসঙ্গে।`;
       bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত করা প্রয়োজন।`;
-    } else {
+    } else if (upsAction === 'NEW_SUPPLY') {
       subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ প্রসঙ্গে।`;
       bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ করা প্রয়োজন।`;
+    } else {
+      subjectLine = `বিষয়ঃ [ক্যাটাগরি ও অনুরোধের ধরণ নির্বাচন করুন]`;
+      bodyParagraph = `[ক্যাটাগরি ও অনুরোধের ধরণ নির্বাচন করুন]`;
     }
 
     const closingParagraph = 'এমতাবস্থায়, উপরে উল্লেখিত সমস্যা সমাধানের জন্য প্রয়োজনীয় ব্যবস্থা গ্রহণের অনুরোধ জানিয়ে নথিটি অত্র ডিপার্টমেন্টের হার্ডওয়্যার সেল বরাবর প্রেরণ করা যেতে পারে।';
@@ -430,6 +433,16 @@ export default function HardwareRequisitionPage() {
 
     if (!selectedApplicantEmp) {
       setErrorMsg('আবেদনকারী কর্মকর্তা নির্বাচন করা হয়নি।');
+      return;
+    }
+
+    if (!hardwareType) {
+      setErrorMsg('অনুগ্রহ করে হার্ডওয়্যার ক্যাটাগরি নির্বাচন করুন।');
+      return;
+    }
+
+    if (!upsAction) {
+      setErrorMsg('অনুগ্রহ করে অনুরোধের ধরণ নির্বাচন করুন।');
       return;
     }
 
@@ -771,9 +784,13 @@ export default function HardwareRequisitionPage() {
                         <label className="font-bold text-slate-500 block">হার্ডওয়্যার ক্যাটাগরি:</label>
                         <select
                           value={hardwareType}
-                          onChange={(e) => setHardwareType(e.target.value)}
+                          onChange={(e) => {
+                            setHardwareType(e.target.value);
+                            setUpsAction(''); // Reset action on type change
+                          }}
                           className="w-full h-10 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold cursor-pointer text-slate-800 dark:text-slate-100"
                         >
+                          <option value="">ক্যাটাগরি নির্বাচন করুন...</option>
                           <option value="UPS">ইউপিএস (UPS)</option>
                         </select>
                       </div>
@@ -783,9 +800,10 @@ export default function HardwareRequisitionPage() {
                           <label className="font-bold text-slate-500 block">অনুরোধের ধরণ:</label>
                           <select
                             value={upsAction}
-                            onChange={(e) => setUpsAction(e.target.value as any)}
+                            onChange={(e) => setUpsAction(e.target.value)}
                             className="w-full h-10 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold cursor-pointer text-slate-800 dark:text-slate-100"
                           >
+                            <option value="">অনুরোধের ধরণ নির্বাচন করুন...</option>
                             <option value="REPAIR">নষ্ট ইউপিএস মেরামত</option>
                             <option value="NEW_SUPPLY">নতুন ইউপিএস সরবরাহ</option>
                           </select>
