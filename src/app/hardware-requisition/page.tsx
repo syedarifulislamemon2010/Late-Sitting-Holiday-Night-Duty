@@ -1049,19 +1049,9 @@ export default function HardwareRequisitionPage() {
             {/* RIGHT document layout preview */}
             <div className="xl:col-span-8 w-full max-w-full overflow-x-auto flex justify-center pb-4 no-print-scrollbar">
               
-              {activeTab === 'NEW' && !isFormValid ? (
-                /* Placeholder Card when form is incomplete */
-                <div className="w-[216mm] min-h-[356mm] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center p-8 text-center text-slate-450 dark:text-slate-500 shadow-sm no-print">
-                  <HardDrive size={48} className="text-slate-300 dark:text-slate-700 mb-4 animate-pulse" />
-                  <h4 className="text-base font-bold text-slate-750 dark:text-slate-300 mb-2">প্রিভিউ উপলব্ধ নয়</h4>
-                  <p className="text-xs max-w-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                    হার্ডওয়্যার রিকুইজিশন নথির প্রিভিউ দেখতে অনুগ্রহ করে বাম পাশের প্যানেল থেকে **হার্ডওয়্যার ক্যাটাগরি** এবং **অনুরোধের ধরণ** নির্বাচন করুন।
-                  </p>
-                </div>
-              ) : (
-                <div 
-                  id="printable-hardware-requisition-sheet" 
-                  className="w-[216mm] min-h-[356mm] bg-white text-black border border-slate-350 dark:border-slate-800 print:border-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] print:shadow-none flex flex-col justify-start shrink-0"
+              <div 
+                id="printable-hardware-requisition-sheet" 
+                className="w-[216mm] min-h-[356mm] bg-white text-black border border-slate-350 dark:border-slate-800 print:border-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] print:shadow-none flex flex-col justify-start shrink-0"
                 style={{
                   paddingTop: '0.8in',
                   paddingBottom: '1in',
@@ -1145,7 +1135,6 @@ export default function HardwareRequisitionPage() {
                 </div>
 
               </div>
-              )}
 
             </div>
 
