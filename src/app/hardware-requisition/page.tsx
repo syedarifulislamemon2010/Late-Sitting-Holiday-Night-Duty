@@ -191,6 +191,12 @@ interface Employee {
   };
 }
 
+interface Cell {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
 interface RequisitionItem {
   id?: number;
   serialNo: string;
@@ -228,6 +234,7 @@ export default function HardwareRequisitionPage() {
   
   // Data loading states
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [cells, setCells] = useState<Cell[]>([]);
   const [dbHolidays, setDbHolidays] = useState<any[]>([]);
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
   const [loading, setLoading] = useState(true);
@@ -242,6 +249,7 @@ export default function HardwareRequisitionPage() {
   });
   const [hardwareType, setHardwareType] = useState('UPS');
   const [upsAction, setUpsAction] = useState<'REPAIR' | 'NEW_SUPPLY'>('REPAIR');
+  const [selectedCellId, setSelectedCellId] = useState<number | ''>('');
   const [selectedApplicantEmp, setSelectedApplicantEmp] = useState<Employee | null>(null);
   
   // Multiple mode specific state
@@ -271,10 +279,11 @@ export default function HardwareRequisitionPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [empsRes, holidaysRes, reqsRes] = await Promise.all([
+        const [empsRes, holidaysRes, reqsRes, cellsRes] = await Promise.all([
           fetch('/api/employees'),
           fetch('/api/holidays'),
-          fetch('/api/hardware-requisitions')
+          fetch('/api/hardware-requisitions'),
+          fetch('/api/cells')
         ]);
 
         let emps: Employee[] = [];
@@ -293,11 +302,17 @@ export default function HardwareRequisitionPage() {
           setRequisitions(reqs);
         }
 
+        if (cellsRes.ok) {
+          const cellsData = await cellsRes.json();
+          setCells(Array.isArray(cellsData) ? cellsData : []);
+        }
+
         // Set default selected employee based on current user
         if (currentUser) {
           const myEmp = emps.find(e => e.bankId?.trim().toLowerCase() === currentUser.username.trim().toLowerCase());
           if (myEmp) {
             setSelectedApplicantEmp(myEmp);
+            setSelectedCellId(myEmp.cellId);
           }
         }
       } catch (err) {
@@ -391,10 +406,10 @@ export default function HardwareRequisitionPage() {
     let bodyParagraph = '';
 
     if (upsAction === 'REPAIR') {
-      subjectLine = `विषয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত প্রসঙ্গে।`;
+      subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত প্রসঙ্গে।`;
       bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত করা প্রয়োজন।`;
     } else {
-      subjectLine = `विषয়ঃ [TODO: নতুন ইউপিএস সরবরাহ এর বিষয়]`;
+      subjectLine = `বিষয়ঃ [TODO: নতুন ইউপিএস সরবরাহ এর বিষয়]`;
       bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ করা প্রয়োজন।`;
     }
 
@@ -638,22 +653,46 @@ export default function HardwareRequisitionPage() {
 
                     <div className="space-y-3.5 text-xs font-sans">
                       {currentUser?.role === 'ADMIN' && (
-                        <div className="space-y-1.5 pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
-                          <label className="font-bold text-indigo-700 dark:text-indigo-400 block">আবেদনকারী কর্মকর্তা নির্বাচন:</label>
-                          <select
-                            value={selectedApplicantEmp?.id || ''}
-                            onChange={(e) => {
-                              const emp = employees.find(emp => String(emp.id) === e.target.value);
-                              if (emp) setSelectedApplicantEmp(emp);
-                            }}
-                            className="w-full px-3 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-xl outline-none focus:border-indigo-500 font-bold cursor-pointer text-indigo-900 dark:text-indigo-300"
-                          >
-                            <option value="">কর্মকর্তা নির্বাচন করুন...</option>
-                            {employees.map(emp => (
-                              <option key={emp.id} value={emp.id}>{emp.name} ({cleanDesignation(emp.designation)})</option>
-                            ))}
-                          </select>
-                        </div>
+                        <>
+                          <div className="space-y-1.5 pb-2">
+                            <label className="font-bold text-indigo-700 dark:text-indigo-400 block">শাখা/সেল নির্বাচন করুন:</label>
+                            <select
+                              value={selectedCellId}
+                              onChange={(e) => {
+                                const cellId = e.target.value ? parseInt(e.target.value, 10) : '';
+                                setSelectedCellId(cellId);
+                                setSelectedApplicantEmp(null); // Reset officer selection
+                              }}
+                              className="w-full px-3 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-xl outline-none focus:border-indigo-500 font-bold cursor-pointer text-indigo-900 dark:text-indigo-300"
+                            >
+                              <option value="">শাখা/সেল নির্বাচন করুন...</option>
+                              {cells.map(cell => (
+                                <option key={cell.id} value={cell.id}>{cell.name}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="space-y-1.5 pb-2 border-b border-dashed border-slate-200 dark:border-slate-800">
+                            <label className="font-bold text-indigo-700 dark:text-indigo-400 block">আবেদনকারী কর্মকর্তা নির্বাচন:</label>
+                            <select
+                              value={selectedApplicantEmp?.id || ''}
+                              disabled={!selectedCellId}
+                              onChange={(e) => {
+                                const emp = employees.find(emp => String(emp.id) === e.target.value);
+                                if (emp) setSelectedApplicantEmp(emp);
+                              }}
+                              className="w-full px-3 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-xl outline-none focus:border-indigo-500 font-bold cursor-pointer text-indigo-900 dark:text-indigo-300 disabled:bg-slate-100 disabled:dark:bg-slate-900 disabled:cursor-not-allowed"
+                            >
+                              <option value="">কর্মকর্তা নির্বাচন করুন...</option>
+                              {employees
+                                .filter(emp => emp.cellId === selectedCellId)
+                                .map(emp => (
+                                  <option key={emp.id} value={emp.id}>{emp.name} ({cleanDesignation(emp.designation)})</option>
+                                ))
+                              }
+                            </select>
+                          </div>
+                        </>
                       )}
 
                       {selectedApplicantEmp ? (
@@ -838,7 +877,7 @@ export default function HardwareRequisitionPage() {
                         </div>
 
                         <div className="text-slate-600 dark:text-slate-400 text-[11px] line-clamp-2">
-                          <strong>বিষয়:</strong> {req.subjectLine.replace('विषयঃ ', '')}
+                          <strong>বিষয়:</strong> {req.subjectLine.replace('বিষয়ঃ ', '').replace('विषয়ঃ ', '')}
                         </div>
 
                         <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-900">
@@ -878,7 +917,7 @@ export default function HardwareRequisitionPage() {
               
               <div 
                 id="printable-hardware-requisition-sheet" 
-                className="w-[216mm] min-h-[356mm] bg-white text-black border border-slate-350 dark:border-slate-800 print:border-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] print:shadow-none flex flex-col justify-between shrink-0"
+                className="w-[216mm] min-h-[356mm] bg-white text-black border border-slate-350 dark:border-slate-800 print:border-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] print:shadow-none flex flex-col justify-start shrink-0"
                 style={{
                   paddingTop: '0.8in',
                   paddingBottom: '1in',
@@ -889,7 +928,7 @@ export default function HardwareRequisitionPage() {
               >
                 
                 {/* Upper block */}
-                <div className="space-y-8 flex-1 flex flex-col justify-start">
+                <div className="space-y-8 flex flex-col justify-start">
                   
                   {/* Top Header */}
                   <div className="text-right space-y-1 font-bold pr-1">
@@ -936,24 +975,24 @@ export default function HardwareRequisitionPage() {
 
                   {/* Closing Paragraph */}
                   <p className="text-justify text-[13px] leading-relaxed text-black mt-4">
-                    এমতাবস্থায়, উপরে উল্লেখিত समस्या সমাধানের জন্য প্রয়োজনীয় ব্যবস্থা গ্রহণের অনুরোধ জানিয়ে নথিটি অত্র ডিপার্টমেন্টের <strong><em>হার্ডওয়্যার সেল</em></strong> বরাবর প্রেরণ করা যেতে পারে।
+                    এমতাবস্থায়, উপরে উল্লেখিত সমস্যা সমাধানের জন্য প্রয়োজনীয় ব্যবস্থা গ্রহণের অনুরোধ জানিয়ে নথিটি অত্র ডিপার্টমেন্টের <strong><em>হার্ডওয়্যার সেল</em></strong> বরাবর প্রেরণ করা যেতে পারে।
                   </p>
 
                 </div>
 
                 {/* Bottom Signature and Receivers block */}
-                <div className="space-y-12">
+                <div className="mt-16 space-y-16">
                   
                   {/* Signature block */}
                   <div className="flex justify-end">
-                    <div className="text-right space-y-1.5 pr-2">
+                    <div className="text-right space-y-1 pr-2">
                       <p className="font-bold text-[13px]">({previewReq.requester?.name || selectedApplicantEmp?.name || '[আবেদনকারীর নাম]'})</p>
                       <p className="text-[13px]">{selectedApplicantEmp ? cleanDesignation(selectedApplicantEmp.designation) : '[আবেদনকারীর পদবী]'}</p>
                     </div>
                   </div>
 
                   {/* Receiver destinations list */}
-                  <div className="space-y-7 pt-4 text-left font-bold text-[13px] leading-relaxed text-black">
+                  <div className="space-y-12 pt-2 text-left font-bold text-[13px] leading-relaxed text-black">
                     <p className="underline">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
                     <p className="underline">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
                     <p className="underline">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
@@ -1036,7 +1075,7 @@ export default function HardwareRequisitionPage() {
               overflow: hidden !important;
               display: flex !important;
               flex-direction: column !important;
-              justify-content: space-between !important;
+              justify-content: flex-start !important;
               page-break-after: avoid !important;
               page-break-before: avoid !important;
               page-break-inside: avoid !important;
