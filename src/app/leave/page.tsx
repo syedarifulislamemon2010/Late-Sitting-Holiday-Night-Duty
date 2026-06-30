@@ -267,6 +267,7 @@ export default function LeaveGeneratorPage() {
   const [cells, setCells] = useState<Cell[]>([]);
   const [dbHolidays, setDbHolidays] = useState<Holiday[]>([]);
   const [selectedCellId, setSelectedCellId] = useState<number | ''>('');
+  const [hasSyncedProfile, setHasSyncedProfile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
 
@@ -675,7 +676,7 @@ export default function LeaveGeneratorPage() {
 
   // Sync state once currentUser, employees and cells are loaded
   useEffect(() => {
-    if (!currentUser || employees.length === 0) return;
+    if (!currentUser || employees.length === 0 || hasSyncedProfile) return;
 
     let initialBankId = '';
     if (currentUser.role === 'ADMIN') {
@@ -695,6 +696,7 @@ export default function LeaveGeneratorPage() {
           setCellName(firstNonAdminEmp.cell.name);
         }
         initialBankId = firstNonAdminEmp.bankId || '';
+        setHasSyncedProfile(true);
       }
     } else {
       setApplicantName((currentUser.name || '').replace(/^জনাব\s+/, ''));
@@ -718,6 +720,7 @@ export default function LeaveGeneratorPage() {
           setCellName(matchedEmp.cell.name);
         }
         initialBankId = matchedEmp.bankId || currentUser.username || '';
+        setHasSyncedProfile(true);
       } else {
         setIsProfileUnresolved(true);
         fetch('/api/leaves/log-resolve-failed', { method: 'POST' }).catch(err => console.error(err));
@@ -727,7 +730,7 @@ export default function LeaveGeneratorPage() {
     if (initialBankId) {
       fetchArchivedLeaves(initialBankId);
     }
-  }, [currentUser, employees]);
+  }, [currentUser, employees, hasSyncedProfile]);
 
   // Prepopulate balance sheet editor when latestLeave changes (only when not editing an existing archive record)
   useEffect(() => {
