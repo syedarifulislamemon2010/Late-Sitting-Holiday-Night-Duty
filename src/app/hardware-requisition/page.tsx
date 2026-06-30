@@ -504,6 +504,12 @@ export default function HardwareRequisitionPage() {
   // Validate on change
   const isDateHoliday = isNonWorkingDay(selectedDate);
 
+  const isFormValid = !!selectedApplicantEmp && 
+    !!hardwareType && 
+    (hardwareType === 'UPS' ? !!upsAction : (hardwareType === 'OTHER' ? !!customHardwareType.trim() : false)) &&
+    !isDateHoliday &&
+    (entryMode === 'MULTIPLE' ? Object.values(checkedEmployees).filter(Boolean).length === upsCount : true);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -646,6 +652,7 @@ export default function HardwareRequisitionPage() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
+                  disabled={!isFormValid}
                   onClick={() => {
                     const fakeReq = {
                       id: 0,
@@ -662,7 +669,7 @@ export default function HardwareRequisitionPage() {
                     };
                     handlePrintClick(fakeReq);
                   }}
-                  className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-100 hover:bg-slate-50 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-100 hover:bg-slate-50 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Printer size={14} />
                   প্রিন্ট প্রিভিউ
@@ -670,8 +677,8 @@ export default function HardwareRequisitionPage() {
 
                 <button
                   onClick={handleSubmit}
-                  disabled={submitting || isDateHoliday}
-                  className="px-5 py-2.5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md hover:shadow-indigo-550/20 disabled:bg-slate-200 disabled:text-slate-400 disabled:dark:bg-slate-900 disabled:cursor-not-allowed transition-all flex items-center gap-2 cursor-pointer"
+                  disabled={submitting || isDateHoliday || !isFormValid}
+                  className="px-5 py-2.5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md hover:shadow-indigo-550/20 disabled:bg-slate-200 disabled:text-slate-400 disabled:dark:bg-slate-900 disabled:cursor-not-allowed transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {submitting ? 'সংরক্ষণ হচ্ছে...' : 'রিকুইজিশন সাবমিট'}
                 </button>
@@ -1042,9 +1049,19 @@ export default function HardwareRequisitionPage() {
             {/* RIGHT document layout preview */}
             <div className="xl:col-span-8 w-full max-w-full overflow-x-auto flex justify-center pb-4 no-print-scrollbar">
               
-              <div 
-                id="printable-hardware-requisition-sheet" 
-                className="w-[216mm] min-h-[356mm] bg-white text-black border border-slate-350 dark:border-slate-800 print:border-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] print:shadow-none flex flex-col justify-start shrink-0"
+              {activeTab === 'NEW' && !isFormValid ? (
+                /* Placeholder Card when form is incomplete */
+                <div className="w-[216mm] min-h-[356mm] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center p-8 text-center text-slate-450 dark:text-slate-500 shadow-sm no-print">
+                  <HardDrive size={48} className="text-slate-300 dark:text-slate-700 mb-4 animate-pulse" />
+                  <h4 className="text-base font-bold text-slate-750 dark:text-slate-300 mb-2">প্রিভিউ উপলব্ধ নয়</h4>
+                  <p className="text-xs max-w-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                    হার্ডওয়্যার রিকুইজিশন নথির প্রিভিউ দেখতে অনুগ্রহ করে বাম পাশের প্যানেল থেকে **হার্ডওয়্যার ক্যাটাগরি** এবং **অনুরোধের ধরণ** নির্বাচন করুন।
+                  </p>
+                </div>
+              ) : (
+                <div 
+                  id="printable-hardware-requisition-sheet" 
+                  className="w-[216mm] min-h-[356mm] bg-white text-black border border-slate-350 dark:border-slate-800 print:border-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] print:shadow-none flex flex-col justify-start shrink-0"
                 style={{
                   paddingTop: '0.8in',
                   paddingBottom: '1in',
@@ -1128,6 +1145,7 @@ export default function HardwareRequisitionPage() {
                 </div>
 
               </div>
+              )}
 
             </div>
 
