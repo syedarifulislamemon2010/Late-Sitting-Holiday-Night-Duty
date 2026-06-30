@@ -19,7 +19,8 @@ import {
   ChevronLeft,
   ClipboardList,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  HardDrive
 } from 'lucide-react';
 
 
@@ -120,7 +121,8 @@ export default function Sidebar() {
     {
       title: 'আবেদনপত্র',
       items: [
-        { name: 'ছুটি আবেদন', href: '/leave', icon: CalendarCheck }
+        { name: 'ছুটির আবেদন', href: '/leave', icon: CalendarCheck },
+        { name: 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive }
       ]
     },
     {

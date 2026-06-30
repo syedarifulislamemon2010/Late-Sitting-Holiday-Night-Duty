@@ -244,6 +244,34 @@ export const auditLogs = pgTable('AuditLog', {
 
 
 // ==========================================
+// 14. HARDWARE REQUISITION MODEL
+// ==========================================
+export const hardwareRequisitions = pgTable('HardwareRequisition', {
+  id: serial('id').primaryKey(),
+  requesterUserId: integer('requesterUserId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  cellName: text('cellName').notNull(),
+  hardwareType: text('hardwareType').notNull(), // 'UPS'
+  upsAction: text('upsAction'), // 'REPAIR' | 'NEW_SUPPLY'
+  subjectLine: text('subjectLine').notNull(),
+  requisitionDate: text('requisitionDate').notNull(), // YYYY-MM-DD
+  mode: text('mode').notNull(), // 'INDIVIDUAL' | 'MULTIPLE'
+  status: text('status').default('Submitted').notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull(),
+});
+
+export const hardwareRequisitionItems = pgTable('HardwareRequisitionItem', {
+  id: serial('id').primaryKey(),
+  requisitionId: integer('requisitionId').notNull().references(() => hardwareRequisitions.id, { onDelete: 'cascade' }),
+  serialNo: text('serialNo').notNull(), // e.g. "০১", "০২"
+  officerUserId: integer('officerUserId').references(() => users.id, { onDelete: 'set null' }),
+  officerNameSnapshot: text('officerNameSnapshot').notNull(),
+  officerDesignationSnapshot: text('officerDesignationSnapshot').notNull(),
+  hardwareLabel: text('hardwareLabel').notNull(), // e.g. "ইউপিএস মেরামত"
+});
+
+
+// ==========================================
 // DRIZZLE RELATIONSHIPS
 // ==========================================
 
@@ -280,4 +308,14 @@ export const leaveApplicationsRelations = relations(leaveApplications, ({ one })
 
 export const lunchBillsRelations = relations(lunchBills, ({ one }) => ({
   cell: one(cells, { fields: [lunchBills.cellId], references: [cells.id] }),
+}));
+
+export const hardwareRequisitionsRelations = relations(hardwareRequisitions, ({ one, many }) => ({
+  requester: one(users, { fields: [hardwareRequisitions.requesterUserId], references: [users.id] }),
+  items: many(hardwareRequisitionItems),
+}));
+
+export const hardwareRequisitionItemsRelations = relations(hardwareRequisitionItems, ({ one }) => ({
+  requisition: one(hardwareRequisitions, { fields: [hardwareRequisitionItems.requisitionId], references: [hardwareRequisitions.id] }),
+  officer: one(users, { fields: [hardwareRequisitionItems.officerUserId], references: [users.id] }),
 }));

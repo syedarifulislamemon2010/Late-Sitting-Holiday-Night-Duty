@@ -36,7 +36,7 @@ export default function CommandCenter() {
   // Static quick actions mapping
   const quickActions = [
     { title: 'ডিউটি রোস্টার তৈরি করুন (Assign Duty)', url: '/roster', icon: Calendar, color: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40' },
-    { title: 'ছুটি আবেদন করুন (Apply for Leave)', url: '/leave', icon: ClipboardList, color: 'text-teal-500 bg-teal-50 dark:bg-teal-950/40' },
+    { title: 'ছুটির আবেদন করুন (Apply for Leave)', url: '/leave', icon: ClipboardList, color: 'text-teal-500 bg-teal-50 dark:bg-teal-950/40' },
     { title: 'বিল বিবরণী দেখুন (Open Billing Ledger)', url: '/billing', icon: FileText, color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40' },
     { title: 'কর্মকর্তা তালিকা খুলুন (Look up Employee)', url: '/employees', icon: User, color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/40' },
     { title: 'ব্যবহারকারী সেটিংস (System Settings)', url: '/users', icon: Settings, color: 'text-slate-500 bg-slate-50 dark:bg-slate-900/40' },

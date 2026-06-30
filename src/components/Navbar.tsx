@@ -102,7 +102,8 @@ export default function Navbar() {
     const routeMap: Record<string, string> = {
       '/roster': 'ডিউটি রোস্টার',
       '/billing': 'বিল ও ভাতার বিবরণী',
-      '/leave': 'ছুটি আবেদন',
+      '/leave': 'ছুটির আবেদন',
+      '/hardware-requisition': 'হার্ডওয়্যার রিকুইজিশন',
       '/employees': 'কর্মকর্তাবৃন্দ',
       '/audit': 'অডিট লগ',
       '/users': 'সেটিংস',
@@ -147,7 +148,8 @@ export default function Navbar() {
       'billing': { section: 'বিল ও ভাতাসমূহ', title: 'বিল ও ভাতার বিবরণী' },
       'lunch-bill': { section: 'বিল ও ভাতাসমূহ', title: 'লাঞ্চ বিল শিট' },
       'closing-bill': { section: 'বিল ও ভাতাসমূহ', title: 'ক্লোজিং বিল শিট' },
-      'leave': { section: 'আবেদনপত্র', title: 'ছুটি আবেদন' },
+      'leave': { section: 'আবেদনপত্র', title: 'ছুটির আবেদন' },
+      'hardware-requisition': { section: 'আবেদনপত্র', title: 'হার্ডওয়্যার রিকুইজিশন' },
       'documents': { section: 'অন্যান্য', title: 'আর্কাইভ' },
       'trash': { section: 'অন্যান্য', title: 'রিসাইকেল বিন' },
       'users': { section: 'সেটিংস', title: 'ব্যবহারকারী সেটিংস' }
