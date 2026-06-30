@@ -214,6 +214,12 @@ interface Employee {
   };
 }
 
+interface Cell {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
 interface UserSession {
   id: number;
   name: string;
@@ -258,7 +264,9 @@ export default function LeaveGeneratorPage() {
   const [selectedApplicantEmp, setSelectedApplicantEmp] = useState<Employee | null>(null);
   const [isProfileUnresolved, setIsProfileUnresolved] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [cells, setCells] = useState<Cell[]>([]);
   const [dbHolidays, setDbHolidays] = useState<Holiday[]>([]);
+  const [selectedCellId, setSelectedCellId] = useState<number | ''>('');
   const [loading, setLoading] = useState(true);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
 
@@ -631,14 +639,15 @@ export default function LeaveGeneratorPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fetch initial data (employees & holidays)
+  // Fetch initial data (employees, holidays & cells)
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
-        const [empsRes, holidaysRes] = await Promise.all([
+        const [empsRes, holidaysRes, cellsRes] = await Promise.all([
           fetch('/api/employees'),
-          fetch('/api/holidays')
+          fetch('/api/holidays'),
+          fetch('/api/cells')
         ]);
 
         if (empsRes.ok) {
@@ -650,6 +659,11 @@ export default function LeaveGeneratorPage() {
           const holData = await holidaysRes.json();
           setDbHolidays(Array.isArray(holData) ? holData : []);
         }
+
+        if (cellsRes.ok) {
+          const cellsData = await cellsRes.json();
+          setCells(Array.isArray(cellsData) ? cellsData : []);
+        }
       } catch (err) {
         console.error('Error fetching initial static leave data:', err);
       } finally {
@@ -659,7 +673,7 @@ export default function LeaveGeneratorPage() {
     loadData();
   }, []);
 
-  // Sync state once currentUser and employees are loaded
+  // Sync state once currentUser, employees and cells are loaded
   useEffect(() => {
     if (!currentUser || employees.length === 0) return;
 
@@ -671,6 +685,7 @@ export default function LeaveGeneratorPage() {
       
       if (firstNonAdminEmp) {
         setSelectedApplicantEmp(firstNonAdminEmp);
+        setSelectedCellId(firstNonAdminEmp.cellId);
         setApplicantName((firstNonAdminEmp.name || '').replace(/^জনাব\s+/, ''));
         setDesignation(cleanDesignationForLeave(firstNonAdminEmp.designation));
         setBankId(firstNonAdminEmp.bankId || '');
@@ -692,6 +707,7 @@ export default function LeaveGeneratorPage() {
       if (matchedEmp) {
         setMatchedEmp(matchedEmp);
         setSelectedApplicantEmp(matchedEmp);
+        setSelectedCellId(matchedEmp.cellId);
         setApplicantName((matchedEmp.name || '').replace(/^জনাব\s+/, ''));
         setDesignation(cleanDesignationForLeave(matchedEmp.designation));
         if (matchedEmp.fileNo) {
@@ -1168,65 +1184,78 @@ export default function LeaveGeneratorPage() {
 
                 <div className="space-y-3.5 text-xs font-sans">
                   {currentUser?.role === 'ADMIN' && (
-                    <div className="space-y-1.5 pb-2 border-b border-dashed border-indigo-100 dark:border-indigo-950">
-                      <label htmlFor="selectedEmployeeId" className="font-bold text-indigo-700 dark:text-indigo-400 block">আবেদনকারী কর্মকর্তা নির্বাচন:</label>
-                      <select
-                        id="selectedEmployeeId"
-                        value={selectedApplicantEmp?.id || ''}
-                        onChange={(e) => {
-                          const empId = e.target.value;
-                          const emp = employees.find(emp => String(emp.id) === empId);
-                          if (emp) {
-                            setSelectedApplicantEmp(emp);
-                            setApplicantName((emp.name || '').replace(/^জনাব\s+/, ''));
-                            setDesignation(cleanDesignationForLeave(emp.designation));
-                            setBankId(emp.bankId || '');
-                            setFileNo(emp.fileNo || '');
-                            setMobileNo(emp.mobile || '');
-                            if (emp.cell && emp.cell.name) {
-                              setCellName(emp.cell.name);
-                            }
-                            setDelegateId(''); // Reset covering officer dropdown selection
-                            if (emp.bankId) {
-                              fetchArchivedLeaves(emp.bankId);
-                            }
-                          }
-                        }}
-                        className="w-full px-3 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-xl outline-none focus:border-indigo-550 font-bold cursor-pointer text-indigo-900 dark:text-indigo-300"
-                      >
-                        <option value="">কর্মকর্তা নির্বাচন করুন...</option>
-                        {(() => {
-                          const displayEmps = employees.filter((emp) => {
-                            if (currentUser?.role === 'ADMIN') {
-                              return emp.bankId?.trim().toLowerCase() !== currentUser.username?.trim().toLowerCase();
-                            }
-                            return true;
-                          });
+                    <>
+                      <div className="space-y-1.5 pb-2">
+                        <label htmlFor="selectedCellId" className="font-bold text-indigo-700 dark:text-indigo-400 block">শাখা/সেল নির্বাচন করুন:</label>
+                        <select
+                          id="selectedCellId"
+                          value={selectedCellId}
+                          onChange={(e) => {
+                            const val = e.target.value ? parseInt(e.target.value, 10) : '';
+                            setSelectedCellId(val);
+                            setSelectedApplicantEmp(null);
+                            setApplicantName('');
+                            setDesignation('');
+                            setBankId('');
+                            setFileNo('');
+                            setMobileNo('');
+                            setCellName('');
+                            setDelegateId('');
+                          }}
+                          className="w-full px-3 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-xl outline-none focus:border-indigo-550 font-bold cursor-pointer text-indigo-900 dark:text-indigo-300"
+                        >
+                          <option value="">শাখা/সেল নির্বাচন করুন...</option>
+                          {cells.map(cell => (
+                            <option key={cell.id} value={cell.id}>{cell.name}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                          const uniqueCells = Array.from(
-                            new Map(
-                              displayEmps
-                                .filter((emp): emp is Employee & { cell: NonNullable<Employee['cell']> } => !!emp.cell)
-                                .map(emp => [emp.cellId, emp.cell])
-                            ).values()
-                          ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-                          return uniqueCells.map((cell) => {
-                            const cellEmps = sortEmployeesBySeniority(displayEmps.filter(emp => emp.cellId === cell.id));
-                            if (cellEmps.length === 0) return null;
-                            return (
-                              <optgroup key={cell.id} label={cell.name}>
-                                {cellEmps.map((emp) => (
-                                  <option key={emp.id} value={emp.id}>
-                                    {emp.name} ({cleanDesignationForLeave(emp.designation)})
-                                  </option>
-                                ))}
-                              </optgroup>
-                            );
-                          });
-                        })()}
-                      </select>
-                    </div>
+                      <div className="space-y-1.5 pb-2 border-b border-dashed border-indigo-100 dark:border-indigo-950">
+                        <label htmlFor="selectedEmployeeId" className="font-bold text-indigo-700 dark:text-indigo-400 block">আবেদনকারী কর্মকর্তা নির্বাচন:</label>
+                        <select
+                          id="selectedEmployeeId"
+                          value={selectedApplicantEmp?.id || ''}
+                          disabled={!selectedCellId}
+                          onChange={(e) => {
+                            const empId = e.target.value;
+                            const emp = employees.find(emp => String(emp.id) === empId);
+                            if (emp) {
+                              setSelectedApplicantEmp(emp);
+                              setApplicantName((emp.name || '').replace(/^জনাব\s+/, ''));
+                              setDesignation(cleanDesignationForLeave(emp.designation));
+                              setBankId(emp.bankId || '');
+                              setFileNo(emp.fileNo || '');
+                              setMobileNo(emp.mobile || '');
+                              if (emp.cell && emp.cell.name) {
+                                setCellName(emp.cell.name);
+                              }
+                              setDelegateId(''); // Reset covering officer dropdown selection
+                              if (emp.bankId) {
+                                fetchArchivedLeaves(emp.bankId);
+                              }
+                            }
+                          }}
+                          className="w-full px-3 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-xl outline-none focus:border-indigo-550 font-bold cursor-pointer text-indigo-900 dark:text-indigo-300 disabled:bg-slate-100 disabled:dark:bg-slate-900 disabled:cursor-not-allowed"
+                        >
+                          <option value="">কর্মকর্তা নির্বাচন করুন...</option>
+                          {(() => {
+                            const displayEmps = employees.filter((emp) => {
+                              if (currentUser?.role === 'ADMIN') {
+                                  return emp.bankId?.trim().toLowerCase() !== currentUser.username?.trim().toLowerCase();
+                              }
+                              return true;
+                            });
+                            const cellEmps = sortEmployeesBySeniority(displayEmps.filter(emp => emp.cellId === selectedCellId));
+                            return cellEmps.map((emp) => (
+                              <option key={emp.id} value={emp.id}>
+                                {emp.name} ({cleanDesignationForLeave(emp.designation)})
+                              </option>
+                            ));
+                          })()}
+                        </select>
+                      </div>
+                    </>
                   )}
                   {/* Name field */}
                   <div className="space-y-1">

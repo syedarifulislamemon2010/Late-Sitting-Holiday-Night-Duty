@@ -932,7 +932,7 @@ export default function HardwareRequisitionPage() {
                   
                   {/* Top Header */}
                   <div className="text-right space-y-1 font-bold pr-1">
-                    <h2 className="text-base text-black" style={{ letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                    <h2 className="text-black" style={{ letterSpacing: 'normal', fontSize: '20pt', lineHeight: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
                     <p className="text-xs text-black" style={{ letterSpacing: 'normal' }}>
                       তারিখঃ {getBnDateString(previewReq.requisitionDate)} ইং
                     </p>
@@ -952,7 +952,7 @@ export default function HardwareRequisitionPage() {
                   </p>
 
                   {/* Table */}
-                  <table className="w-full text-center border-collapse border border-black mt-2 text-[13px]">
+                  <table className="w-full text-center border-collapse border border-black mt-6 mb-6 text-[13px]">
                     <thead>
                       <tr className="bg-slate-50/20 font-bold border-b border-black">
                         <th className="border border-black px-2 py-1.5 text-center font-bold w-[12%]">ক্রমিক নং</th>
@@ -974,14 +974,14 @@ export default function HardwareRequisitionPage() {
                   </table>
 
                   {/* Closing Paragraph */}
-                  <p className="text-justify text-[13px] leading-relaxed text-black mt-4">
-                    এমতাবস্থায়, উপরে উল্লেখিত সমস্যা সমাধানের জন্য প্রয়োজনীয় ব্যবস্থা গ্রহণের অনুরোধ জানিয়ে নথিটি অত্র ডিপার্টমেন্টের <strong><em>হার্ডওয়্যার সেল</em></strong> বরাবর প্রেরণ করা যেতে পারে।
+                  <p className="text-justify text-[13px] leading-relaxed text-black mt-6">
+                    এমতাবস্থায়, উপরে উল্লেখিত সমস্যা সমাধানের জন্য প্রয়োজনীয় ব্যবস্থা গ্রহণের অনুরোধ জানিয়ে নথিটি অत्र ডিপার্টমেন্টের <strong><em>হার্ডওয়্যার সেল</em></strong> বরাবর প্রেরণ করা যেতে পারে।
                   </p>
 
                 </div>
 
                 {/* Bottom Signature and Receivers block */}
-                <div className="mt-16 space-y-16">
+                <div className="mt-10 space-y-12">
                   
                   {/* Signature block */}
                   <div className="flex justify-end">
@@ -992,7 +992,7 @@ export default function HardwareRequisitionPage() {
                   </div>
 
                   {/* Receiver destinations list */}
-                  <div className="space-y-12 pt-2 text-left font-bold text-[13px] leading-relaxed text-black">
+                  <div className="space-y-10 pt-2 text-left font-bold text-[13px] leading-relaxed text-black">
                     <p className="underline">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
                     <p className="underline">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
                     <p className="underline">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
@@ -1017,6 +1017,11 @@ export default function HardwareRequisitionPage() {
             font-size: 13px !important;
             color: #000000;
             line-height: 1.5 !important;
+          }
+
+          #printable-hardware-requisition-sheet h2 {
+            font-size: 20pt !important;
+            line-height: normal !important;
           }
 
           @media print {
