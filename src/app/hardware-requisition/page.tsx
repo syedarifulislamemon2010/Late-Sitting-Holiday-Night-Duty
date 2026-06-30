@@ -368,9 +368,29 @@ export default function HardwareRequisitionPage() {
 
   // Build requisition items dynamically for the preview / submission
   const getRequisitionItems = (): RequisitionItem[] => {
-    const hwLabel = hardwareType === 'OTHER' 
-      ? `${customHardwareType || 'অন্যান্য হার্ডওয়্যার'}${customRequestType ? ` ${customRequestType}` : ''}`
-      : (upsAction === 'REPAIR' ? 'ইউপিএস মেরামত' : 'নতুন ইউপিএস সরবরাহ');
+    let hwLabel = '';
+    if (hardwareType === 'OTHER') {
+      const hwName = customHardwareType || 'হার্ডওয়্যার';
+      const isSupply = customRequestType.includes('সরবরাহ');
+      const isRepair = customRequestType.includes('মেরামত');
+      
+      if (isSupply) {
+        hwLabel = `নতুন ${hwName} - ১ (এক) টি`;
+      } else if (isRepair) {
+        hwLabel = `${hwName} মেরামত - ১ (এক) টি`;
+      } else {
+        const actionSuffix = customRequestType ? ` ${customRequestType}` : '';
+        hwLabel = `${hwName}${actionSuffix} - ১ (এক) টি`;
+      }
+    } else {
+      if (upsAction === 'REPAIR') {
+        hwLabel = 'ইউপিএস মেরামত - ১ (এক) টি';
+      } else if (upsAction === 'NEW_SUPPLY') {
+        hwLabel = 'নতুন ইউপিএস - ১ (এক) টি';
+      } else {
+        hwLabel = 'ইউপিএস - ১ (এক) টি';
+      }
+    }
 
     if (entryMode === 'INDIVIDUAL') {
       if (!selectedApplicantEmp) return [];
@@ -421,10 +441,21 @@ export default function HardwareRequisitionPage() {
           .trim();
         bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${coreText} করা প্রয়োজন।`;
       } else {
-        const hwText = customHardwareType || 'হার্ডওয়্যার';
-        const actionText = customRequestType || 'মেরামত/সরবরাহ';
-        subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ${hwText} ${actionText} প্রসঙ্গে।`;
-        bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি ${hwText} ${actionText} করা প্রয়োজন।`;
+        const hwName = customHardwareType || 'হার্ডওয়্যার';
+        const isSupply = customRequestType.includes('সরবরাহ');
+        const isRepair = customRequestType.includes('মেরামত');
+        
+        let hwTextWithModifier = hwName;
+        let actionName = customRequestType || 'সরবরাহ/মেরামত';
+        
+        if (isSupply) {
+          hwTextWithModifier = `নতুন ${hwName}`;
+        } else if (isRepair) {
+          hwTextWithModifier = `ব্যবহৃত নষ্ট ${hwName}`;
+        }
+        
+        subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ${hwTextWithModifier} ${actionName} প্রসঙ্গে।`;
+        bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি ${hwTextWithModifier} ${actionName} করা প্রয়োজন।`;
       }
     } else {
       if (req.upsAction === 'REPAIR') {
@@ -444,27 +475,29 @@ export default function HardwareRequisitionPage() {
     return { subjectLine, bodyParagraph, closingParagraph };
   };
 
-  const previewReq = printRequisition || {
-    id: 0,
-    requesterUserId: 0,
-    cellName: selectedApplicantEmp?.cell?.name || '',
-    hardwareType,
-    upsAction,
-    subjectLine: '',
-    requisitionDate: selectedDate,
-    mode: entryMode,
-    status: 'Draft',
-    createdAt: new Date().toISOString(),
-    items: currentItems,
-    requester: {
-      name: selectedApplicantEmp?.name || '',
-      username: ''
-    }
-  };
+  const previewReq = (activeTab === 'ARCHIVE' && printRequisition) 
+    ? printRequisition 
+    : {
+        id: 0,
+        requesterUserId: 0,
+        cellName: selectedApplicantEmp?.cell?.name || '',
+        hardwareType,
+        upsAction,
+        subjectLine: '',
+        requisitionDate: selectedDate,
+        mode: entryMode,
+        status: 'Draft',
+        createdAt: new Date().toISOString(),
+        items: currentItems,
+        requester: {
+          name: selectedApplicantEmp?.name || '',
+          username: ''
+        }
+      };
 
   const { subjectLine, bodyParagraph, closingParagraph } = getGeneratedTexts(previewReq);
 
-  if (!printRequisition) {
+  if (activeTab === 'NEW' || !printRequisition) {
     previewReq.subjectLine = subjectLine;
   }
 
@@ -629,7 +662,7 @@ export default function HardwareRequisitionPage() {
                     };
                     handlePrintClick(fakeReq);
                   }}
-                  className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-800 text-slate-700 dark:text-slate-350 hover:bg-slate-50 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-100 hover:bg-slate-50 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <Printer size={14} />
                   প্রিন্ট প্রিভিউ
@@ -656,7 +689,10 @@ export default function HardwareRequisitionPage() {
               <div className="flex border-b border-slate-200 dark:border-slate-800 pb-px">
                 <button
                   type="button"
-                  onClick={() => setActiveTab('NEW')}
+                  onClick={() => {
+                    setActiveTab('NEW');
+                    setPrintRequisition(null);
+                  }}
                   className={`flex-1 pb-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
                     activeTab === 'NEW'
                       ? 'border-indigo-600 text-indigo-600'
@@ -667,7 +703,12 @@ export default function HardwareRequisitionPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('ARCHIVE')}
+                  onClick={() => {
+                    setActiveTab('ARCHIVE');
+                    if (requisitions.length > 0) {
+                      setPrintRequisition(requisitions[0]);
+                    }
+                  }}
                   className={`flex-1 pb-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
                     activeTab === 'ARCHIVE'
                       ? 'border-indigo-600 text-indigo-600'
