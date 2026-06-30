@@ -986,7 +986,7 @@ export default function HardwareRequisitionPage() {
                       {previewReq.items.map((item, idx) => (
                         <tr key={idx} className="border-b border-black">
                           <td className="border border-black px-2 py-2 text-center">{item.serialNo}</td>
-                          <td className="border border-black px-3 py-2 text-center font-bold">{item.officerNameSnapshot}</td>
+                          <td className="border border-black px-3 py-2 text-left">{item.officerNameSnapshot}</td>
                           <td className="border border-black px-3 py-2 text-center">{item.officerDesignationSnapshot}</td>
                           <td className="border border-black px-3 py-2 text-center">{item.hardwareLabel}</td>
                         </tr>
