@@ -251,6 +251,8 @@ export default function HardwareRequisitionPage() {
   const [upsAction, setUpsAction] = useState<string>('');
   const [selectedCellId, setSelectedCellId] = useState<number | ''>('');
   const [selectedApplicantEmp, setSelectedApplicantEmp] = useState<Employee | null>(null);
+  const [customHardwareType, setCustomHardwareType] = useState('');
+  const [customRequestType, setCustomRequestType] = useState('');
   
   // Multiple mode specific state
   const [upsCount, setUpsCount] = useState<number>(1);
@@ -366,6 +368,10 @@ export default function HardwareRequisitionPage() {
 
   // Build requisition items dynamically for the preview / submission
   const getRequisitionItems = (): RequisitionItem[] => {
+    const hwLabel = hardwareType === 'OTHER' 
+      ? `${customHardwareType || 'অন্যান্য হার্ডওয়্যার'}${customRequestType ? ` ${customRequestType}` : ''}`
+      : (upsAction === 'REPAIR' ? 'ইউপিএস মেরামত' : 'নতুন ইউপিএস সরবরাহ');
+
     if (entryMode === 'INDIVIDUAL') {
       if (!selectedApplicantEmp) return [];
       return [{
@@ -373,7 +379,7 @@ export default function HardwareRequisitionPage() {
         officerUserId: currentUser?.id,
         officerNameSnapshot: selectedApplicantEmp.name,
         officerDesignationSnapshot: cleanDesignation(selectedApplicantEmp.designation),
-        hardwareLabel: upsAction === 'REPAIR' ? 'ইউপিএস মেরামত' : upsAction === 'NEW_SUPPLY' ? 'নতুন ইউপিএস সরবরাহ' : ''
+        hardwareLabel: hwLabel
       }];
     } else {
       // Multiple mode
@@ -387,7 +393,7 @@ export default function HardwareRequisitionPage() {
           serialNo: bnSerial,
           officerNameSnapshot: emp.name,
           officerDesignationSnapshot: cleanDesignation(emp.designation),
-          hardwareLabel: upsAction === 'REPAIR' ? 'ইউপিএস মেরামত' : upsAction === 'NEW_SUPPLY' ? 'নতুন ইউপিএস সরবরাহ' : ''
+          hardwareLabel: hwLabel
         };
       });
     }
@@ -396,24 +402,41 @@ export default function HardwareRequisitionPage() {
   const currentItems = getRequisitionItems();
 
   // Text generator
-  const getGeneratedTexts = () => {
-    const cellName = selectedApplicantEmp?.cell?.name || 'অনুমোদিত সেল';
-    const count = currentItems.length;
+  const getGeneratedTexts = (req: any) => {
+    const cellName = req.cellName || 'অনুমোদিত সেল';
+    const count = req.items?.length || 0;
     const countBn = toBanglaDigits(String(count).padStart(2, '0'));
     const countWord = getBanglaCountWords(count);
 
     let subjectLine = '';
     let bodyParagraph = '';
 
-    if (upsAction === 'REPAIR') {
-      subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত প্রসঙ্গে।`;
-      bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত করা প্রয়োজন।`;
-    } else if (upsAction === 'NEW_SUPPLY') {
-      subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ প্রসঙ্গে।`;
-      bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ করা প্রয়োজন।`;
+    if (req.hardwareType === 'OTHER' || req.upsAction === 'CUSTOM') {
+      if (req.subjectLine) {
+        subjectLine = req.subjectLine;
+        const coreText = req.subjectLine
+          .replace(/^বিষয়ঃ\s+/, '')
+          .replace(/^विषयঃ\s+/, '')
+          .replace(/প্রসঙ্গে।$/, '')
+          .trim();
+        bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${coreText} করা প্রয়োজন।`;
+      } else {
+        const hwText = customHardwareType || 'হার্ডওয়্যার';
+        const actionText = customRequestType || 'মেরামত/সরবরাহ';
+        subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ${hwText} ${actionText} প্রসঙ্গে।`;
+        bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি ${hwText} ${actionText} করা প্রয়োজন।`;
+      }
     } else {
-      subjectLine = `বিষয়ঃ [ক্যাটাগরি ও অনুরোধের ধরণ নির্বাচন করুন]`;
-      bodyParagraph = `[ক্যাটাগরি ও অনুরোধের ধরণ নির্বাচন করুন]`;
+      if (req.upsAction === 'REPAIR') {
+        subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত প্রসঙ্গে।`;
+        bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত করা প্রয়োজন।`;
+      } else if (req.upsAction === 'NEW_SUPPLY') {
+        subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ প্রসঙ্গে।`;
+        bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ করা প্রয়োজন।`;
+      } else {
+        subjectLine = `বিষয়ঃ [ক্যাটাগরি ও অনুরোধের ধরণ নির্বাচন করুন]`;
+        bodyParagraph = `[ক্যাটাগরি ও অনুরোধের ধরণ নির্বাচন করুন]`;
+      }
     }
 
     const closingParagraph = 'এমতাবস্থায়, উপরে উল্লেখিত সমস্যা সমাধানের জন্য প্রয়োজনীয় ব্যবস্থা গ্রহণের অনুরোধ জানিয়ে নথিটি অত্র ডিপার্টমেন্টের হার্ডওয়্যার সেল বরাবর প্রেরণ করা যেতে পারে।';
@@ -421,7 +444,29 @@ export default function HardwareRequisitionPage() {
     return { subjectLine, bodyParagraph, closingParagraph };
   };
 
-  const { subjectLine, bodyParagraph, closingParagraph } = getGeneratedTexts();
+  const previewReq = printRequisition || {
+    id: 0,
+    requesterUserId: 0,
+    cellName: selectedApplicantEmp?.cell?.name || '',
+    hardwareType,
+    upsAction,
+    subjectLine: '',
+    requisitionDate: selectedDate,
+    mode: entryMode,
+    status: 'Draft',
+    createdAt: new Date().toISOString(),
+    items: currentItems,
+    requester: {
+      name: selectedApplicantEmp?.name || '',
+      username: ''
+    }
+  };
+
+  const { subjectLine, bodyParagraph, closingParagraph } = getGeneratedTexts(previewReq);
+
+  if (!printRequisition) {
+    previewReq.subjectLine = subjectLine;
+  }
 
   // Validate on change
   const isDateHoliday = isNonWorkingDay(selectedDate);
@@ -441,7 +486,12 @@ export default function HardwareRequisitionPage() {
       return;
     }
 
-    if (!upsAction) {
+    if (hardwareType === 'OTHER' && !customHardwareType.trim()) {
+      setErrorMsg('অনুগ্রহ করে হার্ডওয়্যারের নাম টাইপ করুন।');
+      return;
+    }
+
+    if (hardwareType === 'UPS' && !upsAction) {
       setErrorMsg('অনুগ্রহ করে অনুরোধের ধরণ নির্বাচন করুন।');
       return;
     }
@@ -530,19 +580,7 @@ export default function HardwareRequisitionPage() {
     return `${toBanglaDigits(d)}/${toBanglaDigits(m)}/${toBanglaDigits(y)}`;
   };
 
-  // Preview target data (either active form preview or archived print view)
-  const previewReq = printRequisition || {
-    requisitionDate: selectedDate,
-    hardwareType,
-    upsAction,
-    cellName: selectedApplicantEmp?.cell?.name || '',
-    subjectLine,
-    mode: entryMode,
-    items: currentItems,
-    requester: {
-      name: selectedApplicantEmp?.name || ''
-    }
-  };
+  // Preview target data is resolved above at previewReq
 
   return (
     <AuthGuard>
@@ -785,13 +823,17 @@ export default function HardwareRequisitionPage() {
                         <select
                           value={hardwareType}
                           onChange={(e) => {
-                            setHardwareType(e.target.value);
-                            setUpsAction(''); // Reset action on type change
+                            const val = e.target.value;
+                            setHardwareType(val);
+                            setUpsAction(val === 'UPS' ? '' : 'CUSTOM');
+                            setCustomHardwareType('');
+                            setCustomRequestType('');
                           }}
                           className="w-full h-10 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold cursor-pointer text-slate-800 dark:text-slate-100"
                         >
                           <option value="">ক্যাটাগরি নির্বাচন করুন...</option>
                           <option value="UPS">ইউপিএস (UPS)</option>
+                          <option value="OTHER">অন্যান্য (Other)</option>
                         </select>
                       </div>
 
@@ -808,6 +850,32 @@ export default function HardwareRequisitionPage() {
                             <option value="NEW_SUPPLY">নতুন ইউপিএস সরবরাহ</option>
                           </select>
                         </div>
+                      )}
+
+                      {hardwareType === 'OTHER' && (
+                        <>
+                          <div className="space-y-1.5 animate-in fade-in duration-200">
+                            <label className="font-bold text-slate-500 block">হার্ডওয়্যারের নাম:</label>
+                            <input
+                              type="text"
+                              placeholder="উদাঃ প্রিন্টার, স্ক্যানার"
+                              value={customHardwareType}
+                              onChange={(e) => setCustomHardwareType(e.target.value)}
+                              className="w-full h-10 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-semibold text-slate-850 dark:text-slate-100 placeholder-slate-450 outline-none focus:border-indigo-500 text-xs"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5 animate-in fade-in duration-200">
+                            <label className="font-bold text-slate-500 block">অনুরোধের ধরণ (ঐচ্ছিক):</label>
+                            <input
+                              type="text"
+                              placeholder="উদাঃ মেরামত, নতুন সরবরাহ"
+                              value={customRequestType}
+                              onChange={(e) => setCustomRequestType(e.target.value)}
+                              className="w-full h-10 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-semibold text-slate-850 dark:text-slate-100 placeholder-slate-455 outline-none focus:border-indigo-500 text-xs"
+                            />
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
@@ -966,10 +1034,7 @@ export default function HardwareRequisitionPage() {
 
                   {/* Body Paragraph */}
                   <p className="text-justify text-[13px] leading-relaxed text-black tracking-normal mt-4">
-                    {upsAction === 'REPAIR' 
-                      ? `${previewReq.cellName || '[অনুমোদিত সেল]'}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${toBanglaDigits(String(previewReq.items.length).padStart(2, '0'))} (${getBanglaCountWords(previewReq.items.length)}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত করা প্রয়োজন।`
-                      : `${previewReq.cellName || '[অনুমোদিত সেল]'}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${toBanglaDigits(String(previewReq.items.length).padStart(2, '0'))} (${getBanglaCountWords(previewReq.items.length)}) টি নতুন ইউপিএস সরবরাহ করা প্রয়োজন।`
-                    }
+                    {bodyParagraph}
                   </p>
 
                   {/* Table */}
@@ -1038,6 +1103,27 @@ export default function HardwareRequisitionPage() {
             font-size: 13px !important;
             color: #000000;
             line-height: 1.5 !important;
+          }
+
+          .dark #printable-hardware-requisition-sheet {
+            background-color: #090d16 !important;
+            border-color: #1e293b !important;
+          }
+          
+          .dark #printable-hardware-requisition-sheet * {
+            color: #f8fafc !important;
+            border-color: #334155 !important;
+          }
+
+          .dark #printable-hardware-requisition-sheet table,
+          .dark #printable-hardware-requisition-sheet tr,
+          .dark #printable-hardware-requisition-sheet th,
+          .dark #printable-hardware-requisition-sheet td {
+            border-color: #334155 !important;
+          }
+
+          .dark #printable-hardware-requisition-sheet .border-black {
+            border-color: #f8fafc !important;
           }
 
           #printable-hardware-requisition-sheet h2 {
