@@ -409,7 +409,7 @@ export default function HardwareRequisitionPage() {
       subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত প্রসঙ্গে।`;
       bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত করা প্রয়োজন।`;
     } else {
-      subjectLine = `বিষয়ঃ [TODO: নতুন ইউপিএস সরবরাহ এর বিষয়]`;
+      subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ প্রসঙ্গে।`;
       bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ করা প্রয়োজন।`;
     }
 
@@ -928,7 +928,7 @@ export default function HardwareRequisitionPage() {
               >
                 
                 {/* Upper block */}
-                <div className="space-y-8 flex flex-col justify-start">
+                <div className="flex flex-col justify-start">
                   
                   {/* Top Header */}
                   <div className="text-right space-y-1 font-bold pr-1">
@@ -939,12 +939,12 @@ export default function HardwareRequisitionPage() {
                   </div>
 
                   {/* Subject line */}
-                  <div className="font-bold underline text-left text-[13px] leading-relaxed text-black">
+                  <div className="font-bold underline text-left text-[13px] leading-relaxed text-black mt-4">
                     {previewReq.subjectLine}
                   </div>
 
                   {/* Body Paragraph */}
-                  <p className="text-justify text-[13px] leading-relaxed text-black tracking-normal">
+                  <p className="text-justify text-[13px] leading-relaxed text-black tracking-normal mt-4">
                     {upsAction === 'REPAIR' 
                       ? `${previewReq.cellName || '[অনুমোদিত সেল]'}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${toBanglaDigits(String(previewReq.items.length).padStart(2, '0'))} (${getBanglaCountWords(previewReq.items.length)}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত করা প্রয়োজন।`
                       : `${previewReq.cellName || '[অনুমোদিত সেল]'}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${toBanglaDigits(String(previewReq.items.length).padStart(2, '0'))} (${getBanglaCountWords(previewReq.items.length)}) টি নতুন ইউপিএস সরবরাহ করা প্রয়োজন।`
@@ -986,13 +986,13 @@ export default function HardwareRequisitionPage() {
                   {/* Signature block */}
                   <div className="flex justify-end">
                     <div className="text-right space-y-1 pr-2">
-                      <p className="font-bold text-[13px]">({(previewReq.requester?.name || selectedApplicantEmp?.name || '[আবেদনকারীর নাম]').replace(/^জনাব\s+/, '')})</p>
+                      <p className="text-[13px]">({(previewReq.requester?.name || selectedApplicantEmp?.name || '[আবেদনকারীর নাম]').replace(/^জনাব\s+/, '')})</p>
                       <p className="text-[13px]">{selectedApplicantEmp ? cleanDesignation(selectedApplicantEmp.designation) : '[আবেদনকারীর পদবী]'}</p>
                     </div>
                   </div>
 
                   {/* Receiver destinations list */}
-                  <div className="space-y-16 pt-2 text-left font-bold text-[13px] leading-relaxed text-black">
+                  <div className="space-y-16 pt-2 text-left text-[13px] leading-relaxed text-black">
                     <p className="underline">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
                     <p className="underline">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
                     <p className="underline">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
