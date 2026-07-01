@@ -1051,7 +1051,7 @@ export default function HardwareRequisitionPage() {
               
               <div 
                 id="printable-hardware-requisition-sheet" 
-                className="w-[216mm] min-h-[356mm] bg-white text-black border border-slate-350 dark:border-slate-800 print:border-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] print:shadow-none flex flex-col justify-start shrink-0"
+                className="w-[216mm] min-h-[355mm] bg-white text-black border border-slate-350 dark:border-slate-800 print:border-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] print:shadow-none flex flex-col justify-start shrink-0"
                 style={{
                   paddingTop: '0.8in',
                   paddingBottom: '1in',
@@ -1192,8 +1192,8 @@ export default function HardwareRequisitionPage() {
 
             html, body {
               width: 216mm !important;
-              height: 356mm !important;
-              max-height: 356mm !important;
+              height: 355mm !important;
+              max-height: 355mm !important;
               overflow: hidden !important;
               background: #ffffff !important;
               margin: 0 !important;
@@ -1220,9 +1220,9 @@ export default function HardwareRequisitionPage() {
               top: 0 !important;
               left: 0 !important;
               width: 216mm !important;
-              height: 356mm !important;
-              min-height: 356mm !important;
-              max-height: 356mm !important;
+              height: 355mm !important;
+              min-height: 355mm !important;
+              max-height: 355mm !important;
               padding-top: 0.8in !important;
               padding-bottom: 1in !important;
               padding-left: 1.3in !important;
