@@ -1362,13 +1362,6 @@
       "createdAt": "2026-05-23T05:17:18.636Z"
     },
     {
-      "id": 20,
-      "date": "2026-07-01",
-      "name": "Mid-Year Bank Holiday",
-      "isWorkingDay": false,
-      "createdAt": "2026-05-23T05:17:18.686Z"
-    },
-    {
       "id": 21,
       "date": "2026-08-05",
       "name": "July Mass Uprising Day",
@@ -1416,13 +1409,6 @@
       "name": "Christmas Day",
       "isWorkingDay": false,
       "createdAt": "2026-05-23T05:17:19.046Z"
-    },
-    {
-      "id": 28,
-      "date": "2026-12-31",
-      "name": "Year-End Bank Holiday",
-      "isWorkingDay": false,
-      "createdAt": "2026-05-23T05:17:19.100Z"
     }
   ],
   "executives": [

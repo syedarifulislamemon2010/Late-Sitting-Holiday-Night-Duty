@@ -18,6 +18,11 @@ describe('LeaveCalculator - Sandwich Rule Calculations', () => {
       expect(isNonWorkingDay('2026-03-26')).toBe(true); // Independence Day
     });
 
+    it('should NOT treat half-yearly and year-end bank holidays (1st July and 31st December) as holidays/non-working days', () => {
+      expect(isNonWorkingDay('2026-07-01')).toBe(false); // Mid-Year Bank Holiday (Wednesday)
+      expect(isNonWorkingDay('2026-12-31')).toBe(false); // Year-End Bank Holiday (Thursday)
+    });
+
     it('should override weekend to working day for specific bank overrides (e.g., 2026-05-23)', () => {
       expect(isNonWorkingDay('2026-05-23')).toBe(false); // Saturday, but overridden to working
     });
