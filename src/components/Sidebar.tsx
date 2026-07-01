@@ -184,7 +184,7 @@ export default function Sidebar() {
 
       {/* Sidebar Navigation Panel */}
       <aside 
-        className={`no-print fixed top-0 lg:top-0 bottom-0 left-0 z-30 flex flex-col bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-r border-slate-200/80 dark:border-slate-800/80 transition-all duration-300 ease-in-out lg:translate-x-0 relative ${
+        className={`no-print fixed top-0 lg:top-0 bottom-0 left-0 z-50 flex flex-col bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-r border-slate-200/80 dark:border-slate-800/80 transition-all duration-300 ease-in-out lg:translate-x-0 lg:relative ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:sticky lg:h-screen'
         } ${
           isMounted && isCollapsed ? 'lg:w-20' : 'lg:w-64'
