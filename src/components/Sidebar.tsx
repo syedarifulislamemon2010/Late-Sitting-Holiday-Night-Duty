@@ -178,7 +178,7 @@ export default function Sidebar() {
       {isOpen && (
         <div 
           onClick={() => setIsOpen(false)}
-          className="no-print lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40"
+          className="no-print lg:hidden fixed inset-0 bg-slate-950/20 z-40"
         />
       )}
 
@@ -188,7 +188,7 @@ export default function Sidebar() {
           isOpen ? 'translate-x-0' : '-translate-x-full lg:sticky lg:h-screen'
         } ${
           isMounted && isCollapsed ? 'lg:w-20' : 'lg:w-64'
-        } ${isOpen ? 'w-64' : ''}`}
+        } ${isOpen ? 'w-72 sm:w-80' : ''}`}
       >
         {/* Collapse toggle button on desktop - Floats on the right middle edge */}
         <button 
