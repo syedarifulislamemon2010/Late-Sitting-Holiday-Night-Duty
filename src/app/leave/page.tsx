@@ -1024,7 +1024,7 @@ export default function LeaveGeneratorPage() {
       case 'STATION_LEAVE':
         return `বিষয়ঃ ${daysWord} দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন।`;
       default:
-        return 'বিষয়ঃ [আবেদনের ধরণ নির্বাচন করুন]';
+        return `বিষয়ঃ ${daysWord} দিনের নৈমিত্তিক ছুটি মঞ্জুরির আবেদন।`;
     }
   };
 
@@ -1976,7 +1976,7 @@ export default function LeaveGeneratorPage() {
                         <strong className="italic" style={{ fontStyle: 'italic' }}>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরপূর্বক বাধিত করবেন।
                       </p>
                     </>
-                  ) : leaveType === 'CASUAL' ? (
+                  ) : (
                     <>
                       <p className="text-black text-xs text-justify">
                         {isSingleDay ? (
@@ -2005,8 +2005,6 @@ export default function LeaveGeneratorPage() {
                         <strong className="italic" style={{ fontStyle: 'italic' }}>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
                       </p>
                     </>
-                  ) : (
-                    <p className="text-slate-400 font-bold text-center py-12 no-print">[আবেদনের ধরণ নির্বাচন করুন]</p>
                   )}
                 </div>
 
