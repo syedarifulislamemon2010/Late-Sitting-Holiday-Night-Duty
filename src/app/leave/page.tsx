@@ -275,6 +275,7 @@ export default function LeaveGeneratorPage() {
   const [leaveType, setLeaveType] = useState<'CASUAL' | 'POST_FACTO' | 'STATION_LEAVE'>('CASUAL');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [durationMode, setDurationMode] = useState<'SINGLE' | 'MULTIPLE'>('SINGLE');
   const [applicationDate, setApplicationDate] = useState('');
   
   // Custom applicant details (editable, but default loaded from session & matching employee)
@@ -469,6 +470,7 @@ export default function LeaveGeneratorPage() {
     setLeaveType(leave.leaveType);
     setStartDate(leave.startDate);
     setEndDate(leave.endDate);
+    setDurationMode(leave.startDate === leave.endDate ? 'SINGLE' : 'MULTIPLE');
     setApplicationDate(leave.applicationDate);
     setApplicantName(leave.applicantName);
     setDesignation(cleanDesignationForLeave(leave.designation));
@@ -497,6 +499,7 @@ export default function LeaveGeneratorPage() {
     setLeaveType(leave.leaveType);
     setStartDate(leave.startDate);
     setEndDate(leave.endDate);
+    setDurationMode(leave.startDate === leave.endDate ? 'SINGLE' : 'MULTIPLE');
     setApplicationDate(leave.applicationDate);
     setApplicantName(leave.applicantName);
     setDesignation(cleanDesignationForLeave(leave.designation));
@@ -1409,36 +1412,90 @@ export default function LeaveGeneratorPage() {
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Start Date */}
+                  {/* Duration Mode Selection */}
+                  <div className="space-y-1.5 no-print">
+                    <label className="font-bold text-slate-700 dark:text-slate-300 block">ছুটির মেয়াদ:</label>
+                    <div className="flex bg-slate-100 dark:bg-slate-900/60 p-1 rounded-xl w-fit border border-slate-200/50 dark:border-slate-800/40">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDurationMode('SINGLE');
+                          if (startDate) {
+                            setEndDate(startDate);
+                          }
+                        }}
+                        className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                          durationMode === 'SINGLE'
+                            ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        ১ দিন (একক দিন)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDurationMode('MULTIPLE')}
+                        className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                          durationMode === 'MULTIPLE'
+                            ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        একাধিক দিন
+                      </button>
+                    </div>
+                  </div>
+
+                  {durationMode === 'SINGLE' ? (
+                    /* Single Date Picker */
                     <div className="space-y-1">
-                      <label className="font-bold text-slate-700 dark:text-slate-300">শুরুর তারিখ:</label>
+                      <label className="font-bold text-slate-700 dark:text-slate-300">ছুটির তারিখ:</label>
                       <CalendarDatePicker 
                         value={startDate}
-                        onChange={setStartDate}
+                        onChange={(val) => {
+                          setStartDate(val);
+                          setEndDate(val);
+                        }}
                         isNonWorkingDay={isNonWorkingDay}
                         toBanglaDigits={toBanglaDigits}
                         minDate={dateLimits.min}
                         maxDate={dateLimits.max}
-                        placeholder="শুরুর তারিখ নির্বাচন..."
+                        placeholder="ছুটির তারিখ নির্বাচন..."
                       />
                     </div>
+                  ) : (
+                    /* Multiple Date Pickers (Grid) */
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Start Date */}
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">শুরুর তারিখ:</label>
+                        <CalendarDatePicker 
+                          value={startDate}
+                          onChange={setStartDate}
+                          isNonWorkingDay={isNonWorkingDay}
+                          toBanglaDigits={toBanglaDigits}
+                          minDate={dateLimits.min}
+                          maxDate={dateLimits.max}
+                          placeholder="শুরুর তারিখ নির্বাচন..."
+                        />
+                      </div>
 
-                    {/* End Date */}
-                    <div className="space-y-1">
-                      <label className="font-bold text-slate-700 dark:text-slate-300">শেষের তারিখ:</label>
-                      <CalendarDatePicker 
-                        value={endDate}
-                        onChange={setEndDate}
-                        isNonWorkingDay={isNonWorkingDay}
-                        toBanglaDigits={toBanglaDigits}
-                        minDate={startDate || dateLimits.min}
-                        maxDate={dateLimits.max}
-                        disabled={!startDate}
-                        placeholder="শেষের তারিখ নির্বাচন..."
-                      />
+                      {/* End Date */}
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">শেষের তারিখ:</label>
+                        <CalendarDatePicker 
+                          value={endDate}
+                          onChange={setEndDate}
+                          isNonWorkingDay={isNonWorkingDay}
+                          toBanglaDigits={toBanglaDigits}
+                          minDate={startDate || dateLimits.min}
+                          maxDate={dateLimits.max}
+                          disabled={!startDate}
+                          placeholder="শেষের তারিখ নির্বাচন..."
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Application Date Picker */}
                   <div className="space-y-1">
