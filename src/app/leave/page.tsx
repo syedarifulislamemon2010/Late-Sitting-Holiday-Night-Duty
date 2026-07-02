@@ -444,8 +444,15 @@ export default function LeaveGeneratorPage() {
         return true;
       } else {
         const errData = await res.json();
-        setErrorMsg(errData.error || 'আর্কাইভে সংরক্ষণ করতে সমস্যা হয়েছে।');
-        setTimeout(() => setErrorMsg(''), 4000);
+        let displayError = errData.message || errData.error || 'আর্কাইভে সংরক্ষণ করতে সমস্যা হয়েছে।';
+        if (errData.details) {
+          const detailMsgs = Object.entries(errData.details)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join(', ');
+          displayError = `ভ্যালিডেশন এরর (${detailMsgs})`;
+        }
+        setErrorMsg(displayError);
+        setTimeout(() => setErrorMsg(''), 5000);
         return false;
       }
     } catch (err) {
@@ -1010,6 +1017,9 @@ export default function LeaveGeneratorPage() {
     }
     if (eligibleCoveringOfficers.length > 0 && !delegateId) {
       missing.push('ছুটিতে দায়িত্ব পালনকারী কর্মকর্তা');
+    }
+    if (!mobileNo || !mobileNo.trim()) {
+      missing.push('মোবাইল নম্বর');
     }
     
     if (missing.length > 0) {
