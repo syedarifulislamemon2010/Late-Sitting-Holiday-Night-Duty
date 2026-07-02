@@ -272,7 +272,6 @@ export default function LeaveGeneratorPage() {
   const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   // Leave Form States
-  const [leaveType, setLeaveType] = useState<'CASUAL' | 'POST_FACTO' | 'STATION_LEAVE'>('CASUAL');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [durationMode, setDurationMode] = useState<'SINGLE' | 'MULTIPLE'>('SINGLE');
@@ -287,6 +286,9 @@ export default function LeaveGeneratorPage() {
   const [leaveLocation, setLeaveLocation] = useState('ঢাকা');
   const [mobileNo, setMobileNo] = useState('');
 
+  // Leave Archive & CRUD States
+  const [leaveType, setLeaveType] = useState<'CASUAL' | 'POST_FACTO' | 'STATION_LEAVE' | ''>('');
+  
   // Leave Archive & CRUD States
   const [activeTab, setActiveTab] = useState<'NEW' | 'ARCHIVE'>('NEW');
   const [archivedLeaves, setArchivedLeaves] = useState<Leave[]>([]);
@@ -928,6 +930,21 @@ export default function LeaveGeneratorPage() {
     };
   }, [leaveType, startDate, todayStr, tomorrowStr, yesterdayStr]);
 
+  // Automatically determine leave type based on dates and location
+  useEffect(() => {
+    if (!startDate) return;
+
+    if (startDate < todayStr) {
+      setLeaveType('POST_FACTO');
+    } else {
+      if (selectedDistrict === 'ঢাকা' || !selectedDistrict) {
+        setLeaveType('CASUAL');
+      } else {
+        setLeaveType('STATION_LEAVE');
+      }
+    }
+  }, [startDate, selectedDistrict, todayStr]);
+
   // Dynamically calculate remaining leaves
   const getRemaining = (total: number | string, used: number | string) => {
     const tStr = String(total).trim();
@@ -1006,6 +1023,8 @@ export default function LeaveGeneratorPage() {
         return `বিষয়ঃ ${daysWord} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন।`;
       case 'STATION_LEAVE':
         return `বিষয়ঃ ${daysWord} দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন।`;
+      default:
+        return 'বিষয়ঃ [আবেদনের ধরণ নির্বাচন করুন]';
     }
   };
 
@@ -1017,6 +1036,9 @@ export default function LeaveGeneratorPage() {
     }
     if (!selectedDistrict) {
       missing.push('ছুটিতে থাকাকালীন অবস্থান (জেলা)');
+    }
+    if (!leaveType) {
+      missing.push('আবেদনের ধরণ');
     }
     if (eligibleCoveringOfficers.length > 0 && !delegateId) {
       missing.push('ছুটিতে দায়িত্ব পালনকারী কর্মকর্তা');
@@ -1352,10 +1374,20 @@ export default function LeaveGeneratorPage() {
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-mono font-semibold"
                     />
                   </div>
+                </div>
+              </div>
 
+              {/* Box 2: leave settings */}
+              <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <CalendarRange size={16} className="text-indigo-650" />
+                  ছুটির তথ্য ও সময়কাল
+                </h3>
+
+                <div className="space-y-3.5 text-xs font-sans">
                   {/* District Selection Section */}
-                  <div className="space-y-2 border-t border-slate-100 dark:border-slate-800 pt-3">
-                    <label htmlFor="selectedDistrict" className="font-bold text-slate-700 dark:text-slate-300 text-xs block">ছুটিতে থাকাকালীন অবস্থান (জেলা):</label>
+                  <div className="space-y-1.5">
+                    <label htmlFor="selectedDistrict" className="font-bold text-slate-700 dark:text-slate-300 block">ছুটিতে থাকাকালীন অবস্থান (জেলা):</label>
                     <select
                       id="selectedDistrict"
                       value={selectedDistrict}
@@ -1365,7 +1397,7 @@ export default function LeaveGeneratorPage() {
                           setShowValidationErrors(false);
                         }
                       }}
-                      className={`w-full px-3 py-2 border rounded-xl text-xs font-bold outline-none cursor-pointer transition-all ${
+                      className={`w-full px-3 py-2 border rounded-xl font-bold outline-none cursor-pointer transition-all ${
                         !selectedDistrict && showValidationErrors 
                           ? 'border-red-500 focus:border-red-500 dark:border-red-900/80 bg-red-50/50 dark:bg-red-950/20 text-red-900 dark:text-red-300' 
                           : 'border-slate-200 dark:border-slate-800 focus:border-indigo-550 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100'
@@ -1385,31 +1417,6 @@ export default function LeaveGeneratorPage() {
                         ⚠️ দয়া করে ছুটিতে থাকাকালীন অবস্থান (জেলা) নির্বাচন করুন।
                       </p>
                     )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Box 2: leave settings */}
-              <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <CalendarRange size={16} className="text-indigo-650" />
-                  ছুটির তথ্য ও সময়কাল
-                </h3>
-
-                <div className="space-y-3.5 text-xs font-sans">
-                  {/* Leave Type */}
-                  <div className="space-y-1">
-                    <label htmlFor="leaveType" className="font-bold text-slate-700 dark:text-slate-300">আবেদনের ধরণ:</label>
-                    <select
-                      id="leaveType"
-                      value={leaveType}
-                      onChange={(e) => setLeaveType(e.target.value as 'CASUAL' | 'POST_FACTO' | 'STATION_LEAVE')}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-bold"
-                    >
-                      <option value="CASUAL">ক) নৈমিত্তিক ছুটি</option>
-                      <option value="POST_FACTO">খ) ঘটনাত্তোর নৈমিত্তিক ছুটি</option>
-                      <option value="STATION_LEAVE">গ) কর্মস্থল ত্যাগের অনুমতি সহ নৈমিত্তিক ছুটি</option>
-                    </select>
                   </div>
 
                   {/* Duration Mode Selection */}
@@ -1496,6 +1503,36 @@ export default function LeaveGeneratorPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Leave Type */}
+                  <div className="space-y-1">
+                    <label htmlFor="leaveType" className="font-bold text-slate-700 dark:text-slate-300">আবেদনের ধরণ:</label>
+                    <select
+                      id="leaveType"
+                      value={leaveType}
+                      onChange={(e) => {
+                        setLeaveType(e.target.value as any);
+                        if (e.target.value) {
+                          setShowValidationErrors(false);
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-xl outline-none font-bold cursor-pointer transition-all ${
+                        !leaveType && showValidationErrors
+                          ? 'border-red-500 focus:border-red-500 dark:border-red-900/80 bg-red-50/50 dark:bg-red-950/20 text-red-900 dark:text-red-300'
+                          : 'border-slate-200 dark:border-slate-800 focus:border-indigo-550 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100'
+                      }`}
+                    >
+                      <option value="">আবেদনের ধরণ নির্বাচন করুন...</option>
+                      <option value="CASUAL">ক) নৈমিত্তিক ছুটি</option>
+                      <option value="POST_FACTO">খ) ঘটনাত্তোর নৈমিত্তিক ছুটি</option>
+                      <option value="STATION_LEAVE">গ) কর্মস্থল ত্যাগের অনুমতি সহ নৈমিত্তিক ছুটি</option>
+                    </select>
+                    {!leaveType && showValidationErrors && (
+                      <p className="text-[10px] text-red-500 font-bold mt-1">
+                        ⚠️ দয়া করে আবেদনের ধরণ নির্বাচন করুন।
+                      </p>
+                    )}
+                  </div>
 
                   {/* Application Date Picker */}
                   <div className="space-y-1">
@@ -1939,7 +1976,7 @@ export default function LeaveGeneratorPage() {
                         <strong className="italic" style={{ fontStyle: 'italic' }}>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরপূর্বক বাধিত করবেন।
                       </p>
                     </>
-                  ) : (
+                  ) : leaveType === 'CASUAL' ? (
                     <>
                       <p className="text-black text-xs text-justify">
                         {isSingleDay ? (
@@ -1968,6 +2005,8 @@ export default function LeaveGeneratorPage() {
                         <strong className="italic" style={{ fontStyle: 'italic' }}>{isSingleDay ? '০১ (এক)' : displayDaysWord}</strong> দিনের নৈমিত্তিক ছুটি মঞ্জুরীর অনুমতি দান করে বাধিত করবেন।
                       </p>
                     </>
+                  ) : (
+                    <p className="text-slate-400 font-bold text-center py-12 no-print">[আবেদনের ধরণ নির্বাচন করুন]</p>
                   )}
                 </div>
 
