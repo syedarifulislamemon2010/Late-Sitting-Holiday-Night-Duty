@@ -543,7 +543,7 @@ export default function HardwareRequisitionPage() {
     if (entryMode === 'MULTIPLE') {
       const selectedCount = Object.values(checkedEmployees).filter(Boolean).length;
       if (selectedCount !== upsCount) {
-        setErrorMsg(`অনুরোধকৃত ইউপিএস সংখ্যা (${toBanglaDigits(upsCount)} টি) এবং নির্বাচিত কর্মকর্তার সংখ্যা (${toBanglaDigits(selectedCount)} জন) অবশ্যই সমান হতে হবে।`);
+        setErrorMsg(`অনুরোধকৃত হার্ডওয়্যার সংখ্যা (${toBanglaDigits(upsCount)} টি) এবং নির্বাচিত কর্মকর্তার সংখ্যা (${toBanglaDigits(selectedCount)} জন) অবশ্যই সমান হতে হবে।`);
         return;
       }
     }
@@ -815,8 +815,8 @@ export default function HardwareRequisitionPage() {
                     </div>
                   </div>
 
-                  {/* Mode Selector (Admin Only) */}
-                  {currentUser?.role === 'ADMIN' && (
+                  {/* Mode Selector (Everyone) */}
+                  {currentUser && (
                     <div className="w-full bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-inner flex">
                       <button
                         type="button"
@@ -938,7 +938,7 @@ export default function HardwareRequisitionPage() {
 
                       <div className="space-y-4 text-xs font-sans">
                         <div className="space-y-1.5">
-                          <label className="font-bold text-slate-500 block">প্রয়োজনীয় ইউপিএস সংখ্যা:</label>
+                          <label className="font-bold text-slate-500 block">প্রয়োজনীয় হার্ডওয়্যার সংখ্যা:</label>
                           <select
                             value={upsCount}
                             onChange={(e) => setUpsCount(parseInt(e.target.value, 10))}
@@ -952,7 +952,7 @@ export default function HardwareRequisitionPage() {
 
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-1 border border-slate-100 dark:border-slate-900 p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-950/20">
                           <label className="font-bold text-slate-500 block pb-1 border-b border-slate-100 dark:border-slate-900 mb-1">
-                            কর্মকর্তাবৃন্দ নির্বাচন করুন (ইউপিএস সংখ্যা অনুযায়ী):
+                            কর্মকর্তাবৃন্দ নির্বাচন করুন (হার্ডওয়্যার সংখ্যা অনুযায়ী):
                           </label>
                           {eligibleEmployees.map(emp => {
                             const isChecked = checkedEmployees[emp.id] || false;
@@ -968,7 +968,7 @@ export default function HardwareRequisitionPage() {
                                     // Live validation warning in form info if over select
                                     const checkedCount = Object.values(nextChecked).filter(Boolean).length;
                                     if (checkedCount > upsCount) {
-                                      setErrorMsg(`ইউপিএস সংখ্যা (${toBanglaDigits(upsCount)}) এর চেয়ে বেশি কর্মকর্তা নির্বাচন করেছেন!`);
+                                      setErrorMsg(`হার্ডওয়্যার সংখ্যা (${toBanglaDigits(upsCount)}) এর চেয়ে বেশি কর্মকর্তা নির্বাচন করেছেন!`);
                                     } else {
                                       setErrorMsg('');
                                     }

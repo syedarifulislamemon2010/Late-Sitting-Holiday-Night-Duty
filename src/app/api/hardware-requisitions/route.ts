@@ -82,10 +82,7 @@ export async function POST(request: Request) {
       throw new AppError('holiday_requisition_blocked', 400, 'ছুটির দিনে তারিখ নির্বাচন করা যাবে না।');
     }
 
-    // 3. Mode/Role validation
-    if (mode === 'MULTIPLE' && user.role !== 'ADMIN') {
-      throw new AppError('forbidden_mode', 403, 'মাল্টিপল রিকুইজিশন তৈরি করার ক্ষমতা শুধুমাত্র সিস্টেম অ্যাডমিনের রয়েছে।');
-    }
+
 
     // 4. Save requisition in transaction
     const result = await db.transaction(async (tx) => {
