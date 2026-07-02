@@ -451,7 +451,7 @@ export default function HardwareRequisitionPage() {
         if (isSupply) {
           hwTextWithModifier = `নতুন ${hwName}`;
         } else if (isRepair) {
-          hwTextWithModifier = `ব্যবহৃত নষ্ট ${hwName}`;
+          hwTextWithModifier = `ব্যবহৃত অকেজো ${hwName}`;
         }
         
         subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ${hwTextWithModifier} ${actionName} প্রসঙ্গে।`;
@@ -459,8 +459,8 @@ export default function HardwareRequisitionPage() {
       }
     } else {
       if (req.upsAction === 'REPAIR') {
-        subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত প্রসঙ্গে।`;
-        bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত নষ্ট ইউপিএস মেরামত করা প্রয়োজন।`;
+        subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত অকেজো ইউপিএস মেরামত প্রসঙ্গে।`;
+        bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত অকেজো ইউপিএস মেরামত করা প্রয়োজন।`;
       } else if (req.upsAction === 'NEW_SUPPLY') {
         subjectLine = `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ প্রসঙ্গে।`;
         bodyParagraph = `${cellName}-এ কর্মরত নিম্ন স্বাক্ষরকারী কর্মকর্তার অফিসের যাবতীয় গুরুত্বপূর্ণ কাজ সূচারুরূপে নিরবিচ্ছিন্নভাবে সম্পাদনের নিমিত্তে জরুরিভিত্তিতে ${countBn} (${countWord}) টি নতুন ইউপিএস সরবরাহ করা প্রয়োজন।`;
@@ -894,7 +894,7 @@ export default function HardwareRequisitionPage() {
                             className="w-full h-10 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold cursor-pointer text-slate-800 dark:text-slate-100"
                           >
                             <option value="">অনুরোধের ধরণ নির্বাচন করুন...</option>
-                            <option value="REPAIR">নষ্ট ইউপিএস মেরামত</option>
+                            <option value="REPAIR">অকেজো ইউপিএস মেরামত</option>
                             <option value="NEW_SUPPLY">নতুন ইউপিএস সরবরাহ</option>
                           </select>
                         </div>
