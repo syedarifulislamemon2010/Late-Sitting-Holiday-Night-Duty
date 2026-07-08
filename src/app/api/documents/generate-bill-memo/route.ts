@@ -165,6 +165,7 @@ export async function POST(request: Request) {
   }
   table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     margin: 12px 0;
     font-size: 12px;
@@ -220,7 +221,7 @@ export async function POST(request: Request) {
     font-size: 12px;
   }
   .routing-item {
-    margin-bottom: 0.45in;
+    margin-bottom: 0.5in;
     line-height: 1.4;
   }
   .routing-text {

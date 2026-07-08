@@ -1848,8 +1848,31 @@ export default function BillingPage() {
     return filteredOrdersList.filter(o => o.status !== 'Deleted');
   }, [filteredOrdersList]);
 
+  const ledgerActiveOfficeOrders = useMemo<OfficeOrder[]>(() => {
+    const active = allActiveOfficeOrders;
+    if (active.length === 0) return [];
+    
+    let latestDateStr = "";
+    let latestDateTime = -1;
+    
+    active.forEach(order => {
+      if (order.orderDate) {
+        const dStr = order.orderDate.substring(0, 10);
+        const t = new Date(dStr).getTime();
+        if (t > latestDateTime) {
+          latestDateTime = t;
+          latestDateStr = dStr;
+        }
+      }
+    });
+    
+    if (!latestDateStr) return active;
+    
+    return active.filter(order => order.orderDate && order.orderDate.substring(0, 10) === latestDateStr);
+  }, [allActiveOfficeOrders]);
+
   const ledgerGrandTotal = useMemo(() => {
-    return allActiveOfficeOrders.reduce((sum, order) => {
+    return ledgerActiveOfficeOrders.reduce((sum: number, order: OfficeOrder) => {
       let dutiesList = order.duties || [];
       if (dutiesList.length === 0 && order.dutiesJson) {
         try {
@@ -1870,7 +1893,7 @@ export default function BillingPage() {
       }
       return sum + (totalDays * (apyaonRate + transportRate));
     }, 0);
-  }, [allActiveOfficeOrders]);
+  }, [ledgerActiveOfficeOrders]);
 
   const billGroups = useMemo(() => {
     const groupsMap = new Map<string, OfficeOrder[]>();
@@ -1907,7 +1930,7 @@ export default function BillingPage() {
     let totalNightAllowance2 = 0; 
     let grandTotal = 0;
 
-    allActiveOfficeOrders.forEach(order => {
+    ledgerActiveOfficeOrders.forEach(order => {
       if (selectedCategory !== 'all' && order.category !== selectedCategory) return;
       let dutiesList = (order.duties as any) || [];
       if (dutiesList.length === 0 && order.dutiesJson) {
@@ -1963,7 +1986,7 @@ export default function BillingPage() {
       totalNightAllowance2,
       grandTotal
     };
-  }, [pendingBillingOfficeOrders, selectedCategory]);
+  }, [ledgerActiveOfficeOrders, selectedCategory]);
 
   const [expandedSlots, setExpandedSlots] = useState<Record<string, boolean>>({});
 
@@ -2347,7 +2370,7 @@ export default function BillingPage() {
               </tr>
             </thead>
             <tbody>
-              {allActiveOfficeOrders.map((order, idx) => {
+              {ledgerActiveOfficeOrders.map((order: OfficeOrder, idx: number) => {
                 let dutiesList = order.duties || [];
                 if (dutiesList.length === 0 && order.dutiesJson) {
                   try {
@@ -2386,7 +2409,7 @@ export default function BillingPage() {
                 <td className="p-2 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}></td>
                 <td className="p-2 border-r border-black text-left font-bold" style={{ borderRight: '1px solid #000', paddingLeft: '6px' }} colSpan={4}>সর্বমোট</td>
                 <td className="p-2 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
-                  {toBanglaDigits(allActiveOfficeOrders.reduce((sum, order) => {
+                  {toBanglaDigits(ledgerActiveOfficeOrders.reduce((sum: number, order: OfficeOrder) => {
                     let dutiesList = order.duties || [];
                     if (dutiesList.length === 0 && order.dutiesJson) {
                       try { dutiesList = JSON.parse(order.dutiesJson); } catch {}
@@ -2684,7 +2707,7 @@ export default function BillingPage() {
               loading={loading}
               showOrderWarning={showOrderWarning}
               metrics={metrics}
-              allActiveOfficeOrders={allActiveOfficeOrders}
+              allActiveOfficeOrders={ledgerActiveOfficeOrders}
               findAssociatedBill={findAssociatedBill}
               handleLoadBillForEditing={handleLoadBillForEditing}
               handleGenerateBillFromOrder={handleGenerateBillFromOrder}
@@ -3195,22 +3218,22 @@ export default function BillingPage() {
 
                   {/* Left-aligned Routing List with nice gaps, underlines and font size 12, NOT bold */}
                   <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4' }}>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.5in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.5in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.5in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.5in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ
                       </p>

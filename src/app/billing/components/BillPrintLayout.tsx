@@ -345,15 +345,15 @@ export default function BillPrintLayout({
                         const apyaonRate = isHoliday ? 250 : isNight ? 600 : 100;
                         const transportRate = isHoliday ? 250 : isNight ? 400 : isLate ? 200 : 0;
                         return (
-                          <table className="w-full border-collapse border border-black text-center mt-3 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                          <table className="w-full border-collapse border border-black text-center mt-3 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%', tableLayout: 'fixed' }}>
                             <thead>
                               <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
-                                <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক</th>
-                                <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px' }}>নাম ও পদবী</th>
-                                <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '3px' }}>তারিখ</th>
-                                <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px' }}>যাতায়াত</th>
-                                <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px' }}>আপ্যায়ন</th>
-                                <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '3px' }}>মোট</th>
+                                <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px', width: '8%' }}>ক্রমিক</th>
+                                <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', width: '28%' }}>নাম ও পদবী</th>
+                                <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '3px', width: '25%' }}>তারিখ</th>
+                                <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px', width: '15%' }}>যাতায়াত</th>
+                                <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px', width: '15%' }}>আপ্যায়ন</th>
+                                <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '3px', width: '9%' }}>মোট</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -433,22 +433,22 @@ export default function BillPrintLayout({
 
                   {/* Left-aligned Routing List */}
                   <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4' }}>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.5in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.5in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.5in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.5in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ
                       </p>
@@ -511,7 +511,7 @@ export default function BillPrintLayout({
                       }
                     }
                     return dutiesList.length > 0 ? (
-                      <table className="w-full border-collapse border border-black text-center mt-4 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                      <table className="w-full border-collapse border border-black text-center mt-4 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%', tableLayout: 'fixed' }}>
                         <thead>
                           <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                             <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক</th>

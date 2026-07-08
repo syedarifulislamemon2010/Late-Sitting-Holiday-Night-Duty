@@ -254,7 +254,7 @@ export default function BulkBillPrintLayout({
                 </div>
 
                 <!-- Table -->
-                <table class="w-full text-center mt-3" style="font-size: 14px; border-collapse: collapse; border: 1px solid #000;">
+                <table class="w-full text-center mt-3" style="font-size: 14px; border-collapse: collapse; border: 1px solid #000; width: 100%; table-layout: fixed;">
                   <thead>
                     <tr style="background-color: #f8fafc; font-weight: bold; border-bottom: 1px solid #000;">
                       <th style="border: 1px solid #000; padding: 4px; width: 8%;">ক্রমিক</th>
@@ -327,10 +327,10 @@ export default function BulkBillPrintLayout({
 
             <!-- Routing List -->
             <div class="w-full text-left mt-4" style="font-size: 10.5px; line-height: 1.4;">
-              <div style="margin-bottom: 0.45in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.45in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.45in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.45in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.5in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.5in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.5in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.5in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ</p></div>
             </div>
           </div>
         `;
@@ -371,7 +371,7 @@ export default function BulkBillPrintLayout({
                 </div>
 
                 <!-- Table -->
-                <table class="w-full text-center mt-4" style="font-size: 14px; border-collapse: collapse; border: 1px solid #000;">
+                <table class="w-full text-center mt-4" style="font-size: 14px; border-collapse: collapse; border: 1px solid #000; width: 100%; table-layout: fixed;">
                   <thead>
                     <tr style="background-color: #f8fafc; font-weight: bold; border-bottom: 1px solid #000;">
                       <th style="border: 1px solid #000; padding: 4px; width: 8%;">ক্রমিক</th>
@@ -554,15 +554,15 @@ export default function BulkBillPrintLayout({
                               });
 
                               return (
-                                <table className="w-full border-collapse border border-black text-center mt-3 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                                <table className="w-full border-collapse border border-black text-center mt-3 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%', tableLayout: 'fixed' }}>
                                   <thead>
                                     <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
-                                      <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক</th>
-                                      <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px' }}>নাম ও পদবী</th>
-                                      <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '3px' }}>তারিখ</th>
-                                      <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px' }}>যাতায়াত</th>
-                                      <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px' }}>আপ্যায়ন</th>
-                                      <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '3px' }}>মোট</th>
+                                      <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px', width: '8%' }}>ক্রমিক</th>
+                                      <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', width: '28%' }}>নাম ও পদবী</th>
+                                      <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '3px', width: '25%' }}>তারিখ</th>
+                                      <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px', width: '15%' }}>যাতায়াত</th>
+                                      <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px', width: '15%' }}>আপ্যায়ন</th>
+                                      <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '3px', width: '9%' }}>মোট</th>
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -678,7 +678,7 @@ export default function BulkBillPrintLayout({
 
                         {/* Table */}
                         {dutiesList.length > 0 ? (
-                          <table className="w-full border-collapse border border-black text-center mt-4 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                          <table className="w-full border-collapse border border-black text-center mt-4 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%', tableLayout: 'fixed' }}>
                             <thead>
                               <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                                 <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক</th>

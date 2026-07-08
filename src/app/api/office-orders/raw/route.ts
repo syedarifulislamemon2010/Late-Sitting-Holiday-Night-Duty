@@ -225,6 +225,7 @@ export async function GET(request: Request) {
   }
   table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     margin: 12px 0;
     font-size: 12px;
@@ -280,7 +281,7 @@ export async function GET(request: Request) {
     font-size: 12px;
   }
   .routing-item {
-    margin-bottom: 0.45in;
+    margin-bottom: 0.5in;
     line-height: 1.4;
   }
   .routing-text {
@@ -445,6 +446,7 @@ export async function GET(request: Request) {
   }
   .header-table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     border-bottom: 2px solid #0b5e9e;
     padding-bottom: 4px;
@@ -484,6 +486,7 @@ export async function GET(request: Request) {
   }
   .ref-date-table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     border-bottom: 1px solid rgba(0,0,0,0.1);
     padding-bottom: 4px;
