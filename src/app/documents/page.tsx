@@ -753,6 +753,12 @@ export default function DocumentsPage() {
                 letter-spacing: normal !important;
                 word-spacing: normal !important;
               }
+              @media print {
+                #printable-order-sheet {
+                  width: 100% !important;
+                  max-width: 100% !important;
+                }
+              }
               #printable-order-sheet * {
                 font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
                 letter-spacing: normal !important;

@@ -2771,7 +2771,8 @@ export default function BillingPage() {
                 word-spacing: normal !important;
               }
               .print-legal-layout {
-                width: 8.5in !important;
+                width: 100% !important;
+                max-width: 100% !important;
                 height: auto !important;
                 min-height: 14.0in !important;
                 padding-top: 0.6in !important;

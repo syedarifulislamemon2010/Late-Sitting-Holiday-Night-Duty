@@ -145,6 +145,12 @@ export default function BulkBillPrintLayout({
               padding-left: 0.8in !important;
               padding-right: 0.8in !important;
             }
+            @media print {
+              .page-container, .bill-page, .order-page {
+                width: 100% !important;
+                max-width: 100% !important;
+              }
+            }
             .print-block {
               display: block !important;
               height: auto !important;

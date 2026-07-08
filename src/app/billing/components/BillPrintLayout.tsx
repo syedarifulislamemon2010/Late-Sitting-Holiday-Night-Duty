@@ -150,6 +150,12 @@ export default function BillPrintLayout({
                 letter-spacing: normal !important;
                 word-spacing: normal !important;
               }
+              @media print {
+                #printable-order-sheet {
+                  width: 100% !important;
+                  max-width: 100% !important;
+                }
+              }
               .print-block {
                 display: block !important;
                 height: auto !important;
