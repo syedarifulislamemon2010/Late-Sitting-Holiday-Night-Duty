@@ -2803,7 +2803,7 @@ export default function BillingPage() {
                 min-height: 14.0in !important;
                 padding-top: 0.5in !important;
                 padding-bottom: 0.5in !important;
-                padding-left: 1.3in !important;
+                padding-left: 1.4in !important;
                 padding-right: 0.5in !important;
                 border: none !important;
                 box-shadow: none !important;
@@ -3127,12 +3127,12 @@ export default function BillingPage() {
                         <table className="w-full border-collapse border border-black text-center mt-3 text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                           <thead>
                             <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                              <th className="border border-black p-1.5 w-[8%] text-center">ক্রমিক</th>
+                              <th className="border border-black p-1.5 w-[6%] text-center">ক্রমিক</th>
                               <th className="border border-black p-1.5 text-left pl-3 w-[32%]">নাম ও পদবী</th>
-                              <th className="border border-black p-1.5 text-center w-[23%]">তারিখ</th>
-                              <th className="border border-black p-1.5 text-center w-[14%]">যাতায়াত</th>
-                              <th className="border border-black p-1.5 text-center w-[14%]">আপ্যায়ন</th>
-                              <th className="border border-black p-1.5 text-center w-[9%]">মোট</th>
+                              <th className="border border-black p-1.5 text-center w-[26%]">তারিখ</th>
+                              <th className="border border-black p-1.5 text-center w-[13%]">যাতায়াত</th>
+                              <th className="border border-black p-1.5 text-center w-[13%]">আপ্যায়ন</th>
+                              <th className="border border-black p-1.5 text-center w-[10%]">মোট</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -3145,7 +3145,7 @@ export default function BillingPage() {
                               return (
                                 <tr key={summary.employeeId} className="text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                   <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>{toBanglaDigits(index + 1)}</td>
-                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.1' }}>
+                                  <td className="border border-black p-1.5 text-left pl-3 font-normal whitespace-nowrap" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.1', whiteSpace: 'nowrap' }}>
                                     {(() => {
                                       const displayName = summary.name.replace(/\s*\([^)]*\)\s*$/, '').trim();
                                       return (
@@ -3201,13 +3201,13 @@ export default function BillingPage() {
                       {/* Paragraphs */}
                       <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
                         <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
-                          ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
+                          ০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                         </p>
                         <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
-                          ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                          ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                         </p>
                         <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
-                          ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(grandTotalPrintAll)}/- ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{(representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/\s*\([^)]*\)\s*$/, '')}, {representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                          ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(grandTotalPrintAll)}/- ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{(representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/\s*\([^)]*\)\s*$/, '')}, {representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                         </p>
                       </div>
                     </div>

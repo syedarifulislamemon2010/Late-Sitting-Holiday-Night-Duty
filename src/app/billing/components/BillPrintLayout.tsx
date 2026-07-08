@@ -139,10 +139,10 @@ export default function BillPrintLayout({
                 width: ${isBill ? '8.5in' : '210mm'} !important;
                 height: auto !important;
                 min-height: ${isBill ? '14.0in' : '297mm'} !important;
-                padding-top: ${isBill ? '0.8in' : '0.6in'} !important;
-                padding-bottom: ${isBill ? '1.0in' : '0.6in'} !important;
-                padding-left: ${isBill ? '1.3in' : '0.8in'} !important;
-                padding-right: ${isBill ? '0.6in' : '0.8in'} !important;
+                padding-top: ${isBill ? '0.5in' : '0.6in'} !important;
+                padding-bottom: ${isBill ? '0.5in' : '0.6in'} !important;
+                padding-left: ${isBill ? '1.4in' : '0.8in'} !important;
+                padding-right: ${isBill ? '0.5in' : '0.8in'} !important;
                 box-sizing: border-box !important;
                 display: block !important;
                 font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
@@ -220,12 +220,13 @@ export default function BillPrintLayout({
               .text-indent-8 { text-indent: 0.5in; }
               .text-slate-950 { color: #000000; }
               .font-normal { font-weight: 400; }
-              .w-\\[8\\%\\] { width: 8%; }
+              .w-\\[6\\%\\] { width: 6%; }
               .w-\\[32\\%\\] { width: 32%; }
               .w-\\[12\\%\\] { width: 12%; }
               .w-\\[27\\%\\] { width: 27%; }
-              .w-\\[23\\%\\] { width: 23%; }
-              .w-\\[14\\%\\] { width: 14%; }
+              .w-\\[26\\%\\] { width: 26%; }
+              .w-\\[13\\%\\] { width: 13%; }
+              .w-\\[10\\%\\] { width: 10%; }
               .w-\\[50\\%\\] { width: 50%; }
               .list-decimal { list-style-type: decimal; }
               .space-y-4 > * + * { margin-top: 16px; }
@@ -352,19 +353,19 @@ export default function BillPrintLayout({
                           <table className="w-full border-collapse border border-black text-center mt-3 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%' }}>
                             <thead>
                               <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
-                                <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px', width: '8%' }}>ক্রমিক</th>
+                                <th className="border border-black p-1.5 w-[6%] text-center" style={{ border: '1px solid #000', padding: '3px', width: '6%' }}>ক্রমিক</th>
                                 <th className="border border-black p-1.5 text-left pl-3 w-[32%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', width: '32%' }}>নাম ও পদবী</th>
-                                <th className="border border-black p-1.5 text-center w-[23%]" style={{ border: '1px solid #000', padding: '3px', width: '23%' }}>তারিখ</th>
-                                <th className="border border-black p-1.5 text-center w-[14%]" style={{ border: '1px solid #000', padding: '3px', width: '14%' }}>যাতায়াত</th>
-                                <th className="border border-black p-1.5 text-center w-[14%]" style={{ border: '1px solid #000', padding: '3px', width: '14%' }}>আপ্যায়ন</th>
-                                <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '3px', width: '9%' }}>মোট</th>
+                                <th className="border border-black p-1.5 text-center w-[26%]" style={{ border: '1px solid #000', padding: '3px', width: '26%' }}>তারিখ</th>
+                                <th className="border border-black p-1.5 text-center w-[13%]" style={{ border: '1px solid #000', padding: '3px', width: '13%' }}>যাতায়াত</th>
+                                <th className="border border-black p-1.5 text-center w-[13%]" style={{ border: '1px solid #000', padding: '3px', width: '13%' }}>আপ্যায়ন</th>
+                                <th className="border border-black p-1.5 text-center w-[10%]" style={{ border: '1px solid #000', padding: '3px', width: '10%' }}>মোট</th>
                               </tr>
                             </thead>
                             <tbody>
                               {sortedDutiesList.map((s: OrderDuty, idx: number) => (
                                 <tr key={idx} className="text-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                                   <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(idx + 1)}</td>
-                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.1' }}>
+                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.1', whiteSpace: 'nowrap' }}>
                                     {(() => {
                                       const displayName = s.employeeName.replace(/\s*\([^)]*\)\s*$/, '').trim();
                                       const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
@@ -417,13 +418,13 @@ export default function BillPrintLayout({
                       <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15' }}>
                         <p className="font-bold text-black">কথায়: {(viewingOrder.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
                         <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15', textAlign: 'justify' }}>
-                          ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
+                          ০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                         </p>
                         <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15', textAlign: 'justify' }}>
-                          ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport)}/- ({getBanglaNumberWords(viewingOrder.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/- ({getBanglaNumberWords(viewingOrder.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                          ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport)}/- ({getBanglaNumberWords(viewingOrder.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/- ({getBanglaNumberWords(viewingOrder.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                         </p>
                         <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15', textAlign: 'justify' }}>
-                          ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal)}/- ({getBanglaNumberWords(viewingOrder.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, {viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                          ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal)}/- ({getBanglaNumberWords(viewingOrder.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, {viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                         </p>
                       </div>
                     </div>

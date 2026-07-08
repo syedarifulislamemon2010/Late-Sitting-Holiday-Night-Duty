@@ -136,7 +136,7 @@ export async function GET(request: Request) {
         return `
           <tr style="line-height: 1.15;">
             <td>${toBnDigits(index + 1)}</td>
-            <td class="text-left" style="line-height: 1.1; padding-left: 12px; text-align: left;">
+            <td class="text-left" style="line-height: 1.1; padding-left: 12px; text-align: left; white-space: nowrap;">
               <span style="display: block; white-space: nowrap;">${nameWithPrefix}</span>
               <span style="display: block; font-size: 12px; color: #374151; margin-top: 2px;">(${shortDesignation})</span>
             </td>
@@ -188,7 +188,7 @@ export async function GET(request: Request) {
     size: legal portrait;
     margin-top: 0.5in;
     margin-bottom: 0.5in;
-    margin-left: 1.3in;
+    margin-left: 1.4in;
     margin-right: 0.5in;
   }
   body {
@@ -315,43 +315,35 @@ export async function GET(request: Request) {
   <table>
     <thead>
       <tr>
-        <th style="width: 8%;">ক্রমিক</th>
-        <th style="width: 28%; text-align: left; padding-left: 12px;">নাম ও পদবী</th>
-        <th style="width: 25%;">তারিখ</th>
-        <th style="width: 15%;">যাতায়াত</th>
-        <th style="width: 15%;">আপ্যায়ন</th>
-        <th style="width: 9%;">মোট</th>
+        <th style="width: 6%;">ক্রমিক</th>
+        <th style="width: 32%; text-align: left; padding-left: 12px;">নাম ও পদবী</th>
+        <th style="width: 26%;">তারিখ</th>
+        <th style="width: 13%;">যাতায়াত</th>
+        <th style="width: 13%;">আপ্যায়ন</th>
+        <th style="width: 10%;">মোট</th>
       </tr>
     </thead>
     <tbody>
       ${summariesHtml}
       <tr class="font-bold">
-        <td colspan="3" style="text-align: right; padding-right: 12px; line-height: 1.4;">
-          <p>মোট দিন = ${toBnDigits(totalDays)} দিন</p>
-          <p style="margin-top: 4px;">মোট টাকা = (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</p>
-        </td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold;">
-          <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(transportRate))}x${toBnDigits(totalDays)}) =</span>
-          <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(totalTransport))}/-</span>
-        </td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold;">
-          <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(totalDays)}) =</span>
-          <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(totalApyaon))}/-</span>
-        </td>
-        <td class="font-bold">${toBnDigits(Math.round(grandTotal))}/-</td>
+        <td colspan="2" style="text-align: right; padding-right: 12px; font-weight: bold; border: 1px solid #000; padding: 4px;">সর্বমোট:</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(totalDays)} দিন</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">৳${toBnDigits(Math.round(totalTransport))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">৳${toBnDigits(Math.round(totalApyaon))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">৳${toBnDigits(Math.round(grandTotal))}/-</td>
       </tr>
     </tbody>
   </table>
 
   <div class="paragraphs">
     <div class="paragraph-item">
-      ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
+      ০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
     </div>
     <div class="paragraph-item">
-      ০৩। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>${toBnDigits(Math.round(totalTransport))}/- (${totalTransportInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>${toBnDigits(Math.round(totalApyaon))}/- (${totalApyaonInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+      ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>${toBnDigits(Math.round(totalTransport))}/- (${totalTransportInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>${toBnDigits(Math.round(totalApyaon))}/- (${totalApyaonInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
     </div>
     <div class="paragraph-item">
-      ০৪। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBnDigits(Math.round(grandTotal))}/- (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${representativeName || ''}, ${representativeDesignation || ''}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+      ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBnDigits(Math.round(grandTotal))}/- (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${representativeName || ''}, ${representativeDesignation || ''}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
     </div>
   </div>
 
