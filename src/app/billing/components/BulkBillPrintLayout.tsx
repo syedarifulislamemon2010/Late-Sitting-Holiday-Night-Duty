@@ -131,10 +131,10 @@ export default function BulkBillPrintLayout({
               width: 8.5in !important;
               height: auto !important;
               min-height: 14.0in !important;
-              padding-top: 0.35in !important;
-              padding-bottom: 0.35in !important;
+              padding-top: 0.8in !important;
+              padding-bottom: 1.0in !important;
               padding-left: 1.3in !important;
-              padding-right: 0.5in !important;
+              padding-right: 0.6in !important;
             }
             .order-page {
               width: 210mm !important;

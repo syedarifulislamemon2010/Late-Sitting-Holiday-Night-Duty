@@ -737,10 +737,10 @@ export default function DocumentsPage() {
               #printable-order-sheet {
                 width: ${isBill ? '8.5in' : '210mm'} !important;
                 height: ${isBill ? '14.0in' : '297mm'} !important;
-                padding-top: ${isBill ? '0.35in' : '0.6in'} !important;
-                padding-bottom: ${isBill ? '0.35in' : '0.6in'} !important;
+                padding-top: ${isBill ? '0.8in' : '0.6in'} !important;
+                padding-bottom: ${isBill ? '1.0in' : '0.6in'} !important;
                 padding-left: ${isBill ? '1.3in' : '0.8in'} !important;
-                padding-right: ${isBill ? '0.5in' : '0.8in'} !important;
+                padding-right: ${isBill ? '0.6in' : '0.8in'} !important;
                 box-sizing: border-box !important;
                 display: flex !important;
                 flex-direction: column !important;

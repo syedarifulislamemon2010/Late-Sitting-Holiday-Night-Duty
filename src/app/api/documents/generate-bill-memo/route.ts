@@ -120,10 +120,10 @@ export async function POST(request: Request) {
   }
   @page {
     size: legal portrait;
-    margin-top: 0.4in;
-    margin-bottom: 0.75in;
+    margin-top: 0.8in;
+    margin-bottom: 1.0in;
     margin-left: 1.3in;
-    margin-right: 0.5in;
+    margin-right: 0.6in;
   }
   body {
     font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
