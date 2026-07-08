@@ -283,9 +283,9 @@ export async function GET(request: Request) {
     line-height: 1.0;
   }
   .routing-text {
-    display: inline-block;
-    border-bottom: 1px solid #000;
-    padding-bottom: 2px;
+    display: inline-block !important;
+    border-bottom: 1px solid #000 !important;
+    padding-bottom: 5px !important;
     line-height: 1.0;
   }
 </style>
