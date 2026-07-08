@@ -276,16 +276,18 @@ export async function GET(request: Request) {
   .routing-list {
     margin-top: 24px;
     text-align: left;
-    line-height: 1.2;
-    font-size: 11px;
+    line-height: 1.4;
+    font-size: 12px;
   }
   .routing-item {
-    margin-bottom: 0.25in;
-    line-height: 1.2;
+    margin-bottom: 0.55in;
+    line-height: 1.4;
   }
   .routing-text {
-    display: block !important;
-    line-height: 1.2;
+    display: inline-block !important;
+    border-bottom: 1px solid #000 !important;
+    padding-bottom: 5px !important;
+    line-height: 1.4;
   }
 </style>
 </head>
