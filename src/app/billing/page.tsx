@@ -2775,10 +2775,10 @@ export default function BillingPage() {
                 max-width: 100% !important;
                 height: auto !important;
                 min-height: 14.0in !important;
-                padding-top: 0.8in !important;
-                padding-bottom: 1.0in !important;
+                padding-top: 0.5in !important;
+                padding-bottom: 0.5in !important;
                 padding-left: 1.3in !important;
-                padding-right: 0.6in !important;
+                padding-right: 0.5in !important;
                 border: none !important;
                 box-shadow: none !important;
                 display: block !important;
@@ -3071,15 +3071,15 @@ export default function BillingPage() {
           </div>
 
           <div className="flex justify-center p-2 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner">
-            <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', paddingTop: '0.8in', paddingBottom: '1.0in', paddingLeft: '1.3in', paddingRight: '0.6in', boxSizing: 'border-box', fontSize: '12px', lineHeight: '1.0' }}>
+            <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', paddingTop: '0.5in', paddingBottom: '0.5in', paddingLeft: '1.3in', paddingRight: '0.5in', boxSizing: 'border-box', fontSize: '12px', lineHeight: '1.0' }}>
               
               <div className="print-block flex flex-col h-full justify-between">
                 <div>
                   {/* Official Header */}
                   <div className="w-full flex justify-end text-right mb-4">
                     <div className="text-right leading-none">
-                      <h2 className="text-[18px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', lineHeight: '1.0' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                      <p className="text-[12px] font-bold text-black mt-1.5" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>তারিখ: {getBanglaDate(billDate)} ইং</p>
+                      <h2 className="text-[18px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', lineHeight: '1.0', margin: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                      <p className="text-[12px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', margin: 0, marginTop: '2px' }}>তারিখ: {getBanglaDate(billDate)} ইং</p>
                     </div>
                   </div>
 
@@ -3188,31 +3188,31 @@ export default function BillingPage() {
                   {/* Right-aligned payee signature block */}
                   <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
                     <div className="text-right leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', paddingRight: '0.1in' }}>
-                      <p className="font-extrabold text-[12px]">({cleanBracketName((representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-                      <p className="text-[12px] font-bold text-slate-800 mt-1">{representativeDesignation || 'এসও-আইটি'}</p>
+                      <p className="font-extrabold text-[12px]" style={{ margin: 0, padding: 0 }}>({cleanBracketName((representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
+                      <p className="text-[12px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '2px' }}>{representativeDesignation || 'এসও-আইটি'}</p>
                     </div>
                   </div>
 
                   {/* Left-aligned Routing List with nice gaps, underlines and font size 12, NOT bold */}
-                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.4' }}>
-                    <div style={{ marginBottom: '0.55in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.4', margin: 0 }}>
-                        এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
+                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4' }}>
+                    <div style={{ marginBottom: '0.45in' }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                        এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.55in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.4', margin: 0 }}>
-                        এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
+                    <div style={{ marginBottom: '0.45in' }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                        এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.55in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.4', margin: 0 }}>
-                        উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
+                    <div style={{ marginBottom: '0.45in' }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                        ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.55in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.4', margin: 0 }}>
-                        উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
+                    <div style={{ marginBottom: '0.45in' }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                        ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
                   </div>

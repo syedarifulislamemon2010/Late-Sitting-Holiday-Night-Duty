@@ -180,10 +180,10 @@ export async function GET(request: Request) {
   }
   @page {
     size: legal portrait;
-    margin-top: 0.8in;
-    margin-bottom: 1.0in;
+    margin-top: 0.5in;
+    margin-bottom: 0.5in;
     margin-left: 1.3in;
-    margin-right: 0.6in;
+    margin-right: 0.5in;
   }
   body {
     font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
@@ -207,7 +207,7 @@ export async function GET(request: Request) {
   .header-date {
     font-size: 12px;
     font-weight: bold;
-    margin-top: 6px;
+    margin-top: 2px;
     line-height: 1.0;
   }
   .subject {
@@ -269,9 +269,9 @@ export async function GET(request: Request) {
     text-align: right;
     padding-right: 0.1in;
   }
-  .signature-block p {
+  .signature-block p, .signature-block div {
     margin: 0;
-    line-height: 1.0;
+    line-height: 1.1;
   }
   .routing-list {
     margin-top: 24px;
@@ -280,7 +280,7 @@ export async function GET(request: Request) {
     font-size: 12px;
   }
   .routing-item {
-    margin-bottom: 0.55in;
+    margin-bottom: 0.45in;
     line-height: 1.4;
   }
   .routing-text {
@@ -345,22 +345,22 @@ export async function GET(request: Request) {
   <div class="signature-container">
     <div class="signature-block">
       <p class="font-bold">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-      <p style="margin-top: 5px; color: #333; font-weight: bold;">${representativeDesignation || ''}</p>
+      <p style="margin-top: 2px; color: #333; font-weight: bold;">${representativeDesignation || ''}</p>
     </div>
   </div>
 
   <div class="routing-list">
     <div class="routing-item">
-      <p class="routing-text">এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p>
+      <p class="routing-text">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
     </div>
     <div class="routing-item">
-      <p class="routing-text">এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p>
+      <p class="routing-text">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
     </div>
     <div class="routing-item">
-      <p class="routing-text">উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p>
+      <p class="routing-text">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
     </div>
     <div class="routing-item">
-      <p class="routing-text">উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ</p>
+      <p class="routing-text">ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ</p>
     </div>
   </div>
   

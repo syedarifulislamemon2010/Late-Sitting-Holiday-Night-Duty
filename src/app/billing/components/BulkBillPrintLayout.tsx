@@ -131,10 +131,10 @@ export default function BulkBillPrintLayout({
               width: 8.5in !important;
               height: auto !important;
               min-height: 14.0in !important;
-              padding-top: 0.8in !important;
-              padding-bottom: 1.0in !important;
+              padding-top: 0.5in !important;
+              padding-bottom: 0.5in !important;
               padding-left: 1.3in !important;
-              padding-right: 0.6in !important;
+              padding-right: 0.5in !important;
             }
             .order-page {
               width: 210mm !important;
@@ -321,16 +321,16 @@ export default function BulkBillPrintLayout({
             <div class="w-full flex justify-end" style="margin-top: 0.25in; margin-bottom: 0.1in;">
               <div style="font-size: 14px; text-align: right; padding-right: 0.1in; line-height: 1.05;">
                 <p class="font-extrabold" style="margin: 0;">(${cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-                <p style="color: #334155; margin: 4px 0 0 0;">${order.content?.representativeDesignation || 'এসও-আইটি'}</p>
+                <p style="color: #334155; margin: 2px 0 0 0;">${order.content?.representativeDesignation || 'এসও-আইটি'}</p>
               </div>
             </div>
 
             <!-- Routing List -->
-            <div class="w-full text-left mt-4" style="font-size: 14px; line-height: 1.4;">
-              <div style="margin-bottom: 0.55in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.55in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.55in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.55in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ</p></div>
+            <div class="w-full text-left mt-4" style="font-size: 10.5px; line-height: 1.4;">
+              <div style="margin-bottom: 0.45in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.45in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.45in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.45in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 5px !important; margin: 0 !important; line-height: 1.4 !important;">ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ</p></div>
             </div>
           </div>
         `;
@@ -493,8 +493,8 @@ export default function BulkBillPrintLayout({
                 {isBill ? (
                   /* simulated Legal bill sheet */
                   <div 
-                    className="w-[8.5in] h-[14.0in] bg-white text-black flex flex-col justify-between relative text-left font-serif leading-tight text-[14px] shrink-0"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
+                    className="w-[8.5in] h-[14.0in] bg-white text-black flex flex-col justify-between relative text-left font-serif leading-tight text-[12px] shrink-0"
+                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
                   >
                     <div className="flex flex-col h-full justify-between">
                       <div>
@@ -511,7 +511,7 @@ export default function BulkBillPrintLayout({
                           <div className="text-right leading-tight">
                             <h2 className="text-[18pt] font-extrabold text-[#0b5e9e]" style={{ fontFamily: 'SolaimanLipi', fontSize: '15pt', lineHeight: '1.15' }}>জনতা ব্যাংক পিএলসি.</h2>
                             <p className="text-[14pt] font-bold text-slate-500 uppercase mt-0.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '12pt', lineHeight: '1.0', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
-                            <p className="text-[14px] font-medium text-slate-400 leading-none mt-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>প্রধান কার্যালয়, ঢাকা</p>
+                            <p className="text-[12px] font-medium text-slate-400 leading-none mt-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>প্রধান কার্যালয়, ঢাকা</p>
                           </div>
                         </div>
 
@@ -527,11 +527,11 @@ export default function BulkBillPrintLayout({
 
                         <div className="flex-1 flex flex-col justify-between mt-2">
                           <div>
-                            <h2 className="text-left text-[14px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
+                            <h2 className="text-left text-[12px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                               বিষয়: {order.content?.subjectText || 'যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।'}
                             </h2>
                             <div className="mt-2.5">
-                              <p className="text-justify leading-normal text-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.15', textIndent: '0.5in', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15', textIndent: '0.5in', textAlign: 'justify' }}>
                                 {order.content?.openingParagraph}
                               </p>
                             </div>
@@ -554,9 +554,9 @@ export default function BulkBillPrintLayout({
                               });
 
                               return (
-                                <table className="w-full border-collapse border border-black text-center mt-3 text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                                <table className="w-full border-collapse border border-black text-center mt-3 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
                                   <thead>
-                                    <tr className="bg-slate-50 font-bold border-b border-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
+                                    <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                                       <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক</th>
                                       <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px' }}>নাম ও পদবী</th>
                                       <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '3px' }}>তারিখ</th>
@@ -567,7 +567,7 @@ export default function BulkBillPrintLayout({
                                   </thead>
                                   <tbody>
                                     {sorted.map((s: OrderDuty, sIdx: number) => (
-                                      <tr key={sIdx} className="text-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
+                                      <tr key={sIdx} className="text-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                                         <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(sIdx + 1)}</td>
                                         <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.1' }}>
                                           {(() => {
@@ -604,7 +604,7 @@ export default function BulkBillPrintLayout({
                                         </td>
                                       </tr>
                                     ))}
-                                    <tr className="font-bold bg-slate-50/50 text-[14px]" style={{ border: '1px solid #000', fontWeight: 'bold' }}>
+                                    <tr className="font-bold bg-slate-50/50 text-[12px]" style={{ border: '1px solid #000', fontWeight: 'bold' }}>
                                       <td colSpan={2} className="border border-black p-1.5 text-right pr-3" style={{ border: '1px solid #000', padding: '3px', textAlign: 'right', paddingRight: '12px' }}>সর্বমোট:</td>
                                       <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(order.content?.totalDays)} দিন</td>
                                       <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>৳{toBanglaDigits(order.content?.totalTransport)}/-</td>
@@ -616,9 +616,9 @@ export default function BulkBillPrintLayout({
                               );
                             })()}
 
-                            <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.15' }}>
+                            <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15' }}>
                               <p className="font-bold text-black">কথায়: {(order.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
-                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.15', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15', textAlign: 'justify' }}>
                                 ০২। আলোচ্য বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                               </p>
                             </div>
@@ -628,9 +628,9 @@ export default function BulkBillPrintLayout({
 
                       {/* Signature block */}
                       <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
-                        <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', paddingRight: '0.1in' }}>
-                          <p className="font-extrabold text-[14px]">({cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-                          <p className="text-[14px] font-bold text-slate-800 mt-1">{order.content?.representativeDesignation || 'এসও-আইটি'}</p>
+                        <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', paddingRight: '0.1in' }}>
+                          <p className="font-extrabold text-[12px]">({cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
+                          <p className="text-[12px] font-bold text-slate-800 mt-1">{order.content?.representativeDesignation || 'এসও-আইটি'}</p>
                         </div>
                       </div>
                     </div>
@@ -638,8 +638,8 @@ export default function BulkBillPrintLayout({
                 ) : (
                   /* simulated A4 office order sheet */
                   <div 
-                    className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black flex flex-col justify-between relative text-left font-serif leading-relaxed text-[14px] shrink-0"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', boxSizing: 'border-box', paddingTop: '0.8in', paddingBottom: '0.8in', paddingLeft: '0.8in', paddingRight: '0.8in' }}
+                    className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black flex flex-col justify-between relative text-left font-serif leading-relaxed text-[12px] shrink-0"
+                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', boxSizing: 'border-box', paddingTop: '0.8in', paddingBottom: '0.8in', paddingLeft: '0.8in', paddingRight: '0.8in' }}
                   >
                     <div className="flex flex-col h-full justify-between">
                       <div>
@@ -656,7 +656,7 @@ export default function BulkBillPrintLayout({
                           <div className="text-right leading-tight">
                             <h2 className="text-[18pt] font-extrabold text-[#0b5e9e]" style={{ fontFamily: 'SolaimanLipi', fontSize: '15pt', lineHeight: '1.15' }}>জনতা ব্যাংক পিএলসি.</h2>
                             <p className="text-[14pt] font-bold text-slate-500 uppercase mt-0.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '12pt', lineHeight: '1.0', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
-                            <p className="text-[14px] font-medium text-slate-400 leading-none mt-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>প্রধান কার্যালয়, ঢাকা</p>
+                            <p className="text-[12px] font-medium text-slate-400 leading-none mt-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>প্রধান কার্যালয়, ঢাকা</p>
                           </div>
                         </div>
 
@@ -678,9 +678,9 @@ export default function BulkBillPrintLayout({
 
                         {/* Table */}
                         {dutiesList.length > 0 ? (
-                          <table className="w-full border-collapse border border-black text-center mt-4 text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                          <table className="w-full border-collapse border border-black text-center mt-4 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
                             <thead>
-                              <tr className="bg-slate-50 font-bold border-b border-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
+                              <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                                 <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক</th>
                                 <th className="border border-black p-1 text-left pl-2 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>নাম ও পদবী</th>
                                 <th className="border border-black p-1 text-left pl-2 w-[12%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>কার্ড নং</th>
@@ -693,7 +693,7 @@ export default function BulkBillPrintLayout({
                                 const fullNm = d.employeeName || d.name || '';
                                 const displayName = fullNm.replace(/\s*\([^)]*\)\s*$/, '').trim();
                                 return (
-                                  <tr key={dIdx} className="text-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
+                                  <tr key={dIdx} className="text-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                                     <td className="border border-black p-1 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(dIdx + 1)}</td>
                                     <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', lineHeight: '1.1' }}>
                                       {(() => {
