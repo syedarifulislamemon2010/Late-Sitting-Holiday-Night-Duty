@@ -217,9 +217,11 @@ export async function POST(request: Request) {
     text-align: left;
     line-height: 1.0;
     font-size: 12px;
+    page-break-before: always;
+    break-before: page;
   }
   .routing-item {
-    margin-bottom: 0.45in;
+    margin-bottom: 0.95in;
     line-height: 1.0;
   }
   .routing-text {

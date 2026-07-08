@@ -420,23 +420,23 @@ export default function BillPrintLayout({
                   </div>
 
                   {/* Left-aligned Routing List */}
-                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
-                    <div style={{ marginBottom: '0.45in' }}>
+                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0', pageBreakBefore: 'always', breakBefore: 'page' }}>
+                    <div style={{ marginBottom: '0.95in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0', margin: 0 }}>
                         এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.95in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0', margin: 0 }}>
                         এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.95in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0', margin: 0 }}>
                         উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.45in' }}>
+                    <div style={{ marginBottom: '0.95in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0', margin: 0 }}>
                         উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                       </p>
