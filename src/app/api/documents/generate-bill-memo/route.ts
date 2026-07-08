@@ -238,7 +238,7 @@ export async function POST(request: Request) {
   }
   .signature-block p {
     margin: 0 !important;
-    line-height: 0.95 !important;
+    line-height: 1.15 !important;
     text-align: right !important;
   }
   .routing-list {
@@ -319,9 +319,9 @@ export async function POST(request: Request) {
       <tr class="font-bold">
         <td colspan="2" style="text-align: right; padding-right: 12px; font-weight: bold; border: 1px solid #000; padding: 4px;">সর্বমোট:</td>
         <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(totalDays)} দিন</td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">৳${toBnDigits(Math.round(totalTransport))}/-</td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">৳${toBnDigits(Math.round(totalApyaon))}/-</td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">৳${toBnDigits(Math.round(grandTotal))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(Math.round(totalTransport))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(Math.round(totalApyaon))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(Math.round(grandTotal))}/-</td>
       </tr>
     </tbody>
   </table>
@@ -343,8 +343,8 @@ export async function POST(request: Request) {
       <div>
         <div class="signature-container">
           <div class="signature-block">
-            <p class="font-bold" style="text-align: right !important; line-height: 0.95 !important; margin: 0 !important;">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
-            <p style="margin-top: 0px !important; color: #333; font-weight: bold; text-align: right !important; line-height: 0.95 !important;">${(representativeDesignation || '').trim()}</p>
+            <p class="font-bold" style="text-align: right !important; line-height: 1.15 !important; margin: 0 !important;">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
+            <p style="margin-top: 3px !important; color: #333; font-weight: bold; text-align: right !important; line-height: 1.15 !important;">${(representativeDesignation || '').trim()}</p>
           </div>
         </div>
 

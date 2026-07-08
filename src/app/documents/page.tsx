@@ -2523,9 +2523,9 @@ export default function DocumentsPage() {
                                     <tr className="font-bold bg-slate-50/50" style={{ border: '1px solid #000', fontWeight: 'bold' }}>
                                       <td colSpan={2} className="border border-black p-1.5 text-right pr-3" style={{ border: '1px solid #000', padding: '3.5px', textAlign: 'right', paddingRight: '12px' }}>সর্বমোট:</td>
                                       <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>{toBanglaDigits(viewingOrder.content?.totalDays ?? 0)} দিন</td>
-                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>৳{toBanglaDigits(viewingOrder.content?.totalTransport ?? 0)}/-</td>
-                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>৳{toBanglaDigits(viewingOrder.content?.totalApyaon ?? 0)}/-</td>
-                                      <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3.5px', fontWeight: 'bold' }}>৳{toBanglaDigits(viewingOrder.content?.grandTotal ?? 0)}/-</td>
+                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>{toBanglaDigits(viewingOrder.content?.totalTransport ?? 0)}/-</td>
+                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>{toBanglaDigits(viewingOrder.content?.totalApyaon ?? 0)}/-</td>
+                                      <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3.5px', fontWeight: 'bold' }}>{toBanglaDigits(viewingOrder.content?.grandTotal ?? 0)}/-</td>
                                     </tr>
                                   </tbody>
                                 </table>
@@ -2550,9 +2550,9 @@ export default function DocumentsPage() {
 
                         {/* Right-aligned payee signature block */}
                         <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
-                          <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', paddingRight: '0.1in' }}>
-                            <p className="font-extrabold text-[10px]">({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-                            <p className="text-[10px] font-bold text-slate-800 mt-1">
+                          <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', paddingRight: '0.1in', lineHeight: '1.15' }}>
+                            <p className="font-extrabold text-[10px]" style={{ margin: 0, padding: 0, lineHeight: '1.15' }}>({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
+                            <p className="text-[10px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '3px', lineHeight: '1.15' }}>
                               {viewingOrder.content?.representativeDesignation || viewingOrder.duties?.find((d: OrderDuty) => d.employeeName === viewingOrder.employeeName)?.designation || 'প্রিন্সিপাল অফিসার (পিও)'}
                             </p>
                           </div>

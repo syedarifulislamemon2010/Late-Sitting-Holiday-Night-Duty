@@ -113,10 +113,7 @@ export default function BulkBillPrintLayout({
           <style>
             @page {
               size: ${isBill ? 'legal portrait' : 'A4'};
-              margin-top: ${isBill ? '0.5in' : '0.6in'};
-              margin-bottom: ${isBill ? '0.5in' : '0.6in'};
-              margin-left: ${isBill ? '1.4in' : '0.8in'};
-              margin-right: ${isBill ? '0.5in' : '0.8in'};
+              margin: 0;
             }
             body {
               margin: 0;
@@ -161,12 +158,39 @@ export default function BulkBillPrintLayout({
                 margin: 0 !important;
                 padding: 0 !important;
               }
-              .page-container, .bill-page, .order-page {
+              .page-container {
                 width: 100% !important;
                 max-width: 100% !important;
                 min-width: 100% !important;
+                height: auto !important;
+                min-height: auto !important;
                 margin: 0 !important;
-                padding: 0 !important;
+                box-sizing: border-box !important;
+              }
+              .bill-page {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 100% !important;
+                height: auto !important;
+                min-height: auto !important;
+                margin: 0 !important;
+                padding-top: 0.5in !important;
+                padding-bottom: 0.5in !important;
+                padding-left: 1.4in !important;
+                padding-right: 0.5in !important;
+                box-sizing: border-box !important;
+              }
+              .order-page {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 100% !important;
+                height: auto !important;
+                min-height: auto !important;
+                margin: 0 !important;
+                padding-top: 0.6in !important;
+                padding-bottom: 0.6in !important;
+                padding-left: 0.8in !important;
+                padding-right: 0.8in !important;
                 box-sizing: border-box !important;
               }
             }
@@ -317,9 +341,9 @@ export default function BulkBillPrintLayout({
                     <tr style="font-weight: bold; background-color: #f8fafc;">
                       <td colSpan="2" style="border: 1px solid #000; padding: 4px; text-align: right; padding-right: 12px;">সর্বমোট:</td>
                       <td style="border: 1px solid #000; padding: 4px;">${toBanglaDigits(order.content?.totalDays || 0)} দিন</td>
-                      <td style="border: 1px solid #000; padding: 4px;">৳${toBanglaDigits(order.content?.totalTransport || 0)}/-</td>
-                      <td style="border: 1px solid #000; padding: 4px;">৳${toBanglaDigits(order.content?.totalApyaon || 0)}/-</td>
-                      <td style="border: 1px solid #000; padding: 4px;">৳${toBanglaDigits(order.content?.grandTotal || 0)}/-</td>
+                      <td style="border: 1px solid #000; padding: 4px;">${toBanglaDigits(order.content?.totalTransport || 0)}/-</td>
+                      <td style="border: 1px solid #000; padding: 4px;">${toBanglaDigits(order.content?.totalApyaon || 0)}/-</td>
+                      <td style="border: 1px solid #000; padding: 4px;">${toBanglaDigits(order.content?.grandTotal || 0)}/-</td>
                     </tr>
                   </tbody>
                 </table>
@@ -340,9 +364,9 @@ export default function BulkBillPrintLayout({
 
             <!-- Signatures -->
             <div class="w-full flex justify-end" style="margin-top: 0.25in; margin-bottom: 0.1in;">
-              <div style="font-size: 14px; text-align: right; padding-right: 0.1in; line-height: 0.95;">
-                <p class="font-extrabold" style="margin: 0; text-align: right !important; line-height: 0.95 !important;">(${cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
-                <p style="color: #334155; margin: 0; margin-top: 2px; text-align: right !important; line-height: 0.95 !important;">${(order.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
+              <div style="font-size: 14px; text-align: right; padding-right: 0.1in; line-height: 1.15;">
+                <p class="font-extrabold" style="margin: 0; text-align: right !important; line-height: 1.15 !important;">(${cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
+                <p style="color: #334155; margin: 0; margin-top: 3px; text-align: right !important; line-height: 1.15 !important;">${(order.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
               </div>
             </div>
 
@@ -630,9 +654,9 @@ export default function BulkBillPrintLayout({
                                     <tr className="font-bold bg-slate-50/50 text-[12px]" style={{ border: '1px solid #000', fontWeight: 'bold' }}>
                                       <td colSpan={2} className="border border-black p-1.5 text-right pr-3" style={{ border: '1px solid #000', padding: '3px', textAlign: 'right', paddingRight: '12px' }}>সর্বমোট:</td>
                                       <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(order.content?.totalDays)} দিন</td>
-                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>৳{toBanglaDigits(order.content?.totalTransport)}/-</td>
-                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>৳{toBanglaDigits(order.content?.totalApyaon)}/-</td>
-                                      <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3px', fontWeight: 'bold' }}>৳{toBanglaDigits(order.content?.grandTotal)}/-</td>
+                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(order.content?.totalTransport)}/-</td>
+                                      <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(order.content?.totalApyaon)}/-</td>
+                                      <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3px', fontWeight: 'bold' }}>{toBanglaDigits(order.content?.grandTotal)}/-</td>
                                     </tr>
                                   </tbody>
                                 </table>
@@ -658,8 +682,8 @@ export default function BulkBillPrintLayout({
                       {/* Signature block */}
                       <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
                         <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', paddingRight: '0.1in' }}>
-                          <p className="font-extrabold text-[12px]" style={{ margin: 0, padding: 0, lineHeight: '0.95', textAlign: 'right' }}>({cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
-                          <p className="text-[12px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '2px', lineHeight: '0.95', textAlign: 'right' }}>{(order.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
+                          <p className="font-extrabold text-[12px]" style={{ margin: 0, padding: 0, lineHeight: '1.15', textAlign: 'right' }}>({cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
+                          <p className="text-[12px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '3px', lineHeight: '1.15', textAlign: 'right' }}>{(order.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
                         </div>
                       </div>
                     </div>

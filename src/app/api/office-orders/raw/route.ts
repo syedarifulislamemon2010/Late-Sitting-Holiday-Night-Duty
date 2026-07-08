@@ -328,9 +328,9 @@ export async function GET(request: Request) {
       <tr class="font-bold">
         <td colspan="2" style="text-align: right; padding-right: 12px; font-weight: bold; border: 1px solid #000; padding: 4px;">সর্বমোট:</td>
         <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(totalDays)} দিন</td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">৳${toBnDigits(Math.round(totalTransport))}/-</td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">৳${toBnDigits(Math.round(totalApyaon))}/-</td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">৳${toBnDigits(Math.round(grandTotal))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(Math.round(totalTransport))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(Math.round(totalApyaon))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(Math.round(grandTotal))}/-</td>
       </tr>
     </tbody>
   </table>

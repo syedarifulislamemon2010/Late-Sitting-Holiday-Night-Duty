@@ -133,10 +133,7 @@ export default function BillPrintLayout({
               }
               @page {
                 size: ${isBill ? 'legal portrait' : 'A4'};
-                margin-top: ${isBill ? '0.5in' : '0.6in'};
-                margin-bottom: ${isBill ? '0.5in' : '0.6in'};
-                margin-left: ${isBill ? '1.4in' : '0.8in'};
-                margin-right: ${isBill ? '0.5in' : '0.8in'};
+                margin: 0;
               }
               #printable-order-sheet {
                 width: ${isBill ? '8.5in' : '210mm'} !important;
@@ -165,8 +162,13 @@ export default function BillPrintLayout({
                   width: 100% !important;
                   max-width: 100% !important;
                   min-width: 100% !important;
+                  height: auto !important;
+                  min-height: auto !important;
                   margin: 0 !important;
-                  padding: 0 !important;
+                  padding-top: ${isBill ? '0.5in' : '0.6in'} !important;
+                  padding-bottom: ${isBill ? '0.5in' : '0.6in'} !important;
+                  padding-left: ${isBill ? '1.4in' : '0.8in'} !important;
+                  padding-right: ${isBill ? '0.5in' : '0.8in'} !important;
                   box-sizing: border-box !important;
                 }
               }
@@ -416,9 +418,9 @@ export default function BillPrintLayout({
                               <tr className="font-bold bg-slate-50/50 text-[12px]" style={{ border: '1px solid #000', fontWeight: 'bold' }}>
                                 <td colSpan={2} className="border border-black p-1.5 text-right pr-3" style={{ border: '1px solid #000', padding: '3px', textAlign: 'right', paddingRight: '12px' }}>সর্বমোট:</td>
                                 <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(viewingOrder.content?.totalDays)} দিন</td>
-                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>৳{toBanglaDigits(viewingOrder.content?.totalTransport)}/-</td>
-                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>৳{toBanglaDigits(viewingOrder.content?.totalApyaon)}/-</td>
-                                <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3px', fontWeight: 'bold' }}>৳{toBanglaDigits(viewingOrder.content?.grandTotal)}/-</td>
+                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(viewingOrder.content?.totalTransport)}/-</td>
+                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/-</td>
+                                <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3px', fontWeight: 'bold' }}>{toBanglaDigits(viewingOrder.content?.grandTotal)}/-</td>
                               </tr>
                             </tbody>
                           </table>
@@ -444,8 +446,8 @@ export default function BillPrintLayout({
                   {/* Right-aligned payee signature block */}
                   <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
                     <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', paddingRight: '0.1in' }}>
-                      <p className="font-extrabold text-[12px]" style={{ margin: 0, padding: 0, lineHeight: '0.95', textAlign: 'right' }}>({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
-                      <p className="text-[12px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '2px', lineHeight: '0.95', textAlign: 'right' }}>{(viewingOrder.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
+                      <p className="font-extrabold text-[12px]" style={{ margin: 0, padding: 0, lineHeight: '1.15', textAlign: 'right' }}>({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
+                      <p className="text-[12px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '3px', lineHeight: '1.15', textAlign: 'right' }}>{(viewingOrder.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
                     </div>
                   </div>
 

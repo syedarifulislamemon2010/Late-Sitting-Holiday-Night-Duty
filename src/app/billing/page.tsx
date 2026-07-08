@@ -3216,9 +3216,9 @@ export default function BillingPage() {
 
                   {/* Right-aligned payee signature block */}
                   <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
-                    <div className="text-right leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', paddingRight: '0.1in' }}>
-                      <p className="font-extrabold text-[12px]" style={{ margin: 0, padding: 0 }}>({cleanBracketName((representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-                      <p className="text-[12px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '2px' }}>{representativeDesignation || 'এসও-আইটি'}</p>
+                    <div className="text-right leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', paddingRight: '0.1in', lineHeight: '1.15' }}>
+                      <p className="font-extrabold text-[12px]" style={{ margin: 0, padding: 0, lineHeight: '1.15' }}>({cleanBracketName((representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
+                      <p className="text-[12px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '3px', lineHeight: '1.15' }}>{representativeDesignation || 'এসও-আইটি'}</p>
                     </div>
                   </div>
 
