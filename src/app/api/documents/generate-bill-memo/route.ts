@@ -226,8 +226,8 @@ export async function POST(request: Request) {
   .routing-text {
     display: inline-block !important;
     border-bottom: 1px solid #000 !important;
-    padding-bottom: 5px !important;
-    line-height: 1.0;
+    padding-bottom: 8px !important;
+    line-height: 1.25;
   }
   @media screen {
     html.dark body {
