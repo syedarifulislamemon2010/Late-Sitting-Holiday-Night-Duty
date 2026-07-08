@@ -3104,9 +3104,9 @@ export default function BillingPage() {
                 <div>
                   {/* Official Header */}
                   <div className="w-full flex justify-end text-right mb-4">
-                    <div className="text-right leading-none">
-                      <h2 className="text-[18px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', lineHeight: '1.0', margin: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                      <p className="text-[12px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', margin: 0, marginTop: '2px' }}>তারিখ: {getBanglaDate(billDate)} ইং</p>
+                    <div className="text-right leading-none" style={{ lineHeight: '0.85' }}>
+                      <h2 className="text-[18px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', lineHeight: '0.85', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                      <p className="text-[12px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '0.85', margin: 0, padding: 0, marginTop: '2px' }}>তারিখ: {getBanglaDate(billDate)} ইং</p>
                     </div>
                   </div>
 

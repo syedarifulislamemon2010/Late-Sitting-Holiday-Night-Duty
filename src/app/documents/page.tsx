@@ -2437,9 +2437,9 @@ export default function DocumentsPage() {
                       <div>
                         {/* Official Header */}
                         <div className="w-full flex justify-end text-right mb-4">
-                          <div className="text-right leading-none">
-                            <h2 className="text-[16px] font-bold text-black uppercase" style={{ fontFamily: 'SolaimanLipi', fontSize: '16px', lineHeight: '1.1', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                            <p className="text-[10px] font-bold text-black mt-0.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.1', letterSpacing: 'normal' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                          <div className="text-right leading-none" style={{ lineHeight: '0.85' }}>
+                            <h2 className="text-[16px] font-bold text-black uppercase" style={{ fontFamily: 'SolaimanLipi', fontSize: '16px', lineHeight: '0.85', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                            <p className="text-[10px] font-bold text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '0.85', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '2px' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                           </div>
                         </div>
 
