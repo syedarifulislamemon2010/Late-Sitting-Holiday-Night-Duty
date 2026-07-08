@@ -216,19 +216,16 @@ export async function POST(request: Request) {
   .routing-list {
     margin-top: 24px;
     text-align: left;
-    line-height: 1.0;
-    font-size: 12px;
+    line-height: 1.2;
+    font-size: 11px;
   }
   .routing-item {
-    margin-bottom: 0.55in;
-    line-height: 1.3;
+    margin-bottom: 0.25in;
+    line-height: 1.2;
   }
   .routing-text {
     display: block !important;
-    width: 370px !important;
-    border-bottom: 1px solid #000 !important;
-    padding-bottom: 10px !important;
-    line-height: 1.3;
+    line-height: 1.2;
   }
   @media screen {
     html.dark body {

@@ -2544,24 +2544,24 @@ export default function DocumentsPage() {
                         </div>
 
                         {/* Left-aligned Routing List with nice gaps, underlines and font size 10, NOT bold */}
-                        <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.3' }}>
-                          <div style={{ marginBottom: '0.55in' }}>
-                            <p style={{ display: 'block', width: '370px', borderBottom: '1px solid #000', paddingBottom: '10px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.3', margin: 0 }}>
+                        <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.2' }}>
+                          <div style={{ marginBottom: '0.25in' }}>
+                            <p style={{ display: 'block', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.2', margin: 0 }}>
                               এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.55in' }}>
-                            <p style={{ display: 'block', width: '370px', borderBottom: '1px solid #000', paddingBottom: '10px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.3', margin: 0 }}>
+                          <div style={{ marginBottom: '0.25in' }}>
+                            <p style={{ display: 'block', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.2', margin: 0 }}>
                               এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.55in' }}>
-                            <p style={{ display: 'block', width: '370px', borderBottom: '1px solid #000', paddingBottom: '10px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.3', margin: 0 }}>
+                          <div style={{ marginBottom: '0.25in' }}>
+                            <p style={{ display: 'block', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.2', margin: 0 }}>
                               উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.55in' }}>
-                            <p style={{ display: 'block', width: '370px', borderBottom: '1px solid #000', paddingBottom: '10px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.3', margin: 0 }}>
+                          <div style={{ marginBottom: '0.25in' }}>
+                            <p style={{ display: 'block', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.2', margin: 0 }}>
                               উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
