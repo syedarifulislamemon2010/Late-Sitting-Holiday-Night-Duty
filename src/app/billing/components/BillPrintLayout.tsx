@@ -134,15 +134,14 @@ export default function BillPrintLayout({
               }
               #printable-order-sheet {
                 width: ${isBill ? '8.5in' : '210mm'} !important;
-                height: ${isBill ? '14.0in' : '297mm'} !important;
+                height: auto !important;
+                min-height: ${isBill ? '14.0in' : '297mm'} !important;
                 padding-top: ${isBill ? '0.35in' : '0.6in'} !important;
                 padding-bottom: ${isBill ? '0.35in' : '0.6in'} !important;
                 padding-left: ${isBill ? '1.3in' : '0.8in'} !important;
                 padding-right: ${isBill ? '0.5in' : '0.8in'} !important;
                 box-sizing: border-box !important;
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: space-between !important;
+                display: block !important;
                 font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
                 font-size: 12px !important;
                 color: #000 !important;
@@ -150,6 +149,10 @@ export default function BillPrintLayout({
                 line-height: 1.05 !important;
                 letter-spacing: normal !important;
                 word-spacing: normal !important;
+              }
+              .print-block {
+                display: block !important;
+                height: auto !important;
               }
               #printable-order-sheet * {
                 font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
@@ -289,7 +292,7 @@ export default function BillPrintLayout({
               className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-none text-[14px] shrink-0"
               style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
             >
-              <div className="flex flex-col h-full justify-between">
+              <div className="print-block flex flex-col h-full justify-between">
                 <div>
                   {/* Official Header */}
                   <div className="w-full flex justify-end text-right mb-4">
@@ -417,23 +420,23 @@ export default function BillPrintLayout({
                   </div>
 
                   {/* Left-aligned Routing List */}
-                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0', pageBreakBefore: 'always', breakBefore: 'page' }}>
-                    <div style={{ marginBottom: '0.95in' }}>
+                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
+                    <div style={{ marginBottom: '0.45in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
                         এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.95in' }}>
+                    <div style={{ marginBottom: '0.45in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
                         এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.95in' }}>
+                    <div style={{ marginBottom: '0.45in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.95in' }}>
+                    <div style={{ marginBottom: '0.45in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                       </p>
@@ -450,7 +453,7 @@ export default function BillPrintLayout({
               className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-relaxed text-[14px] shrink-0"
               style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', boxSizing: 'border-box', paddingTop: '0.8in', paddingBottom: '0.8in', paddingLeft: '0.8in', paddingRight: '0.8in' }}
             >
-              <div className="flex flex-col h-full justify-between">
+              <div className="print-block flex flex-col h-full justify-between">
                 <div>
                   {/* Header */}
                   <div className="w-full flex justify-between items-start border-b-2 border-[#0b5e9e] pb-1.5">

@@ -339,6 +339,7 @@ export default function RosterPage() {
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [currentPickerYear, setCurrentPickerYear] = useState(() => new Date().getFullYear());
   const monthPickerRef = useRef<HTMLDivElement>(null);
+  const isUserCellInitializedRef = useRef(false);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -731,6 +732,8 @@ export default function RosterPage() {
 
   const changeSelectedCell = (cellId: string) => {
     setSelectedCell(cellId);
+    setOpt1CellId(cellId);
+    setFormCellFilter(cellId);
     setActivePartIdx(0);
     setUserSelectedPayeeId(null);
     setUserCustomOrderText(null);
@@ -1530,7 +1533,11 @@ export default function RosterPage() {
       const cellsList = Array.isArray(cellData) ? cellData : [];
       setCells(cellsList);
       if (cellsList.length > 0) {
-        setOpt1CellId(cellsList[0].id.toString());
+        const defaultCell = (!currentUser || currentUser.role === 'ADMIN' || (currentUser.cells && currentUser.cells.length > 1))
+          ? 'all'
+          : (currentUser.cells && currentUser.cells[0] ? currentUser.cells[0].id.toString() : cellsList[0].id.toString());
+        setOpt1CellId(defaultCell);
+        setFormCellFilter(defaultCell);
       }
       setHolidays(Array.isArray(holidayData) ? holidayData : []);
       setLeaves(Array.isArray(leavesData) ? leavesData : []);
@@ -1640,7 +1647,7 @@ export default function RosterPage() {
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !isUserCellInitializedRef.current) {
       const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const hasEditRef = params ? !!params.get('edit_ref') : false;
       
@@ -1649,11 +1656,14 @@ export default function RosterPage() {
           const pIdStr = currentUser.cells[0].id.toString();
           setSelectedCell(pIdStr);
           setOpt1CellId(pIdStr);
+          setFormCellFilter(pIdStr);
         } else {
           setSelectedCell('all');
           setOpt1CellId('all');
+          setFormCellFilter('all');
         }
       }
+      isUserCellInitializedRef.current = true;
     }
   }, [currentUser]);
 

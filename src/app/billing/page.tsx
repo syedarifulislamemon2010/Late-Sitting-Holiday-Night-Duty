@@ -2772,19 +2772,22 @@ export default function BillingPage() {
               }
               .print-legal-layout {
                 width: 8.5in !important;
-                height: 14.0in !important;
+                height: auto !important;
+                min-height: 14.0in !important;
                 padding-top: 0.6in !important;
                 padding-bottom: 0.75in !important;
                 padding-left: 1.3in !important;
                 padding-right: 0.5in !important;
                 border: none !important;
                 box-shadow: none !important;
-                page-break-after: avoid !important;
-                page-break-inside: avoid !important;
-                page-break-before: avoid !important;
-                overflow: hidden !important;
+                display: block !important;
+                overflow: visible !important;
                 letter-spacing: normal !important;
                 word-spacing: normal !important;
+              }
+              .print-block {
+                display: block !important;
+                height: auto !important;
               }
             }
           `}} />
@@ -3069,7 +3072,7 @@ export default function BillingPage() {
           <div className="flex justify-center p-2 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner">
             <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', paddingTop: '0.3in', paddingBottom: '0.3in', paddingLeft: '1.0in', paddingRight: '0.5in', boxSizing: 'border-box', fontSize: '12px', lineHeight: '1.0' }}>
               
-              <div className="flex flex-col h-full justify-between">
+              <div className="print-block flex flex-col h-full justify-between">
                 <div>
                   {/* Official Header */}
                   <div className="w-full flex justify-end text-right mb-4">
@@ -3190,23 +3193,23 @@ export default function BillingPage() {
                   </div>
 
                   {/* Left-aligned Routing List with nice gaps, underlines and font size 12, NOT bold */}
-                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', pageBreakBefore: 'always', breakBefore: 'page' }}>
-                    <div style={{ marginBottom: '0.95in' }}>
+                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
+                    <div style={{ marginBottom: '0.45in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.95in' }}>
+                    <div style={{ marginBottom: '0.45in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.95in' }}>
+                    <div style={{ marginBottom: '0.45in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.95in' }}>
+                    <div style={{ marginBottom: '0.45in' }}>
                       <p className="inline-block border-b border-black pb-0.5 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                       </p>

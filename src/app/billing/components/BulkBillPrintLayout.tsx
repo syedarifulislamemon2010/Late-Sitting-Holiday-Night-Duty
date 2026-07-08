@@ -122,16 +122,15 @@ export default function BulkBillPrintLayout({
             }
             .page-container {
               box-sizing: border-box !important;
-              display: flex !important;
-              flex-direction: column !important;
-              justify-content: space-between !important;
+              display: block !important;
               background-color: #fff !important;
               page-break-after: always;
               break-after: page;
             }
             .bill-page {
               width: 8.5in !important;
-              height: 14.0in !important;
+              height: auto !important;
+              min-height: 14.0in !important;
               padding-top: 0.35in !important;
               padding-bottom: 0.35in !important;
               padding-left: 1.3in !important;
@@ -139,11 +138,16 @@ export default function BulkBillPrintLayout({
             }
             .order-page {
               width: 210mm !important;
-              height: 297mm !important;
+              height: auto !important;
+              min-height: 297mm !important;
               padding-top: 0.6in !important;
               padding-bottom: 0.6in !important;
               padding-left: 0.8in !important;
               padding-right: 0.8in !important;
+            }
+            .print-block {
+              display: block !important;
+              height: auto !important;
             }
             .w-full { width: 100%; }
             .flex { display: flex; }
@@ -207,7 +211,7 @@ export default function BulkBillPrintLayout({
 
         htmlContent += `
           <div class="page-container bill-page">
-            <div class="w-full">
+            <div class="print-block w-full">
               <!-- Header -->
               <div class="w-full flex justify-between items-start border-b-2 border-b-2 pb-2" style="border-bottom: 2px solid #0b5e9e;">
                 <img 
@@ -315,11 +319,11 @@ export default function BulkBillPrintLayout({
             </div>
 
             <!-- Routing List -->
-            <div class="w-full text-left mt-4" style="font-size: 14px; line-height: 1.0; page-break-before: always; break-before: page;">
-              <div style="margin-bottom: 0.95in;"><p style="display: inline-block; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 0;">এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.95in;"><p style="display: inline-block; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 0;">এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.95in;"><p style="display: inline-block; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 0;">উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.95in;"><p style="display: inline-block; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 0;">উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ</p></div>
+            <div class="w-full text-left mt-4" style="font-size: 14px; line-height: 1.0;">
+              <div style="margin-bottom: 0.45in;"><p style="display: inline-block; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 0;">এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.45in;"><p style="display: inline-block; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 0;">এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.45in;"><p style="display: inline-block; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 0;">উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.45in;"><p style="display: inline-block; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 0;">উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ</p></div>
             </div>
           </div>
         `;
@@ -327,7 +331,7 @@ export default function BulkBillPrintLayout({
         const sortedDuties = [...dutiesList];
         htmlContent += `
           <div class="page-container order-page">
-            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+            <div class="print-block" style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
               <div>
                 <!-- Header -->
                 <div class="w-full flex justify-between items-start border-b-2 pb-1" style="border-bottom: 2px solid #0b5e9e;">
