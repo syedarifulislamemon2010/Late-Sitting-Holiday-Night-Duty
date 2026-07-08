@@ -267,8 +267,9 @@ export default function BulkBillPrintLayout({
                       return `
                         <tr style="border-bottom: 1px solid #000;">
                           <td style="border: 1px solid #000; padding: 4px;">${toBanglaDigits(idx + 1)}</td>
-                          <td style="border: 1px solid #000; padding: 4px; text-align: left; padding-left: 12px; line-height: 1.05;">
-                            ${nameStr} (${getShortDesignation(s.designation)})
+                          <td style="border: 1px solid #000; padding: 4px; text-align: left; padding-left: 12px; line-height: 1.1;">
+                            <span style="display: block; white-space: nowrap;">${nameStr}</span>
+                            <span style="display: block; font-size: 12px; color: #374151; margin-top: 2px;">(${getShortDesignation(s.designation)})</span>
                           </td>
                           <td style="border: 1px solid #000; padding: 4px; font-size: 10px;">
                             ${datesArr.map(pair => `<span class="block">${pair}</span>`).join('')}
@@ -562,8 +563,21 @@ export default function BulkBillPrintLayout({
                                     {sorted.map((s: OrderDuty, sIdx: number) => (
                                       <tr key={sIdx} className="text-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
                                         <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(sIdx + 1)}</td>
-                                        <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.05' }}>
-                                          {s.employeeName.replace(/\s*\([^)]*\)\s*$/, '')} ({getShortDesignation(s.designation)})
+                                        <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.1' }}>
+                                          {(() => {
+                                            const displayName = s.employeeName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                                            const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
+                                            return (
+                                              <>
+                                                <span className="font-normal block whitespace-nowrap" style={{ display: 'block', whiteSpace: 'nowrap' }}>
+                                                  {nameWithPrefix}
+                                                </span>
+                                                <span className="font-normal block text-slate-800 text-[12px] mt-0.5" style={{ display: 'block', fontSize: '12px', marginTop: '2px' }}>
+                                                  ({getShortDesignation(s.designation)})
+                                                </span>
+                                              </>
+                                            );
+                                          })()}
                                         </td>
                                         <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', fontSize: '10px', lineHeight: '1.0' }}>
                                           {renderDatesInPairs(s.datesFormatted || s.dates || '').map((pair, pIdx) => (
@@ -675,8 +689,20 @@ export default function BulkBillPrintLayout({
                                 return (
                                   <tr key={dIdx} className="text-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
                                     <td className="border border-black p-1 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(dIdx + 1)}</td>
-                                    <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', lineHeight: '1.05' }}>
-                                      {displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`} ({getShortDesignation(d.designation)})
+                                    <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', lineHeight: '1.1' }}>
+                                      {(() => {
+                                        const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
+                                        return (
+                                          <>
+                                            <span className="font-normal block whitespace-nowrap" style={{ display: 'block', whiteSpace: 'nowrap' }}>
+                                              {nameWithPrefix}
+                                            </span>
+                                            <span className="font-normal block text-slate-800 text-[12px] mt-0.5" style={{ display: 'block', fontSize: '12px', marginTop: '2px' }}>
+                                              ({getShortDesignation(d.designation)})
+                                            </span>
+                                          </>
+                                        );
+                                      })()}
                                     </td>
                                     <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>
                                       <span className="font-sans">{d.bankId}</span>

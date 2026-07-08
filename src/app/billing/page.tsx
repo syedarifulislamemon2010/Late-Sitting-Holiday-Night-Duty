@@ -3118,13 +3118,13 @@ export default function BillingPage() {
                               return (
                                 <tr key={summary.employeeId} className="text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                   <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>{toBanglaDigits(index + 1)}</td>
-                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.05' }}>
+                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.1' }}>
                                     {(() => {
                                       const displayName = summary.name.replace(/\s*\([^)]*\)\s*$/, '').trim();
                                       return (
                                         <>
-                                          <p className="font-normal">{displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`}</p>
-                                          <p className="text-[10px] text-slate-800 font-normal mt-0.5">({getShortDesignation(summary.designation)})</p>
+                                          <p className="font-normal whitespace-nowrap" style={{ whiteSpace: 'nowrap' }}>{displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`}</p>
+                                          <p className="text-[10px] text-slate-800 font-normal mt-0.5" style={{ fontSize: '12px', marginTop: '2px' }}>({getShortDesignation(summary.designation)})</p>
                                         </>
                                       );
                                     })()}

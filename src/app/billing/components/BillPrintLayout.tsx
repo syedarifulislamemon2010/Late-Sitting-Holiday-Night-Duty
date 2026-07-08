@@ -354,13 +354,19 @@ export default function BillPrintLayout({
                               {sortedDutiesList.map((s: OrderDuty, idx: number) => (
                                 <tr key={idx} className="text-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
                                   <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(idx + 1)}</td>
-                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.05' }}>
+                                  <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.1' }}>
                                     {(() => {
                                       const displayName = s.employeeName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                                      const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
                                       return (
-                                        <span className="font-normal block">
-                                          {displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`} ({getShortDesignation(s.designation)})
-                                        </span>
+                                        <>
+                                          <span className="font-normal block whitespace-nowrap" style={{ display: 'block', whiteSpace: 'nowrap' }}>
+                                            {nameWithPrefix}
+                                          </span>
+                                          <span className="font-normal block text-slate-800 text-[12px] mt-0.5" style={{ display: 'block', fontSize: '12px', marginTop: '2px' }}>
+                                            ({getShortDesignation(s.designation)})
+                                          </span>
+                                        </>
                                       );
                                     })()}
                                   </td>
@@ -513,14 +519,20 @@ export default function BillPrintLayout({
                           {dutiesList.map((d: DutyListEntry, idx: number) => (
                             <tr key={idx} className="text-black text-[14px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '14px', lineHeight: '1.0' }}>
                               <td className="border border-black p-1 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(idx + 1)}</td>
-                              <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', lineHeight: '1.05' }}>
+                              <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', lineHeight: '1.1' }}>
                                 {(() => {
                                   const fullNm = d.employeeName || d.name || '';
                                   const displayName = fullNm.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                                  const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
                                   return (
-                                  <span className="font-normal block">
-                                    {displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`} ({getShortDesignation(d.designation)})
-                                  </span>
+                                    <>
+                                      <span className="font-normal block whitespace-nowrap" style={{ display: 'block', whiteSpace: 'nowrap' }}>
+                                        {nameWithPrefix}
+                                      </span>
+                                      <span className="font-normal block text-slate-800 text-[12px] mt-0.5" style={{ display: 'block', fontSize: '12px', marginTop: '2px' }}>
+                                        ({getShortDesignation(d.designation)})
+                                      </span>
+                                    </>
                                   );
                                 })()}
                               </td>

@@ -136,8 +136,9 @@ export async function GET(request: Request) {
         return `
           <tr style="line-height: 1.15;">
             <td>${toBnDigits(index + 1)}</td>
-            <td class="text-left" style="line-height: 1.2; padding-left: 12px; text-align: left;">
-              <span>${nameWithPrefix} (${shortDesignation})</span>
+            <td class="text-left" style="line-height: 1.1; padding-left: 12px; text-align: left;">
+              <span style="display: block; white-space: nowrap;">${nameWithPrefix}</span>
+              <span style="display: block; font-size: 12px; color: #374151; margin-top: 2px;">(${shortDesignation})</span>
             </td>
             <td style="font-size: 11px; line-height: 1.15; padding: 4px; text-align: center;">
               ${datesHtml}
