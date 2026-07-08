@@ -3161,11 +3161,13 @@ export default function BillingPage() {
                                     ))}
                                     <p className="text-[10px] text-slate-700 mt-0.5 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>
                                   </td>
-                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                                    ({toBanglaDigits(transportRate)}x{toBanglaDigits(days)}) = {toBanglaDigits(empTransport)}/-
+                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', verticalAlign: 'middle' }}>
+                                    <span style={{ display: 'block', whiteSpace: 'nowrap' }}>({toBanglaDigits(transportRate)}x{toBanglaDigits(days)}) =</span>
+                                    <span style={{ display: 'block', whiteSpace: 'nowrap', marginTop: '2px' }}>{toBanglaDigits(empTransport)}/-</span>
                                   </td>
-                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                                    ({toBanglaDigits(apyaonRate)}x{toBanglaDigits(days)}) = {toBanglaDigits(empApyaon)}/-
+                                  <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', verticalAlign: 'middle' }}>
+                                    <span style={{ display: 'block', whiteSpace: 'nowrap' }}>({toBanglaDigits(apyaonRate)}x{toBanglaDigits(days)}) =</span>
+                                    <span style={{ display: 'block', whiteSpace: 'nowrap', marginTop: '2px' }}>{toBanglaDigits(empApyaon)}/-</span>
                                   </td>
                                   <td className="border border-black p-1.5 font-extrabold text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                                     {toBanglaDigits(empTotal)}/-

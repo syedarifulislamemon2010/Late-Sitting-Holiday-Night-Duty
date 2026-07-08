@@ -144,8 +144,14 @@ export async function GET(request: Request) {
               ${datesHtml}
               <p style="font-size: 11px; font-weight: bold; margin-top: 4px; line-height: 1.1;">মোট: ${toBnDigits(s.days || 0)} দিন</p>
             </td>
-            <td>(${toBnDigits(Math.round(transportRate))}x${toBnDigits(s.days || 0)}) = ${toBnDigits(Math.round(s.totalTransport || 0))}/-</td>
-            <td>(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(s.days || 0)}) = ${toBnDigits(Math.round(s.totalApyaon || 0))}/-</td>
+            <td style="text-align: center; vertical-align: middle; padding: 4px;">
+              <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(transportRate))}x${toBnDigits(s.days || 0)}) =</span>
+              <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(s.totalTransport || 0))}/-</span>
+            </td>
+            <td style="text-align: center; vertical-align: middle; padding: 4px;">
+              <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(s.days || 0)}) =</span>
+              <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(s.totalApyaon || 0))}/-</span>
+            </td>
             <td class="font-bold">${toBnDigits(Math.round(s.grandTotal || 0))}/-</td>
           </tr>
         `;
@@ -225,7 +231,6 @@ export async function GET(request: Request) {
   }
   table {
     width: 100%;
-    table-layout: fixed;
     border-collapse: collapse;
     margin: 12px 0;
     font-size: 12px;
@@ -324,8 +329,14 @@ export async function GET(request: Request) {
           <p>মোট দিন = ${toBnDigits(totalDays)} দিন</p>
           <p style="margin-top: 4px;">মোট টাকা = (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</p>
         </td>
-        <td>(${toBnDigits(Math.round(transportRate))}x${toBnDigits(totalDays)}) = ${toBnDigits(Math.round(totalTransport))}/-</td>
-        <td>(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(totalDays)}) = ${toBnDigits(Math.round(totalApyaon))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold;">
+          <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(transportRate))}x${toBnDigits(totalDays)}) =</span>
+          <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(totalTransport))}/-</span>
+        </td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold;">
+          <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(totalDays)}) =</span>
+          <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(totalApyaon))}/-</span>
+        </td>
         <td class="font-bold">${toBnDigits(Math.round(grandTotal))}/-</td>
       </tr>
     </tbody>
@@ -446,7 +457,6 @@ export async function GET(request: Request) {
   }
   .header-table {
     width: 100%;
-    table-layout: fixed;
     border-collapse: collapse;
     border-bottom: 2px solid #0b5e9e;
     padding-bottom: 4px;
@@ -486,7 +496,6 @@ export async function GET(request: Request) {
   }
   .ref-date-table {
     width: 100%;
-    table-layout: fixed;
     border-collapse: collapse;
     border-bottom: 1px solid rgba(0,0,0,0.1);
     padding-bottom: 4px;

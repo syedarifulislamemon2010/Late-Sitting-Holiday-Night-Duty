@@ -345,7 +345,7 @@ export default function BillPrintLayout({
                         const apyaonRate = isHoliday ? 250 : isNight ? 600 : 100;
                         const transportRate = isHoliday ? 250 : isNight ? 400 : isLate ? 200 : 0;
                         return (
-                          <table className="w-full border-collapse border border-black text-center mt-3 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%', tableLayout: 'fixed' }}>
+                          <table className="w-full border-collapse border border-black text-center mt-3 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%' }}>
                             <thead>
                               <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                                 <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px', width: '8%' }}>ক্রমিক</th>
@@ -384,11 +384,13 @@ export default function BillPrintLayout({
                                     ))}
                                     <p className="text-[10px] text-slate-700 mt-0.5 font-semibold">মোট: {toBanglaDigits(s.days)} দিন</p>
                                   </td>
-                                  <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3px' }}>
-                                    ({toBanglaDigits(transportRate)}x{toBanglaDigits(s.days)}) = {toBanglaDigits(s.totalTransport)}/-
+                                  <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle' }}>
+                                    <span style={{ display: 'block', whiteSpace: 'nowrap' }}>({toBanglaDigits(transportRate)}x{toBanglaDigits(s.days)}) =</span>
+                                    <span style={{ display: 'block', whiteSpace: 'nowrap', marginTop: '2px' }}>{toBanglaDigits(s.totalTransport)}/-</span>
                                   </td>
-                                  <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3px' }}>
-                                    ({toBanglaDigits(apyaonRate)}x{toBanglaDigits(s.days)}) = {toBanglaDigits(s.totalApyaon)}/-
+                                  <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle' }}>
+                                    <span style={{ display: 'block', whiteSpace: 'nowrap' }}>({toBanglaDigits(apyaonRate)}x{toBanglaDigits(s.days)}) =</span>
+                                    <span style={{ display: 'block', whiteSpace: 'nowrap', marginTop: '2px' }}>{toBanglaDigits(s.totalApyaon)}/-</span>
                                   </td>
                                   <td className="border border-black p-1.5 font-extrabold text-center" style={{ border: '1px solid #000', padding: '3px', fontWeight: 'bold' }}>
                                     {toBanglaDigits(s.grandTotal)}/-
@@ -511,7 +513,7 @@ export default function BillPrintLayout({
                       }
                     }
                     return dutiesList.length > 0 ? (
-                      <table className="w-full border-collapse border border-black text-center mt-4 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%', tableLayout: 'fixed' }}>
+                      <table className="w-full border-collapse border border-black text-center mt-4 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%' }}>
                         <thead>
                           <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                             <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক</th>

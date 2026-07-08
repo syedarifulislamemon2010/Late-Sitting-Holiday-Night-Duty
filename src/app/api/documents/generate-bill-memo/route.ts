@@ -77,8 +77,14 @@ export async function POST(request: Request) {
             ${datesHtml}
             <p style="font-size: 11px; font-weight: bold; margin-top: 4px; line-height: 1.1;">মোট: ${toBnDigits(s.days)} দিন</p>
           </td>
-          <td>(${toBnDigits(Math.round(transportRate))}x${toBnDigits(s.days)}) = ${toBnDigits(Math.round(s.totalTransport))}/-</td>
-          <td>(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(s.days)}) = ${toBnDigits(Math.round(s.totalApyaon))}/-</td>
+          <td style="text-align: center; vertical-align: middle; padding: 4px;">
+            <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(transportRate))}x${toBnDigits(s.days)}) =</span>
+            <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(s.totalTransport))}/-</span>
+          </td>
+          <td style="text-align: center; vertical-align: middle; padding: 4px;">
+            <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(s.days)}) =</span>
+            <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(s.totalApyaon))}/-</span>
+          </td>
           <td class="font-bold">${toBnDigits(Math.round(s.grandTotal))}/-</td>
         </tr>
       `;
@@ -165,7 +171,6 @@ export async function POST(request: Request) {
   }
   table {
     width: 100%;
-    table-layout: fixed;
     border-collapse: collapse;
     margin: 12px 0;
     font-size: 12px;
@@ -290,8 +295,14 @@ export async function POST(request: Request) {
           <p>মোট দিন = ${toBnDigits(totalDays)} দিন</p>
           <p style="margin-top: 4px;">মোট টাকা = (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</p>
         </td>
-        <td>(${toBnDigits(Math.round(transportRate))}x${toBnDigits(totalDays)}) = ${toBnDigits(Math.round(totalTransport))}/-</td>
-        <td>(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(totalDays)}) = ${toBnDigits(Math.round(totalApyaon))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold;">
+          <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(transportRate))}x${toBnDigits(totalDays)}) =</span>
+          <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(totalTransport))}/-</span>
+        </td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold;">
+          <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(totalDays)}) =</span>
+          <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(totalApyaon))}/-</span>
+        </td>
         <td class="font-bold">${toBnDigits(Math.round(grandTotal))}/-</td>
       </tr>
     </tbody>
