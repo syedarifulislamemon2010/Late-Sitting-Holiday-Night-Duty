@@ -326,11 +326,11 @@ export default function BulkBillPrintLayout({
             </div>
 
             <!-- Routing List -->
-            <div class="w-full text-left mt-4" style="font-size: 14px; line-height: 1.2;">
-              <div style="margin-bottom: 0.35in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 8px !important; margin: 0 !important; line-height: 1.2 !important;">এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.35in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 8px !important; margin: 0 !important; line-height: 1.2 !important;">এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.35in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 8px !important; margin: 0 !important; line-height: 1.2 !important;">উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
-              <div style="margin-bottom: 0.35in;"><p style="display: inline-block !important; border-bottom: 1px solid #000 !important; padding-bottom: 8px !important; margin: 0 !important; line-height: 1.2 !important;">উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ</p></div>
+            <div class="w-full text-left mt-4" style="font-size: 14px; line-height: 1.3;">
+              <div style="margin-bottom: 0.55in;"><p style="display: block !important; width: 370px !important; border-bottom: 1px solid #000 !important; padding-bottom: 10px !important; margin: 0 !important; line-height: 1.3 !important;">এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.55in;"><p style="display: block !important; width: 370px !important; border-bottom: 1px solid #000 !important; padding-bottom: 10px !important; margin: 0 !important; line-height: 1.3 !important;">এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.55in;"><p style="display: block !important; width: 370px !important; border-bottom: 1px solid #000 !important; padding-bottom: 10px !important; margin: 0 !important; line-height: 1.3 !important;">উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ</p></div>
+              <div style="margin-bottom: 0.55in;"><p style="display: block !important; width: 370px !important; border-bottom: 1px solid #000 !important; padding-bottom: 10px !important; margin: 0 !important; line-height: 1.3 !important;">উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ</p></div>
             </div>
           </div>
         `;

@@ -280,14 +280,15 @@ export async function GET(request: Request) {
     font-size: 12px;
   }
   .routing-item {
-    margin-bottom: 0.35in;
-    line-height: 1.0;
+    margin-bottom: 0.55in;
+    line-height: 1.3;
   }
   .routing-text {
-    display: inline-block !important;
+    display: block !important;
+    width: 370px !important;
     border-bottom: 1px solid #000 !important;
-    padding-bottom: 8px !important;
-    line-height: 1.25;
+    padding-bottom: 10px !important;
+    line-height: 1.3;
   }
 </style>
 </head>
