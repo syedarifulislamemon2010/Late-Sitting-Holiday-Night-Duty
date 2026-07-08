@@ -2793,6 +2793,9 @@ export default function BillingPage() {
                 letter-spacing: normal !important;
                 word-spacing: normal !important;
               }
+              .whitespace-nowrap {
+                white-space: nowrap !important;
+              }
               .print-legal-layout {
                 width: 100% !important;
                 max-width: 100% !important;
@@ -3125,10 +3128,10 @@ export default function BillingPage() {
                           <thead>
                             <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                               <th className="border border-black p-1.5 w-[8%] text-center">ক্রমিক</th>
-                              <th className="border border-black p-1.5 text-left pl-3 w-[28%]">নাম ও পদবী</th>
-                              <th className="border border-black p-1.5 text-center w-[25%]">তারিখ</th>
-                              <th className="border border-black p-1.5 text-center w-[15%]">যাতায়াত</th>
-                              <th className="border border-black p-1.5 text-center w-[15%]">আপ্যায়ন</th>
+                              <th className="border border-black p-1.5 text-left pl-3 w-[32%]">নাম ও পদবী</th>
+                              <th className="border border-black p-1.5 text-center w-[23%]">তারিখ</th>
+                              <th className="border border-black p-1.5 text-center w-[14%]">যাতায়াত</th>
+                              <th className="border border-black p-1.5 text-center w-[14%]">আপ্যায়ন</th>
                               <th className="border border-black p-1.5 text-center w-[9%]">মোট</th>
                             </tr>
                           </thead>
@@ -3220,22 +3223,22 @@ export default function BillingPage() {
 
                   {/* Left-aligned Routing List with nice gaps, underlines and font size 12, NOT bold */}
                   <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4' }}>
-                    <div style={{ marginBottom: '0.5in' }}>
+                    <div style={{ marginBottom: '0.7in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.5in' }}>
+                    <div style={{ marginBottom: '0.7in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.5in' }}>
+                    <div style={{ marginBottom: '0.7in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.5in' }}>
+                    <div style={{ marginBottom: '0.7in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ
                       </p>

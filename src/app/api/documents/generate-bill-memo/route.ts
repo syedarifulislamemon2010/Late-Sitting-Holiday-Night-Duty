@@ -70,7 +70,7 @@ export async function POST(request: Request) {
         <tr style="line-height: 1.15;">
           <td>${toBnDigits(index + 1)}</td>
           <td class="text-left" style="line-height: 1.1; padding-left: 12px; text-align: left;">
-            <span style="display: block; white-space: nowrap;">${nameWithPrefix}</span>
+            <span class="whitespace-nowrap" style="display: block; white-space: nowrap;">${nameWithPrefix}</span>
             <span style="display: block; font-size: 12px; color: #374151; margin-top: 2px;">(${shortDesignation})</span>
           </td>
           <td style="font-size: 11px; line-height: 1.15; padding: 4px; text-align: center;">
@@ -211,6 +211,9 @@ export async function POST(request: Request) {
   .font-bold {
     font-weight: bold;
   }
+  .whitespace-nowrap {
+    white-space: nowrap !important;
+  }
   .paragraphs {
     margin-top: 12px;
     text-align: justify;
@@ -243,7 +246,7 @@ export async function POST(request: Request) {
     font-size: 10.5px;
   }
   .routing-item {
-    margin-bottom: 0.5in;
+    margin-bottom: 0.7in;
     line-height: 1.4;
   }
   .routing-text {
@@ -302,10 +305,10 @@ export async function POST(request: Request) {
     <thead>
       <tr>
         <th style="width: 8%;">ক্রমিক</th>
-        <th style="width: 28%; text-align: left; padding-left: 12px;">নাম ও পদবী</th>
-        <th style="width: 25%;">তারিখ</th>
-        <th style="width: 15%;">যাতায়াত</th>
-        <th style="width: 15%;">আপ্যায়ন</th>
+        <th style="width: 32%; text-align: left; padding-left: 12px;">নাম ও পদবী</th>
+        <th style="width: 23%;">তারিখ</th>
+        <th style="width: 14%;">যাতায়াত</th>
+        <th style="width: 14%;">আপ্যায়ন</th>
         <th style="width: 9%;">মোট</th>
       </tr>
     </thead>

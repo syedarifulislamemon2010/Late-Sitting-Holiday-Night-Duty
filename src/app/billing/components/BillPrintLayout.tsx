@@ -128,6 +128,9 @@ export default function BillPrintLayout({
                 word-spacing: normal !important;
                 -webkit-font-smoothing: antialiased;
               }
+              .whitespace-nowrap {
+                white-space: nowrap !important;
+              }
               @page {
                 size: ${isBill ? 'legal portrait' : 'A4'};
                 margin: 0;
@@ -218,10 +221,11 @@ export default function BillPrintLayout({
               .text-slate-950 { color: #000000; }
               .font-normal { font-weight: 400; }
               .w-\\[8\\%\\] { width: 8%; }
-              .w-\\[28\\%\\] { width: 28%; }
+              .w-\\[32\\%\\] { width: 32%; }
               .w-\\[12\\%\\] { width: 12%; }
               .w-\\[27\\%\\] { width: 27%; }
-              .w-\\[25\\%\\] { width: 25%; }
+              .w-\\[23\\%\\] { width: 23%; }
+              .w-\\[14\\%\\] { width: 14%; }
               .w-\\[50\\%\\] { width: 50%; }
               .list-decimal { list-style-type: decimal; }
               .space-y-4 > * + * { margin-top: 16px; }
@@ -349,10 +353,10 @@ export default function BillPrintLayout({
                             <thead>
                               <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
                                 <th className="border border-black p-1.5 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px', width: '8%' }}>ক্রমিক</th>
-                                <th className="border border-black p-1.5 text-left pl-3 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', width: '28%' }}>নাম ও পদবী</th>
-                                <th className="border border-black p-1.5 text-center w-[25%]" style={{ border: '1px solid #000', padding: '3px', width: '25%' }}>তারিখ</th>
-                                <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px', width: '15%' }}>যাতায়াত</th>
-                                <th className="border border-black p-1.5 text-center w-[15%]" style={{ border: '1px solid #000', padding: '3px', width: '15%' }}>আপ্যায়ন</th>
+                                <th className="border border-black p-1.5 text-left pl-3 w-[32%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', width: '32%' }}>নাম ও পদবী</th>
+                                <th className="border border-black p-1.5 text-center w-[23%]" style={{ border: '1px solid #000', padding: '3px', width: '23%' }}>তারিখ</th>
+                                <th className="border border-black p-1.5 text-center w-[14%]" style={{ border: '1px solid #000', padding: '3px', width: '14%' }}>যাতায়াত</th>
+                                <th className="border border-black p-1.5 text-center w-[14%]" style={{ border: '1px solid #000', padding: '3px', width: '14%' }}>আপ্যায়ন</th>
                                 <th className="border border-black p-1.5 text-center w-[9%]" style={{ border: '1px solid #000', padding: '3px', width: '9%' }}>মোট</th>
                               </tr>
                             </thead>
@@ -435,22 +439,22 @@ export default function BillPrintLayout({
 
                   {/* Left-aligned Routing List */}
                   <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4' }}>
-                    <div style={{ marginBottom: '0.5in' }}>
+                    <div style={{ marginBottom: '0.7in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.5in' }}>
+                    <div style={{ marginBottom: '0.7in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.5in' }}>
+                    <div style={{ marginBottom: '0.7in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
-                    <div style={{ marginBottom: '0.5in' }}>
+                    <div style={{ marginBottom: '0.7in' }}>
                       <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ
                       </p>
