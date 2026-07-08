@@ -126,7 +126,10 @@ export async function POST(request: Request) {
   }
   @page {
     size: legal portrait;
-    margin: 0;
+    margin-top: 0.5in;
+    margin-bottom: 0.5in;
+    margin-left: 1.4in;
+    margin-right: 0.5in;
   }
   body {
     margin: 0;
@@ -134,13 +137,12 @@ export async function POST(request: Request) {
     background-color: #fff;
   }
   #printable-order-sheet {
-    width: 8.5in;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
     height: auto;
     min-height: 14.0in;
-    padding-top: 0.5in;
-    padding-bottom: 0.5in;
-    padding-left: 1.4in;
-    padding-right: 0.5in;
+    padding: 0 !important;
     box-sizing: border-box;
     font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
     font-size: 12px;

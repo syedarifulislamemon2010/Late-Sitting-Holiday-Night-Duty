@@ -100,6 +100,7 @@ export default function BulkBillPrintLayout({
     }
     fetchDutiesForBilling();
 
+    const isBill = viewingOrders[0]?.category?.startsWith('BILL_') || false;
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -110,6 +111,13 @@ export default function BulkBillPrintLayout({
           <link rel="stylesheet" href="https://fonts.maateen.me/solaiman-lipi/font.css" />
           <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" />
           <style>
+            @page {
+              size: ${isBill ? 'legal portrait' : 'A4'};
+              margin-top: ${isBill ? '0.5in' : '0.6in'};
+              margin-bottom: ${isBill ? '0.5in' : '0.6in'};
+              margin-left: ${isBill ? '1.4in' : '0.8in'};
+              margin-right: ${isBill ? '0.5in' : '0.8in'};
+            }
             body {
               margin: 0;
               padding: 0;
@@ -149,9 +157,17 @@ export default function BulkBillPrintLayout({
               padding-right: 0.8in !important;
             }
             @media print {
+              body {
+                margin: 0 !important;
+                padding: 0 !important;
+              }
               .page-container, .bill-page, .order-page {
                 width: 100% !important;
                 max-width: 100% !important;
+                min-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
               }
             }
             .print-block {
@@ -499,7 +515,7 @@ export default function BulkBillPrintLayout({
                   /* simulated Legal bill sheet */
                   <div 
                     className="w-[8.5in] h-[14.0in] bg-white text-black flex flex-col justify-between relative text-left font-serif leading-tight text-[12px] shrink-0"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
+                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
                   >
                     <div className="flex flex-col h-full justify-between">
                       <div>

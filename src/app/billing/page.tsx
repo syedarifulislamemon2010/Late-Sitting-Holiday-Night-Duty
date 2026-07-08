@@ -2779,8 +2779,11 @@ export default function BillingPage() {
           <style dangerouslySetInnerHTML={{ __html: `
             @media print {
               @page {
-                size: legal;
-                margin: 0;
+                size: legal portrait;
+                margin-top: 0.5in;
+                margin-bottom: 0.5in;
+                margin-left: 1.4in;
+                margin-right: 0.5in;
               }
               .no-print { display: none !important; }
               body { 
@@ -2799,12 +2802,10 @@ export default function BillingPage() {
               .print-legal-layout {
                 width: 100% !important;
                 max-width: 100% !important;
+                min-width: 100% !important;
                 height: auto !important;
                 min-height: 14.0in !important;
-                padding-top: 0.5in !important;
-                padding-bottom: 0.5in !important;
-                padding-left: 1.4in !important;
-                padding-right: 0.5in !important;
+                padding: 0 !important;
                 border: none !important;
                 box-shadow: none !important;
                 display: block !important;
@@ -3097,7 +3098,7 @@ export default function BillingPage() {
           </div>
 
           <div className="flex justify-center p-2 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner">
-            <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', paddingTop: '0.5in', paddingBottom: '0.5in', paddingLeft: '1.3in', paddingRight: '0.5in', boxSizing: 'border-box', fontSize: '12px', lineHeight: '1.0' }}>
+            <div className="print-legal-layout w-[8.5in] h-[14.0in] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', paddingTop: '0.5in', paddingBottom: '0.5in', paddingLeft: '1.4in', paddingRight: '0.5in', boxSizing: 'border-box', fontSize: '12px', lineHeight: '1.0' }}>
               
               <div className="print-block flex flex-col h-full justify-between">
                 <div>

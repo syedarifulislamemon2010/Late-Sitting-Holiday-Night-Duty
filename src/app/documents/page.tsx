@@ -732,7 +732,10 @@ export default function DocumentsPage() {
               }
               @page {
                 size: ${isBill ? 'legal portrait' : 'A4'};
-                margin: 0;
+                margin-top: ${isBill ? '0.5in' : '0.6in'};
+                margin-bottom: ${isBill ? '0.5in' : '0.6in'};
+                margin-left: ${isBill ? '1.4in' : '0.8in'};
+                margin-right: ${isBill ? '0.5in' : '0.8in'};
               }
               #printable-order-sheet {
                 width: ${isBill ? '8.5in' : '210mm'} !important;
@@ -754,9 +757,17 @@ export default function DocumentsPage() {
                 word-spacing: normal !important;
               }
               @media print {
+                body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                }
                 #printable-order-sheet {
                   width: 100% !important;
                   max-width: 100% !important;
+                  min-width: 100% !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  box-sizing: border-box !important;
                 }
               }
               #printable-order-sheet * {
@@ -2418,7 +2429,7 @@ export default function DocumentsPage() {
                   <div 
                     id="printable-order-sheet"
                     className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-none text-[10px] shrink-0"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.3in', paddingRight: '0.5in' }}
+                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
                   >
                     <div className="flex flex-col h-full justify-between">
                       <div>
