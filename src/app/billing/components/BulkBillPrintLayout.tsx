@@ -325,13 +325,13 @@ export default function BulkBillPrintLayout({
                 </table>
 
                 <!-- Bottom Text Details -->
-                <div class="mt-3 leading-normal" style="font-size: 14px; text-align: justify;">
-                  <p class="font-bold" style="margin: 4px 0;">কথায়: ${(order.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
-                  <p style="margin: 4px 0;">০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।</p>
-                  <p style="margin: 4px 0;">
+                <div class="mt-2 leading-normal" style="font-size: 14px; text-align: justify; line-height: 0.95;">
+                  <p class="font-bold" style="margin: 2px 0;">কথায়: ${(order.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
+                  <p style="margin: 2px 0;">০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।</p>
+                  <p style="margin: 2px 0;">
                     ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>${toBanglaDigits(order.content?.totalTransport || 0)}/- (${getBanglaNumberWords(order.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>${toBanglaDigits(order.content?.totalApyaon || 0)}/- (${getBanglaNumberWords(order.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                   </p>
-                  <p style="margin: 4px 0;">
+                  <p style="margin: 2px 0;">
                     ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBanglaDigits(order.content?.grandTotal || 0)}/- (${getBanglaNumberWords(order.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, ${order.content?.representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                   </p>
                 </div>
@@ -340,9 +340,9 @@ export default function BulkBillPrintLayout({
 
             <!-- Signatures -->
             <div class="w-full flex justify-end" style="margin-top: 0.25in; margin-bottom: 0.1in;">
-              <div style="font-size: 14px; text-align: right; padding-right: 0.1in; line-height: 1.05;">
-                <p class="font-extrabold" style="margin: 0;">(${cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-                <p style="color: #334155; margin: 2px 0 0 0;">${order.content?.representativeDesignation || 'এসও-আইটি'}</p>
+              <div style="font-size: 14px; text-align: right; padding-right: 0.1in; line-height: 0.95;">
+                <p class="font-extrabold" style="margin: 0; text-align: right !important; line-height: 0.95 !important;">(${cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
+                <p style="color: #334155; margin: 0; margin-top: 2px; text-align: right !important; line-height: 0.95 !important;">${(order.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
               </div>
             </div>
 
@@ -658,8 +658,8 @@ export default function BulkBillPrintLayout({
                       {/* Signature block */}
                       <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
                         <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', paddingRight: '0.1in' }}>
-                          <p className="font-extrabold text-[12px]">({cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-                          <p className="text-[12px] font-bold text-slate-800 mt-1">{order.content?.representativeDesignation || 'এসও-আইটি'}</p>
+                          <p className="font-extrabold text-[12px]" style={{ margin: 0, padding: 0, lineHeight: '0.95', textAlign: 'right' }}>({cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
+                          <p className="text-[12px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '2px', lineHeight: '0.95', textAlign: 'right' }}>{(order.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
                         </div>
                       </div>
                     </div>

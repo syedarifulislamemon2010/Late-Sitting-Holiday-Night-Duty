@@ -730,12 +730,9 @@ export default function DocumentsPage() {
                 word-spacing: normal !important;
                 -webkit-font-smoothing: antialiased;
               }
-              @page {
+               @page {
                 size: ${isBill ? 'legal portrait' : 'A4'};
-                margin-top: ${isBill ? '0.5in' : '0.6in'};
-                margin-bottom: ${isBill ? '0.5in' : '0.6in'};
-                margin-left: ${isBill ? '1.4in' : '0.8in'};
-                margin-right: ${isBill ? '0.5in' : '0.8in'};
+                margin: 0;
               }
               #printable-order-sheet {
                 width: ${isBill ? '8.5in' : '210mm'} !important;
@@ -765,8 +762,13 @@ export default function DocumentsPage() {
                   width: 100% !important;
                   max-width: 100% !important;
                   min-width: 100% !important;
+                  height: auto !important;
+                  min-height: auto !important;
                   margin: 0 !important;
-                  padding: 0 !important;
+                  padding-top: ${isBill ? '0.5in' : '0.6in'} !important;
+                  padding-bottom: ${isBill ? '0.5in' : '0.6in'} !important;
+                  padding-left: ${isBill ? '1.4in' : '0.8in'} !important;
+                  padding-right: ${isBill ? '0.5in' : '0.8in'} !important;
                   box-sizing: border-box !important;
                 }
               }

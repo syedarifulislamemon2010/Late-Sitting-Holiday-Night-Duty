@@ -126,10 +126,7 @@ export async function POST(request: Request) {
   }
   @page {
     size: legal portrait;
-    margin-top: 0.5in;
-    margin-bottom: 0.5in;
-    margin-left: 1.4in;
-    margin-right: 0.5in;
+    margin: 0;
   }
   body {
     margin: 0;
@@ -141,8 +138,11 @@ export async function POST(request: Request) {
     max-width: 100% !important;
     min-width: 100% !important;
     height: auto;
-    min-height: 14.0in;
-    padding: 0 !important;
+    min-height: auto;
+    padding-top: 0.5in !important;
+    padding-bottom: 0.5in !important;
+    padding-left: 1.4in !important;
+    padding-right: 0.5in !important;
     box-sizing: border-box;
     font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
     font-size: 12px;
@@ -157,21 +157,21 @@ export async function POST(request: Request) {
   }
   .header-container {
     width: 100%;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     text-align: right;
-    line-height: 1.1;
+    line-height: 0.95 !important;
   }
   .header-title {
     font-size: 20px;
     font-weight: bold;
     margin: 0;
-    line-height: 1.1;
+    line-height: 0.95 !important;
   }
   .header-date {
     font-size: 12px;
     font-weight: bold;
-    margin-top: 2px;
-    line-height: 1.1;
+    margin-top: 0px !important;
+    line-height: 0.95 !important;
   }
   .subject {
     font-size: 12px;
@@ -235,11 +235,11 @@ export async function POST(request: Request) {
   .signature-block {
     display: inline-block;
     text-align: right;
-
   }
   .signature-block p {
-    margin: 0;
-    line-height: 1.0;
+    margin: 0 !important;
+    line-height: 0.95 !important;
+    text-align: right !important;
   }
   .routing-list {
     margin-top: 24px;
@@ -288,7 +288,7 @@ export async function POST(request: Request) {
 </head>
 <body>
   <div id="printable-order-sheet">
-    <div class="print-block" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; min-height: 13.0in; width: 100%;">
+    <div class="print-block" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; min-height: 11.5in; width: 100%;">
       <div>
         <div class="header-container">
           <p class="header-title">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
@@ -343,8 +343,8 @@ export async function POST(request: Request) {
       <div>
         <div class="signature-container">
           <div class="signature-block">
-            <p class="font-bold">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-            <p style="margin-top: 2px; color: #333; font-weight: bold;">${representativeDesignation || ''}</p>
+            <p class="font-bold" style="text-align: right !important; line-height: 0.95 !important; margin: 0 !important;">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
+            <p style="margin-top: 0px !important; color: #333; font-weight: bold; text-align: right !important; line-height: 0.95 !important;">${(representativeDesignation || '').trim()}</p>
           </div>
         </div>
 

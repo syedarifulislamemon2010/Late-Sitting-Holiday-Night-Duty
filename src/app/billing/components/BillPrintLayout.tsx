@@ -444,8 +444,8 @@ export default function BillPrintLayout({
                   {/* Right-aligned payee signature block */}
                   <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
                     <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', paddingRight: '0.1in' }}>
-                      <p className="font-extrabold text-[12px]">({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-                      <p className="text-[12px] font-bold text-slate-800 mt-1">{viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</p>
+                      <p className="font-extrabold text-[12px]" style={{ margin: 0, padding: 0, lineHeight: '0.95', textAlign: 'right' }}>({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
+                      <p className="text-[12px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '2px', lineHeight: '0.95', textAlign: 'right' }}>{(viewingOrder.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
                     </div>
                   </div>
 

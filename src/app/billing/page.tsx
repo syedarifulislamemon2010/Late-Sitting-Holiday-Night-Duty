@@ -2780,10 +2780,7 @@ export default function BillingPage() {
             @media print {
               @page {
                 size: legal portrait;
-                margin-top: 0.5in;
-                margin-bottom: 0.5in;
-                margin-left: 1.4in;
-                margin-right: 0.5in;
+                margin: 0;
               }
               .no-print { display: none !important; }
               body { 
@@ -2804,8 +2801,11 @@ export default function BillingPage() {
                 max-width: 100% !important;
                 min-width: 100% !important;
                 height: auto !important;
-                min-height: 14.0in !important;
-                padding: 0 !important;
+                min-height: auto !important;
+                padding-top: 0.5in !important;
+                padding-bottom: 0.5in !important;
+                padding-left: 1.4in !important;
+                padding-right: 0.5in !important;
                 border: none !important;
                 box-shadow: none !important;
                 display: block !important;
