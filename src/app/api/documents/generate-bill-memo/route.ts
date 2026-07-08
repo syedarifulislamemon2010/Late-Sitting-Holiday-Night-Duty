@@ -126,48 +126,65 @@ export async function POST(request: Request) {
   }
   @page {
     size: legal portrait;
-    margin-top: 0.5in;
-    margin-bottom: 0.5in;
-    margin-left: 1.3in;
-    margin-right: 0.5in;
+    margin: 0;
   }
   body {
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+  }
+  #printable-order-sheet {
+    width: 8.5in;
+    height: auto;
+    min-height: 14.0in;
+    padding-top: 0.5in;
+    padding-bottom: 0.5in;
+    padding-left: 1.3in;
+    padding-right: 0.5in;
+    box-sizing: border-box;
     font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
     font-size: 12px;
-    line-height: 1.0;
+    line-height: 1.05;
     color: #000;
     background-color: #fff;
+  }
+  #printable-order-sheet * {
+    font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
   }
   .header-container {
     width: 100%;
     margin-bottom: 16px;
     text-align: right;
-    line-height: 1.0;
+    line-height: 1.1;
   }
   .header-title {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     margin: 0;
-    line-height: 1.0;
+    line-height: 1.1;
   }
   .header-date {
     font-size: 12px;
     font-weight: bold;
     margin-top: 2px;
-    line-height: 1.0;
+    line-height: 1.1;
   }
   .subject {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
     text-decoration: underline;
     margin-bottom: 10px;
     line-height: 1.0;
+    text-underline-offset: 2px;
   }
   .body-text {
     text-align: justify;
     margin-top: 10px;
     margin-bottom: 10px;
-    line-height: 1.6;
+    line-height: 1.15;
+    text-indent: 0.5in;
   }
   table {
     width: 100%;
@@ -178,13 +195,13 @@ export async function POST(request: Request) {
   }
   th, td {
     border: 1px solid #000;
-    padding: 3px 3px;
+    padding: 3px;
     text-align: center;
     vertical-align: middle;
-    line-height: 1.0;
+    line-height: 1.05;
   }
   th {
-    background-color: #f5f5f5;
+    background-color: #f8fafc;
     font-weight: bold;
   }
   .text-left {
@@ -205,15 +222,15 @@ export async function POST(request: Request) {
   }
   .signature-container {
     width: 100%;
-    margin-top: 0.5in;
-    margin-bottom: 0.2in;
+    margin-top: 24px;
+    margin-bottom: 16px;
     text-align: right;
     line-height: 1.0;
   }
   .signature-block {
     display: inline-block;
     text-align: right;
-    padding-right: 0.1in;
+
   }
   .signature-block p {
     margin: 0;
@@ -223,7 +240,7 @@ export async function POST(request: Request) {
     margin-top: 24px;
     text-align: left;
     line-height: 1.4;
-    font-size: 12px;
+    font-size: 10.5px;
   }
   .routing-item {
     margin-bottom: 0.5in;
@@ -234,6 +251,7 @@ export async function POST(request: Request) {
     border-bottom: 1px solid #000 !important;
     padding-bottom: 5px !important;
     line-height: 1.4;
+    font-size: 10.5px;
   }
   @media screen {
     html.dark body {
@@ -264,20 +282,23 @@ export async function POST(request: Request) {
 </style>
 </head>
 <body>
-  <div class="header-container">
-    <p class="header-title">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
-    <p class="header-date">তারিখ: ${getBnDate(billDate)} ইং</p>
-  </div>
+  <div id="printable-order-sheet">
+    <div class="print-block" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; min-height: 13.0in; width: 100%;">
+      <div>
+        <div class="header-container">
+          <p class="header-title">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+          <p class="header-date">তারিখ: ${getBnDate(billDate)} ইং</p>
+        </div>
 
-  <div class="subject">
-    বিষয়: ${subjectText || ''}
-  </div>
+        <div class="subject">
+          বিষয়: ${subjectText || ''}
+        </div>
 
-  <div class="body-text">
-    ${openingParagraph}
-  </div>
+        <div class="body-text">
+          ${openingParagraph}
+        </div>
 
-  <table>
+        <table>
     <thead>
       <tr>
         <th style="width: 8%;">ক্রমিক</th>
@@ -320,25 +341,31 @@ export async function POST(request: Request) {
     </div>
   </div>
 
-  <div class="signature-container">
-    <div class="signature-block">
-      <p class="font-bold">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-      <p style="margin-top: 2px; color: #333; font-weight: bold;">${representativeDesignation || ''}</p>
-    </div>
-  </div>
+      </div>
+      
+      <div>
+        <div class="signature-container">
+          <div class="signature-block">
+            <p class="font-bold">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
+            <p style="margin-top: 2px; color: #333; font-weight: bold;">${representativeDesignation || ''}</p>
+          </div>
+        </div>
 
-  <div class="routing-list">
-    <div class="routing-item">
-      <p class="routing-text">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
-    </div>
-    <div class="routing-item">
-      <p class="routing-text">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
-    </div>
-    <div class="routing-item">
-      <p class="routing-text">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
-    </div>
-    <div class="routing-item">
-      <p class="routing-text">ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ</p>
+        <div class="routing-list">
+          <div class="routing-item">
+            <p class="routing-text">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
+          </div>
+          <div class="routing-item">
+            <p class="routing-text">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
+          </div>
+          <div class="routing-item">
+            <p class="routing-text">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
+          </div>
+          <div class="routing-item">
+            <p class="routing-text">ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   

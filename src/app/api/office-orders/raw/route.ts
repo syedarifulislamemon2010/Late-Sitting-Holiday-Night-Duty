@@ -238,13 +238,13 @@ export async function GET(request: Request) {
   }
   th, td {
     border: 1px solid #000;
-    padding: 3px 3px;
+    padding: 3px;
     text-align: center;
     vertical-align: middle;
-    line-height: 1.0;
+    line-height: 1.05;
   }
   th {
-    background-color: #f5f5f5;
+    background-color: #f8fafc;
     font-weight: bold;
   }
   .text-left {
@@ -265,15 +265,15 @@ export async function GET(request: Request) {
   }
   .signature-container {
     width: 100%;
-    margin-top: 0.5in;
-    margin-bottom: 0.2in;
+    margin-top: 24px;
+    margin-bottom: 16px;
     text-align: right;
     line-height: 1.0;
   }
   .signature-block {
     display: inline-block;
     text-align: right;
-    padding-right: 0.1in;
+
   }
   .signature-block p, .signature-block div {
     margin: 0;
@@ -283,7 +283,7 @@ export async function GET(request: Request) {
     margin-top: 24px;
     text-align: left;
     line-height: 1.4;
-    font-size: 12px;
+    font-size: 10.5px;
   }
   .routing-item {
     margin-bottom: 0.5in;
@@ -294,6 +294,7 @@ export async function GET(request: Request) {
     border-bottom: 1px solid #000 !important;
     padding-bottom: 5px !important;
     line-height: 1.4;
+    font-size: 10.5px;
   }
 </style>
 </head>
@@ -391,6 +392,7 @@ export async function GET(request: Request) {
       }
     }
   </script>
+  </div>
 </body>
 </html>
       `;
@@ -585,6 +587,7 @@ export async function GET(request: Request) {
 </style>
 </head>
 <body>
+  <div id="printable-order-sheet">
   ${headerMode === 'with_header' ? `
   <table class="header-table">
     <tr>
@@ -670,6 +673,7 @@ export async function GET(request: Request) {
       }
     }
   </script>
+  </div>
 </body>
 </html>
       `;
