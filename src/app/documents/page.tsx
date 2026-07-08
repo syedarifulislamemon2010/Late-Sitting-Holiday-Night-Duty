@@ -2538,24 +2538,24 @@ export default function DocumentsPage() {
                         </div>
 
                         {/* Left-aligned Routing List with nice gaps, underlines and font size 10, NOT bold */}
-                        <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', pageBreakBefore: 'always', breakBefore: 'page' }}>
-                          <div style={{ marginBottom: '0.95in' }}>
-                            <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', margin: 0 }}>
+                        <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
+                          <div style={{ marginBottom: '0.35in' }}>
+                            <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '3.5px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', margin: 0 }}>
                               এসপিও, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.95in' }}>
-                            <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', margin: 0 }}>
+                          <div style={{ marginBottom: '0.35in' }}>
+                            <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '3.5px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', margin: 0 }}>
                               এজিএম, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.95in' }}>
-                            <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', margin: 0 }}>
+                          <div style={{ marginBottom: '0.35in' }}>
+                            <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '3.5px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', margin: 0 }}>
                               উপ-মহাব্যবস্থাপক, অনলাইন ব্যাংকিং ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
-                          <div style={{ marginBottom: '0.95in' }}>
-                            <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', margin: 0 }}>
+                          <div style={{ marginBottom: '0.35in' }}>
+                            <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '3.5px', fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', margin: 0 }}>
                               উপ-মহাব্যবস্থাপক, বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট সমীপেঃ
                             </p>
                           </div>
@@ -2635,29 +2635,29 @@ export default function DocumentsPage() {
                               <table className="w-full border-collapse border border-black text-center mt-2.5 text-[9pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9pt', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
                                 <thead>
                                   <tr className="bg-slate-50 font-bold border-b border-black text-[9.5pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9.5pt', lineHeight: '1.0' }}>
-                                    <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক নং</th>
-                                    <th className="border border-black p-1 text-left pl-2 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>নির্বাহী/ কর্মকর্তার নাম</th>
-                                    <th className="border border-black p-1 text-center w-[12%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center' }}>পদবী</th>
-                                    <th className="border border-black p-1 text-left pl-2 w-[27%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>কাজের বিবরণ</th>
-                                    <th className="border border-black p-1 text-center w-[25%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center' }}>তারিখ</th>
+                                    <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle' }}>ক্রমিক নং</th>
+                                    <th className="border border-black p-1 text-left pl-2 w-[25%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle' }}>নির্বাহী/ কর্মকর্তার নাম</th>
+                                    <th className="border border-black p-1 text-center w-[10%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle' }}>পদবী</th>
+                                    <th className="border border-black p-1 text-left pl-2 w-[35%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle' }}>কাজের বিবরণ</th>
+                                    <th className="border border-black p-1 text-center w-[22%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle' }}>তারিখ</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {dutiesList.map((group: OrderDuty, index: number) => (
                                     <tr key={index} className="text-black text-[9pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9pt', lineHeight: '1.0' }}>
-                                      <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center' }}>
+                                      <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle' }}>
                                         {toBanglaDigits(index + 1)}
                                       </td>
-                                      <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-[9pt]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>
-                                        {group.employeeName.startsWith('জনাব') ? group.employeeName : `জনাব ${group.employeeName}`}
+                                      <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-[9pt] whitespace-nowrap" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                                        {group.employeeName.startsWith(' জনাব') || group.employeeName.startsWith('জনাব') ? group.employeeName : `জনাব ${group.employeeName}`}
                                       </td>
-                                      <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center' }}>
+                                      <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle' }}>
                                         {group.designation.match(/\(([^)]+)\)/)?.[1] ?? group.designation}
                                       </td>
-                                      <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-black" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>
+                                      <td className="border border-black p-1 text-left pl-2 leading-normal font-normal text-black" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle', lineHeight: '1.25' }}>
                                         {group.description || 'Customization এবং Development সংক্রান্ত'}
                                       </td>
-                                      <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center' }}>
+                                      <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.25' }}>
                                         {getFormattedDateList(group.dates)}
                                       </td>
                                     </tr>

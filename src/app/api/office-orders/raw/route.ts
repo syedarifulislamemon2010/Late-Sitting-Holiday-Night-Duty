@@ -278,17 +278,15 @@ export async function GET(request: Request) {
     text-align: left;
     line-height: 1.0;
     font-size: 12px;
-    page-break-before: always;
-    break-before: page;
   }
   .routing-item {
-    margin-bottom: 0.95in;
+    margin-bottom: 0.35in;
     line-height: 1.0;
   }
   .routing-text {
     display: inline-block !important;
     border-bottom: 1px solid #000 !important;
-    padding-bottom: 5px !important;
+    padding-bottom: 3.5px !important;
     line-height: 1.0;
   }
 </style>
@@ -395,11 +393,11 @@ export async function GET(request: Request) {
         const datesFormatted = d.datesFormatted || (d.dates ? getFormattedDateList(d.dates) : '');
         return `
           <tr>
-            <td class="text-center">${toBnDigits(index + 1)}</td>
-            <td class="text-left"><strong>${nameFormatted}</strong></td>
-            <td class="text-center">${designation}</td>
-            <td class="text-left">${d.description || ''}</td>
-            <td class="text-center">${datesFormatted}</td>
+            <td class="text-center" style="vertical-align: middle;">${toBnDigits(index + 1)}</td>
+            <td class="text-left" style="vertical-align: middle; white-space: nowrap;"><strong>${nameFormatted}</strong></td>
+            <td class="text-center" style="vertical-align: middle;">${designation}</td>
+            <td class="text-left" style="vertical-align: middle; line-height: 1.25;">${d.description || ''}</td>
+            <td class="text-center" style="vertical-align: middle; line-height: 1.25;">${datesFormatted}</td>
           </tr>
         `;
       }).join('');
@@ -624,11 +622,11 @@ export async function GET(request: Request) {
   <table class="duty-table" style="width: 100%; min-width: 100%;">
     <thead>
       <tr>
-        <th style="width: 8%;" class="text-center">ক্রমিক নং</th>
-        <th style="width: 28%;" class="text-left">নির্বাহী/ কর্মকর্তার নাম</th>
-        <th style="width: 12%;" class="text-center">পদবী</th>
-        <th style="width: 27%;" class="text-left">কাজের বিবরণ</th>
-        <th style="width: 25%;" class="text-center">তারিখ</th>
+        <th style="width: 8%; vertical-align: middle;" class="text-center">ক্রমিক নং</th>
+        <th style="width: 25%; vertical-align: middle;" class="text-left">নির্বাহী/ কর্মকর্তার নাম</th>
+        <th style="width: 10%; vertical-align: middle;" class="text-center">পদবী</th>
+        <th style="width: 35%; vertical-align: middle;" class="text-left">কাজের বিবরণ</th>
+        <th style="width: 22%; vertical-align: middle;" class="text-center">তারিখ</th>
       </tr>
     </thead>
     <tbody>

@@ -218,17 +218,15 @@ export async function POST(request: Request) {
     text-align: left;
     line-height: 1.0;
     font-size: 12px;
-    page-break-before: always;
-    break-before: page;
   }
   .routing-item {
-    margin-bottom: 0.95in;
+    margin-bottom: 0.35in;
     line-height: 1.0;
   }
   .routing-text {
     display: inline-block !important;
     border-bottom: 1px solid #000 !important;
-    padding-bottom: 5px !important;
+    padding-bottom: 3.5px !important;
     line-height: 1.0;
   }
   @media screen {

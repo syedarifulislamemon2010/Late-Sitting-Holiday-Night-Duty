@@ -4038,32 +4038,32 @@ export default function RosterPage() {
 
                   {/* Redesigned Printed Duty Table Grouped by Employee */}
                   {getGroupedDuties().length > 0 ? (
-                    <table className="w-full border-collapse border border-black text-center mt-2.5 text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                    <table className="w-full border-collapse border border-black text-center mt-2.5 text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
                       <thead>
                         <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                          <th className="border border-black p-1 w-[8%] text-center">ক্রমিক নং</th>
-                          <th className="border border-black p-1 text-left pl-2 w-[28%]">নির্বাহী/ কর্মকর্তার নাম</th>
-                          <th className="border border-black p-1 text-center w-[12%]">পদবী</th>
-                          <th className="border border-black p-1 text-left pl-2 w-[27%]">কাজের বিবরণ</th>
-                          <th className="border border-black p-1 text-center w-[25%]">তারিখ</th>
+                          <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle' }}>ক্রমিক নং</th>
+                          <th className="border border-black p-1 text-left pl-2 w-[25%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle' }}>নির্বাহী/ কর্মকর্তার নাম</th>
+                          <th className="border border-black p-1 text-center w-[10%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle' }}>পদবী</th>
+                          <th className="border border-black p-1 text-left pl-2 w-[35%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle' }}>কাজের বিবরণ</th>
+                          <th className="border border-black p-1 text-center w-[22%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle' }}>তারিখ</th>
                         </tr>
                       </thead>
                       <tbody>
                         {getGroupedDuties().map((group, index) => (
                           <tr key={group.employee.id} className="text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                            <td className="border border-black p-1 text-center font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                            <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle' }}>
                               {toBanglaDigits(index + 1)}
                             </td>
-                            <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                              {group.employee.name.startsWith('জনাব') ? group.employee.name : `জনাব ${group.employee.name}`}
+                            <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-[11px] whitespace-nowrap" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                              {group.employee.name.startsWith(' জনাব') || group.employee.name.startsWith('জনাব') ? group.employee.name : `জনাব ${group.employee.name}`}
                             </td>
-                            <td className="border border-black p-1 text-center font-normal" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                            <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle' }}>
                               {getShortDesignation(group.employee.designation)}
                             </td>
-                            <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                            <td className="border border-black p-1 text-left pl-2 leading-normal font-normal text-black" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle', lineHeight: '1.25' }}>
                               {group.description}
                             </td>
-                            <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                            <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle', lineHeight: '1.25' }}>
                               {getFormattedDateList(group.dates)}
                             </td>
                           </tr>
