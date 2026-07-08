@@ -394,7 +394,7 @@ export default function BillPrintLayout({
                                   </td>
                                   <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', fontSize: '10px', lineHeight: '1.0' }}>
                                     {renderDatesInPairs(s.datesFormatted || s.dates || '').map((pair, pIdx, arr) => (
-                                      <span key={pIdx} className="block" style={{ whiteSpace: 'nowrap' }}>
+                                      <span key={pIdx} className="block" style={{ display: 'block', whiteSpace: 'nowrap' }}>
                                         {pair}
                                       </span>
                                     ))}
@@ -565,7 +565,7 @@ export default function BillPrintLayout({
                               </td>
                               <td className="border border-black p-1 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '3px', fontSize: '10px' }}>
                                 {renderDatesInPairs(d.datesFormatted || d.date || '').map((pair, pIdx, arr) => (
-                                  <span key={pIdx} className="block leading-snug" style={{ whiteSpace: 'nowrap' }}>
+                                  <span key={pIdx} className="block leading-snug" style={{ display: 'block', whiteSpace: 'nowrap' }}>
                                     {pair}
                                   </span>
                                 ))}

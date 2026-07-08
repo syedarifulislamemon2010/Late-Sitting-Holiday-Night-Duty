@@ -297,7 +297,7 @@ export default function BulkBillPrintLayout({
                             <span style="display: block; font-size: 12px; color: #374151; margin-top: 2px;">(${getShortDesignation(s.designation)})</span>
                           </td>
                           <td style="border: 1px solid #000; padding: 4px; font-size: 10px;">
-                            ${datesArr.map(pair => `<span class="block">${pair}</span>`).join('')}
+                            ${datesArr.map(pair => `<span style="display: block; white-space: nowrap;">${pair}</span>`).join('')}
                             <p style="font-size: 10px; color: #374151; margin: 2px 0 0 0; font-weight: 600;">মোট: ${toBanglaDigits(s.days)} দিন</p>
                           </td>
                           <td style="border: 1px solid #000; padding: 4px; vertical-align: middle; text-align: center;">
@@ -418,7 +418,7 @@ export default function BulkBillPrintLayout({
                             ${d.bankId}
                           </td>
                           <td style="border: 1px solid #000; padding: 4px; font-size: 10px;">
-                            ${datesArr.map(pair => `<span class="block">${pair}</span>`).join('')}
+                            ${datesArr.map(pair => `<span style="display: block; white-space: nowrap;">${pair}</span>`).join('')}
                           </td>
                           <td style="border: 1px solid #000; padding: 4px; text-align: left; padding-left: 6px;">
                             ${d.description || ''}
@@ -608,7 +608,7 @@ export default function BulkBillPrintLayout({
                                         </td>
                                         <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', fontSize: '10px', lineHeight: '1.0' }}>
                                           {renderDatesInPairs(s.datesFormatted || s.dates || '').map((pair, pIdx) => (
-                                            <span key={pIdx} className="block" style={{ whiteSpace: 'nowrap' }}>
+                                            <span key={pIdx} className="block" style={{ display: 'block', whiteSpace: 'nowrap' }}>
                                               {pair}
                                             </span>
                                           ))}
@@ -744,7 +744,7 @@ export default function BulkBillPrintLayout({
                                     </td>
                                     <td className="border border-black p-1 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '3px', fontSize: '10px' }}>
                                       {renderDatesInPairs(d.datesFormatted || d.date || '').map((pair, pIdx) => (
-                                        <span key={pIdx} className="block leading-snug" style={{ whiteSpace: 'nowrap' }}>
+                                        <span key={pIdx} className="block leading-snug" style={{ display: 'block', whiteSpace: 'nowrap' }}>
                                           {pair}
                                         </span>
                                       ))}

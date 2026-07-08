@@ -3159,8 +3159,8 @@ export default function BillingPage() {
                                   </td>
                                   <td className="border border-black p-1.5 text-center leading-snug" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10px', lineHeight: '1.0' }}>
                                     {renderDatesInPairs(formatWorkedDatesForCategory(summary.employeeId)).map((pair, pIdx, arr) => (
-                                      <span key={pIdx} className="block leading-snug" style={{ whiteSpace: 'nowrap' }}>
-                                        {pair}{pIdx < arr.length - 1 ? ',' : ''}
+                                      <span key={pIdx} className="block leading-snug" style={{ display: 'block', whiteSpace: 'nowrap' }}>
+                                        {pair}
                                       </span>
                                     ))}
                                     <p className="text-[10px] text-slate-700 mt-0.5 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>

@@ -2499,8 +2499,8 @@ export default function DocumentsPage() {
                                         </td>
                                         <td className="border border-black p-1.5 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '3.5px', fontSize: '9px', lineHeight: '1.0' }}>
                                           {renderDatesInPairs(s.datesFormatted || s.dates || '').map((pair, pIdx, arr) => (
-                                            <span key={pIdx} className="block leading-snug" style={{ whiteSpace: 'nowrap' }}>
-                                              {pair}{pIdx < arr.length - 1 ? ',' : ''}
+                                            <span key={pIdx} className="block leading-snug" style={{ display: 'block', whiteSpace: 'nowrap' }}>
+                                              {pair}
                                             </span>
                                           ))}
                                           <p className="text-[9px] text-slate-700 mt-0.5 font-semibold">মোট: {toBanglaDigits(s.days)} দিন</p>
