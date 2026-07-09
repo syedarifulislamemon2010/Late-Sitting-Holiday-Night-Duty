@@ -7,7 +7,8 @@ import {
   AlertCircle, 
   Loader2,
   Printer,
-  Download
+  Download,
+  ChevronLeft
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
@@ -22,6 +23,31 @@ interface OfficeOrder {
   dutiesJson?: string | null;
   duties?: any[];
 }
+
+const getSlotName = (dateStr: string) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length < 3) return dateStr;
+  const year = parts[0];
+  const monthNum = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+  
+  const banglaMonths = [
+    'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+    'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+  ];
+  const monthName = banglaMonths[monthNum - 1] || '';
+  
+  let dayStr = '';
+  if (day === 1) dayStr = '১লা';
+  else if (day === 2) dayStr = '২রা';
+  else if (day === 3) dayStr = '৩রা';
+  else if (day === 4) dayStr = '৪ঠা';
+  else if (day >= 5 && day <= 18) dayStr = `${toBanglaDigits(day)}ই`;
+  else dayStr = `${toBanglaDigits(day)}শে`;
+  
+  return `${dayStr} ${monthName}, ${toBanglaDigits(year)}`;
+};
 
 interface BillsTabProps {
   loading: boolean;
@@ -47,6 +73,23 @@ export default function BillsTab({
 
   const [selectedBills, setSelectedBills] = useState<number[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
+  const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
+
+  const pendingPrintBillMemos = filteredBillMemos.filter(b => b.status === 'Generated');
+  const printedBillMemos = filteredBillMemos.filter(b => b.status === 'Printed' || b.status === 'Generated & Printed' || b.status === 'Modified');
+
+  const { groupedPrintedMemos, sortedPrintedDates } = React.useMemo(() => {
+    const groups: Record<string, OfficeOrder[]> = {};
+    printedBillMemos.forEach(memo => {
+      const dateKey = memo.orderDate;
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(memo);
+    });
+    const sortedPrintedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+    return { groupedPrintedMemos: groups, sortedPrintedDates };
+  }, [printedBillMemos]);
 
   const handleBulkExportCSV = () => {
     const selectedOrders = filteredBillMemos.filter(order => selectedBills.includes(order.id));
@@ -233,9 +276,6 @@ export default function BillsTab({
     );
   };
 
-  const pendingPrintBillMemos = filteredBillMemos.filter(b => b.status === 'Generated');
-  const printedBillMemos = filteredBillMemos.filter(b => b.status === 'Printed' || b.status === 'Generated & Printed' || b.status === 'Modified');
-
   return (
     <div className="space-y-6">
       {loading || actionLoading ? (
@@ -278,8 +318,70 @@ export default function BillsTab({
               <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
               জেনারেটেড এবং প্রিন্টেড বিল সেকশন ({toBanglaDigits(printedBillMemos.length)} টি)
             </h3>
-            {printedBillMemos.length > 0 ? (
-              renderBillMemosGrid(printedBillMemos)
+            
+            {sortedPrintedDates.length > 0 ? (
+              <div className="space-y-6">
+                {/* 1. Latest Date Section (Open by default) */}
+                {(() => {
+                  const latestDate = sortedPrintedDates[0];
+                  const latestMemos = groupedPrintedMemos[latestDate] || [];
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-indigo-650 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 rounded-lg font-mono">
+                          সর্বশেষ স্লট: {getSlotName(latestDate)} ({toBanglaDigits(latestMemos.length)} টি বিল)
+                        </span>
+                      </div>
+                      {renderBillMemosGrid(latestMemos)}
+                    </div>
+                  );
+                })()}
+
+                {/* 2. Older Dates Accordions */}
+                {sortedPrintedDates.length > 1 && (
+                  <div className="space-y-3 pt-2">
+                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800 pb-1.5 font-sans">
+                      পূর্ববর্তী স্লটসমূহ (Older Slots)
+                    </h4>
+                    {sortedPrintedDates.slice(1).map((dateKey) => {
+                      const isExpanded = !!expandedDates[dateKey];
+                      const memos = groupedPrintedMemos[dateKey] || [];
+                      return (
+                        <div key={dateKey} className="border border-slate-200/60 dark:border-slate-800/80 rounded-2xl overflow-hidden bg-white/30 dark:bg-slate-900/10 shadow-sm hover:border-slate-350 dark:hover:border-slate-705 transition-all">
+                          {/* Accordion Header */}
+                          <div 
+                            className="p-3 bg-slate-50/50 dark:bg-slate-900/40 flex items-center justify-between gap-4 cursor-pointer select-none"
+                            onClick={() => setExpandedDates(prev => ({ ...prev, [dateKey]: !prev[dateKey] }))}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-700 dark:text-slate-350 font-mono">
+                                📂 {getSlotName(dateKey)}
+                              </span>
+                              <span className="text-[10px] bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold font-sans">
+                                {toBanglaDigits(memos.length)} টি বিল
+                              </span>
+                            </div>
+                            <span className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                              {isExpanded ? (
+                                <ChevronLeft size={16} className="rotate-90" />
+                              ) : (
+                                <ChevronLeft size={16} className="-rotate-90" />
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Accordion Content */}
+                          {isExpanded && (
+                            <div className="p-4 border-t border-slate-100 dark:border-slate-800/80">
+                              {renderBillMemosGrid(memos)}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs">
                 কোনো প্রিন্টেড বিল মেমো নেই।
