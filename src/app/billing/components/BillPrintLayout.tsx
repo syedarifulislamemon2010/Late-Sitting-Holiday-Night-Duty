@@ -247,7 +247,7 @@ export default function BillPrintLayout({
               .space-y-1 > * + * { margin-top: 4px; }
               .space-y-0.5 > * + * { margin-top: 2px; }
               table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-              th, td { border: 1px solid #000; padding: 3px !important; font-size: 14px; line-height: 1.05; }
+              th, td { border: 1px solid #000; padding: 3px !important; font-size: 11px !important; line-height: 1.15; }
               th { font-weight: bold; background-color: #f8fafc; }
               ${!isBill ? `
                 #printable-order-sheet .bank-title { font-size: 18pt !important; font-weight: bold !important; color: #0b5e9e !important; }
@@ -313,7 +313,7 @@ export default function BillPrintLayout({
             /* simulated Legal-sized Bill Memo sheet */
             <div 
               id="printable-order-sheet"
-              className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-none text-[12px] shrink-0"
+              className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-sans leading-none text-[11px] shrink-0"
               style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
             >
               <div className="print-block flex flex-col h-full justify-between">
@@ -363,9 +363,9 @@ export default function BillPrintLayout({
                         const apyaonRate = isHoliday ? 250 : isNight ? 600 : 100;
                         const transportRate = isHoliday ? 250 : isNight ? 400 : isLate ? 200 : 0;
                         return (
-                          <table className="w-full border-collapse border border-black text-center mt-3 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%' }}>
+                          <table className="w-full border-collapse border border-black text-center mt-3 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '11px', lineHeight: '1.15', borderCollapse: 'collapse', border: '1px solid #000', width: '100%' }}>
                             <thead>
-                              <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
+                              <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '11px', lineHeight: '1.15' }}>
                                 <th className="border border-black p-1.5 w-[6%] text-center" style={{ border: '1px solid #000', padding: '3px', width: '6%' }}>ক্রমিক</th>
                                 <th className="border border-black p-1.5 text-left pl-3 w-[32%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', width: '32%' }}>নাম ও পদবী</th>
                                 <th className="border border-black p-1.5 text-center w-[26%]" style={{ border: '1px solid #000', padding: '3px', width: '26%' }}>তারিখ</th>
@@ -376,7 +376,7 @@ export default function BillPrintLayout({
                             </thead>
                             <tbody>
                               {sortedDutiesList.map((s: OrderDuty, idx: number) => (
-                                <tr key={idx} className="text-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
+                                <tr key={idx} className="text-black text-[11px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '11px', lineHeight: '1.15' }}>
                                   <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(idx + 1)}</td>
                                   <td className="border border-black p-1.5 text-left pl-3 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.1', whiteSpace: 'nowrap' }}>
                                     {(() => {
@@ -387,20 +387,20 @@ export default function BillPrintLayout({
                                           <span className="font-normal block whitespace-nowrap" style={{ display: 'block', whiteSpace: 'nowrap' }}>
                                             {nameWithPrefix}
                                           </span>
-                                          <span className="font-normal block text-slate-800 text-[12px] mt-0.5" style={{ display: 'block', fontSize: '12px', marginTop: '2px' }}>
+                                          <span className="font-normal block text-slate-800 text-[11px] mt-0.5" style={{ display: 'block', fontSize: '11px', marginTop: '2px' }}>
                                             ({getShortDesignation(s.designation)})
                                           </span>
                                         </>
                                       );
                                     })()}
                                   </td>
-                                  <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', fontSize: '10px', lineHeight: '1.0' }}>
+                                  <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', fontSize: '11px', lineHeight: '1.15' }}>
                                     {renderDatesInPairs(s.datesFormatted || s.dates || '').map((pair, pIdx, arr) => (
                                       <span key={pIdx} className="block" style={{ display: 'block', whiteSpace: 'nowrap' }}>
                                         {pair}
                                       </span>
                                     ))}
-                                    <p className="text-[10px] text-slate-700 mt-0.5 font-semibold">মোট: {toBanglaDigits(s.days)} দিন</p>
+                                    <p className="text-[11px] text-slate-700 mt-0.5 font-semibold">মোট: {toBanglaDigits(s.days)} দিন</p>
                                   </td>
                                   <td className="border border-black p-1.5 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle' }}>
                                     <span style={{ display: 'block', whiteSpace: 'nowrap' }}>({toBanglaDigits(transportRate)}x{toBanglaDigits(s.days)}) =</span>
@@ -420,7 +420,7 @@ export default function BillPrintLayout({
                                 <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(viewingOrder.content?.totalDays)} দিন</td>
                                 <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(viewingOrder.content?.totalTransport)}/-</td>
                                 <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/-</td>
-                                <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3px', fontWeight: 'bold' }}>{toBanglaDigits(viewingOrder.content?.grandTotal)}/-</td>
+                                <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3px', fontWeight: 'bold', fontSize: '11px' }}>{toBanglaDigits(viewingOrder.content?.grandTotal)}/-</td>
                               </tr>
                             </tbody>
                           </table>
@@ -482,7 +482,7 @@ export default function BillPrintLayout({
             /* simulated A4 office order sheet */
             <div 
               id="printable-order-sheet"
-              className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-serif leading-relaxed text-[12px] shrink-0"
+              className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-sans leading-relaxed text-[11px] shrink-0"
               style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', boxSizing: 'border-box', paddingTop: '0.8in', paddingBottom: '0.8in', paddingLeft: '0.8in', paddingRight: '0.8in' }}
             >
               <div className="print-block flex flex-col h-full justify-between">
@@ -531,9 +531,9 @@ export default function BillPrintLayout({
                       }
                     }
                     return dutiesList.length > 0 ? (
-                      <table className="w-full border-collapse border border-black text-center mt-4 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%' }}>
+                      <table className="w-full border-collapse border border-black text-center mt-4 text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '11px', lineHeight: '1.15', borderCollapse: 'collapse', border: '1px solid #000', width: '100%' }}>
                         <thead>
-                          <tr className="bg-slate-50 font-bold border-b border-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
+                          <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '11px', lineHeight: '1.15' }}>
                             <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px' }}>ক্রমিক</th>
                             <th className="border border-black p-1 text-left pl-2 w-[28%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>নাম ও পদবী</th>
                             <th className="border border-black p-1 text-left pl-2 w-[12%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>কার্ড নং</th>
@@ -543,7 +543,7 @@ export default function BillPrintLayout({
                         </thead>
                         <tbody>
                           {dutiesList.map((d: DutyListEntry, idx: number) => (
-                            <tr key={idx} className="text-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
+                            <tr key={idx} className="text-black text-[11px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '11px', lineHeight: '1.15' }}>
                               <td className="border border-black p-1 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(idx + 1)}</td>
                               <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', lineHeight: '1.1' }}>
                                 {(() => {
@@ -555,7 +555,7 @@ export default function BillPrintLayout({
                                       <span className="font-normal block whitespace-nowrap" style={{ display: 'block', whiteSpace: 'nowrap' }}>
                                         {nameWithPrefix}
                                       </span>
-                                      <span className="font-normal block text-slate-800 text-[12px] mt-0.5" style={{ display: 'block', fontSize: '12px', marginTop: '2px' }}>
+                                      <span className="font-normal block text-slate-800 text-[11px] mt-0.5" style={{ display: 'block', fontSize: '11px', marginTop: '2px' }}>
                                         ({getShortDesignation(d.designation)})
                                       </span>
                                     </>
@@ -565,7 +565,7 @@ export default function BillPrintLayout({
                               <td className="border border-black p-1 text-left pl-2 font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px' }}>
                                 <p className="font-sans font-normal">{d.bankId}</p>
                               </td>
-                              <td className="border border-black p-1 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '3px', fontSize: '10px' }}>
+                              <td className="border border-black p-1 text-center leading-snug font-normal" style={{ border: '1px solid #000', padding: '3px', fontSize: '11px' }}>
                                 {renderDatesInPairs(d.datesFormatted || d.date || '').map((pair, pIdx, arr) => (
                                   <span key={pIdx} className="block leading-snug" style={{ display: 'block', whiteSpace: 'nowrap' }}>
                                     {pair}

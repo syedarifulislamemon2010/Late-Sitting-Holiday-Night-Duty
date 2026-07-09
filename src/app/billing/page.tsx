@@ -3152,18 +3152,18 @@ export default function BillingPage() {
                                       return (
                                         <>
                                           <p className="font-normal whitespace-nowrap" style={{ whiteSpace: 'nowrap' }}>{displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`}</p>
-                                          <p className="text-[10px] text-slate-800 font-normal mt-0.5" style={{ fontSize: '12px', marginTop: '2px' }}>({getShortDesignation(summary.designation)})</p>
+                                          <p className="text-[10px] text-slate-800 font-normal mt-0.5" style={{ fontSize: '11px', marginTop: '2px' }}>({getShortDesignation(summary.designation)})</p>
                                         </>
                                       );
                                     })()}
                                   </td>
-                                  <td className="border border-black p-1.5 text-center leading-snug" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10px', lineHeight: '1.0' }}>
+                                  <td className="border border-black p-1.5 text-center leading-snug" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.15' }}>
                                     {renderDatesInPairs(formatWorkedDatesForCategory(summary.employeeId)).map((pair, pIdx, arr) => (
                                       <span key={pIdx} className="block leading-snug" style={{ display: 'block', whiteSpace: 'nowrap' }}>
                                         {pair}
                                       </span>
                                     ))}
-                                    <p className="text-[10px] text-slate-700 mt-0.5 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>
+                                    <p className="text-[11px] text-slate-700 mt-0.5 font-semibold">মোট: {toBanglaDigits(days)} দিন</p>
                                   </td>
                                   <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', verticalAlign: 'middle' }}>
                                     <span style={{ display: 'block', whiteSpace: 'nowrap' }}>({toBanglaDigits(transportRate)}x{toBanglaDigits(days)}) =</span>

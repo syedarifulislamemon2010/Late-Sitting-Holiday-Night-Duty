@@ -138,7 +138,7 @@ export async function GET(request: Request) {
             <td>${toBnDigits(index + 1)}</td>
             <td class="text-left" style="line-height: 1.1; padding-left: 12px; text-align: left; white-space: nowrap;">
               <span style="display: block; white-space: nowrap;">${nameWithPrefix}</span>
-              <span style="display: block; font-size: 12px; color: #374151; margin-top: 2px;">(${shortDesignation})</span>
+              <span style="display: block; font-size: 11px; color: #374151; margin-top: 2px;">(${shortDesignation})</span>
             </td>
             <td style="font-size: 11px; line-height: 1.15; padding: 4px; text-align: center;">
               ${datesHtml}
@@ -193,7 +193,7 @@ export async function GET(request: Request) {
   }
   body {
     font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.0;
     color: #000;
     background-color: #fff;
@@ -211,7 +211,7 @@ export async function GET(request: Request) {
     line-height: 1.0;
   }
   .header-date {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: bold;
     margin-top: 2px;
     line-height: 1.0;
@@ -233,7 +233,7 @@ export async function GET(request: Request) {
     width: 100%;
     border-collapse: collapse;
     margin: 12px 0;
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.0;
   }
   th, td {
@@ -283,7 +283,7 @@ export async function GET(request: Request) {
     margin-top: 24px;
     text-align: left;
     line-height: 1.4;
-    font-size: 10.5px;
+    font-size: 11px;
   }
   .routing-item {
     margin-bottom: 0.5in;
@@ -294,7 +294,7 @@ export async function GET(request: Request) {
     border-bottom: 1px solid #000 !important;
     padding-bottom: 5px !important;
     line-height: 1.4;
-    font-size: 10.5px;
+    font-size: 11px;
   }
 </style>
 </head>
@@ -443,7 +443,7 @@ export async function GET(request: Request) {
   }
   body {
     font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.5;
     color: #000;
     background: #fff;
@@ -524,7 +524,7 @@ export async function GET(request: Request) {
     border-collapse: collapse;
     margin-top: 8px;
     margin-bottom: 10px;
-    font-size: 12px;
+    font-size: 11px;
   }
   table.duty-table th, table.duty-table td {
     border: 1px solid #000;
