@@ -1918,6 +1918,17 @@ export default function BillingPage() {
     });
   }, [filteredBillMemos]);
 
+  const latestPrintedCount = useMemo(() => {
+    const printedMemos = filteredBillMemos.filter(b => b.status === 'Printed' || b.status === 'Generated & Printed' || b.status === 'Modified');
+    if (printedMemos.length === 0) return 0;
+    const groups: Record<string, number> = {};
+    printedMemos.forEach(m => {
+      groups[m.orderDate] = (groups[m.orderDate] || 0) + 1;
+    });
+    const latestDate = Object.keys(groups).sort((a, b) => b.localeCompare(a))[0];
+    return groups[latestDate] || 0;
+  }, [filteredBillMemos]);
+
   const metrics = useMemo(() => {
     let totalLateSittingBill = 0;
     let totalLateAllowance1 = 0; 
@@ -2687,7 +2698,7 @@ export default function BillingPage() {
                   ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400'
                   : 'bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400'
               }`}>
-                {toBanglaDigits(filteredBillMemos.length)}
+                {toBanglaDigits(latestPrintedCount)}
               </span>
             </button>
             <button

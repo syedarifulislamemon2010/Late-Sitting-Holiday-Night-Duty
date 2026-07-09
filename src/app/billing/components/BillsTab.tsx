@@ -316,7 +316,7 @@ export default function BillsTab({
           <div className="space-y-4 pt-4">
             <h3 className="text-sm font-extrabold text-teal-600 dark:text-teal-400 flex items-center gap-2 border-b border-teal-200/30 pb-2">
               <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
-              জেনারেটেড এবং প্রিন্টেড বিল সেকশন ({toBanglaDigits(printedBillMemos.length)} টি)
+              জেনারেটেড এবং প্রিন্টেড বিল সেকশন ({toBanglaDigits((groupedPrintedMemos[sortedPrintedDates[0]] || []).length)} টি)
             </h3>
             
             {sortedPrintedDates.length > 0 ? (
@@ -355,10 +355,10 @@ export default function BillsTab({
                           >
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-bold text-slate-700 dark:text-slate-350 font-mono">
-                                📂 {getSlotName(dateKey)}
+                                📂 জেনারেটেড এবং প্রিন্টেড বিল সেকশন — {getSlotName(dateKey)}
                               </span>
                               <span className="text-[10px] bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold font-sans">
-                                {toBanglaDigits(memos.length)} টি বিল
+                                {toBanglaDigits(memos.length)} টি
                               </span>
                             </div>
                             <span className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
@@ -379,6 +379,40 @@ export default function BillsTab({
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* 3. All Bills Accordion (Total) */}
+                {sortedPrintedDates.length > 1 && (
+                  <div className="space-y-3 pt-2">
+                    <div className="border border-teal-200/60 dark:border-teal-800/60 rounded-2xl overflow-hidden bg-teal-50/20 dark:bg-teal-950/10 shadow-sm hover:border-teal-300 dark:hover:border-teal-700 transition-all">
+                      <div 
+                        className="p-3 bg-teal-50/50 dark:bg-teal-950/30 flex items-center justify-between gap-4 cursor-pointer select-none"
+                        onClick={() => setExpandedDates(prev => ({ ...prev, ['__all__']: !prev['__all__'] }))}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-teal-700 dark:text-teal-350 font-mono">
+                            📋 জেনারেটেড এবং প্রিন্টেড বিল সেকশন — সকল
+                          </span>
+                          <span className="text-[10px] bg-teal-100 text-teal-600 dark:bg-teal-900/50 dark:text-teal-400 px-2 py-0.5 rounded-full font-bold font-sans">
+                            {toBanglaDigits(printedBillMemos.length)} টি
+                          </span>
+                        </div>
+                        <span className="text-teal-400 hover:text-teal-600 dark:hover:text-teal-300 transition-colors">
+                          {expandedDates['__all__'] ? (
+                            <ChevronLeft size={16} className="rotate-90" />
+                          ) : (
+                            <ChevronLeft size={16} className="-rotate-90" />
+                          )}
+                        </span>
+                      </div>
+
+                      {expandedDates['__all__'] && (
+                        <div className="p-4 border-t border-teal-100 dark:border-teal-800/80">
+                          {renderBillMemosGrid(printedBillMemos)}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
