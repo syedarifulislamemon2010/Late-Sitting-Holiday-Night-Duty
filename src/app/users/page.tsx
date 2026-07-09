@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { 
   UserPlus, 
   Shield, 
@@ -684,7 +686,7 @@ export default function UserManagement() {
 
       {/* PROFILE TAB */}
       {effectiveTab === 'profile' && (
-        <div className="max-w-2xl mx-auto glass-card p-8 rounded-[24px] border border-slate-200/50 dark:border-slate-800 shadow-xl space-y-6">
+        <Card className="max-w-2xl mx-auto shadow-xl space-y-6">
           <div className="flex items-center gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
             <div className="w-14 h-14 rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-extrabold text-lg flex items-center justify-center shadow-lg">
               {extractNickname(currentUser.name)}
@@ -814,7 +816,7 @@ export default function UserManagement() {
               </button>
             </div>
           </form>
-        </div>
+        </Card>
       )}
 
       {/* USER MANAGEMENT TAB */}

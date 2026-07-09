@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 
 import MyDutySummaryCard from './components/MyDutySummaryCard';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 
 // Custom Bangla digit converter
 function toBanglaDigits(num: number | string): string {
@@ -316,31 +318,33 @@ export default function DashboardPage() {
         <div className="xl:col-span-2 flex flex-col">
           
           {/* Beautiful Month Picker Tabs */}
-          <div className="glass-card p-5 rounded-2xl space-y-4 flex-1 flex flex-col justify-between">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3">
-              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
-                <Calendar className="text-indigo-650" size={18} />
+          <Card
+            title={
+              <span className="flex items-center gap-2">
+                <Calendar className="text-primary-600" size={18} />
                 ২০২৬ সালের সরকারি ছুটির ক্যালেন্ডার
-              </h3>
-              <span className="px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 text-[10px] font-bold rounded-full font-sans">
+              </span>
+            }
+            actions={
+              <span className="px-2.5 py-0.5 bg-primary-50 dark:bg-primary-950/20 text-primary-600 dark:text-primary-400 text-[10px] font-bold rounded-full font-sans">
                 ২০২৬ সাল
               </span>
-            </div>
+            }
+            className="flex-1 flex flex-col justify-between"
+          >
             
             {/* Month Selection Buttons */}
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 w-full">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 w-full mb-4">
               {MONTH_NAMES.map((name, idx) => (
-                <button
+                <Button
                   key={name}
                   onClick={() => setSelectedMonth(idx)}
-                  className={`py-2 px-1 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer ${
-                    selectedMonth === idx
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20 scale-[1.03]'
-                      : 'bg-slate-50/70 hover:bg-slate-100 text-slate-600 dark:bg-slate-900/40 dark:hover:bg-slate-900/70 dark:text-slate-400'
-                  }`}
+                  variant={selectedMonth === idx ? 'primary' : 'secondary'}
+                  size="sm"
+                  className="w-full text-center"
                 >
                   {name}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -441,7 +445,7 @@ export default function DashboardPage() {
               <p className="text-[10px] text-slate-400 italic pt-2">এই মাসে সাধারণ সরকারি কোনো ছুটি নেই।</p>
             )}
 
-          </div>
+          </Card>
 
         </div>
 
@@ -449,16 +453,16 @@ export default function DashboardPage() {
         <div className="flex flex-col">
           
           {/* Upcoming Configuration Public Holidays */}
-          <div className="glass-card p-6 rounded-2xl space-y-4 flex-1">
-            <div className="border-b border-slate-100 dark:border-slate-800/60 pb-3 flex justify-between items-center">
-              <div>
-                <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">আসন্ন সরকারি ছুটি</h3>
-                <p className="text-[9px] text-slate-400 mt-0.5 font-medium">পরবর্তী ক্যালেন্ডার ছুটির দিনসমূহ।</p>
-              </div>
+          <Card
+            title="আসন্ন সরকারি ছুটি"
+            subtitle="পরবর্তী ক্যালেন্ডার ছুটির দিনসমূহ।"
+            actions={
               <span className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-rose-500 animate-pulse">
                 <CalendarCheck size={14} />
               </span>
-            </div>
+            }
+            className="flex-1"
+          >
             
             {finalUpcomingHolidays.length > 0 ? (
               <div className="space-y-3 font-sans">
@@ -489,7 +493,7 @@ export default function DashboardPage() {
                 <p className="text-xs text-slate-400">আসন্ন ছুটির কোনো দিন পাওয়া যায়নি।</p>
               </div>
             )}
-          </div>
+          </Card>
 
         </div>
 

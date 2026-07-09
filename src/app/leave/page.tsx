@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { 
   DEFAULT_2026_HOLIDAYS, 
@@ -12,6 +12,8 @@ import { sortEmployeesBySeniority } from '@/lib/seniority';
 
 import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { BANGLADESH_AREAS } from './bangladesh_areas';
 import { 
   CalendarCheck, 
@@ -293,6 +295,7 @@ export default function LeaveGeneratorPage() {
   const [activeTab, setActiveTab] = useState<'NEW' | 'ARCHIVE'>('NEW');
   const [archivedLeaves, setArchivedLeaves] = useState<Leave[]>([]);
   const [latestLeave, setLatestLeave] = useState<Leave | null>(null);
+  const lastLoadedBankIdRef = useRef('');
   const [editingLeaveId, setEditingLeaveId] = useState<number | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -576,16 +579,12 @@ export default function LeaveGeneratorPage() {
     currentUsed: number | string,
     setUsed: (val: number | string) => void
   ) => {
-    if (value === '' || value.trim() === '-') {
-      setter(value);
-      return;
-    }
     const cleaned = value.replace(/\D/g, '');
     if (cleaned === '') {
       setter('');
       return;
     }
-    const num = parseInt(cleaned, 10);
+    const num = Math.max(0, parseInt(cleaned, 10));
     setter(num);
 
     const usedValStr = String(currentUsed).trim();
@@ -602,16 +601,12 @@ export default function LeaveGeneratorPage() {
     setter: (val: number | string) => void,
     total: number | string
   ) => {
-    if (value === '' || value.trim() === '-') {
-      setter(value);
-      return;
-    }
     const cleaned = value.replace(/\D/g, '');
     if (cleaned === '') {
       setter('');
       return;
     }
-    const num = parseInt(cleaned, 10);
+    const num = Math.max(0, parseInt(cleaned, 10));
 
     const totalValStr = String(total).trim();
     if (totalValStr !== '-' && totalValStr !== '') {
@@ -747,24 +742,28 @@ export default function LeaveGeneratorPage() {
   // Prepopulate balance sheet editor when latestLeave changes (only when not editing an existing archive record)
   useEffect(() => {
     if (!editingLeaveId) {
-      if (latestLeave) {
-        setCasualTotal(latestLeave.casualTotal ?? 20);
-        setCasualUsed(latestLeave.casualUsed ?? 0);
-        setOrdinaryTotal(latestLeave.ordinaryTotal ?? 0);
-        setOrdinaryUsed(latestLeave.ordinaryUsed ?? 0);
-        setSpecialTotal(latestLeave.specialTotal ?? 0);
-        setSpecialUsed(latestLeave.specialUsed ?? 0);
-      } else {
-        // Reset to default starting entitlements
-        setCasualTotal(20);
-        setCasualUsed(0);
-        setOrdinaryTotal(0);
-        setOrdinaryUsed(0);
-        setSpecialTotal(0);
-        setSpecialUsed(0);
+      const activeBankId = selectedApplicantEmp?.bankId || '';
+      if (activeBankId !== lastLoadedBankIdRef.current) {
+        if (latestLeave) {
+          setCasualTotal(latestLeave.casualTotal ?? 20);
+          setCasualUsed(latestLeave.casualUsed ?? 0);
+          setOrdinaryTotal(latestLeave.ordinaryTotal || 120);
+          setOrdinaryUsed(latestLeave.ordinaryUsed ?? 0);
+          setSpecialTotal(latestLeave.specialTotal ?? 0);
+          setSpecialUsed(latestLeave.specialUsed ?? 0);
+        } else {
+          // Reset to default starting entitlements
+          setCasualTotal(20);
+          setCasualUsed(0);
+          setOrdinaryTotal(120);
+          setOrdinaryUsed(0);
+          setSpecialTotal(0);
+          setSpecialUsed(0);
+        }
+        lastLoadedBankIdRef.current = activeBankId;
       }
     }
-  }, [latestLeave, editingLeaveId]);
+  }, [latestLeave, editingLeaveId, selectedApplicantEmp]);
 
   // Format YYYY-MM-DD date to DD/MM/YYYY
   const toDisplayDateStr = (dateStr: string): string => {
@@ -796,7 +795,7 @@ export default function LeaveGeneratorPage() {
     else if (dayVal === 4) suffix = 'ঠা';
     else if (dayVal === 18 || dayVal === 28 || dayVal === 29 || dayVal === 31) suffix = 'শে';
     
-    return `${bnDay}${suffix} ${bnMonth} ${bnYear}`;
+    return `${bnDay}${suffix} ${bnMonth}, ${bnYear}`;
   };
 
   // Convert numbers to Bengali digits
@@ -841,28 +840,7 @@ export default function LeaveGeneratorPage() {
     }
   }, [endDate]);
 
-  useEffect(() => {
-    if (applicationDate && isNonWorkingDay(applicationDate)) {
-      // Find nearest previous working day
-      let checkDate = new Date(applicationDate);
-      let found = false;
-      for (let i = 0; i < 30; i++) {
-        checkDate.setDate(checkDate.getDate() - 1);
-        const formatted = checkDate.toISOString().split('T')[0];
-        if (!isNonWorkingDay(formatted)) {
-          setApplicationDate(formatted);
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        setApplicationDate('');
-      }
-      setErrorMsg('আবেদনের তারিখ কোনো ছুটির দিন হতে পারবে না। তারিখটি স্বয়ংক্রিয়ভাবে নিকটবর্তী কর্মদিবসে পরিবর্তন করা হয়েছে।');
-      const timer = setTimeout(() => setErrorMsg(''), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [applicationDate, dbHolidays]);
+  // Removed auto-reset weekend/holiday block for Application Date to let users select any date.
 
   // Get contiguous holiday days starting from a specific date forward
   const getSucceedingContiguousHolidaysCount = (startDateStr: string): number => {
@@ -1043,9 +1021,7 @@ export default function LeaveGeneratorPage() {
     if (eligibleCoveringOfficers.length > 0 && !delegateId) {
       missing.push('ছুটিতে দায়িত্ব পালনকারী কর্মকর্তা');
     }
-    if (!mobileNo || !mobileNo.trim()) {
-      missing.push('মোবাইল নম্বর');
-    }
+    // Mobile number is now optional as requested
     
     if (missing.length > 0) {
       return {
@@ -1214,11 +1190,14 @@ export default function LeaveGeneratorPage() {
                     )}
                     
                     {/* Box 1: applicant information */}
-              <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <User size={16} className="text-indigo-650" />
-                  আবেদনকারীর তথ্য
-                </h3>
+              <Card
+                title={
+                  <span className="flex items-center gap-2">
+                    <User size={16} className="text-primary-600" />
+                    আবেদনকারীর তথ্য
+                  </span>
+                }
+              >
 
                 <div className="space-y-3.5 text-xs font-sans">
                   {currentUser?.role === 'ADMIN' && (
@@ -1375,17 +1354,64 @@ export default function LeaveGeneratorPage() {
                     />
                   </div>
                 </div>
-              </div>
+              </Card>
 
               {/* Box 2: leave settings */}
-              <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <CalendarRange size={16} className="text-indigo-650" />
-                  ছুটির তথ্য ও সময়কাল
-                </h3>
+              <Card
+                className="!overflow-visible"
+                title={
+                  <span className="flex items-center gap-2">
+                    <CalendarRange size={16} className="text-primary-600" />
+                    ছুটির তথ্য ও সময়কাল
+                  </span>
+                }
+              >
 
                 <div className="space-y-3.5 text-xs font-sans">
-                  {/* District Selection Section */}
+                  {/* 1. Application Date Picker */}
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">আবেদনের তারিখ (চিঠির উপরে প্রদর্শিত হবে):</label>
+                    <CalendarDatePicker 
+                      value={applicationDate}
+                      onChange={setApplicationDate}
+                      isNonWorkingDay={isNonWorkingDay}
+                      toBanglaDigits={toBanglaDigits}
+                      minDate={todayStr}
+                      placeholder="আবেদনের তারিখ নির্বাচন..."
+                    />
+                  </div>
+
+                  {/* 2. Leave Type */}
+                  <div className="space-y-1">
+                    <label htmlFor="leaveType" className="font-bold text-slate-700 dark:text-slate-300">আবেদনের ধরণ:</label>
+                    <select
+                      id="leaveType"
+                      value={leaveType}
+                      onChange={(e) => {
+                        setLeaveType(e.target.value as any);
+                        if (e.target.value) {
+                          setShowValidationErrors(false);
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-xl outline-none font-bold cursor-pointer transition-all ${
+                        !leaveType && showValidationErrors
+                          ? 'border-red-500 focus:border-red-500 dark:border-red-900/80 bg-red-50/50 dark:bg-red-950/20 text-red-900 dark:text-red-300'
+                          : 'border-slate-200 dark:border-slate-800 focus:border-indigo-550 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100'
+                      }`}
+                    >
+                      <option value="">আবেদনের ধরণ নির্বাচন করুন...</option>
+                      <option value="CASUAL">ক) নৈমিত্তিক ছুটি</option>
+                      <option value="POST_FACTO">খ) ঘটনাত্তোর নৈমিত্তিক ছুটি</option>
+                      <option value="STATION_LEAVE">গ) কর্মস্থল ত্যাগের অনুমতি সহ নৈমিত্তিক ছুটি</option>
+                    </select>
+                    {!leaveType && showValidationErrors && (
+                      <p className="text-[10px] text-red-500 font-bold mt-1">
+                        ⚠️ দয়া করে আবেদনের ধরণ নির্বাচন করুন।
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 3. District Selection Section */}
                   <div className="space-y-1.5">
                     <label htmlFor="selectedDistrict" className="font-bold text-slate-700 dark:text-slate-300 block">ছুটিতে থাকাকালীন অবস্থান (জেলা):</label>
                     <select
@@ -1419,7 +1445,7 @@ export default function LeaveGeneratorPage() {
                     )}
                   </div>
 
-                  {/* Duration Mode Selection */}
+                  {/* 4. Duration Mode Selection */}
                   <div className="space-y-1.5 no-print">
                     <label className="font-bold text-slate-700 dark:text-slate-300 block">ছুটির মেয়াদ:</label>
                     <div className="flex bg-slate-100 dark:bg-slate-900/60 p-1 rounded-xl w-fit border border-slate-200/50 dark:border-slate-800/40">
@@ -1453,6 +1479,7 @@ export default function LeaveGeneratorPage() {
                     </div>
                   </div>
 
+                  {/* 5. Date Pickers (Grid / Single) */}
                   {durationMode === 'SINGLE' ? (
                     /* Single Date Picker */
                     <div className="space-y-1">
@@ -1504,49 +1531,7 @@ export default function LeaveGeneratorPage() {
                     </div>
                   )}
 
-                  {/* Leave Type */}
-                  <div className="space-y-1">
-                    <label htmlFor="leaveType" className="font-bold text-slate-700 dark:text-slate-300">আবেদনের ধরণ:</label>
-                    <select
-                      id="leaveType"
-                      value={leaveType}
-                      onChange={(e) => {
-                        setLeaveType(e.target.value as any);
-                        if (e.target.value) {
-                          setShowValidationErrors(false);
-                        }
-                      }}
-                      className={`w-full px-3 py-2 border rounded-xl outline-none font-bold cursor-pointer transition-all ${
-                        !leaveType && showValidationErrors
-                          ? 'border-red-500 focus:border-red-500 dark:border-red-900/80 bg-red-50/50 dark:bg-red-950/20 text-red-900 dark:text-red-300'
-                          : 'border-slate-200 dark:border-slate-800 focus:border-indigo-550 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100'
-                      }`}
-                    >
-                      <option value="">আবেদনের ধরণ নির্বাচন করুন...</option>
-                      <option value="CASUAL">ক) নৈমিত্তিক ছুটি</option>
-                      <option value="POST_FACTO">খ) ঘটনাত্তোর নৈমিত্তিক ছুটি</option>
-                      <option value="STATION_LEAVE">গ) কর্মস্থল ত্যাগের অনুমতি সহ নৈমিত্তিক ছুটি</option>
-                    </select>
-                    {!leaveType && showValidationErrors && (
-                      <p className="text-[10px] text-red-500 font-bold mt-1">
-                        ⚠️ দয়া করে আবেদনের ধরণ নির্বাচন করুন।
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Application Date Picker */}
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">আবেদনের তারিখ (চিঠির উপরে প্রদর্শিত হবে):</label>
-                    <CalendarDatePicker 
-                      value={applicationDate}
-                      onChange={setApplicationDate}
-                      isNonWorkingDay={isNonWorkingDay}
-                      toBanglaDigits={toBanglaDigits}
-                      placeholder="আবেদনের তারিখ নির্বাচন..."
-                    />
-                  </div>
-
-                  {/* Delegate Officer dropdown */}
+                  {/* 6. Delegate Officer dropdown */}
                   <div className="space-y-1">
                     <label htmlFor="delegateId" className="font-bold text-slate-700 dark:text-slate-300">ছুটিতে দায়িত্ব পালনকারী কর্মকর্তা:</label>
                     <select
@@ -1578,14 +1563,17 @@ export default function LeaveGeneratorPage() {
                     )}
                   </div>
                 </div>
-              </div>
+              </Card>
 
               {/* Box 3: editable balance grid */}
-              <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <Settings size={16} className="text-indigo-650" />
-                  ছুটির ব্যালেন্স শিট এডিটর
-                </h3>
+              <Card
+                title={
+                  <span className="flex items-center gap-2">
+                    <Settings size={16} className="text-primary-600" />
+                    ছুটির ব্যালেন্স শিট এডিটর
+                  </span>
+                }
+              >
 
                 <div className="space-y-3.5 text-xs font-sans">
                   {/* Row 1 Casual leaves config */}
@@ -1669,7 +1657,7 @@ export default function LeaveGeneratorPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
                     {/* Box 4: sandwich leave details display */}
                     {leaveDetails.actualDeducted > 0 && (
                       <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-250 dark:border-amber-900 rounded-2xl space-y-2 mt-4">
@@ -1758,13 +1746,14 @@ export default function LeaveGeneratorPage() {
                 )}
 
                 {/* Past Applications List */}
-                <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                  <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm border-b border-slate-100 dark:border-slate-800 pb-2 flex justify-between items-center">
-                    <span>বিগত আবেদনসমূহ</span>
-                    <span className="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">
+                <Card
+                  title="বিগত আবেদনসমূহ"
+                  actions={
+                    <span className="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-650 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">
                       মোট: {toBanglaDigits(archivedLeaves.length)} টি
                     </span>
-                  </h3>
+                  }
+                >
 
                   {archivedLeaves.length === 0 ? (
                     <p className="text-xs text-slate-400 font-medium text-center py-6">আর্কাইভে কোনো ছুটির আবেদন নেই।</p>
@@ -1815,7 +1804,7 @@ export default function LeaveGeneratorPage() {
                       ))}
                     </div>
                   )}
-                </div>
+                </Card>
 
               </div>
             )}
@@ -2039,7 +2028,7 @@ export default function LeaveGeneratorPage() {
                   style={{ marginTop: '0.55in' }}
                 >
                   {/* Recommendation notice line */}
-                  <div className="text-left text-black">
+                  <div className="text-left text-black mb-6">
                     আবেদনকারীর অনুকূলে উক্ত <strong className="italic" style={{ fontStyle: 'italic' }}>{displayDaysWord}</strong> দিনের {leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : leaveType === 'STATION_LEAVE' ? 'কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক' : 'নৈমিত্তিক'} ছুটি মঞ্জুরীর সুপারিশ করা হলো।
                   </div>
 
@@ -2091,7 +2080,7 @@ export default function LeaveGeneratorPage() {
         /* Universal Kalpurush size 10 normal weight styles */
         #printable-leave-sheet, #printable-leave-sheet * {
           font-family: 'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif !important;
-          font-size: 13px !important;
+          font-size: 12px !important;
           font-style: normal;
           line-height: 1.45 !important;
           color: #000000;

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 
 import { 
   UploadCloud, 
@@ -1326,13 +1328,15 @@ export default function DocumentsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Side: Upload Panel */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-sky-500 to-emerald-500" />
-              
-              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-4">
-                <UploadCloud size={20} className="text-indigo-500" />
-                নতুন ফাইল আপলোড
-              </h2>
+            <Card
+              title={
+                <span className="flex items-center gap-2">
+                  <UploadCloud size={20} className="text-primary-600" />
+                  নতুন ফাইল আপলোড
+                </span>
+              }
+              topBorderAccent="primary"
+            >
 
               {/* Banners */}
               {error && (
@@ -1458,12 +1462,12 @@ export default function DocumentsPage() {
                   </div>
                 )}
               </form>
-            </div>
+            </Card>
           </div>
 
           {/* Document list */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl min-h-[500px] flex flex-col justify-between">
+            <Card className="min-h-[500px] flex flex-col justify-between">
               <div className="space-y-6">
                 
                 <div className="flex flex-col gap-4">
@@ -1648,20 +1652,22 @@ export default function DocumentsPage() {
                   </span>
                 </div>
               )}
-            </div>
+            </Card>
           </div>
         </div>
       ) : activeTab === 'manual-docs' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Side: Upload Panel */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500" />
-              
-              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-4">
-                <UploadCloud size={20} className="text-indigo-500" />
-                নতুন ডকুমেন্ট আপলোড
-              </h2>
+            <Card
+              title={
+                <span className="flex items-center gap-2">
+                  <UploadCloud size={20} className="text-primary-600" />
+                  নতুন ডকুমেন্ট আপলোড
+                </span>
+              }
+              topBorderAccent="success"
+            >
 
               {/* Banners */}
               {error && (
@@ -1802,12 +1808,12 @@ export default function DocumentsPage() {
                   </div>
                 )}
               </form>
-            </div>
+            </Card>
           </div>
 
           {/* Document list */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl min-h-[500px] flex flex-col justify-between">
+            <Card className="min-h-[500px] flex flex-col justify-between">
               <div className="space-y-6">
                 
                 {/* Advanced Search Options */}
@@ -2060,13 +2066,13 @@ export default function DocumentsPage() {
                   </span>
                 </div>
               )}
-            </div>
+            </Card>
           </div>
         </div>
       ) : activeTab === 'orders' ? (
         /* Tab 3: Office Order Reference Archive */
         <div className="space-y-6">
-          <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl min-h-[500px]">
+          <Card className="min-h-[500px]">
             <div className="space-y-6">
               
               {/* Search Bar & Advanced Filters for Orders */}
@@ -2207,12 +2213,12 @@ export default function DocumentsPage() {
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         </div>
       ) : (
         /* Tab 3: Bill Memo Reference Archive */
         <div className="space-y-6">
-          <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl min-h-[500px]">
+          <Card className="min-h-[500px]">
             <div className="space-y-6">
               
               {/* Search Bar & Advanced Filters for Bills */}
@@ -2386,7 +2392,7 @@ export default function DocumentsPage() {
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
@@ -2431,15 +2437,15 @@ export default function DocumentsPage() {
                   <div 
                     id="printable-order-sheet"
                     className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-sans leading-none text-[11px] shrink-0"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
+                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
                   >
                     <div className="flex flex-col h-full justify-between">
                       <div>
                         {/* Official Header */}
                         <div className="w-full flex justify-end text-right mb-4">
                           <div className="text-right leading-none" style={{ lineHeight: '0.85' }}>
-                            <h2 className="text-[16px] font-bold text-black uppercase" style={{ fontFamily: 'SolaimanLipi', fontSize: '16px', lineHeight: '0.85', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                            <p className="text-[10px] font-bold text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '0.85', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '2px' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                            <h2 className="text-[20px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                            <p className="text-[11px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '4px' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                           </div>
                         </div>
 
@@ -2590,7 +2596,7 @@ export default function DocumentsPage() {
                   <div 
                     id="printable-order-sheet"
                     className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg p-[0.8in] flex flex-col justify-between relative text-left font-sans leading-relaxed text-[11px] shrink-0"
-                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', boxSizing: 'border-box' }}
+                    style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', boxSizing: 'border-box' }}
                   >
                     <div>
                       {/* Janata Bank PLC Redesigned Header to match mockup logo exactly */}
@@ -2611,19 +2617,19 @@ export default function DocumentsPage() {
                             </g>
                           </svg>
                           <div className="font-serif leading-none mt-0.5">
-                            <h2 className="bank-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '14pt', fontWeight: 'bold', color: '#0b5e9e', lineHeight: '1.0', margin: 0 }}>জনতা ব্যাংক পিএলসি.</h2>
-                            <p style={{ fontFamily: 'SolaimanLipi', fontSize: '7.5pt', fontWeight: 'bold', color: '#555555', marginTop: '2px', lineHeight: '1.0', margin: 0 }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
+                            <h2 className="bank-title" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', fontWeight: 'bold', color: '#0b5e9e', lineHeight: '1.15', margin: 0 }}>জনতা ব্যাংক পিএলসি.</h2>
+                            <p style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', fontWeight: 'bold', color: '#555555', marginTop: '2px', lineHeight: '1.0', margin: 0 }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
                           </div>
                         </div>
 
                         {/* Right side: Department */}
                         <div className="text-right mt-1">
-                          <h3 className="dept-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '11pt', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '5px', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
+                          <h3 className="dept-title" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '5px', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
                         </div>
                       </div>
 
                       {/* Sub-header line: Reference and Date (With exactly 1 inch space below it) */}
-                      <div className="w-full flex justify-between items-center text-[9.5pt] pt-1 pb-1 border-b border-black/10 mt-1 memo-line" style={{ fontFamily: 'SolaimanLipi', fontSize: '9.5pt', lineHeight: '1.0', marginBottom: '0.25in' }}>
+                      <div className="w-full flex justify-between items-center text-[11px] pt-1 pb-1 border-b border-black/10 mt-1 memo-line" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', marginBottom: '0.25in' }}>
                         <span className="font-bold">সূত্রঃ {viewingOrder.orderRef}</span>
                         <span className="font-bold">
                           তারিখঃ {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং
@@ -2631,15 +2637,15 @@ export default function DocumentsPage() {
                       </div>
 
                       {/* Title and Main Body */}
-                      <div className="flex-1 flex flex-col justify-start pt-1 text-[10pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10pt', lineHeight: '1.0' }}>
+                      <div className="flex-1 flex flex-col justify-start pt-1 text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                         <div className="space-y-2">
-                          <h2 className="text-center text-[13px] font-extrabold underline decoration-black underline-offset-2 office-order-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '13pt', lineHeight: '1.0' }}>
+                          <h2 className="text-center text-[14px] font-extrabold underline decoration-black underline-offset-4 mt-4 leading-none office-order-title" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', lineHeight: '1.0' }}>
                             অফিস নির্দেশ
                           </h2>
                           
                           <p 
-                            className="text-justify leading-normal mt-2 text-[10pt] text-slate-950 text-indent-8 body-paragraph"
-                            style={{ fontFamily: 'SolaimanLipi', fontSize: '10pt', lineHeight: '1.5', textIndent: '0.5in', textAlign: 'justify' }}
+                            className="text-justify leading-normal mt-2 text-[11px] text-slate-950 text-indent-8 body-paragraph"
+                            style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.5', textIndent: '0.5in', textAlign: 'justify' }}
                             dangerouslySetInnerHTML={{ __html: viewingOrder.content?.orderText || '' }}
                           />
 
@@ -2693,10 +2699,10 @@ export default function DocumentsPage() {
                           })()}
 
                           {/* Sign-off Officer block (Left Aligned on Bottom Left with 1 inch space above it) */}
-                          <div className="w-full flex justify-start text-[9.5pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9.5pt', lineHeight: '1.0', marginTop: '0.6in' }}>
+                          <div className="w-full flex justify-start text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.6', marginTop: '0.6in' }}>
                             <div className="text-left pl-2">
                               <p className="font-bold text-black signature-name" style={{ margin: 0, fontWeight: 'bold' }}>({cleanBracketName(viewingOrder.content?.signingOfficer || 'স্বাক্ষরিত')})</p>
-                              <p className="text-[9.5pt] text-slate-800 signature-designation" style={{ margin: 0, marginTop: '2px', fontWeight: 'bold' }}>{viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>
+                              <p className="text-[11px] text-slate-800 signature-designation" style={{ margin: 0, marginTop: '2px', fontWeight: 'bold', fontSize: '11px' }}>{viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>
                             </div>
                           </div>
                         </div>
@@ -2708,7 +2714,6 @@ export default function DocumentsPage() {
               </div>
 
             </div>
-
           </div>
         );
       })()}

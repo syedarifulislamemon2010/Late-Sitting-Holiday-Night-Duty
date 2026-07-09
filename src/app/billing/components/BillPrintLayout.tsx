@@ -314,27 +314,27 @@ export default function BillPrintLayout({
             <div 
               id="printable-order-sheet"
               className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-sans leading-none text-[11px] shrink-0"
-              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
+              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
             >
               <div className="print-block flex flex-col h-full justify-between">
                 <div>
                   {/* Official Header */}
                   <div className="w-full flex justify-end text-right mb-4">
                     <div className="text-right leading-none" style={{ lineHeight: '0.85' }}>
-                      <h2 className="text-[20px] font-bold text-black uppercase" style={{ fontFamily: 'SolaimanLipi', fontSize: '20px', lineHeight: '0.85', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                      <p className="text-[12px] font-bold text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '0.85', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '2px' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                      <h2 className="text-[20px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                      <p className="text-[11px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '4px' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                     </div>
                   </div>
 
                   {/* Title and Main Body */}
                   <div className="flex-1 flex flex-col justify-between mt-2">
                     <div>
-                      <h2 className="text-left text-[12px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>
+                      <h2 className="text-left text-[11px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                         বিষয়: {viewingOrder.content?.subjectText || 'যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।'}
                       </h2>
                       
                       <div className="mt-2.5">
-                        <p className="text-justify leading-normal text-black text-[12px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15', textIndent: '0.5in', textAlign: 'justify' }}>
+                        <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.15', textIndent: '0.5in', textAlign: 'justify' }}>
                           {viewingOrder.content?.openingParagraph}
                         </p>
                       </div>
@@ -428,15 +428,15 @@ export default function BillPrintLayout({
                       })()}
 
                       {/* Words and paragraphs */}
-                      <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15' }}>
-                        <p className="font-bold text-black">কথায়: {(viewingOrder.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15', textAlign: 'justify' }}>
+                      <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25' }}>
+                        <p className="font-bold text-black text-[11px]" style={{ fontSize: '11px' }}>কথায়: {(viewingOrder.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
+                        <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25', textAlign: 'justify' }}>
                           ০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                         </p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15', textAlign: 'justify' }}>
+                        <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25', textAlign: 'justify' }}>
                           ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport)}/- ({getBanglaNumberWords(viewingOrder.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/- ({getBanglaNumberWords(viewingOrder.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                         </p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.15', textAlign: 'justify' }}>
+                        <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25', textAlign: 'justify' }}>
                           ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal)}/- ({getBanglaNumberWords(viewingOrder.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, {viewingOrder.content?.representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                         </p>
                       </div>
@@ -445,31 +445,31 @@ export default function BillPrintLayout({
 
                   {/* Right-aligned payee signature block */}
                   <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
-                    <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', paddingRight: '0.1in' }}>
-                      <p className="font-extrabold text-[12px]" style={{ margin: 0, padding: 0, lineHeight: '1.15', textAlign: 'right' }}>({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
-                      <p className="text-[12px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '3px', lineHeight: '1.15', textAlign: 'right' }}>{(viewingOrder.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
+                    <div className="text-right leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', paddingRight: '0.1in' }}>
+                      <p className="font-extrabold text-[11px]" style={{ margin: 0, padding: 0, lineHeight: '1.15', textAlign: 'right', fontSize: '11px' }}>({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
+                      <p className="text-[11px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '3px', lineHeight: '1.15', textAlign: 'right', fontSize: '11px' }}>{(viewingOrder.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
                     </div>
                   </div>
 
                   {/* Left-aligned Routing List */}
-                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4' }}>
+                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.4' }}>
                     <div style={{ marginBottom: '0.7in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.4', margin: 0 }}>
                         এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
                     <div style={{ marginBottom: '0.7in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.4', margin: 0 }}>
                         এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
                     <div style={{ marginBottom: '0.7in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
                     <div style={{ marginBottom: '0.7in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
@@ -498,24 +498,24 @@ export default function BillPrintLayout({
                       unoptimized
                     />
                     <div className="text-right leading-tight">
-                      <h2 className="text-[18pt] font-extrabold text-[#0b5e9e] bank-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '15pt', lineHeight: '1.15' }}>জনতা ব্যাংক পিএলসি.</h2>
-                      <p className="text-[14pt] font-bold text-slate-500 uppercase mt-0.5 dept-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '12pt', lineHeight: '1.0', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
-                      <p className="text-[12px] font-medium text-slate-400 leading-none mt-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '12px', lineHeight: '1.0' }}>প্রধান কার্যালয়, ঢাকা</p>
+                      <h2 className="text-[20px] font-extrabold text-[#0b5e9e] bank-title" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.15' }}>জনতা ব্যাংক পিএলসি.</h2>
+                      <p className="text-[20px] font-bold text-slate-500 uppercase mt-0.5 dept-title" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.0', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+                      <p className="text-[11px] font-medium text-slate-400 leading-none mt-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>প্রধান কার্যালয়, ঢাকা</p>
                     </div>
                   </div>
 
                   {/* Title and Memo details */}
-                  <div className="w-full flex justify-between items-start mt-4 text-[14pt] memo-line" style={{ fontFamily: 'SolaimanLipi', fontSize: '12pt', lineHeight: '1.0' }}>
+                  <div className="w-full flex justify-between items-start mt-4 text-[11px] memo-line" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                     <p className="font-bold">স্মারক নং: {viewingOrder.orderRef}</p>
                     <p className="font-bold">তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                   </div>
 
-                  <div className="text-center font-bold text-sm underline decoration-black underline-offset-4 mt-6 leading-none office-order-title" style={{ fontFamily: 'SolaimanLipi', fontSize: '14.5pt', lineHeight: '1.0' }}>
+                  <div className="text-center font-bold text-[14px] underline decoration-black underline-offset-4 mt-6 leading-none office-order-title" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', lineHeight: '1.0' }}>
                     অফিস নির্দেশ
                   </div>
 
                   <div className="mt-6">
-                    <p className="text-justify leading-relaxed text-black text-[11.5pt] text-indent-8 body-paragraph" style={{ fontFamily: 'SolaimanLipi', fontSize: '12pt', lineHeight: '1.5', textIndent: '0.5in', textAlign: 'justify' }}>
+                    <p className="text-justify leading-relaxed text-black text-[11px] text-indent-8 body-paragraph" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.5', textIndent: '0.5in', textAlign: 'justify' }}>
                       {viewingOrder.content?.openingParagraph || 'অনলাইন ব্যাংকিং ডিপার্টমেন্টের স্বাভাবিক কার্যক্রম পরিচালনার জন্য নিম্নলিখিত কর্মকর্তাদের দায়িত্ব অর্পণ করা হইলঃ'}
                     </p>
                   </div>
@@ -583,7 +583,7 @@ export default function BillPrintLayout({
                   })()}
 
                   {/* Signatures block */}
-                  <div className="w-full flex justify-between items-start mt-8 pt-4 leading-normal text-[11.5pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '12pt', lineHeight: '1.6' }}>
+                  <div className="w-full flex justify-between items-start mt-8 pt-4 leading-normal text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.6' }}>
                     <div className="w-[50%] footer-copy">
                       <p className="underline underline-offset-2">অনুলিপি জ্ঞাতার্থে ও কার্যার্থে প্রেরিত হইলোঃ</p>
                       <ol className="list-decimal pl-5 mt-2 space-y-1">

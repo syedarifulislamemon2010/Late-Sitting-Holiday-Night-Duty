@@ -113,7 +113,7 @@ export default function Sidebar() {
     {
       title: 'বিল ও ভাতাসমূহ',
       items: [
-        { name: 'বিল নথি', href: '/billing', icon: Receipt },
+        { name: 'বিল প্রস্তুতকরণ', href: '/billing', icon: Receipt },
         { name: 'লাঞ্চ বিল শিট', href: '/lunch-bill', icon: Utensils },
         ...(showClosingBill ? [{ name: 'ক্লোজিং বিল শিট', href: '/closing-bill', icon: CalendarCheck }] : [])
       ]
@@ -137,7 +137,7 @@ export default function Sidebar() {
     {
       title: 'অন্যান্য',
       items: [
-        { name: 'আর্কাইভ', href: '/documents', icon: FileText },
+        { name: 'নথিপত্র আর্কাইভ', href: '/documents', icon: FileText },
         ...(isAdmin ? [{ name: 'রিসাইকেল বিন', href: '/trash', icon: Trash2 }] : [])
       ]
     }
@@ -283,14 +283,14 @@ export default function Sidebar() {
                           setShowWarningModal(true);
                         }
                       }}
-                      className={`flex items-center transition-all duration-200 group relative border-l-4 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-primary ${
+                      className={`flex items-center transition-all duration-normal ease-premium group relative border-l-3 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                         isMounted && isCollapsed 
                           ? 'justify-center py-2.5 px-0' 
                           : 'px-3 py-2.5'
                       } ${
                         isActive 
-                          ? 'bg-slate-50 dark:bg-slate-800/40 text-primary border-primary font-bold' 
-                          : 'text-slate-600 dark:text-slate-400 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/30 hover:text-slate-900 dark:hover:text-slate-100'
+                          ? 'bg-primary-50 dark:bg-primary-950/20 text-primary-600 dark:text-sky-400 border-primary-600 dark:border-sky-500 font-extrabold' 
+                          : 'text-slate-650 dark:text-slate-400 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/30 hover:text-slate-900 dark:hover:text-slate-100'
                       }`}
                       aria-current={isActive ? 'page' : undefined}
                     >

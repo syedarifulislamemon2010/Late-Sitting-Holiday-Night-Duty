@@ -9,6 +9,8 @@ import {
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { 
   Printer, 
   ArrowLeft, 
@@ -743,12 +745,14 @@ export default function HardwareRequisitionPage() {
                     </div>
                   )}
 
-                  {/* Settings Box: Requester */}
-                  <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                    <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-                      <User size={16} className="text-indigo-605" />
-                      রিকুয়েস্টার কর্মকর্তা তথ্য
-                    </h3>
+                  <Card
+                    title={
+                      <span className="flex items-center gap-2">
+                        <User size={16} className="text-primary-600" />
+                        রিকুয়েস্টার কর্মকর্তা তথ্য
+                      </span>
+                    }
+                  >
 
                     <div className="space-y-3.5 text-xs font-sans">
                       {currentUser?.role === 'ADMIN' && (
@@ -813,7 +817,7 @@ export default function HardwareRequisitionPage() {
                         <div className="text-rose-500 font-bold animate-pulse">প্রোফাইল ম্যাচ পাওয়া যায়নি!</div>
                       )}
                     </div>
-                  </div>
+                  </Card>
 
                   {/* Mode Selector (Everyone) */}
                   {currentUser && (
@@ -843,12 +847,15 @@ export default function HardwareRequisitionPage() {
                     </div>
                   )}
 
-                  {/* Settings Box: Parameters */}
-                  <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                    <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-                      <HardDrive size={16} className="text-indigo-605" />
-                      হার্ডওয়্যার ও তারিখ নির্ধারণ
-                    </h3>
+                  <Card
+                    className="!overflow-visible"
+                    title={
+                      <span className="flex items-center gap-2">
+                        <HardDrive size={16} className="text-primary-600" />
+                        হার্ডওয়্যার ও তারিখ নির্ধারণ
+                      </span>
+                    }
+                  >
 
                     <div className="space-y-4 text-xs font-sans">
                       <div className="space-y-1.5">
@@ -926,15 +933,19 @@ export default function HardwareRequisitionPage() {
                         </>
                       )}
                     </div>
-                  </div>
+                  </Card>
 
                   {/* Settings Box: Multiple mode selections */}
                   {entryMode === 'MULTIPLE' && selectedApplicantEmp && (
-                    <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-                        <CalendarCheck size={16} className="text-indigo-605" />
-                        কর্মকর্তা তালিকা (মোট কর্মকর্তা: {toBanglaDigits(maxSelectable)})
-                      </h3>
+                    <Card
+                      title={
+                        <span className="flex items-center gap-2">
+                          <CalendarCheck size={16} className="text-primary-600" />
+                          কর্মকর্তা তালিকা (মোট কর্মকর্তা: {toBanglaDigits(maxSelectable)})
+                        </span>
+                      }
+                      className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                    >
 
                       <div className="space-y-4 text-xs font-sans">
                         <div className="space-y-1.5">
@@ -982,10 +993,10 @@ export default function HardwareRequisitionPage() {
                               </label>
                             );
                           })}
-                        </div>
                       </div>
                     </div>
-                  )}
+                  </Card>
+                )}
 
                 </div>
               ) : (
@@ -1148,9 +1159,13 @@ export default function HardwareRequisitionPage() {
           #printable-hardware-requisition-sheet, 
           #printable-hardware-requisition-sheet * {
             font-family: 'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif !important;
-            font-size: 13px !important;
+            font-size: 11px !important;
             color: #000000;
             line-height: 1.5 !important;
+          }
+
+          #printable-hardware-requisition-sheet h2 {
+            font-size: 20px !important;
           }
 
           .dark #printable-hardware-requisition-sheet {

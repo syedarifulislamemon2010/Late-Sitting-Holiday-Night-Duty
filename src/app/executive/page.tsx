@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { 
   Plus, 
   Search, 
@@ -877,11 +879,11 @@ export default function ExecutivesPage() {
               })}
             </div>
           ) : (
-            <div className="glass-card p-12 text-center rounded-2xl max-w-md mx-auto space-y-3">
-              <UserCheck className="mx-auto text-slate-300" size={32} />
+            <Card className="max-w-md mx-auto text-center space-y-3 p-12">
+              <UserCheck className="mx-auto text-slate-350" size={32} />
               <h4 className="font-bold text-slate-800 dark:text-slate-100">কোনো নির্বাহী কর্মকর্তা পাওয়া যায়নি</h4>
               <p className="text-xs text-slate-400">খুঁজে পাওয়া ডাটা খালি। অনুগ্রহ করে অন্য নাম লিখুন বা নতুন নির্বাহী যোগ করুন।</p>
-            </div>
+            </Card>
           )}
         </div>
       )}

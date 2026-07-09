@@ -469,21 +469,21 @@ export async function GET(request: Request) {
     text-align: right;
   }
   .bank-title {
-    font-size: 18pt;
+    font-size: 20px;
     font-weight: bold;
     color: #0b5e9e;
     margin: 0;
     line-height: 1.0;
   }
   .bank-tagline {
-    font-size: 9pt;
+    font-size: 11px;
     font-weight: bold;
     color: #555555;
     margin: 2px 0 0 0;
     line-height: 1.0;
   }
   .dept-title {
-    font-size: 12pt;
+    font-size: 20px;
     font-weight: bold;
     color: #000000;
     margin: 5px 0 0 0;
@@ -496,7 +496,7 @@ export async function GET(request: Request) {
     padding-bottom: 4px;
     margin-bottom: 10px;
     margin-top: 4px;
-    font-size: 9pt;
+    font-size: 11px;
     font-weight: bold;
   }
   .ref-date-table td {
@@ -505,7 +505,7 @@ export async function GET(request: Request) {
   }
   .title-content {
     text-align: center;
-    font-size: 18pt;
+    font-size: 14px;
     font-weight: bold;
     text-decoration: underline;
     margin-bottom: 8px;
@@ -513,7 +513,7 @@ export async function GET(request: Request) {
   }
   .body-content {
     text-align: justify;
-    font-size: 12pt;
+    font-size: 11px;
     line-height: 1.5;
     margin-bottom: 10px;
     text-indent: 0.5in;
@@ -535,12 +535,12 @@ export async function GET(request: Request) {
   }
   table.duty-table th {
     background-color: #f8fafc;
-    font-size: 10.5pt;
+    font-size: 11px;
     font-weight: bold;
     text-align: center;
   }
   table.duty-table td {
-    font-size: 10.5pt;
+    font-size: 11px;
   }
   table.duty-table td.text-center {
     text-align: center;
@@ -552,7 +552,7 @@ export async function GET(request: Request) {
   .signature-container {
     width: 100%;
     margin-top: 1.0in !important;
-    font-size: 12pt;
+    font-size: 11px;
     clear: both;
   }
   .signature-block {
@@ -562,13 +562,13 @@ export async function GET(request: Request) {
     line-height: 1.2;
   }
   .sig-name {
-    font-size: 12pt;
+    font-size: 11px;
     font-weight: bold;
   }
   .footer-copy {
     clear: both;
     margin-top: 25px;
-    font-size: 9pt;
+    font-size: 11px;
     color: #333;
     border-top: 1px dashed #ccc;
     padding-top: 8px;
