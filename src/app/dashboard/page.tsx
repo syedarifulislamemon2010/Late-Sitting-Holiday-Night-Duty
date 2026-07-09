@@ -18,6 +18,7 @@ import {
 import MyDutySummaryCard from './components/MyDutySummaryCard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/context/ToastContext';
 
 // Custom Bangla digit converter
 function toBanglaDigits(num: number | string): string {
@@ -76,8 +77,16 @@ interface Holiday {
 }
 
 export default function DashboardPage() {
+  const { showToast } = useToast();
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
+  const [employee, setEmployee] = useState<any>(null);
+  const [isEmployee, setIsEmployee] = useState(false);
+  const [myDuties, setMyDuties] = useState<any[]>([]);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [formDutyType, setFormDutyType] = useState('LATE_SITTING');
+  const [savingDuties, setSavingDuties] = useState(false);
+  const [entryError, setEntryError] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number>(() => {
     const today = new Date();
     return today.getFullYear() === 2026 ? today.getMonth() : 0;
@@ -162,6 +171,18 @@ export default function DashboardPage() {
         const holidayRes = await fetch('/api/holidays');
         const holidaysData = await holidayRes.json();
         setHolidays(Array.isArray(holidaysData) ? holidaysData : []);
+
+        const portalRes = await fetch('/api/my-portal');
+        if (portalRes.ok) {
+          const portalData = await portalRes.json();
+          if (portalData.employee) {
+            setEmployee(portalData.employee);
+            setIsEmployee(true);
+          }
+          if (Array.isArray(portalData.duties)) {
+            setMyDuties(portalData.duties);
+          }
+        }
       } catch (err) {
         console.error('Error fetching dashboard stats:', err);
       } finally {
@@ -228,6 +249,62 @@ export default function DashboardPage() {
     
     slots.push({ day, dateStr, isHoliday, holidayName, isWeekend });
   }
+
+  const handleDateClick = (dateStr: string) => {
+    if (!isEmployee) {
+      showToast('দুঃখিত, এই সুবিধাটি শুধুমাত্র কর্মকর্তা অ্যাকাউন্টের জন্য প্রযোজ্য। আপনার অ্যাকাউন্টের সাথে কোনো কর্মকর্তা রেকর্ড যুক্ত নেই।', 'error');
+      return;
+    }
+    setSelectedDates(prev => {
+      if (prev.includes(dateStr)) {
+        return prev.filter(d => d !== dateStr);
+      } else {
+        return [...prev, dateStr];
+      }
+    });
+  };
+
+  const handleSaveDuties = async () => {
+    if (!employee) return;
+    setSavingDuties(true);
+    setEntryError(null);
+    try {
+      const assignments = selectedDates.map(date => ({
+        employeeId: employee.id,
+        type: formDutyType,
+        date,
+        description: ''
+      }));
+      
+      const res = await fetch('/api/duties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignments })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'ডিউটি এন্ট্রি করা সম্ভব হয়নি।');
+      }
+      
+      setSelectedDates([]);
+      showToast('ডিউটি সফলভাবে সংরক্ষণ করা হয়েছে!', 'success');
+      
+      // Refresh local states
+      const portalRes = await fetch('/api/my-portal');
+      if (portalRes.ok) {
+        const portalData = await portalRes.json();
+        if (Array.isArray(portalData.duties)) {
+          setMyDuties(portalData.duties);
+        }
+      }
+    } catch (err: any) {
+      setEntryError(err.message);
+      showToast(err.message || 'ডিউটি সংরক্ষণে সমস্যা হয়েছে', 'error');
+    } finally {
+      setSavingDuties(false);
+    }
+  };
 
   // Filter holidays of the active month
   const selectedMonthHolidays = allHolidays.filter(h => {
@@ -384,32 +461,53 @@ export default function DashboardPage() {
                   }
 
                   const isToday = slot.dateStr === todayStr;
-                  let cellClass = 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60';
+                  const existingDuty = myDuties.find(d => d.date === slot.dateStr);
+                  const isSelected = slot.dateStr ? selectedDates.includes(slot.dateStr) : false;
 
-                  if (slot.isHoliday) {
+                  let cellClass = 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60 cursor-pointer relative';
+
+                  if (existingDuty) {
+                    if (existingDuty.type === 'LATE_SITTING') {
+                      cellClass = 'bg-amber-105 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-900/50 cursor-pointer relative';
+                    } else if (existingDuty.type === 'HOLIDAY') {
+                      cellClass = 'bg-rose-105 dark:bg-rose-955/20 text-rose-700 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-900/50 cursor-pointer relative';
+                    } else if (existingDuty.type === 'NIGHT_SHIFT') {
+                      cellClass = 'bg-purple-105 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 font-bold border border-purple-200 dark:border-purple-900/50 cursor-pointer relative';
+                    }
+                  } else if (slot.isHoliday) {
                     cellClass = 'bg-rose-500 text-white font-extrabold shadow-sm scale-[1.02] border border-rose-600 hover:bg-rose-600 shadow-rose-500/10 cursor-pointer relative group';
                   } else if (slot.isWeekend) {
-                    cellClass = 'bg-rose-50/40 dark:bg-rose-950/10 text-rose-600 dark:text-rose-400 font-bold border border-rose-100/50 dark:border-rose-950/20';
+                    cellClass = 'bg-rose-50/40 dark:bg-rose-950/10 text-rose-600 dark:text-rose-400 font-bold border border-rose-100/50 dark:border-rose-950/20 cursor-pointer hover:bg-rose-100/30';
                   }
 
                   if (isToday) {
                     cellClass += ' ring-2 ring-indigo-600 dark:ring-indigo-400 ring-offset-2 dark:ring-offset-slate-900';
                   }
 
+                  if (isSelected) {
+                    cellClass += ' ring-4 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 scale-105 z-10 border-indigo-600';
+                  }
+
                   return (
                     <div
                       key={`day-${slot.day}`}
+                      onClick={() => slot.dateStr && handleDateClick(slot.dateStr)}
                       title={slot.holidayName || (slot.isWeekend ? 'সাপ্তাহিক ছুটি' : '')}
                       className={`aspect-square rounded-xl text-xs flex flex-col items-center justify-center transition-all relative ${cellClass}`}
                     >
                       <span className="font-sans font-bold text-sm">
                         {slot.day}
                       </span>
-                      {isToday && (
+                      {existingDuty && (
+                        <span className="text-[9px] font-bold mt-0.5 px-1 py-0.2 rounded bg-white/60 dark:bg-slate-950/40 scale-90">
+                          {existingDuty.type === 'LATE_SITTING' ? 'লেট' : existingDuty.type === 'HOLIDAY' ? 'হলিডে' : 'নাইট'}
+                        </span>
+                      )}
+                      {isToday && !existingDuty && (
                         <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-indigo-650 dark:bg-indigo-400" />
                       )}
-                      {slot.isHoliday && (
-                        <span className="absolute bottom-1 w-1 h-1 rounded-full bg-white animate-pulse" />
+                      {slot.isHoliday && !existingDuty && (
+                        <span className="absolute bottom-1 w-1 h-1 rounded-full bg-white/80 animate-pulse" />
                       )}
                       
                       {/* Hover Tooltip for Holidays */}
@@ -425,6 +523,71 @@ export default function DashboardPage() {
               </div>
 
             </div>
+
+            {/* Bulk Duty Entry Form Panel */}
+            {selectedDates.length > 0 && (
+              <div className="mt-6 p-4 bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-950/20 rounded-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="flex items-center justify-between border-b border-indigo-100/30 pb-3 mb-3">
+                  <h5 className="text-xs font-bold text-indigo-900 dark:text-indigo-400 flex items-center gap-1.5 font-sans">
+                    <CalendarCheck size={14} className="text-indigo-600" />
+                    ডিউটি এন্ট্রি প্যানেল ({toBanglaDigits(selectedDates.length)}টি দিন নির্বাচিত)
+                  </h5>
+                  <button 
+                    onClick={() => setSelectedDates([])} 
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+                
+                <p className="text-[10px] text-slate-500 font-sans mb-3">
+                  নির্বাচিত তারিখসমূহ: {selectedDates.sort().map(d => toBanglaDigits(d.split('-').reverse().join('-'))).join(', ')}
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-500 block">ডিউটির ধরণ:</label>
+                    <select
+                      value={formDutyType}
+                      onChange={(e) => setFormDutyType(e.target.value)}
+                      className="w-full h-9 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-805 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 cursor-pointer"
+                    >
+                      <option value="LATE_SITTING">লেট সিটিং (Late Sitting)</option>
+                      <option value="HOLIDAY">ছুটির দিন (Holiday Duty)</option>
+                      <option value="NIGHT_SHIFT">নাইট শিফট (Night Shift)</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button" 
+                      onClick={handleSaveDuties}
+                      disabled={savingDuties}
+                      variant="primary"
+                      size="sm"
+                      className="flex-1 text-xs h-9 justify-center cursor-pointer"
+                    >
+                      {savingDuties ? 'সংরক্ষণ হচ্ছে...' : 'সংরক্ষণ করুন'}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      onClick={() => setSelectedDates([])}
+                      variant="secondary"
+                      size="sm"
+                      className="text-xs h-9 justify-center border-slate-205 cursor-pointer"
+                    >
+                      বাতিল
+                    </Button>
+                  </div>
+                </div>
+                
+                {entryError && (
+                  <p className="text-[10px] text-rose-500 font-bold mt-2 font-sans">
+                    ⚠️ {entryError}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* List of Holidays for Selected Month */}
             {selectedMonthHolidays.length > 0 ? (

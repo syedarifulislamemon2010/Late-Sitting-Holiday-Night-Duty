@@ -412,7 +412,6 @@ paths:
 
 | Case ID | Scenario | Preconditions | Input / Action | Expected Outcome |
 | :--- | :--- | :--- | :--- | :--- |
-| **UAT-SEC-01** | Multi-Factor Authentication (TOTP) | User is registered; MFA is activated on profile | Enter username and password, then input the standard RFC 6238 TOTP code | User session initialized; dashboard loads successfully. |
 | **UAT-SEC-02** | Cell Scope boundary check | User is Cell Officer scoped only to Cell 7 | Attempt to edit or delete an employee record in Cell 9 | Request blocked; API returns `HTTP 403 Forbidden` error. |
 | **UAT-DUTY-01** | Date collision on active leave | Employee has approved leave from June 10 to June 15 | Create Late Sitting duty for employee on June 12 | System returns `HTTP 409 Conflict` and blocks insertion. |
 | **UAT-LEAVE-01** | Sandwich Rule leave deduction | Employee applies for leave from Thursday to Sunday | Submit Casual Leave request | Sandwiched Friday and Saturday are programmatically deducted from balance. |
@@ -508,7 +507,7 @@ paths:
 
 | Standard | Control Ref | System Implementation |
 | :--- | :--- | :--- |
-| Bangladesh Bank ICT Security Guidelines | Chapter 4.2: User authentication | NextAuth with multi-factor authentication (TOTP) |
+| Bangladesh Bank ICT Security Guidelines | Chapter 4.2: User authentication | NextAuth Credentials login |
 | Bangladesh Bank ICT Security Guidelines | Chapter 5.1: Database audits | Immutable database-backed audit log indexed by username |
 | ISO 27001 | A.12.4.1: Event logging | LogActivity system logs mapped locally and via database |
 | ISO 27001 | A.10.1.1: Cryptography | Database storage encryption and AES-256-CBC chat log security |
