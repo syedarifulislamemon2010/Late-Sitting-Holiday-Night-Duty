@@ -226,7 +226,12 @@ const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGH
   if (!currentUser) return false;
   if (currentUser.role === 'ADMIN') return true;
 
-  const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+  let userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+  if (userCellNames.includes('CBS Integrated Development Cell')) {
+    return true;
+  } else {
+    userCellNames = Array.from(new Set([...userCellNames, 'CBS Integrated Development Cell']));
+  }
 
   // 1. Direct cell name match
   if (o.cellName && userCellNames.includes(o.cellName)) {
@@ -1846,26 +1851,7 @@ export default function BillingPage() {
   }, [filteredOrdersList]);
 
   const ledgerActiveOfficeOrders = useMemo<OfficeOrder[]>(() => {
-    const active = allActiveOfficeOrders;
-    if (active.length === 0) return [];
-    
-    let latestDateStr = "";
-    let latestDateTime = -1;
-    
-    active.forEach(order => {
-      if (order.orderDate) {
-        const dStr = order.orderDate.substring(0, 10);
-        const t = new Date(dStr).getTime();
-        if (t > latestDateTime) {
-          latestDateTime = t;
-          latestDateStr = dStr;
-        }
-      }
-    });
-    
-    if (!latestDateStr) return active;
-    
-    return active.filter(order => order.orderDate && order.orderDate.substring(0, 10) === latestDateStr);
+    return allActiveOfficeOrders;
   }, [allActiveOfficeOrders]);
 
   const ledgerGrandTotal = useMemo(() => {
