@@ -1851,8 +1851,40 @@ export default function BillingPage() {
   }, [filteredOrdersList]);
 
   const ledgerActiveOfficeOrders = useMemo<OfficeOrder[]>(() => {
-    return allActiveOfficeOrders;
-  }, [allActiveOfficeOrders]);
+    const active = allActiveOfficeOrders;
+    if (active.length === 0) return [];
+
+    const orderWithBillingDates = active.map(order => {
+      const norm = getNormalizedRef(order.orderRef);
+      const bill = archivedOrders.find(o => 
+        o.category?.startsWith('BILL_') && 
+        o.status !== 'Deleted' && 
+        getNormalizedRef(o.orderRef) === norm
+      );
+      const billingDateStr = bill ? bill.orderDate : order.orderDate;
+      const cleanDate = billingDateStr ? billingDateStr.substring(0, 10) : "";
+      return { order, cleanDate };
+    });
+
+    let latestDateStr = "";
+    let latestDateTime = -1;
+
+    orderWithBillingDates.forEach(item => {
+      if (item.cleanDate) {
+        const t = new Date(item.cleanDate).getTime();
+        if (t > latestDateTime) {
+          latestDateTime = t;
+          latestDateStr = item.cleanDate;
+        }
+      }
+    });
+
+    if (!latestDateStr) return active;
+
+    return orderWithBillingDates
+      .filter(item => item.cleanDate === latestDateStr)
+      .map(item => item.order);
+  }, [allActiveOfficeOrders, archivedOrders, getNormalizedRef]);
 
   const ledgerGrandTotal = useMemo(() => {
     return ledgerActiveOfficeOrders.reduce((sum: number, order: OfficeOrder) => {
