@@ -2679,7 +2679,11 @@ export default function DocumentsPage() {
                                         {group.description || 'Customization এবং Development সংক্রান্ত'}
                                       </td>
                                       <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.25' }}>
-                                        {getFormattedDateList(group.dates)}
+                                        {renderDatesInPairs(group.dates).map((pair, pIdx) => (
+                                          <span key={pIdx} className="block" style={{ display: 'block', whiteSpace: 'nowrap' }}>
+                                            {pair}
+                                          </span>
+                                        ))}
                                       </td>
                                     </tr>
                                   ))}

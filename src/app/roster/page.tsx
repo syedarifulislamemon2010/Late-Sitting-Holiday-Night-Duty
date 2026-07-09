@@ -5,7 +5,7 @@ import { useProfile } from '@/context/ProfileContext';
 import { useLayout, LayoutPriority } from '@/context/LayoutContext';
 import { TableSkeleton } from "@/components/SkeletonLoader";
 import { sortEmployeesBySeniority } from '@/lib/seniority';
-import { cleanBracketName } from '@/lib/print-helpers';
+import { cleanBracketName, renderDatesInPairs } from '@/lib/print-helpers';
 import RosterOCRImport from './components/RosterOCRImport';
 
 import { 
@@ -4064,7 +4064,11 @@ export default function RosterPage() {
                               {group.description}
                             </td>
                             <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle', lineHeight: '1.25' }}>
-                              {getFormattedDateList(group.dates)}
+                              {renderDatesInPairs(group.dates).map((pair, pIdx) => (
+                                <span key={pIdx} className="block" style={{ display: 'block', whiteSpace: 'nowrap' }}>
+                                  {pair}
+                                </span>
+                              ))}
                             </td>
                           </tr>
                         ))}

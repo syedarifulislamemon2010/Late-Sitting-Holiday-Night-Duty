@@ -396,14 +396,15 @@ export async function GET(request: Request) {
           : `জনাব ${name}`;
         
         const designation = d.designation || d.employee?.designation || '';
-        const datesFormatted = d.datesFormatted || (d.dates ? getFormattedDateList(d.dates) : '');
+        const pairedDates = renderDatesInPairs(d.dates || d.datesFormatted || []);
+        const datesHtml = pairedDates.map(pair => `<span style="display: block; white-space: nowrap;">${pair}</span>`).join('');
         return `
           <tr>
             <td class="text-center" style="vertical-align: middle;">${toBnDigits(index + 1)}</td>
             <td class="text-left" style="vertical-align: middle; white-space: nowrap;"><strong>${nameFormatted}</strong></td>
             <td class="text-center" style="vertical-align: middle;">${designation}</td>
             <td class="text-left" style="vertical-align: middle; line-height: 1.25;">${d.description || ''}</td>
-            <td class="text-center" style="vertical-align: middle; line-height: 1.25;">${datesFormatted}</td>
+            <td class="text-center" style="vertical-align: middle; line-height: 1.25;">${datesHtml}</td>
           </tr>
         `;
       }).join('');
