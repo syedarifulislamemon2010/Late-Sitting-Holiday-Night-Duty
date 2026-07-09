@@ -20,7 +20,8 @@ import {
   ClipboardList,
   AlertCircle,
   TrendingUp,
-  HardDrive
+  HardDrive,
+  ClipboardPen
 } from 'lucide-react';
 
 
@@ -122,7 +123,8 @@ export default function Sidebar() {
       title: 'আবেদনপত্র',
       items: [
         { name: 'ছুটির আবেদন', href: '/leave', icon: CalendarCheck },
-        { name: 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive }
+        { name: 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive },
+        { name: 'TAZ Committee Form', href: '/taz-committee', icon: ClipboardPen }
       ]
     },
     {
