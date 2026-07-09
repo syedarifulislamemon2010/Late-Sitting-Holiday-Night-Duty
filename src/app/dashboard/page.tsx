@@ -78,6 +78,11 @@ interface Holiday {
 
 export default function DashboardPage() {
   const { showToast } = useToast();
+  const dutyOptions = [
+    { value: 'LATE_SITTING', label: 'লেট সিটিং', icon: '⏰', activeColor: 'bg-amber-500 text-white', hoverColor: 'hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50' },
+    { value: 'HOLIDAY', label: 'হলিডে', icon: '📅', activeColor: 'bg-rose-500 text-white', hoverColor: 'hover:bg-rose-50 dark:hover:bg-rose-955/20 text-rose-650 dark:text-rose-450 border-rose-200 dark:border-rose-900/50' },
+    { value: 'NIGHT_SHIFT', label: 'নাইট শিফট', icon: '🌙', activeColor: 'bg-purple-500 text-white', hoverColor: 'hover:bg-purple-50 dark:hover:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900/50' },
+  ];
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
   const [employee, setEmployee] = useState<any>(null);
@@ -250,6 +255,43 @@ export default function DashboardPage() {
     slots.push({ day, dateStr, isHoliday, holidayName, isWeekend });
   }
 
+  const checkIsHolidayOrWeekend = (dateStr: string): boolean => {
+    const foundSlot = slots.find(s => s.dateStr === dateStr);
+    if (foundSlot) {
+      return foundSlot.isHoliday || foundSlot.isWeekend;
+    }
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const dayOfWeek = dateObj.getDay();
+    let isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+    if (dateStr === '2026-05-23') {
+      isWeekend = false;
+    }
+    const dbHol = holidays.find(h => h.date === dateStr);
+    if (dbHol && dbHol.isWorkingDay) {
+      isWeekend = false;
+    }
+    const hol = allHolidays.some(h => h.date === dateStr);
+    return isWeekend || hol;
+  };
+
+  useEffect(() => {
+    if (selectedDates.length > 0) {
+      const isLateSittingDisabled = selectedDates.some(date => checkIsHolidayOrWeekend(date));
+      const isHolidayDisabled = selectedDates.some(date => !checkIsHolidayOrWeekend(date));
+      
+      setFormDutyType(prev => {
+        if (prev === 'LATE_SITTING' && isLateSittingDisabled) {
+          return isHolidayDisabled ? 'NIGHT_SHIFT' : 'HOLIDAY';
+        }
+        if (prev === 'HOLIDAY' && isHolidayDisabled) {
+          return isLateSittingDisabled ? 'NIGHT_SHIFT' : 'LATE_SITTING';
+        }
+        return prev;
+      });
+    }
+  }, [selectedDates]);
+
   const handleDateClick = (dateStr: string) => {
     if (!isEmployee) {
       showToast('দুঃখিত, এই সুবিধাটি শুধুমাত্র কর্মকর্তা অ্যাকাউন্টের জন্য প্রযোজ্য। আপনার অ্যাকাউন্টের সাথে কোনো কর্মকর্তা রেকর্ড যুক্ত নেই।', 'error');
@@ -257,9 +299,9 @@ export default function DashboardPage() {
     }
     setSelectedDates(prev => {
       if (prev.includes(dateStr)) {
-        return prev.filter(d => d !== dateStr);
+        return [];
       } else {
-        return [...prev, dateStr];
+        return [dateStr];
       }
     });
   };
@@ -524,70 +566,7 @@ export default function DashboardPage() {
 
             </div>
 
-            {/* Bulk Duty Entry Form Panel */}
-            {selectedDates.length > 0 && (
-              <div className="mt-6 p-4 bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-950/20 rounded-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <div className="flex items-center justify-between border-b border-indigo-100/30 pb-3 mb-3">
-                  <h5 className="text-xs font-bold text-indigo-900 dark:text-indigo-400 flex items-center gap-1.5 font-sans">
-                    <CalendarCheck size={14} className="text-indigo-600" />
-                    ডিউটি এন্ট্রি প্যানেল ({toBanglaDigits(selectedDates.length)}টি দিন নির্বাচিত)
-                  </h5>
-                  <button 
-                    onClick={() => setSelectedDates([])} 
-                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-                
-                <p className="text-[10px] text-slate-500 font-sans mb-3">
-                  নির্বাচিত তারিখসমূহ: {selectedDates.sort().map(d => toBanglaDigits(d.split('-').reverse().join('-'))).join(', ')}
-                </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-500 block">ডিউটির ধরণ:</label>
-                    <select
-                      value={formDutyType}
-                      onChange={(e) => setFormDutyType(e.target.value)}
-                      className="w-full h-9 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-805 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 cursor-pointer"
-                    >
-                      <option value="LATE_SITTING">লেট সিটিং (Late Sitting)</option>
-                      <option value="HOLIDAY">ছুটির দিন (Holiday Duty)</option>
-                      <option value="NIGHT_SHIFT">নাইট শিফট (Night Shift)</option>
-                    </select>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button 
-                      type="button" 
-                      onClick={handleSaveDuties}
-                      disabled={savingDuties}
-                      variant="primary"
-                      size="sm"
-                      className="flex-1 text-xs h-9 justify-center cursor-pointer"
-                    >
-                      {savingDuties ? 'সংরক্ষণ হচ্ছে...' : 'সংরক্ষণ করুন'}
-                    </Button>
-                    <Button 
-                      type="button" 
-                      onClick={() => setSelectedDates([])}
-                      variant="secondary"
-                      size="sm"
-                      className="text-xs h-9 justify-center border-slate-205 cursor-pointer"
-                    >
-                      বাতিল
-                    </Button>
-                  </div>
-                </div>
-                
-                {entryError && (
-                  <p className="text-[10px] text-rose-500 font-bold mt-2 font-sans">
-                    ⚠️ {entryError}
-                  </p>
-                )}
-              </div>
-            )}
 
             {/* List of Holidays for Selected Month */}
             {selectedMonthHolidays.length > 0 ? (
@@ -876,6 +855,116 @@ export default function DashboardPage() {
 
             </div>
           )}
+        </div>
+      )}
+
+      {/* Floating Action Dock Overlay for Bulk Duty Entry */}
+      {selectedDates.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[calc(100%-2rem)] bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/80 rounded-2xl shadow-2xl p-4 flex flex-col gap-3.5 animate-in slide-in-from-bottom-5 duration-300 font-sans">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-650 dark:bg-indigo-400 animate-pulse" />
+              <span className="text-[11px] font-black text-slate-700 dark:text-slate-200">
+                ডিউটি সংরক্ষণ ({toBanglaDigits(selectedDates.length)} দিন নির্বাচিত)
+              </span>
+            </div>
+            <button 
+              onClick={() => setSelectedDates([])}
+              className="text-slate-400 hover:text-slate-655 dark:hover:text-slate-350 cursor-pointer p-0.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+            >
+              <X size={12} />
+            </button>
+          </div>
+
+          {/* Selected Date Badges */}
+          <div className="space-y-1">
+            <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">নির্বাচিত তারিখসমূহ:</label>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-h-12 scrollbar-none">
+              {selectedDates.sort().map(date => {
+                const [y, m, d] = date.split('-');
+                const formatted = `${toBanglaDigits(parseInt(d, 10))} ${MONTH_NAMES[parseInt(m, 10) - 1]}`;
+                return (
+                  <span 
+                    key={date} 
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 text-[10px] font-bold rounded-full shrink-0 border border-indigo-100/50 dark:border-indigo-900/20"
+                  >
+                    {formatted}
+                    <button 
+                      type="button"
+                      onClick={() => setSelectedDates(prev => prev.filter(x => x !== date))}
+                      className="hover:text-indigo-900 dark:hover:text-indigo-200 cursor-pointer"
+                    >
+                      <X size={10} strokeWidth={3} />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Duty Options Tab Grid */}
+          <div className="space-y-1">
+            <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">ডিউটির ধরণ:</label>
+            <div className="grid grid-cols-3 gap-2">
+              {dutyOptions.map((opt) => {
+                const isLateSittingDisabled = selectedDates.some(date => checkIsHolidayOrWeekend(date));
+                const isHolidayDisabled = selectedDates.some(date => !checkIsHolidayOrWeekend(date));
+                const isDisabled = opt.value === 'LATE_SITTING' ? isLateSittingDisabled : opt.value === 'HOLIDAY' ? isHolidayDisabled : false;
+                const isActive = formDutyType === opt.value && !isDisabled;
+
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => setFormDutyType(opt.value)}
+                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[10px] font-bold border transition-all ${
+                      isDisabled
+                        ? 'opacity-45 cursor-not-allowed bg-slate-100/50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-650'
+                        : isActive 
+                          ? `${opt.activeColor} border-transparent shadow-md scale-102 cursor-pointer` 
+                          : `bg-slate-50/50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-805 text-slate-655 dark:text-slate-405 ${opt.hoverColor} cursor-pointer`
+                    }`}
+                  >
+                    <span className="text-sm mb-0.5">{opt.icon}</span>
+                    <span>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2.5 pt-1.5 border-t border-slate-100 dark:border-slate-850">
+            <Button 
+              type="button" 
+              onClick={handleSaveDuties}
+              disabled={savingDuties}
+              variant="primary"
+              size="sm"
+              className="flex-1 text-xs h-9 justify-center cursor-pointer shadow-lg shadow-indigo-500/10 font-bold"
+            >
+              {savingDuties ? 'সংরক্ষণ হচ্ছে...' : 'সংরক্ষণ করুন'}
+            </Button>
+            <Button 
+              type="button" 
+              onClick={() => setSelectedDates([])}
+              variant="secondary"
+              size="sm"
+              className="text-xs h-9 justify-center border-slate-200 dark:border-slate-800 cursor-pointer font-bold"
+            >
+              বাতিল
+            </Button>
+          </div>
+
+          {entryError && (
+            <p className="text-[9px] text-rose-500 font-bold font-sans text-center mt-1">
+              ⚠️ {entryError}
+            </p>
+          )}
+
         </div>
       )}
 

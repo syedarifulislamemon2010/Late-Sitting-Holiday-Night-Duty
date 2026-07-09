@@ -9,6 +9,7 @@ A production-ready administrative and financial utility management portal built 
 ### 1. Unified Dashboard & Analytics
 * **Summary Metrics**: High-density stat cards displaying active duties, monthly costs, pending orders, and active staff counts.
 * **Allowance Trends & Distribution**: Interactive charts (rendered client-side using Recharts) mapping duty category distribution and cell-wise cost breakdowns.
+* **Interactive Duty Calendar**: Interactive calendar grid for bank officers allowing multi-date selection and bulk duty logging directly from the dashboard via a premium animated floating action dock with real-time balance sync and client-side conflict prevention.
 * **My Portal**: Personalized dashboard for individual bank officers to view their personal scheduled duties, monthly allowance credits, and leave balances in a read-only secure view.
 
 ### 2. Duty Roster Scheduler

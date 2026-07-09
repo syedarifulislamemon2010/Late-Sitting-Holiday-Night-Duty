@@ -501,6 +501,7 @@ export default function RosterPage() {
   });
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeRosterTab, setActiveRosterTab] = useState<'pending' | 'archived'>('pending');
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [currentPickerYear, setCurrentPickerYear] = useState(() => new Date().getFullYear());
   const monthPickerRef = useRef<HTMLDivElement>(null);
@@ -904,6 +905,7 @@ export default function RosterPage() {
     setUserCustomOrderText(null);
     setUserCustomOrderRef(null);
     setOrderGenerated(false);
+    setSelectedEmployee('all');
   };
 
   const changeSelectedMonths = (months: string[] | ((prev: string[]) => string[])) => {
@@ -3021,8 +3023,9 @@ export default function RosterPage() {
     return duties
       .filter(d => !d.orderRef)
       .filter(d => selectedCategory === 'all' || d.type === selectedCategory)
-      .filter(d => selectedCell === 'all' || d.employee.cellId.toString() === selectedCell);
-  }, [duties, selectedCategory, selectedCell]);
+      .filter(d => selectedCell === 'all' || d.employee.cellId.toString() === selectedCell)
+      .filter(d => selectedEmployee === 'all' || d.employee.id.toString() === selectedEmployee);
+  }, [duties, selectedCategory, selectedCell, selectedEmployee]);
 
   const activeCellObj = useMemo(() => {
     return cells.find(c => c.id.toString() === selectedCell);
@@ -3632,6 +3635,19 @@ export default function RosterPage() {
                     <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
                     <option value="HOLIDAY">Holiday Duty (ছুটির দিনে)</option>
                     <option value="NIGHT_SHIFT">Night Shift (রাত্রিকালীন)</option>
+                  </select>
+
+                  {/* Select Employee Filter */}
+                  <select
+                    value={selectedEmployee}
+                    onChange={(e) => setSelectedEmployee(e.target.value)}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"
+                  >
+                    <option value="all">সকল কর্মকর্তা (All Staff)</option>
+                    {employees
+                      .filter(emp => selectedCell === 'all' || emp.cellId.toString() === selectedCell)
+                      .map(emp => <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>)
+                    }
                   </select>
 
                   {/* Custom Modern Multi-Month Picker */}
