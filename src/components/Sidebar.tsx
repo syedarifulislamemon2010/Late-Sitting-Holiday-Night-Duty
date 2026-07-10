@@ -20,8 +20,10 @@ import {
   ClipboardList,
   AlertCircle,
   TrendingUp,
-  HardDrive
+  HardDrive,
+  LogOut
 } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 
 
 interface UserSession {
@@ -80,6 +82,16 @@ export default function Sidebar() {
     const nextState = !isCollapsed;
     setIsCollapsed(nextState);
     localStorage.setItem('sidebar-collapsed', String(nextState));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ redirect: false });
+      localStorage.removeItem('currentUser');
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
   const isEmployee = currentUser?.role === 'EMPLOYEE';
@@ -184,7 +196,7 @@ export default function Sidebar() {
 
       {/* Sidebar Navigation Panel */}
       <aside 
-        className={`no-print fixed top-0 lg:top-0 bottom-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800/80 transition-all duration-300 ease-in-out lg:translate-x-0 lg:relative ${
+        className={`no-print fixed top-0 lg:top-0 bottom-0 left-0 z-50 flex flex-col bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-xl border-r border-slate-200/60 dark:border-slate-800/60 transition-all duration-350 ease-in-out lg:translate-x-0 lg:relative ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:sticky lg:h-screen'
         } ${
           isMounted && isCollapsed ? 'lg:w-20' : 'lg:w-64'
@@ -193,7 +205,7 @@ export default function Sidebar() {
         {/* Collapse toggle button on desktop - Floats on the right middle edge */}
         <button 
           onClick={toggleCollapse}
-          className={`hidden lg:flex absolute top-1/2 -translate-y-1/2 -right-3 items-center justify-center w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 shadow-sm z-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition-transform duration-300 ${
+          className={`hidden lg:flex absolute top-[10%] -right-3.5 items-center justify-center w-7 h-7 rounded-xl bg-white dark:bg-slate-805 border border-slate-200/80 dark:border-slate-700/80 text-slate-500 dark:text-slate-400 hover:text-indigo-650 dark:hover:text-sky-400 shadow-md hover:shadow-lg z-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 hover:scale-105 active:scale-95 ${
             isCollapsed ? 'rotate-180' : ''
           }`}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -203,7 +215,7 @@ export default function Sidebar() {
         </button>
 
         {/* Sidebar Header Logo */}
-        <div className={`flex items-center py-5 border-b border-slate-100 dark:border-slate-800 ${
+        <div className={`flex items-center py-5 border-b border-slate-200/60 dark:border-slate-800/60 ${
           isMounted && isCollapsed ? 'lg:px-3 lg:justify-center' : 'px-6 justify-between'
         }`}>
           <Link 
@@ -215,7 +227,6 @@ export default function Sidebar() {
                 setShowWarningModal(true);
               }
             }}
-
             className="flex items-center group cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg w-full"
           >
             <Image 
@@ -231,7 +242,7 @@ export default function Sidebar() {
                 : 'opacity-100 w-full ml-3 whitespace-normal'
             }`}>
               <h1 className="font-extrabold text-slate-950 dark:text-slate-100 text-[13px] sm:text-[14px] leading-tight">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h1>
-              <p className="text-[10px] font-bold text-primary dark:text-blue-400 uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
+              <p className="text-[10px] font-bold text-indigo-650 dark:text-sky-400 uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
             </div>
           </Link>
           
@@ -254,14 +265,15 @@ export default function Sidebar() {
               <div className="transition-all duration-300">
                 {isMounted && isCollapsed ? (
                   secIdx > 0 ? (
-                    <div className="border-t border-slate-100 dark:border-slate-800 my-2 mx-3" />
+                    <div className="border-t border-slate-205 dark:border-slate-800 my-2 mx-3" />
                   ) : (
                     <div className="h-2" />
                   )
                 ) : (
-                  section.items.length > 1 && (
-                    <h3 className="px-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pt-2 whitespace-nowrap">
-                      {section.title}
+                  section.items.length > 0 && (
+                    <h3 className="px-4 text-[10px] font-black tracking-widest text-slate-400/80 dark:text-slate-500 uppercase pt-4 pb-1.5 whitespace-nowrap flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
+                      <span>{section.title}</span>
                     </h3>
                   )
                 )}
@@ -283,35 +295,40 @@ export default function Sidebar() {
                           setShowWarningModal(true);
                         }
                       }}
-                      className={`flex items-center transition-all duration-normal ease-premium group relative border-l-3 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                      className={`flex items-center transition-all duration-300 ease-in-out group relative rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 mx-2 ${
                         isMounted && isCollapsed 
-                          ? 'justify-center py-2.5 px-0' 
-                          : 'px-3 py-2.5'
+                          ? 'justify-center py-3 px-0' 
+                          : 'px-3.5 py-3 hover:pl-5'
                       } ${
                         isActive 
-                          ? 'bg-primary-50 dark:bg-primary-950/20 text-primary-600 dark:text-sky-400 border-primary-600 dark:border-sky-500 font-extrabold' 
-                          : 'text-slate-650 dark:text-slate-400 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/30 hover:text-slate-900 dark:hover:text-slate-100'
+                          ? 'bg-gradient-to-r from-indigo-50 to-blue-50/20 dark:from-indigo-950/20 dark:to-blue-950/5 text-indigo-650 dark:text-sky-400 font-black' 
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-805/30 hover:text-slate-900 dark:hover:text-slate-100'
                       }`}
                       aria-current={isActive ? 'page' : undefined}
                     >
+                      {/* Vertical Indicator Line */}
+                      {isActive && !isCollapsed && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-indigo-650 dark:bg-sky-400 rounded-full animate-pulse" />
+                      )}
+                      
                       <Icon 
                         size={18} 
-                        className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${
-                          isActive ? 'text-primary' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'
+                        className={`transition-transform duration-300 group-hover:scale-110 shrink-0 ${
+                          isActive ? 'text-indigo-650 dark:text-sky-400' : 'text-slate-450 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'
                         }`} 
                       />
                       
-                      <span className={`transition-all duration-200 whitespace-nowrap overflow-hidden ${
+                      <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${
                         isMounted && isCollapsed 
                           ? 'opacity-0 w-0 ml-0' 
-                          : 'opacity-100 w-auto ml-3'
+                          : 'opacity-100 w-auto ml-3 font-semibold text-xs sm:text-[13px]'
                       }`}>
                         {item.name}
                       </span>
 
                       {/* Interactive Hover Tooltip when collapsed */}
                       {isMounted && isCollapsed && (
-                        <div className="absolute left-16 opacity-0 pointer-events-none invisible group-hover:opacity-100 group-hover:visible group-hover:left-20 transition-all duration-200 whitespace-nowrap z-50 shadow-md px-2.5 py-1.5 bg-slate-950 text-white text-[12px] font-medium rounded-lg">
+                        <div className="absolute left-16 opacity-0 pointer-events-none invisible group-hover:opacity-100 group-hover:visible group-hover:left-20 transition-all duration-300 whitespace-nowrap z-50 shadow-xl px-3 py-2 bg-slate-950/95 dark:bg-slate-950/95 border border-slate-800 text-white text-[11px] font-bold rounded-xl leading-none">
                           {item.name}
                         </div>
                       )}
@@ -322,6 +339,51 @@ export default function Sidebar() {
             </div>
           ))}
         </nav>
+
+        {/* User Account / Profile Widget at Bottom */}
+        {currentUser && (
+          <div className={`no-print border-t border-slate-200/60 dark:border-slate-800/60 p-4 transition-all duration-350 ${
+            isMounted && isCollapsed ? 'flex justify-center' : 'flex items-center justify-between gap-3'
+          }`}>
+            {isMounted && isCollapsed ? (
+              <div className="group relative">
+                <button 
+                  onClick={handleLogout}
+                  className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  title="লগআউট করুন"
+                >
+                  {currentUser.name ? currentUser.name[0].toUpperCase() : 'U'}
+                </button>
+                <div className="absolute left-16 bottom-2 opacity-0 pointer-events-none invisible group-hover:opacity-100 group-hover:visible group-hover:left-18 transition-all duration-300 whitespace-nowrap z-50 shadow-xl px-3 py-2 bg-slate-950/95 dark:bg-slate-950/95 border border-slate-800 text-white text-[11px] font-bold rounded-xl flex flex-col gap-0.5">
+                  <span className="text-white">{currentUser.name}</span>
+                  <span className="text-slate-400 text-[9px]">{currentUser.role === 'ADMIN' ? 'অ্যাডমিন' : currentUser.role === 'EMPLOYEE' ? 'কর্মকর্তা' : 'ইউজার'}</span>
+                  <span className="text-red-400 text-[9px] font-extrabold mt-1 border-t border-slate-800 pt-1 flex items-center gap-1">
+                    <LogOut size={10} /> লগআউট করতে ক্লিক করুন
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-md shrink-0 select-none">
+                    {currentUser.name ? currentUser.name[0].toUpperCase() : 'U'}
+                  </div>
+                  <div className="flex flex-col text-left overflow-hidden">
+                    <span className="font-bold text-slate-805 dark:text-slate-205 text-xs truncate max-w-[120px]">{currentUser.name}</span>
+                    <span className="text-[9px] font-extrabold text-indigo-650 dark:text-sky-400 uppercase tracking-wider">{currentUser.role === 'ADMIN' ? 'অ্যাডমিন' : currentUser.role === 'EMPLOYEE' ? 'কর্মকর্তা' : 'ইউজার'}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-955/20 transition-all cursor-pointer active:scale-90"
+                  title="লগআউট করুন"
+                >
+                  <LogOut size={16} />
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </aside>
 
       {/* Styled Unsaved Changes Warning Modal */}
