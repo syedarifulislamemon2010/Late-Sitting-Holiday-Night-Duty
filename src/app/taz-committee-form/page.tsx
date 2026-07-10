@@ -208,6 +208,11 @@ function CalendarDatePicker({ value, onChange, isNonWorkingDay }: CalendarDatePi
   );
 }
 
+const cleanDesignation = (desig: string): string => {
+  if (!desig) return '';
+  return desig.replace(/\s*\([^)]*\)/g, '').trim();
+};
+
 export default function TazCommitteeFormPage() {
   const { currentUser } = useProfile();
   const { showToast } = useToast();
@@ -337,7 +342,7 @@ export default function TazCommitteeFormPage() {
     const emp = employees.find(e => e.id === parseInt(empIdStr, 10));
     if (emp) {
       setRequesterName(emp.name);
-      setRequesterDesignation(emp.designation);
+      setRequesterDesignation(cleanDesignation(emp.designation));
     }
   };
 
@@ -350,7 +355,7 @@ export default function TazCommitteeFormPage() {
     const emp = employees.find(e => e.id === parseInt(empIdStr, 10));
     if (emp) {
       handleImplementerChange(index, 'name', emp.name);
-      handleImplementerChange(index, 'designation', emp.designation);
+      handleImplementerChange(index, 'designation', cleanDesignation(emp.designation));
       handleImplementerChange(index, 'organization', 'Online Banking Department, Head Office, Janata Bank PLC.');
     }
   };
@@ -1127,40 +1132,33 @@ export default function TazCommitteeFormPage() {
           {/* RIGHT COLUMN: Pixel-Perfect A4 Live Preview (7 Columns width on desktop) */}
           <div className="xl:col-span-7 flex flex-col items-center pb-8">
             
-            {/* Live Preview actions toolbar */}
-            <div className="no-print w-full max-w-[210mm] flex items-center justify-between mb-4 gap-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-3 rounded-2xl shadow-sm">
+            {/* Live Preview actions toolbar matching 4th picture style */}
+            <div className="no-print w-full max-w-[210mm] flex items-center justify-between mb-4 gap-3 bg-transparent p-0">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Live Previewing Area</span>
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Live Previewing Area</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button 
-                  onClick={resetForm}
+                  onClick={() => window.location.href = '/dashboard'}
                   variant="secondary"
-                  size="sm"
-                  className="flex items-center gap-1.5 cursor-pointer font-bold text-xs"
-                  title="Clear all fields"
+                  className="flex items-center gap-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm rounded-xl px-4 py-2 font-bold text-xs cursor-pointer"
                 >
-                  <RefreshCw size={11} /> Reset
-                </Button>
-                <Button 
-                  onClick={() => handleSave()}
-                  variant="primary"
-                  size="sm"
-                  disabled={saving}
-                  className="flex items-center gap-1.5 cursor-pointer font-bold shadow-md text-xs"
-                  title="Save current request"
-                >
-                  <Save size={11} /> {editingFormId ? 'Update' : 'Save'}
+                  ← Dashboard
                 </Button>
                 <Button 
                   onClick={() => window.print()}
                   variant="secondary"
-                  size="sm"
-                  className="flex items-center gap-1.5 cursor-pointer font-bold shadow-sm bg-slate-100 text-slate-705 border border-slate-200 text-xs"
-                  title="Print this sheet"
+                  className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-850 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl px-4 py-2 font-bold text-xs cursor-pointer"
                 >
-                  <Printer size={11} /> Print A4
+                  <Printer size={13} /> Print Preview
+                </Button>
+                <Button 
+                  onClick={() => handleSave()}
+                  disabled={saving}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-md rounded-xl px-4 py-2 font-bold text-xs cursor-pointer"
+                >
+                  <Save size={13} /> {editingFormId ? 'Update Request' : 'Save Request'}
                 </Button>
               </div>
             </div>
@@ -1169,119 +1167,126 @@ export default function TazCommitteeFormPage() {
             <div className="w-full max-w-full overflow-x-auto flex justify-center pb-4 no-print-scrollbar">
               <div 
                 id="taz-print-area" 
-                className="w-[210mm] min-h-[297mm] bg-white text-black p-[15mm] border-2 border-slate-350 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.06)] relative flex flex-col justify-start shrink-0 font-serif text-[11px] leading-relaxed space-y-4"
+                className="w-[210mm] min-h-[297mm] bg-white dark:bg-slate-950 text-black dark:text-slate-200 p-[15mm] border-2 border-slate-350 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.06)] relative flex flex-col justify-start shrink-0 font-serif text-[11px] leading-relaxed space-y-4"
               >
                 
                 {/* Header */}
                 <div className="text-center space-y-1">
-                  <h1 className="text-[20px] font-bold text-black tracking-wide">Janata Bank PLC.</h1>
-                  <h2 className="text-[12px] font-bold text-black uppercase tracking-wider">Central Data Center (CDC)</h2>
-                  <div className="inline-block border-b border-black pb-0.5">
-                    <h3 className="text-[11px] font-bold text-black italic">
-                      Data Extraction/Change/Update Request Form for <span className="bg-black text-white px-1.5 py-0.5 not-italic font-mono font-bold">T24 Live</span> Area
+                  <h1 className="text-[20px] font-bold text-black dark:text-white tracking-wide">Janata Bank PLC.</h1>
+                  <h2 className="text-[12px] font-bold text-black dark:text-slate-300 uppercase tracking-wider">Central Data Center (CDC)</h2>
+                  <div className="inline-block border-b border-black dark:border-slate-750 pb-0.5">
+                    <h3 className="text-[11px] font-bold text-black dark:text-slate-300 italic">
+                      Data Extraction/Change/Update Request Form for <span className="bg-black dark:bg-slate-800 text-white dark:text-slate-100 px-1.5 py-0.5 not-italic font-mono font-bold">T24 Live</span> Area
                     </h3>
                   </div>
                 </div>
 
                 {/* Form Date */}
-                <div className="text-right font-bold text-black mt-2">
+                <div className="text-right font-bold text-black dark:text-slate-300 mt-2">
                   Date: {formatDateToDMY(formDate)}
                 </div>
 
-                {/* Main Attributes Table Grid */}
-                <table className="w-full border-collapse border border-black text-left">
+                {/* Main Attributes Table Grid - 4 Columns structure using colgroup */}
+                <table className="w-full border-collapse border border-black dark:border-slate-700 text-left">
+                  <colgroup>
+                    <col style={{ width: '30%' }} />
+                    <col style={{ width: '20%' }} />
+                    <col style={{ width: '30%' }} />
+                    <col style={{ width: '20%' }} />
+                  </colgroup>
                   <tbody>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold w-[25%]">Ref:</td>
-                      <td className="border border-black px-2 py-1 w-[40%] break-all">{ref}</td>
-                      <td className="border border-black px-2 py-1 font-bold w-[15%]">PACS ID :</td>
-                      <td className="border border-black px-2 py-1 w-[20%]"></td>
+                      <td colSpan={2} className="border border-black dark:border-slate-700 px-2 py-1 font-bold">
+                        Ref: <span className="font-normal font-mono">{ref}</span>
+                      </td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">PACS ID :</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1"></td>
                     </tr>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold">Title</td>
-                      <td colSpan={3} className="border border-black px-2 py-1 break-words">{title}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Title</td>
+                      <td colSpan={3} className="border border-black dark:border-slate-700 px-2 py-1 break-words">{title}</td>
                     </tr>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold">Purpose</td>
-                      <td colSpan={3} className="border border-black px-2 py-1 break-words">{purpose}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Purpose</td>
+                      <td colSpan={3} className="border border-black dark:border-slate-700 px-2 py-1 break-words">{purpose}</td>
                     </tr>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold">Application Name</td>
-                      <td colSpan={3} className="border border-black px-2 py-1 break-words">{applicationName}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Application Name</td>
+                      <td colSpan={3} className="border border-black dark:border-slate-700 px-2 py-1 break-words">{applicationName}</td>
                     </tr>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold">Routine Details</td>
-                      <td colSpan={3} className="border border-black px-2 py-1 whitespace-pre-wrap break-words">{routineDetails}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Routine Details</td>
+                      <td colSpan={3} className="border border-black dark:border-slate-700 px-2 py-1 whitespace-pre-wrap break-words">{routineDetails}</td>
                     </tr>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold">Subroutine Details</td>
-                      <td colSpan={3} className="border border-black px-2 py-1 whitespace-pre-wrap break-words">{subroutineDetails}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Subroutine Details</td>
+                      <td colSpan={3} className="border border-black dark:border-slate-700 px-2 py-1 whitespace-pre-wrap break-words">{subroutineDetails}</td>
                     </tr>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold">Version (Routine, Subroutine)</td>
-                      <td colSpan={3} className="border border-black px-2 py-1 break-words">{versionInfo}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Version (Routine, Subroutine)</td>
+                      <td colSpan={3} className="border border-black dark:border-slate-700 px-2 py-1 break-words">{versionInfo}</td>
                     </tr>
                     
                     {/* Access Flags Checklist Grid */}
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold text-[10px]">Need Backend Access? (Yes/No)</td>
-                      <td className="border border-black px-2 py-1 text-center font-mono font-bold">{needBackendAccess}</td>
-                      <td className="border border-black px-2 py-1 font-bold text-[10px]">Need Core FTP Access? (Yes/No)</td>
-                      <td className="border border-black px-2 py-1 text-center font-mono font-bold">{needCoreFtpAccess}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold text-[10px]">Need Backend Access? (Yes/No)</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 text-center font-mono font-bold">{needBackendAccess}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold text-[10px]">Need Core FTP Access? (Yes/No)</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 text-center font-mono font-bold">{needCoreFtpAccess}</td>
                     </tr>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold text-[10px]">Need Browser access? (Yes/No)</td>
-                      <td className="border border-black px-2 py-1 text-center font-mono font-bold">{needBrowserAccess}</td>
-                      <td className="border border-black px-2 py-1 font-bold text-[10px]">Browser Port Change? (Yes/No)</td>
-                      <td className="border border-black px-2 py-1 text-center font-mono font-bold">{browserPortChange}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold text-[10px]">Need Browser access? (Yes/No)</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 text-center font-mono font-bold">{needBrowserAccess}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold text-[10px]">Browser Port Change? (Yes/No)</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 text-center font-mono font-bold">{browserPortChange}</td>
                     </tr>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold text-[10px]">During Transaction hour? (Yes/No)</td>
-                      <td className="border border-black px-2 py-1 text-center font-mono font-bold">{duringTxHour}</td>
-                      <td className="border border-black px-2 py-1 font-bold text-[10px]">Number of Team Member</td>
-                      <td className="border border-black px-2 py-1 text-center font-mono font-bold">{String(numTeamMembers).padStart(2, '0')}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold text-[10px]">During Transaction hour? (Yes/No)</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 text-center font-mono font-bold">{duringTxHour}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold text-[10px]">Number of Team Member</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 text-center font-mono font-bold">{String(numTeamMembers).padStart(2, '0')}</td>
                     </tr>
 
                     {/* Schedule Ranges */}
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold">Approximated Schedule</td>
-                      <td className="border border-black px-2 py-1 text-center font-bold font-mono">Date</td>
-                      <td colSpan={2} className="border border-black px-2 py-1 font-mono text-center">
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Approximated Schedule</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 text-center font-bold font-mono">Date</td>
+                      <td colSpan={2} className="border border-black dark:border-slate-700 px-2 py-1 font-mono text-center font-bold whitespace-nowrap">
                         {formatDateTimeForPrint(approxScheduleStart)} {approxScheduleEnd ? ` – ${formatDateTimeForPrint(approxScheduleEnd)}` : ''}
                       </td>
                     </tr>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold">Execution Schedule</td>
-                      <td className="border border-black px-2 py-1 text-center font-bold font-mono">Date</td>
-                      <td colSpan={2} className="border border-black px-2 py-1 font-mono text-center">
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Execution Schedule</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 text-center font-bold font-mono">Date</td>
+                      <td colSpan={2} className="border border-black dark:border-slate-700 px-2 py-1 font-mono text-center font-bold whitespace-nowrap">
                         {formatDateTimeForPrint(execScheduleStart)} {execScheduleEnd ? ` – ${formatDateTimeForPrint(execScheduleEnd)}` : ''}
                       </td>
                     </tr>
                     <tr>
-                      <td className="border border-black px-2 py-1 font-bold">Impact *</td>
-                      <td colSpan={3} className="border border-black px-2 py-1 break-words">{impact}</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Impact *</td>
+                      <td colSpan={3} className="border border-black dark:border-slate-700 px-2 py-1 break-words">{impact}</td>
                     </tr>
                   </tbody>
                 </table>
 
                 {/* Requester Info Section */}
                 <div className="space-y-1">
-                  <h4 className="font-bold underline text-black">Requester Details:</h4>
-                  <table className="w-full border-collapse border border-black text-center">
+                  <h4 className="font-bold underline text-black dark:text-white">Requester Details:</h4>
+                  <table className="w-full border-collapse border border-black dark:border-slate-700 text-center">
                     <thead>
-                      <tr className="bg-slate-100 font-bold">
-                        <th className="border border-black px-2 py-1 w-[30%]">Requester Name</th>
-                        <th className="border border-black px-2 py-1 w-[25%]">Designation</th>
-                        <th className="border border-black px-2 py-1 w-[25%]">Organization</th>
-                        <th className="border border-black px-2 py-1 w-[20%]">Sign</th>
+                      <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold">
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[30%]">Requester Name</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[25%]">Designation</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[25%]">Organization</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[20%]">Sign</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr className="h-10">
-                        <td className="border border-black px-2 py-1 font-bold">{requesterName}</td>
-                        <td className="border border-black px-2 py-1">{requesterDesignation}</td>
-                        <td className="border border-black px-2 py-1">{requesterOrganization}</td>
-                        <td className="border border-black px-2 py-1"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">{requesterName}</td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1">{requesterDesignation}</td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1">{requesterOrganization}</td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1"></td>
                       </tr>
                     </tbody>
                   </table>
@@ -1289,22 +1294,22 @@ export default function TazCommitteeFormPage() {
 
                 {/* TAAJ Committee Opinion Sign Block */}
                 <div className="space-y-1">
-                  <h4 className="font-bold underline text-black">TAAJ Committee Opinion:</h4>
-                  <table className="w-full border-collapse border border-black text-center">
+                  <h4 className="font-bold underline text-black dark:text-white">TAAJ Committee Opinion:</h4>
+                  <table className="w-full border-collapse border border-black dark:border-slate-700 text-center">
                     <tbody>
                       <tr className="h-12">
-                        <td className="border border-black px-2 py-1 w-[20%]"></td>
-                        <td className="border border-black px-2 py-1 w-[20%]"></td>
-                        <td className="border border-black px-2 py-1 w-[20%]"></td>
-                        <td className="border border-black px-2 py-1 w-[20%]"></td>
-                        <td className="border border-black px-2 py-1 w-[20%]"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 w-[20%]"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 w-[20%]"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 w-[20%]"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 w-[20%]"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 w-[20%]"></td>
                       </tr>
-                      <tr className="bg-slate-100 font-bold text-[9px] h-6">
-                        <td className="border border-black px-1 py-0.5">Core Cell</td>
-                        <td className="border border-black px-1 py-0.5">Migration Cell</td>
-                        <td className="border border-black px-1 py-0.5">User Cell</td>
-                        <td className="border border-black px-1 py-0.5">Development & Customization Cell</td>
-                        <td className="border border-black px-1 py-0.5">DGM</td>
+                      <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold text-[9px] h-6">
+                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">Core Cell</td>
+                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">Migration Cell</td>
+                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">User Cell</td>
+                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">Development & Customization Cell</td>
+                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">DGM</td>
                       </tr>
                     </tbody>
                   </table>
@@ -1312,20 +1317,20 @@ export default function TazCommitteeFormPage() {
 
                 {/* Approval Details Sign Block */}
                 <div className="space-y-1">
-                  <h4 className="font-bold underline text-black">Approval Details (CDC & Network):</h4>
-                  <table className="w-full border-collapse border border-black text-center">
+                  <h4 className="font-bold underline text-black dark:text-white">Approval Details (CDC & Network):</h4>
+                  <table className="w-full border-collapse border border-black dark:border-slate-700 text-center">
                     <tbody>
                       <tr className="h-12">
-                        <td className="border border-black px-2 py-1 w-[25%]"></td>
-                        <td className="border border-black px-2 py-1 w-[25%]"></td>
-                        <td className="border border-black px-2 py-1 w-[25%]"></td>
-                        <td className="border border-black px-2 py-1 w-[25%]"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 w-[25%]"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 w-[25%]"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 w-[25%]"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 w-[25%]"></td>
                       </tr>
-                      <tr className="bg-slate-100 font-bold text-[9px] h-6">
-                        <td className="border border-black px-1 py-0.5">CDC</td>
-                        <td className="border border-black px-1 py-0.5">Cell in charge</td>
-                        <td className="border border-black px-1 py-0.5">AGM</td>
-                        <td className="border border-black px-1 py-0.5">DGM</td>
+                      <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold text-[9px] h-6">
+                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">CDC</td>
+                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">Cell in charge</td>
+                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">AGM</td>
+                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">DGM</td>
                       </tr>
                     </tbody>
                   </table>
@@ -1333,25 +1338,25 @@ export default function TazCommitteeFormPage() {
 
                 {/* Implementers Section */}
                 <div className="space-y-1">
-                  <h4 className="font-bold underline text-black">Implementer Details:</h4>
-                  <table className="w-full border-collapse border border-black text-center">
+                  <h4 className="font-bold underline text-black dark:text-white">Implementer Details:</h4>
+                  <table className="w-full border-collapse border border-black dark:border-slate-700 text-center">
                     <thead>
-                      <tr className="bg-slate-100 font-bold">
-                        <th className="border border-black px-2 py-1 w-[10%]">SL</th>
-                        <th className="border border-black px-2 py-1 w-[35%]">Name</th>
-                        <th className="border border-black px-2 py-1 w-[20%]">Designation</th>
-                        <th className="border border-black px-2 py-1 w-[20%]">Organization</th>
-                        <th className="border border-black px-2 py-1 w-[15%]">Signature</th>
+                      <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold">
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[10%]">SL</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[35%]">Name</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[20%]">Designation</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[20%]">Organization</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[15%]">Signature</th>
                       </tr>
                     </thead>
                     <tbody>
                       {implementers.map((impl, idx) => (
                         <tr key={idx} className="h-8">
-                          <td className="border border-black px-2 py-1 font-mono">{idx + 1}.</td>
-                          <td className="border border-black px-2 py-1 font-bold text-left">{impl.name}</td>
-                          <td className="border border-black px-2 py-1">{impl.designation}</td>
-                          <td className="border border-black px-2 py-1">{impl.organization}</td>
-                          <td className="border border-black px-2 py-1"></td>
+                          <td className="border border-black dark:border-slate-700 px-2 py-1 font-mono">{idx + 1}.</td>
+                          <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold text-left">{impl.name}</td>
+                          <td className="border border-black dark:border-slate-700 px-2 py-1">{impl.designation}</td>
+                          <td className="border border-black dark:border-slate-700 px-2 py-1">{impl.organization}</td>
+                          <td className="border border-black dark:border-slate-700 px-2 py-1"></td>
                         </tr>
                       ))}
                     </tbody>
@@ -1360,31 +1365,31 @@ export default function TazCommitteeFormPage() {
 
                 {/* Attended by Section */}
                 <div className="space-y-1 pt-1">
-                  <h4 className="font-bold text-black">Attended by: N/A</h4>
-                  <table className="w-full border-collapse border border-black text-center">
+                  <h4 className="font-bold text-black dark:text-white">Attended by: N/A</h4>
+                  <table className="w-full border-collapse border border-black dark:border-slate-700 text-center">
                     <thead>
-                      <tr className="bg-slate-100 font-bold">
-                        <th className="border border-black px-2 py-1 w-[10%]">SL#</th>
-                        <th className="border border-black px-2 py-1 w-[40%]">Name</th>
-                        <th className="border border-black px-2 py-1 w-[20%]">Designation</th>
-                        <th className="border border-black px-2 py-1 w-[15%]">Cell</th>
-                        <th className="border border-black px-2 py-1 w-[15%]">Signature</th>
+                      <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold">
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[10%]">SL#</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[40%]">Name</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[20%]">Designation</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[15%]">Cell</th>
+                        <th className="border border-black dark:border-slate-700 px-2 py-1 w-[15%]">Signature</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr className="h-8">
-                        <td className="border border-black px-2 py-1 font-mono">1.</td>
-                        <td className="border border-black px-2 py-1"></td>
-                        <td className="border border-black px-2 py-1"></td>
-                        <td className="border border-black px-2 py-1">CDC</td>
-                        <td className="border border-black px-2 py-1"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 font-mono">1.</td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1">CDC</td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1"></td>
                       </tr>
                       <tr className="h-8">
-                        <td className="border border-black px-2 py-1 font-mono">2.</td>
-                        <td className="border border-black px-2 py-1"></td>
-                        <td className="border border-black px-2 py-1"></td>
-                        <td className="border border-black px-2 py-1">CDC</td>
-                        <td className="border border-black px-2 py-1"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1 font-mono">2.</td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1"></td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1">CDC</td>
+                        <td className="border border-black dark:border-slate-700 px-2 py-1"></td>
                       </tr>
                     </tbody>
                   </table>
@@ -1400,41 +1405,53 @@ export default function TazCommitteeFormPage() {
         {/* Global Print Overrides style block */}
         <style jsx global>{`
           @media print {
+            @page {
+              size: A4 portrait;
+              margin: 10mm 15mm 10mm 15mm;
+            }
             body {
               background: white !important;
               color: black !important;
               padding: 0 !important;
               margin: 0 !important;
+              overflow: visible !important;
             }
             .no-print, header, nav, aside, footer, button, .no-print * {
               display: none !important;
             }
-            .print-container {
-              box-shadow: none !important;
-              border: none !important;
+            main, .flex-1, .p-4, .lg\:p-8, .p-6, .py-6, .xl\:col-span-7, .pb-8 {
               margin: 0 !important;
               padding: 0 !important;
-              width: 100% !important;
-              max-width: 100% !important;
-            }
-            table {
-              border-color: black !important;
-            }
-            th, td {
-              border-color: black !important;
-              color: black !important;
-            }
-            .bg-slate-100 {
-              background-color: #f1f5f9 !important;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
+              border: none !important;
+              box-shadow: none !important;
+              background: transparent !important;
+              width: auto !important;
+              height: auto !important;
+              max-height: none !important;
+              min-height: auto !important;
+              overflow: visible !important;
+              display: block !important;
             }
             #taz-print-area {
-              box-shadow: none !important;
-              border: none !important;
+              position: absolute !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100% !important;
+              min-height: auto !important;
               padding: 0 !important;
               margin: 0 !important;
-              width: 100% !important;
+              border: none !important;
+              box-shadow: none !important;
+              box-sizing: border-box !important;
+              background: #ffffff !important;
+              overflow: visible !important;
+              display: block !important;
+            }
+            #taz-print-area,
+            #taz-print-area * {
+              background-color: transparent !important;
+              color: #000000 !important;
+              border-color: #000000 !important;
             }
           }
         `}</style>
