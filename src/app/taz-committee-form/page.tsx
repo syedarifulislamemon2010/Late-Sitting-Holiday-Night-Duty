@@ -1412,7 +1412,7 @@ export default function TazCommitteeFormPage() {
           @media print {
             @page {
               size: A4 portrait;
-              margin: 15mm;
+              margin: 0;
             }
             body {
               background: white !important;
@@ -1449,7 +1449,10 @@ export default function TazCommitteeFormPage() {
               width: 100% !important;
               max-width: 100% !important;
               min-height: auto !important;
-              padding: 0 !important;
+              padding-top: 15mm !important;
+              padding-bottom: 15mm !important;
+              padding-left: 15mm !important;
+              padding-right: 15mm !important;
               margin: 0 auto !important;
               border: none !important;
               box-shadow: none !important;
