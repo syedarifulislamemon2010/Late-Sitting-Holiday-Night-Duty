@@ -1402,12 +1402,11 @@ export default function TazCommitteeFormPage() {
 
         </div>
 
-        {/* Global Print Overrides style block */}
         <style jsx global>{`
           @media print {
             @page {
               size: A4 portrait;
-              margin: 10mm 15mm 10mm 15mm;
+              margin: 15mm;
             }
             body {
               background: white !important;
@@ -1419,33 +1418,31 @@ export default function TazCommitteeFormPage() {
             .no-print, header, nav, aside, footer, button, .no-print * {
               display: none !important;
             }
-            main, .flex-1, .p-4, .lg\:p-8, .p-6, .py-6, .xl\:col-span-7, .pb-8 {
-              margin: 0 !important;
-              padding: 0 !important;
-              border: none !important;
-              box-shadow: none !important;
-              background: transparent !important;
+            html, body, #__next, main, [class*="flex"], [class*="grid"], div:not(#taz-print-area):not(#taz-print-area *) {
+              position: static !important;
               width: auto !important;
               height: auto !important;
-              max-height: none !important;
-              min-height: auto !important;
-              overflow: visible !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              box-shadow: none !important;
+              border: none !important;
+              background: transparent !important;
               display: block !important;
+              float: none !important;
+              overflow: visible !important;
             }
             #taz-print-area {
-              position: absolute !important;
-              top: 0 !important;
-              left: 0 !important;
+              display: block !important;
               width: 100% !important;
+              max-width: 100% !important;
               min-height: auto !important;
               padding: 0 !important;
-              margin: 0 !important;
+              margin: 0 auto !important;
               border: none !important;
               box-shadow: none !important;
               box-sizing: border-box !important;
               background: #ffffff !important;
               overflow: visible !important;
-              display: block !important;
             }
             #taz-print-area,
             #taz-print-area * {
