@@ -1186,8 +1186,21 @@ export default function TazCommitteeFormPage() {
                   Date: {formatDateToDMY(formDate)}
                 </div>
 
-                {/* Main Attributes Table Grid - 4 Columns structure using colgroup */}
-                <table className="w-full border-collapse border border-black dark:border-slate-700 text-left">
+                {/* Ref & PACS Table (Table 1) */}
+                <table className="w-full border-collapse border border-black dark:border-slate-700 border-b-0 text-left">
+                  <tbody>
+                    <tr>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold w-[65%]">
+                        Ref: <span className="font-normal font-mono">{ref}</span>
+                      </td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold w-[15%]">PACS ID :</td>
+                      <td className="border border-black dark:border-slate-700 px-2 py-1 w-[20%]"></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Main Parameters Table Grid (Table 2) */}
+                <table className="w-full border-collapse border border-black dark:border-slate-700 text-left mt-0">
                   <colgroup>
                     <col style={{ width: '30%' }} />
                     <col style={{ width: '20%' }} />
@@ -1195,13 +1208,6 @@ export default function TazCommitteeFormPage() {
                     <col style={{ width: '20%' }} />
                   </colgroup>
                   <tbody>
-                    <tr>
-                      <td colSpan={2} className="border border-black dark:border-slate-700 px-2 py-1 font-bold">
-                        Ref: <span className="font-normal font-mono">{ref}</span>
-                      </td>
-                      <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">PACS ID :</td>
-                      <td className="border border-black dark:border-slate-700 px-2 py-1"></td>
-                    </tr>
                     <tr>
                       <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Title</td>
                       <td colSpan={3} className="border border-black dark:border-slate-700 px-2 py-1 break-words">{title}</td>
@@ -1328,7 +1334,7 @@ export default function TazCommitteeFormPage() {
                       </tr>
                       <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold text-[9px] h-6">
                         <td className="border border-black dark:border-slate-700 px-1 py-0.5">CDC</td>
-                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">Cell in charge</td>
+                        <td className="border border-black dark:border-slate-700 px-1 py-0.5">Cell In-charge</td>
                         <td className="border border-black dark:border-slate-700 px-1 py-0.5">AGM</td>
                         <td className="border border-black dark:border-slate-700 px-1 py-0.5">DGM</td>
                       </tr>
