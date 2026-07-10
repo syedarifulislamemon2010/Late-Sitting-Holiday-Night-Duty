@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { isNonWorkingDay } from '@/lib/leave-calculator';
 import AuthGuard from '@/components/AuthGuard';
@@ -11,11 +11,8 @@ import {
   Printer, 
   Trash2, 
   Edit2, 
-  Plus, 
   FileText, 
-  Check, 
   ArrowLeft,
-  X,
   PlusCircle,
   MinusCircle
 } from 'lucide-react';
@@ -61,7 +58,23 @@ interface Holiday {
   isWorkingDay: boolean;
 }
 
-// Custom DatePicker that disables weekends & holidays
+interface Employee {
+  id: number;
+  name: string;
+  designation: string;
+  cellId: number;
+  cell?: {
+    id: number;
+    name: string;
+  };
+}
+
+interface Cell {
+  id: number;
+  name: string;
+}
+
+// Custom DatePicker in English that disables weekends & holidays
 interface CalendarDatePickerProps {
   value: string;
   onChange: (date: string) => void;
@@ -100,15 +113,15 @@ function CalendarDatePicker({ value, onChange, isNonWorkingDay }: CalendarDatePi
     setIsOpen(false);
   };
 
-  const monthNamesBN = [
-    'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
-    'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+  const monthNamesEN = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
   const getDisplayDate = () => {
-    if (!value) return 'তারিখ নির্বাচন করুন';
+    if (!value) return 'Select Date';
     const [y, m, d] = value.split('-');
-    return `${parseInt(d, 10)}ই ${monthNamesBN[parseInt(m, 10) - 1]} ${y}`;
+    return `${parseInt(d, 10)} ${monthNamesEN[parseInt(m, 10) - 1]} ${y}`;
   };
 
   const days = [];
@@ -162,7 +175,7 @@ function CalendarDatePicker({ value, onChange, isNonWorkingDay }: CalendarDatePi
               ◀
             </button>
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              {monthNamesBN[month]} {year}
+              {monthNamesEN[month]} {year}
             </span>
             <button
               type="button"
@@ -174,13 +187,13 @@ function CalendarDatePicker({ value, onChange, isNonWorkingDay }: CalendarDatePi
           </div>
 
           <div className="grid grid-cols-7 gap-1.5 text-center mb-1 text-[10px] font-bold text-slate-500">
-            <span>রবি</span>
-            <span>সোম</span>
-            <span>মঙ্গল</span>
-            <span>বুধ</span>
-            <span>বৃহ</span>
-            <span className="text-rose-500">শুক্র</span>
-            <span className="text-rose-500">শনি</span>
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span className="text-rose-500">Fri</span>
+            <span className="text-rose-500">Sat</span>
           </div>
 
           <div className="grid grid-cols-7 gap-1.5 text-center">
@@ -197,6 +210,8 @@ export default function TazCommitteeFormPage() {
   const { showToast } = useToast();
 
   const [dbHolidays, setDbHolidays] = useState<Holiday[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [cells, setCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'NEW' | 'ARCHIVE'>('NEW');
   const [archivedForms, setArchivedForms] = useState<TazForm[]>([]);
@@ -206,12 +221,10 @@ export default function TazCommitteeFormPage() {
 
   // Form States
   const [formDate, setFormDate] = useState(() => {
-    // Defaults to today's date formatted as YYYY-MM-DD
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
   const [ref, setRef] = useState('');
-  const [pacsId, setPacsId] = useState('');
   const [title, setTitle] = useState('');
   const [purpose, setPurpose] = useState('');
   const [applicationName, setApplicationName] = useState('');
@@ -232,23 +245,26 @@ export default function TazCommitteeFormPage() {
   const [execScheduleEnd, setExecScheduleEnd] = useState('');
   const [impact, setImpact] = useState('');
 
-  // Requester Info (defaulted from logged-in session)
+  // Requester Info (defaults to empty, editable)
   const [requesterName, setRequesterName] = useState('');
   const [requesterDesignation, setRequesterDesignation] = useState('');
-  const [requesterOrganization, setRequesterOrganization] = useState('Central Data Center (CDC)');
+  const [requesterOrganization, setRequesterOrganization] = useState('Online Banking Department, Head Office, Janata Bank PLC.');
 
-  // Implementers Info
+  // Selected cell & officer mapping for implementers
+  const [implementerCells, setImplementerCells] = useState<string[]>([]);
   const [implementers, setImplementers] = useState<Implementer[]>([
-    { name: '', designation: '', organization: 'Central Data Center (CDC)' }
+    { name: '', designation: '', organization: 'Online Banking Department, Head Office, Janata Bank PLC.' }
   ]);
 
-  // Load holidays & history list
+  // Load holidays, employees, cells & history list
   useEffect(() => {
     const initPage = async () => {
       try {
-        const [holRes, formsRes] = await Promise.all([
+        const [holRes, formsRes, empRes, cellsRes] = await Promise.all([
           fetch('/api/holidays'),
-          fetch('/api/taz-committee-forms')
+          fetch('/api/taz-committee-forms'),
+          fetch('/api/employees'),
+          fetch('/api/cells')
         ]);
         if (holRes.ok) {
           const holidays = await holRes.json();
@@ -257,6 +273,14 @@ export default function TazCommitteeFormPage() {
         if (formsRes.ok) {
           const forms = await formsRes.json();
           setArchivedForms(forms);
+        }
+        if (empRes.ok) {
+          const empList = await empRes.json();
+          setEmployees(empList);
+        }
+        if (cellsRes.ok) {
+          const cellList = await cellsRes.json();
+          setCells(cellList);
         }
       } catch (err) {
         console.error('Error loading Taz form dependencies:', err);
@@ -267,45 +291,27 @@ export default function TazCommitteeFormPage() {
     initPage();
   }, []);
 
-  // Sync current user default info
-  useEffect(() => {
-    if (currentUser) {
-      setRequesterName(currentUser.name || '');
-      // Fetch matching designation from employee list if possible
-      const getEmployeeDesignation = async () => {
-        try {
-          const res = await fetch('/api/employees');
-          if (res.ok) {
-            const list = await res.json();
-            const matched = list.find((e: any) => e.userId === currentUser.id);
-            if (matched) {
-              setRequesterDesignation(matched.designation);
-              setImplementers([{
-                name: matched.name,
-                designation: matched.designation,
-                organization: 'Central Data Center (CDC)'
-              }]);
-            }
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      };
-      getEmployeeDesignation();
-    }
-  }, [currentUser]);
-
   // Adjust implementers array length dynamically based on numTeamMembers
   useEffect(() => {
     setImplementers(prev => {
       const copy = [...prev];
       if (copy.length < numTeamMembers) {
-        // Expand
         while (copy.length < numTeamMembers) {
-          copy.push({ name: '', designation: '', organization: 'Central Data Center (CDC)' });
+          copy.push({ name: '', designation: '', organization: 'Online Banking Department, Head Office, Janata Bank PLC.' });
         }
       } else if (copy.length > numTeamMembers) {
-        // Shrink
+        return copy.slice(0, numTeamMembers);
+      }
+      return copy;
+    });
+
+    setImplementerCells(prev => {
+      const copy = [...prev];
+      if (copy.length < numTeamMembers) {
+        while (copy.length < numTeamMembers) {
+          copy.push('');
+        }
+      } else if (copy.length > numTeamMembers) {
         return copy.slice(0, numTeamMembers);
       }
       return copy;
@@ -320,10 +326,37 @@ export default function TazCommitteeFormPage() {
     });
   };
 
+  const handleSelectRequesterOfficer = (empIdStr: string) => {
+    if (!empIdStr) {
+      setRequesterName('');
+      setRequesterDesignation('');
+      return;
+    }
+    const emp = employees.find(e => e.id === parseInt(empIdStr, 10));
+    if (emp) {
+      setRequesterName(emp.name);
+      setRequesterDesignation(emp.designation);
+    }
+  };
+
+  const handleSelectImplementerOfficer = (index: number, empIdStr: string) => {
+    if (!empIdStr) {
+      handleImplementerChange(index, 'name', '');
+      handleImplementerChange(index, 'designation', '');
+      return;
+    }
+    const emp = employees.find(e => e.id === parseInt(empIdStr, 10));
+    if (emp) {
+      handleImplementerChange(index, 'name', emp.name);
+      handleImplementerChange(index, 'designation', emp.designation);
+      handleImplementerChange(index, 'organization', 'Online Banking Department, Head Office, Janata Bank PLC.');
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formDate) {
-      showToast('তারিখ নির্বাচন করা আবশ্যক।', 'error');
+      showToast('Date selection is required.', 'error');
       return;
     }
 
@@ -332,7 +365,6 @@ export default function TazCommitteeFormPage() {
       const payload = {
         formDate,
         ref,
-        pacsId,
         title,
         purpose,
         applicationName,
@@ -367,23 +399,21 @@ export default function TazCommitteeFormPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.message || 'সংরক্ষণ করতে ব্যর্থ হয়েছে।');
+        throw new Error(data.message || 'Failed to save form data.');
       }
 
-      showToast(editingFormId ? 'TAZ কমিটি ফরম আপডেট করা হয়েছে!' : 'TAZ কমিটি ফরম তৈরি করা হয়েছে!', 'success');
+      showToast(editingFormId ? 'TAZ Request Form updated successfully!' : 'TAZ Request Form created successfully!', 'success');
       
-      // Reload archive
       const formsRes = await fetch('/api/taz-committee-forms');
       if (formsRes.ok) {
         const forms = await formsRes.json();
         setArchivedForms(forms);
       }
 
-      // Reset form fields
       resetForm();
       setActiveTab('ARCHIVE');
     } catch (err: any) {
-      showToast(err.message || 'ডিউটি সংরক্ষণে সমস্যা হয়েছে', 'error');
+      showToast(err.message || 'Error occurred while saving.', 'error');
     } finally {
       setSaving(false);
     }
@@ -393,7 +423,6 @@ export default function TazCommitteeFormPage() {
     setEditingFormId(form.id);
     setFormDate(form.formDate);
     setRef(form.ref);
-    setPacsId(form.pacsId);
     setTitle(form.title);
     setPurpose(form.purpose);
     setApplicationName(form.applicationName);
@@ -423,14 +452,14 @@ export default function TazCommitteeFormPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('আপনি কি নিশ্চিত যে এই ফরমটি ডিলিট করতে চান?')) return;
+    if (!confirm('Are you sure you want to delete this form?')) return;
     try {
       const res = await fetch(`/api/taz-committee-forms/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || 'ডিলিট করতে ব্যর্থ হয়েছে।');
+        throw new Error(data.message || 'Delete failed.');
       }
-      showToast('রেকর্ডটি সফলভাবে ডিলিট করা হয়েছে!', 'success');
+      showToast('Record deleted successfully!', 'success');
       setArchivedForms(prev => prev.filter(f => f.id !== id));
     } catch (err: any) {
       showToast(err.message, 'error');
@@ -441,7 +470,6 @@ export default function TazCommitteeFormPage() {
     setEditingFormId(null);
     setFormDate(new Date().toISOString().split('T')[0]);
     setRef('');
-    setPacsId('');
     setTitle('');
     setPurpose('');
     setApplicationName('');
@@ -459,9 +487,11 @@ export default function TazCommitteeFormPage() {
     setExecScheduleStart('');
     setExecScheduleEnd('');
     setImpact('');
-    if (currentUser) {
-      setRequesterName(currentUser.name || '');
-    }
+    setRequesterName('');
+    setRequesterDesignation('');
+    setRequesterOrganization('Online Banking Department, Head Office, Janata Bank PLC.');
+    setImplementers([{ name: '', designation: '', organization: 'Online Banking Department, Head Office, Janata Bank PLC.' }]);
+    setImplementerCells(['']);
   };
 
   const isNonWorking = (dateStr: string) => {
@@ -473,6 +503,24 @@ export default function TazCommitteeFormPage() {
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-');
     return `${d}/${m}/${y}`;
+  };
+
+  // Formatter to convert datetime-local input string (2024-12-29T15:00) to printable format (29.12.24 (3:00 PM))
+  const formatDateTimeForPrint = (dateTimeStr: string): string => {
+    if (!dateTimeStr) return '';
+    const date = new Date(dateTimeStr);
+    if (isNaN(date.getTime())) return dateTimeStr;
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = String(date.getFullYear()).slice(-2);
+    
+    let hours = date.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; 
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${d}.${m}.${y} (${hours}:${minutes} ${ampm})`;
   };
 
   if (loading) {
@@ -501,7 +549,7 @@ export default function TazCommitteeFormPage() {
             size="sm"
             className="flex items-center gap-2 cursor-pointer font-bold"
           >
-            <ArrowLeft size={14} /> ফিরে যান
+            <ArrowLeft size={14} /> Back
           </Button>
           <Button 
             onClick={() => window.print()}
@@ -509,7 +557,7 @@ export default function TazCommitteeFormPage() {
             size="sm"
             className="flex items-center gap-2 shadow-md cursor-pointer font-bold"
           >
-            <Printer size={14} /> প্রিন্ট করুন
+            <Printer size={14} /> Print
           </Button>
         </div>
 
@@ -538,8 +586,8 @@ export default function TazCommitteeFormPage() {
               <tr>
                 <td className="border border-black px-2 py-1 font-bold w-[25%]">Ref:</td>
                 <td className="border border-black px-2 py-1 w-[40%]">{printForm.ref}</td>
-                <td className="border border-black px-2 py-1 font-bold w-[15%]">PACS ID:</td>
-                <td className="border border-black px-2 py-1 w-[20%]">{printForm.pacsId}</td>
+                <td className="border border-black px-2 py-1 font-bold w-[15%]">PACS ID :</td>
+                <td className="border border-black px-2 py-1 w-[20%]"></td>
               </tr>
               <tr>
                 <td className="border border-black px-2 py-1 font-bold">Title</td>
@@ -590,12 +638,16 @@ export default function TazCommitteeFormPage() {
               <tr>
                 <td className="border border-black px-2 py-1 font-bold">Approximated Schedule</td>
                 <td className="border border-black px-2 py-1 text-center font-bold font-mono">Date</td>
-                <td colSpan={2} className="border border-black px-2 py-1 font-mono text-center">{printForm.approxScheduleStart} {printForm.approxScheduleEnd ? `– ${printForm.approxScheduleEnd}` : ''}</td>
+                <td colSpan={2} className="border border-black px-2 py-1 font-mono text-center">
+                  {formatDateTimeForPrint(printForm.approxScheduleStart)} {printForm.approxScheduleEnd ? ` – ${formatDateTimeForPrint(printForm.approxScheduleEnd)}` : ''}
+                </td>
               </tr>
               <tr>
                 <td className="border border-black px-2 py-1 font-bold">Execution Schedule</td>
                 <td className="border border-black px-2 py-1 text-center font-bold font-mono">Date</td>
-                <td colSpan={2} className="border border-black px-2 py-1 font-mono text-center">{printForm.execScheduleStart} {printForm.execScheduleEnd ? `– ${printForm.execScheduleEnd}` : ''}</td>
+                <td colSpan={2} className="border border-black px-2 py-1 font-mono text-center">
+                  {formatDateTimeForPrint(printForm.execScheduleStart)} {printForm.execScheduleEnd ? ` – ${formatDateTimeForPrint(printForm.execScheduleEnd)}` : ''}
+                </td>
               </tr>
               <tr>
                 <td className="border border-black px-2 py-1 font-bold">Impact *</td>
@@ -778,7 +830,7 @@ export default function TazCommitteeFormPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-850 dark:text-slate-100 flex items-center gap-2">
-              📝 TAZ কমিটি ফরম
+              📝 TAZ Committee Request Form
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Data Extraction/Change/Update Request Form for T24 Live Area
@@ -797,7 +849,7 @@ export default function TazCommitteeFormPage() {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              {editingFormId ? 'ফরম সংশোধন' : 'নতুন ফরম তৈরি'}
+              {editingFormId ? 'Edit Form' : 'Create Request'}
             </button>
             <button
               onClick={() => setActiveTab('ARCHIVE')}
@@ -807,7 +859,7 @@ export default function TazCommitteeFormPage() {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              ইতিহাস ও আর্কাইভ ({archivedForms.length})
+              Request History ({archivedForms.length})
             </button>
           </div>
         </div>
@@ -820,7 +872,7 @@ export default function TazCommitteeFormPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">
-                    তারিখ (অবশ্যই কার্যদিবস হতে হবে): <span className="text-red-500">*</span>
+                    Request Date (Must be a working day): <span className="text-red-500">*</span>
                   </label>
                   <CalendarDatePicker 
                     value={formDate} 
@@ -828,58 +880,46 @@ export default function TazCommitteeFormPage() {
                     isNonWorkingDay={isNonWorking} 
                   />
                   <p className="text-[10px] text-slate-400">
-                    ছুটির দিনসমূহ (শুক্র/শনি ও ব্যাংক ছুটির তারিখসমূহ) ডিজেবল থাকবে।
+                    Holidays and weekends (Fri/Sat) are disabled and cannot be selected.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Ref (রেফারেন্স নম্বর):</label>
-                    <input 
-                      type="text" 
-                      value={ref} 
-                      onChange={(e) => setRef(e.target.value)}
-                      placeholder="e.g. JB/CDC/..."
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm font-semibold"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">PACS ID:</label>
-                    <input 
-                      type="text" 
-                      value={pacsId} 
-                      onChange={(e) => setPacsId(e.target.value)}
-                      placeholder="e.g. PACS-001"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm font-semibold"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Reference No (Ref):</label>
+                  <input 
+                    type="text" 
+                    value={ref} 
+                    onChange={(e) => setRef(e.target.value)}
+                    placeholder="e.g. JB/CDC/..."
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm font-semibold"
+                  />
                 </div>
               </div>
 
               {/* Form details section */}
               <div className="space-y-4 border-t border-slate-100 dark:border-slate-800/80 pt-4">
-                <h3 className="text-xs font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-wider">রিকুইজিশন বিবরণী</h3>
+                <h3 className="text-xs font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-wider">Request Details</h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Title (শিরোনাম):</label>
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Request Title:</label>
                     <input 
                       type="text" 
                       value={title} 
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="Title of change request"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Purpose (উদ্দেশ্য):</label>
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Purpose / Objective:</label>
                     <input 
                       type="text" 
                       value={purpose} 
                       onChange={(e) => setPurpose(e.target.value)}
                       placeholder="Purpose of extraction/change"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm"
                     />
                   </div>
 
@@ -890,7 +930,7 @@ export default function TazCommitteeFormPage() {
                       value={applicationName} 
                       onChange={(e) => setApplicationName(e.target.value)}
                       placeholder="Application name"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm"
                     />
                   </div>
 
@@ -901,7 +941,7 @@ export default function TazCommitteeFormPage() {
                       value={versionInfo} 
                       onChange={(e) => setVersionInfo(e.target.value)}
                       placeholder="Version info"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm"
                     />
                   </div>
                 </div>
@@ -914,7 +954,7 @@ export default function TazCommitteeFormPage() {
                       onChange={(e) => setRoutineDetails(e.target.value)}
                       placeholder="Provide routine details"
                       rows={2}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-805 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm"
                     />
                   </div>
                   <div className="space-y-2">
@@ -924,7 +964,7 @@ export default function TazCommitteeFormPage() {
                       onChange={(e) => setSubroutineDetails(e.target.value)}
                       placeholder="Provide subroutine details"
                       rows={2}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-805 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm"
                     />
                   </div>
                 </div>
@@ -932,7 +972,7 @@ export default function TazCommitteeFormPage() {
 
               {/* Yes/No Check Options dropdown grid */}
               <div className="space-y-4 border-t border-slate-100 dark:border-slate-800/80 pt-4">
-                <h3 className="text-xs font-black text-indigo-655 dark:text-indigo-400 uppercase tracking-wider">অ্যাক্সেস ও ট্রানজেকশন প্যারামিটার</h3>
+                <h3 className="text-xs font-black text-indigo-655 dark:text-indigo-400 uppercase tracking-wider">Access Parameters</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-slate-650 dark:text-slate-400 block">Backend Access?</label>
@@ -998,12 +1038,12 @@ export default function TazCommitteeFormPage() {
 
               {/* Schedules, Team members & Impact */}
               <div className="space-y-4 border-t border-slate-100 dark:border-slate-800/80 pt-4">
-                <h3 className="text-xs font-black text-indigo-655 dark:text-indigo-400 uppercase tracking-wider">শিডিউল, প্রভাব ও টিম</h3>
+                <h3 className="text-xs font-black text-indigo-655 dark:text-indigo-400 uppercase tracking-wider">Schedule, Impact & Team size</h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Number of Team Member (টিম সংখ্যা):</label>
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Number of Team Members:</label>
                     <div className="flex items-center gap-2">
                       <button 
                         type="button" 
@@ -1033,22 +1073,20 @@ export default function TazCommitteeFormPage() {
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Approximated Start Schedule:</label>
                     <input 
-                      type="text" 
+                      type="datetime-local" 
                       value={approxScheduleStart} 
                       onChange={(e) => setApproxScheduleStart(e.target.value)}
-                      placeholder="e.g. 29.12.24 (3:00 PM)"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm font-mono"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-805 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm font-mono"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Approximated Finish Schedule:</label>
                     <input 
-                      type="text" 
+                      type="datetime-local" 
                       value={approxScheduleEnd} 
                       onChange={(e) => setApproxScheduleEnd(e.target.value)}
-                      placeholder="e.g. 30.12.24 (10:00 PM)"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm font-mono"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-805 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm font-mono"
                     />
                   </div>
                 </div>
@@ -1057,33 +1095,31 @@ export default function TazCommitteeFormPage() {
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Execution Start Schedule:</label>
                     <input 
-                      type="text" 
+                      type="datetime-local" 
                       value={execScheduleStart} 
                       onChange={(e) => setExecScheduleStart(e.target.value)}
-                      placeholder="e.g. 29.12.24 (3:00 PM)"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm font-mono"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-805 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm font-mono"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Execution Finish Schedule:</label>
                     <input 
-                      type="text" 
+                      type="datetime-local" 
                       value={execScheduleEnd} 
                       onChange={(e) => setExecScheduleEnd(e.target.value)}
-                      placeholder="e.g. 30.12.24 (10:00 PM)"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm font-mono"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-805 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm font-mono"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Impact * (প্রভাব):</label>
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Impact *:</label>
                     <input 
                       type="text" 
                       value={impact} 
                       onChange={(e) => setImpact(e.target.value)}
                       placeholder="e.g. Service downtime info"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none text-sm"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-805 dark:text-slate-100 rounded-xl outline-none text-sm"
                     />
                   </div>
                 </div>
@@ -1091,11 +1127,27 @@ export default function TazCommitteeFormPage() {
 
               {/* Requester Info Details Form */}
               <div className="space-y-4 border-t border-slate-100 dark:border-slate-800/80 pt-4">
-                <h3 className="text-xs font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-wider">অনুরোধকারীর বিবরণ (Requester Details)</h3>
+                <h3 className="text-xs font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-wider">Requester Details</h3>
                 
+                {/* Search officer dropdown */}
+                <div className="space-y-1 max-w-md">
+                  <label className="text-[10px] font-black text-slate-500 block">Search / Select Officer (Optional):</label>
+                  <select
+                    onChange={(e) => handleSelectRequesterOfficer(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-150 rounded-xl outline-none text-xs font-bold cursor-pointer"
+                  >
+                    <option value="">-- Select Officer --</option>
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name} ({emp.designation})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Name (নাম):</label>
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Name:</label>
                     <input 
                       type="text" 
                       value={requesterName} 
@@ -1106,7 +1158,7 @@ export default function TazCommitteeFormPage() {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Designation (পদবী):</label>
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Designation:</label>
                     <input 
                       type="text" 
                       value={requesterDesignation} 
@@ -1117,7 +1169,7 @@ export default function TazCommitteeFormPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Organization (বিভাগ):</label>
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-350 block">Organization:</label>
                     <input 
                       type="text" 
                       value={requesterOrganization} 
@@ -1132,50 +1184,103 @@ export default function TazCommitteeFormPage() {
               {/* Implementers Details Form Grid */}
               <div className="space-y-4 border-t border-slate-100 dark:border-slate-800/80 pt-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-wider">বাস্তবায়নকারীর বিবরণ (Implementer Details)</h3>
-                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">টিম সংখ্যা: {numTeamMembers} জন</span>
+                  <h3 className="text-xs font-black text-indigo-655 dark:text-indigo-400 uppercase tracking-wider">Implementer Details</h3>
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">Team size: {numTeamMembers} member(s)</span>
                 </div>
 
                 <div className="space-y-3">
-                  {implementers.map((impl, idx) => (
-                    <div key={idx} className="p-4 bg-slate-50/50 dark:bg-slate-900/20 border border-slate-100 dark:border-slate-850 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 block">বাস্তবায়নকারী #{idx + 1} নাম:</label>
-                        <input 
-                          type="text"
-                          required
-                          value={impl.name}
-                          onChange={(e) => handleImplementerChange(idx, 'name', e.target.value)}
-                          placeholder="Name"
-                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-lg outline-none text-xs font-semibold"
-                        />
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 block">পদবী:</label>
-                        <input 
-                          type="text"
-                          required
-                          value={impl.designation}
-                          onChange={(e) => handleImplementerChange(idx, 'designation', e.target.value)}
-                          placeholder="Designation"
-                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-lg outline-none text-xs font-semibold"
-                        />
-                      </div>
+                  {implementers.map((impl, idx) => {
+                    const currentCellId = implementerCells[idx] ? parseInt(implementerCells[idx], 10) : '';
+                    const filteredEmps = employees.filter(emp => emp.cellId === currentCellId);
 
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 block">প্রতিষ্ঠান / বিভাগ:</label>
-                        <input 
-                          type="text"
-                          required
-                          value={impl.organization}
-                          onChange={(e) => handleImplementerChange(idx, 'organization', e.target.value)}
-                          placeholder="Organization"
-                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-lg outline-none text-xs font-semibold"
-                        />
+                    return (
+                      <div key={idx} className="p-4 bg-slate-50/50 dark:bg-slate-900/20 border border-slate-105 dark:border-slate-850 rounded-2xl space-y-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-indigo-650 dark:text-indigo-400">Implementer #{idx + 1} Selection:</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 block">Select Cell:</label>
+                            <select
+                              value={implementerCells[idx] || ''}
+                              onChange={(e) => {
+                                const newCells = [...implementerCells];
+                                newCells[idx] = e.target.value;
+                                setImplementerCells(newCells);
+                                // reset officer select
+                                handleImplementerChange(idx, 'name', '');
+                                handleImplementerChange(idx, 'designation', '');
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-150 rounded-lg outline-none text-xs font-semibold cursor-pointer"
+                            >
+                              <option value="">-- Select Cell --</option>
+                              {cells.map((cell) => (
+                                <option key={cell.id} value={cell.id}>
+                                  {cell.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 block">Select Officer:</label>
+                            <select
+                              disabled={!implementerCells[idx]}
+                              onChange={(e) => handleSelectImplementerOfficer(idx, e.target.value)}
+                              className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-805 dark:text-slate-150 rounded-lg outline-none text-xs font-semibold cursor-pointer disabled:bg-slate-100 disabled:dark:bg-slate-950 disabled:cursor-not-allowed"
+                            >
+                              <option value="">-- Select Officer --</option>
+                              {filteredEmps.map((emp) => (
+                                <option key={emp.id} value={emp.id}>
+                                  {emp.name} ({emp.designation})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-slate-100 dark:border-slate-800/60 pt-2.5">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 block">Name:</label>
+                            <input 
+                              type="text"
+                              required
+                              value={impl.name}
+                              onChange={(e) => handleImplementerChange(idx, 'name', e.target.value)}
+                              placeholder="Name"
+                              className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-lg outline-none text-xs font-bold"
+                            />
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 block">Designation:</label>
+                            <input 
+                              type="text"
+                              required
+                              value={impl.designation}
+                              onChange={(e) => handleImplementerChange(idx, 'designation', e.target.value)}
+                              placeholder="Designation"
+                              className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-lg outline-none text-xs font-bold"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 block">Organization / Department:</label>
+                            <input 
+                              type="text"
+                              required
+                              value={impl.organization}
+                              onChange={(e) => handleImplementerChange(idx, 'organization', e.target.value)}
+                              placeholder="Organization"
+                              className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-lg outline-none text-xs font-bold"
+                            />
+                          </div>
+                        </div>
+
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1191,7 +1296,7 @@ export default function TazCommitteeFormPage() {
                   size="md"
                   className="font-bold cursor-pointer"
                 >
-                  সংশোধন বাতিল করুন
+                  Cancel Edit
                 </Button>
               )}
               <Button
@@ -1201,7 +1306,7 @@ export default function TazCommitteeFormPage() {
                 size="md"
                 className="font-bold shadow-lg shadow-indigo-500/10 cursor-pointer"
               >
-                {saving ? 'সংরক্ষণ হচ্ছে...' : editingFormId ? 'সংশোধন সংরক্ষণ করুন' : 'ফরম তৈরি ও সংরক্ষণ করুন'}
+                {saving ? 'Saving...' : editingFormId ? 'Update Request' : 'Save Request'}
               </Button>
             </div>
 
@@ -1211,64 +1316,54 @@ export default function TazCommitteeFormPage() {
           <div className="space-y-4">
             {archivedForms.length === 0 ? (
               <div className="text-center py-12 text-slate-400 italic text-sm">
-                কোনো পূর্বে সংরক্ষিত TAZ কমিটি ফরমের রেকর্ড পাওয়া যায়নি।
+                No TAZ Request Form records found.
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4">
-                {archivedForms.map((form) => {
-                  let team: Implementer[] = [];
-                  try {
-                    team = JSON.parse(form.implementersJson);
-                  } catch (e) {}
-
-                  return (
-                    <Card 
-                      key={form.id} 
-                      className="p-5 border border-slate-100 dark:border-slate-805 bg-white dark:bg-slate-900/60 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-md transition-all rounded-2xl"
-                    >
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-black text-slate-800 dark:text-slate-200 font-mono">Ref: {form.ref || 'N/A'}</span>
-                          <span className="px-2.5 py-0.5 text-[9px] font-black rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
-                            PACS ID: {form.pacsId || 'N/A'}
-                          </span>
-                        </div>
-                        
-                        <p className="text-xs font-bold text-slate-650 dark:text-slate-350">{form.title}</p>
-                        
-                        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[10px] text-slate-400 font-bold">
-                          <span>📅 তারিখ: {formatDateToDMY(form.formDate)}</span>
-                          <span>👥 টিম সংখ্যা: {form.numTeamMembers} জন</span>
-                          <span>👤 অনুরোধকারী: {form.requesterName}</span>
-                        </div>
+                {archivedForms.map((form) => (
+                  <Card 
+                    key={form.id} 
+                    className="p-5 border border-slate-100 dark:border-slate-805 bg-white dark:bg-slate-900/60 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-md transition-all rounded-2xl"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-200 font-mono">Ref: {form.ref || 'N/A'}</span>
                       </div>
-
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <button
-                          onClick={() => setPrintForm(form)}
-                          className="p-2 text-indigo-650 hover:text-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 rounded-xl transition-all cursor-pointer"
-                          title="প্রিন্ট প্রিভিউ ও প্রিন্ট করুন"
-                        >
-                          <Printer size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(form)}
-                          className="p-2 text-amber-600 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/20 rounded-xl transition-all cursor-pointer"
-                          title="সম্পাদনা করুন"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(form.id)}
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all cursor-pointer"
-                          title="মুছে ফেলুন"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      
+                      <p className="text-xs font-bold text-slate-650 dark:text-slate-350">{form.title}</p>
+                      
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[10px] text-slate-400 font-bold">
+                        <span>📅 Date: {formatDateToDMY(form.formDate)}</span>
+                        <span>👥 Team Size: {form.numTeamMembers}</span>
+                        <span>👤 Requester: {form.requesterName}</span>
                       </div>
-                    </Card>
-                  );
-                })}
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <button
+                        onClick={() => setPrintForm(form)}
+                        className="p-2 text-indigo-650 hover:text-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 rounded-xl transition-all cursor-pointer"
+                        title="Print Preview & Print"
+                      >
+                        <Printer size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(form)}
+                        className="p-2 text-amber-600 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/20 rounded-xl transition-all cursor-pointer"
+                        title="Edit Request"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(form.id)}
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-955/20 rounded-xl transition-all cursor-pointer"
+                        title="Delete Request"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </Card>
+                ))}
               </div>
             )}
           </div>
