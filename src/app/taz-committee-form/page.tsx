@@ -1421,10 +1421,17 @@ export default function TazCommitteeFormPage() {
               margin: 0 !important;
               overflow: visible !important;
             }
-            .no-print, header, nav, aside, footer, button, .no-print * {
-              display: none !important;
-            }
-            html, body, #__next, main, [class*="flex"], [class*="grid"], div:not(#taz-print-area):not(#taz-print-area *) {
+            main,
+            .flex-1,
+            .p-4,
+            .sm\:p-6,
+            .lg\:p-8,
+            .grid,
+            .grid-cols-1,
+            .xl\:grid-cols-12,
+            .xl\:col-span-7,
+            .overflow-x-auto,
+            .no-print-scrollbar {
               position: static !important;
               width: auto !important;
               height: auto !important;
@@ -1455,6 +1462,10 @@ export default function TazCommitteeFormPage() {
               background-color: transparent !important;
               color: #000000 !important;
               border-color: #000000 !important;
+            }
+            .no-print,
+            .no-print * {
+              display: none !important;
             }
           }
         `}</style>
