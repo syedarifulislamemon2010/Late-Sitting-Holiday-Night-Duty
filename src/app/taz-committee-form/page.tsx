@@ -1460,12 +1460,26 @@ export default function TazCommitteeFormPage() {
               background: #ffffff !important;
               overflow: visible !important;
             }
-            #taz-print-area,
-            #taz-print-area * {
-              background-color: transparent !important;
-              color: #000000 !important;
-              border-color: #000000 !important;
-            }
+             #taz-print-area,
+             #taz-print-area *:not(.bg-black):not(.bg-slate-100) {
+               background-color: transparent !important;
+               color: #000000 !important;
+               border-color: #000000 !important;
+             }
+             #taz-print-area .bg-black,
+             #taz-print-area .bg-black * {
+               background-color: #000000 !important;
+               color: #ffffff !important;
+               -webkit-print-color-adjust: exact !important;
+               print-color-adjust: exact !important;
+             }
+             #taz-print-area .bg-slate-100,
+             #taz-print-area .bg-slate-100 * {
+               background-color: #f1f5f9 !important;
+               color: #000000 !important;
+               -webkit-print-color-adjust: exact !important;
+               print-color-adjust: exact !important;
+             }
             .no-print,
             .no-print * {
               display: none !important;
