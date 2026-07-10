@@ -134,7 +134,8 @@ export default function Sidebar() {
       title: 'আবেদনপত্র',
       items: [
         { name: 'ছুটির আবেদন', href: '/leave', icon: CalendarCheck },
-        { name: 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive }
+        { name: 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive },
+        { name: 'TAZ কমিটি ফরম', href: '/taz-committee-form', icon: ClipboardList }
       ]
     },
     {
@@ -339,51 +340,6 @@ export default function Sidebar() {
             </div>
           ))}
         </nav>
-
-        {/* User Account / Profile Widget at Bottom */}
-        {currentUser && (
-          <div className={`no-print border-t border-slate-200/60 dark:border-slate-800/60 p-4 transition-all duration-350 ${
-            isMounted && isCollapsed ? 'flex justify-center' : 'flex items-center justify-between gap-3'
-          }`}>
-            {isMounted && isCollapsed ? (
-              <div className="group relative">
-                <button 
-                  onClick={handleLogout}
-                  className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                  title="লগআউট করুন"
-                >
-                  {currentUser.name ? currentUser.name[0].toUpperCase() : 'U'}
-                </button>
-                <div className="absolute left-16 bottom-2 opacity-0 pointer-events-none invisible group-hover:opacity-100 group-hover:visible group-hover:left-18 transition-all duration-300 whitespace-nowrap z-50 shadow-xl px-3 py-2 bg-slate-950/95 dark:bg-slate-950/95 border border-slate-800 text-white text-[11px] font-bold rounded-xl flex flex-col gap-0.5">
-                  <span className="text-white">{currentUser.name}</span>
-                  <span className="text-slate-400 text-[9px]">{currentUser.role === 'ADMIN' ? 'অ্যাডমিন' : currentUser.role === 'EMPLOYEE' ? 'কর্মকর্তা' : 'ইউজার'}</span>
-                  <span className="text-red-400 text-[9px] font-extrabold mt-1 border-t border-slate-800 pt-1 flex items-center gap-1">
-                    <LogOut size={10} /> লগআউট করতে ক্লিক করুন
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-md shrink-0 select-none">
-                    {currentUser.name ? currentUser.name[0].toUpperCase() : 'U'}
-                  </div>
-                  <div className="flex flex-col text-left overflow-hidden">
-                    <span className="font-bold text-slate-805 dark:text-slate-205 text-xs truncate max-w-[120px]">{currentUser.name}</span>
-                    <span className="text-[9px] font-extrabold text-indigo-650 dark:text-sky-400 uppercase tracking-wider">{currentUser.role === 'ADMIN' ? 'অ্যাডমিন' : currentUser.role === 'EMPLOYEE' ? 'কর্মকর্তা' : 'ইউজার'}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-955/20 transition-all cursor-pointer active:scale-90"
-                  title="লগআউট করুন"
-                >
-                  <LogOut size={16} />
-                </button>
-              </>
-            )}
-          </div>
-        )}
       </aside>
 
       {/* Styled Unsaved Changes Warning Modal */}

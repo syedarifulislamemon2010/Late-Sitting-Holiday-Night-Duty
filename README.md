@@ -33,9 +33,10 @@ A production-ready administrative and financial utility management portal built 
 * **Covering Officer Delegation**: Form flow to select and assign active cell officers as covering delegates during leaves.
 * **Printable Leave Requests**: Standardised high-density print format matching official bank letters.
 
-### 5. Hardware Requisition
+### 5. Hardware Requisition & TAZ Committee Form
 * **Repair Request Form**: Operational workflow for reporting and requesting repair assignments for damaged hardware tools.
-* **Print-to-Paper Layout**: Instantly generates standardized paper-sized hardware requisitions.
+* **TAZ Committee Form**: Fully compliant Data Extraction/Change/Update Request Form for T24 Live Area featuring dynamic implementer table grids (scaling based on team members count), working-day validation calendar, signing opinion sheets, and pixel-perfect A4 printing layout matching Janata Bank CDC guidelines.
+* **Print-to-Paper Layout**: Instantly generates standardized paper-sized hardware requisitions and TAZ form templates.
 
 ### 6. Recycle Bin (Trash Directory)
 * **Soft Deletions**: Enforces programmatic soft-deletes across all data models (Employees, Duties, Cells, Users).

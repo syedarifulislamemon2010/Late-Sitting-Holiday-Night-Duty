@@ -283,6 +283,7 @@ export const cellsRelations = relations(cells, ({ many }) => ({
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   leaveApplications: many(leaveApplications),
+  tazCommitteeForms: many(tazCommitteeForms),
   userCells: many(userCells),
   employee: one(employees),
 }));
@@ -318,4 +319,47 @@ export const hardwareRequisitionsRelations = relations(hardwareRequisitions, ({ 
 export const hardwareRequisitionItemsRelations = relations(hardwareRequisitionItems, ({ one }) => ({
   requisition: one(hardwareRequisitions, { fields: [hardwareRequisitionItems.requisitionId], references: [hardwareRequisitions.id] }),
   officer: one(users, { fields: [hardwareRequisitionItems.officerUserId], references: [users.id] }),
+}));
+
+// ==========================================
+// 15. TAZ COMMITTEE FORM MODEL
+// ==========================================
+export const tazCommitteeForms = pgTable('TazCommitteeForm', {
+  id: serial('id').primaryKey(),
+  requesterUserId: integer('requesterUserId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  formDate: text('formDate').notNull(), // YYYY-MM-DD
+  ref: text('ref'),
+  pacsId: text('pacsId'),
+  title: text('title'),
+  purpose: text('purpose'),
+  applicationName: text('applicationName'),
+  routineDetails: text('routineDetails'),
+  subroutineDetails: text('subroutineDetails'),
+  versionInfo: text('versionInfo'),
+  needBackendAccess: text('needBackendAccess').default('No').notNull(),
+  needCoreFtpAccess: text('needCoreFtpAccess').default('No').notNull(),
+  needBrowserAccess: text('needBrowserAccess').default('No').notNull(),
+  browserPortChange: text('browserPortChange').default('No').notNull(),
+  duringTxHour: text('duringTxHour').default('No').notNull(),
+  numTeamMembers: integer('numTeamMembers').default(1).notNull(),
+  approxScheduleStart: text('approxScheduleStart'),
+  approxScheduleEnd: text('approxScheduleEnd'),
+  execScheduleStart: text('execScheduleStart'),
+  execScheduleEnd: text('execScheduleEnd'),
+  impact: text('impact'),
+  requesterName: text('requesterName'),
+  requesterDesignation: text('requesterDesignation'),
+  requesterOrganization: text('requesterOrganization'),
+  implementersJson: text('implementersJson').notNull(), // JSON string representing array of { name, designation, organization }
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    requesterUserIdIdx: index('TazCommitteeForm_requesterUserId_idx').on(table.requesterUserId),
+    formDateIdx: index('TazCommitteeForm_formDate_idx').on(table.formDate),
+  };
+});
+
+export const tazCommitteeFormsRelations = relations(tazCommitteeForms, ({ one }) => ({
+  requester: one(users, { fields: [tazCommitteeForms.requesterUserId], references: [users.id] }),
 }));
