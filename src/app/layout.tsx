@@ -8,6 +8,8 @@ import { ProfileProvider } from "@/context/ProfileContext";
 import { LayoutProvider } from "@/context/LayoutContext";
 import { TopProgressBar } from "@/components/TopProgressBar";
 
+import { ToastProvider } from "@/context/ToastContext";
+
 export const metadata: Metadata = {
   title: "লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল",
   description: "সরকারি অফিস আদেশ ও আপ্যায়ন বিল অটোমেশন পোর্টাল",
@@ -65,8 +67,9 @@ export default function RootLayout({
         <TopProgressBar />
         <ProfileProvider>
           <LayoutProvider>
-            <AuthGuard>
-              <div className="flex-1 flex flex-col lg:flex-row min-h-0" suppressHydrationWarning={true}>
+            <ToastProvider>
+              <AuthGuard>
+                <div className="flex-1 flex flex-col lg:flex-row min-h-0" suppressHydrationWarning={true}>
                 <Sidebar />
                 <main className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
                   <Navbar />
@@ -84,8 +87,9 @@ export default function RootLayout({
                 </main>
               </div>
             </AuthGuard>
-          </LayoutProvider>
-        </ProfileProvider>
+          </ToastProvider>
+        </LayoutProvider>
+      </ProfileProvider>
       </body>
     </html>
   );

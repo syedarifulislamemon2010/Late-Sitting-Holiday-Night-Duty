@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ShieldCheck, AlertCircle, Eye, EyeOff, Lock } from 'lucide-react';
+import { ShieldCheck, AlertCircle, Eye, EyeOff, Lock, User, KeyRound } from 'lucide-react';
 import { signIn, signOut } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { canAccessRoute } from '@/permissions/rbac';
@@ -440,24 +440,26 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const isExpanded = isHovered || focusField !== 'none' || username !== '' || password !== '' || loading || error !== '';
 
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-between p-4 relative overflow-y-auto overflow-x-hidden font-sans z-0" suppressHydrationWarning={true}
-        style={{ background: 'linear-gradient(160deg, #e3f2fd 0%, #bbdefb 35%, #90caf9 65%, #64b5f6 100%)' }}
-      >
-        {/* Animated floating orbs */}
-        <div className="absolute top-[10%] left-[8%] w-48 h-48 bg-white/15 rounded-full blur-3xl animate-pulse pointer-events-none -z-10" />
-        <div className="absolute bottom-[15%] right-[10%] w-64 h-64 bg-blue-200/20 rounded-full blur-3xl animate-pulse pointer-events-none -z-10" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-[50%] right-[5%] w-36 h-36 bg-white/10 rounded-full blur-2xl animate-pulse pointer-events-none -z-10" style={{ animationDelay: '2s' }} />
-        <div className="absolute bottom-[5%] left-[20%] w-28 h-28 bg-blue-300/15 rounded-full blur-2xl animate-pulse pointer-events-none -z-10" style={{ animationDelay: '0.5s' }} />
+      <div className="min-h-screen w-full flex flex-col items-center justify-between p-4 relative overflow-y-auto overflow-x-hidden font-sans z-0" suppressHydrationWarning={true}>
+        {/* Animated Premium Mesh Background */}
+        <div className="absolute inset-0 -z-20 overflow-hidden bg-[#e8f4fd] dark:bg-slate-950 transition-colors duration-500">
+          <div className="absolute -inset-[10px] opacity-60">
+            <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-gradient-to-br from-blue-300 to-sky-400/80 blur-[130px] animate-blob1" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-gradient-to-br from-indigo-300 to-purple-400/80 blur-[130px] animate-blob2" style={{ animationDelay: '2s' }} />
+            <div className="absolute top-[30%] right-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-cyan-300 to-blue-400/80 blur-[110px] animate-blob3" style={{ animationDelay: '4s' }} />
+            <div className="absolute bottom-[20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-sky-300 to-indigo-400/80 blur-[110px] animate-blob1" style={{ animationDelay: '6s' }} />
+          </div>
+        </div>
 
         {/* Centered Main Login Layout */}
         <div className="flex-1 flex items-center justify-center w-full my-6 z-10">
           <div 
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`w-full bg-white/95 backdrop-blur-2xl rounded-[32px] shadow-2xl shadow-blue-900/15 border border-white/80 overflow-hidden transition-all duration-500 ease-in-out p-6 flex flex-col justify-between ${
+            className={`w-full bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl rounded-[32px] shadow-[0_20px_50px_rgba(21,101,192,0.12)] border border-white/60 dark:border-slate-800/60 overflow-hidden transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1) p-6 flex flex-col justify-between ${
               isExpanded 
                 ? 'max-w-[420px] min-h-[580px] p-6 sm:p-8 space-y-6' 
-                : 'max-w-[280px] h-[280px] items-center justify-center space-y-4 cursor-pointer scale-100 hover:scale-105 hover:shadow-blue-900/25'
+                : 'max-w-[280px] h-[280px] items-center justify-center space-y-4 cursor-pointer scale-100 hover:scale-[1.03] hover:shadow-[0_20px_50px_rgba(21,101,192,0.22)]'
             }`}
           >
             {/* COMPACT LOCKED STATE VIEW */}
@@ -465,6 +467,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               <div className="flex flex-col items-center justify-center text-center space-y-4 animate-fade-in py-2">
                 {/* Pulsing Shielded Logo */}
                 <div className="relative">
+                  <div className="absolute inset-[-12px] bg-gradient-to-r from-cyan-400 to-[#00B7DE] opacity-25 blur-xl animate-pulse rounded-full" />
                   <div className="absolute inset-0 bg-[#00B7DE]/20 rounded-full blur-md animate-ping" />
                   <svg viewBox="0 0 512 512" className="h-20 w-20 text-[#00B7DE] relative z-10 drop-shadow-md" fill="none">
                     <g>
@@ -551,25 +554,33 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     )}
 
                     {/* Username Input */}
-                    <div className="space-y-1.5 text-left">
-                      <label htmlFor="username-input" className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">ইউজারনেম</label>
-                      <input 
-                        id="username-input"
-                        type="text" 
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        onFocus={() => setFocusField('username')}
-                        onBlur={() => setFocusField('none')}
-                        placeholder="যেমন: 026799 (ব্যাংক আইডি)"
-                        className="w-full px-4 py-3 border border-slate-200 bg-white text-slate-800 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 rounded-2xl text-sm font-semibold outline-none transition-all"
-                        required
-                      />
+                    <div className="space-y-1.5 text-left group">
+                      <label htmlFor="username-input" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">ইউজারনেম</label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-4 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
+                          <User size={16} />
+                        </span>
+                        <input 
+                          id="username-input"
+                          type="text" 
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          onFocus={() => setFocusField('username')}
+                          onBlur={() => setFocusField('none')}
+                          placeholder="যেমন: 026799 (ব্যাংক আইডি)"
+                          className="w-full pl-11 pr-4 py-3 border border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/80 text-slate-800 dark:text-slate-200 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/40 rounded-2xl text-sm font-semibold outline-none transition-all"
+                          required
+                        />
+                      </div>
                     </div>
 
                     {/* Password Input */}
-                    <div className="space-y-1.5 text-left relative font-sans">
-                      <label htmlFor="password-input" className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
-                      <div className="relative">
+                    <div className="space-y-1.5 text-left relative font-sans group">
+                      <label htmlFor="password-input" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-4 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
+                          <KeyRound size={16} />
+                        </span>
                         <input 
                           id="password-input"
                           type={showPassword ? "text" : "password"} 
@@ -578,7 +589,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                           onFocus={() => setFocusField('password')}
                           onBlur={() => setFocusField('none')}
                           placeholder="••••••••"
-                          className="w-full pl-4 pr-12 py-3 border border-slate-200 bg-white text-slate-800 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 rounded-2xl text-sm font-semibold outline-none transition-all font-mono"
+                          className="w-full pl-11 pr-12 py-3 border border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/80 text-slate-800 dark:text-slate-200 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/40 rounded-2xl text-sm font-semibold outline-none transition-all font-mono"
                           required
                         />
                         <button
@@ -600,7 +611,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     <button 
                       type="submit" 
                       disabled={loading}
-                      className="w-full py-3.5 bg-gradient-to-r from-[#1565C0] to-[#0D47A1] hover:from-[#0D47A1] hover:to-[#0A2F6C] focus:outline-none focus:ring-4 focus:ring-blue-100 text-white font-bold text-sm tracking-wide rounded-2xl transition-all shadow-md shadow-blue-700/10 hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3.5 bg-gradient-to-r from-[#1565C0] via-[#0D47A1] to-[#0A2F6C] hover:from-[#0D47A1] hover:to-[#1565C0] focus:outline-none focus:ring-4 focus:ring-blue-100 text-white font-bold text-sm tracking-wide rounded-2xl transition-all shadow-md shadow-blue-700/10 hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
                     >
                       {loading ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -667,6 +678,30 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             40% { transform: translateX(6px); }
             60% { transform: translateX(-4px); }
             80% { transform: translateX(4px); }
+          }
+          @keyframes blob1 {
+            0%, 100% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+          }
+          @keyframes blob2 {
+            0%, 100% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(-30px, 40px) scale(0.95); }
+            66% { transform: translate(40px, -20px) scale(1.1); }
+          }
+          @keyframes blob3 {
+            0%, 100% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(20px, -30px) scale(1.05); }
+            66% { transform: translate(-40px, 40px) scale(0.9); }
+          }
+          .animate-blob1 {
+            animation: blob1 18s infinite alternate ease-in-out;
+          }
+          .animate-blob2 {
+            animation: blob2 22s infinite alternate ease-in-out;
+          }
+          .animate-blob3 {
+            animation: blob3 20s infinite alternate ease-in-out;
           }
           .animate-float {
             animation: float 4s ease-in-out infinite;

@@ -29,7 +29,6 @@ import {
 
 import LedgerTab from './components/LedgerTab';
 import OrdersTab from './components/OrdersTab';
-import BillsTab from './components/BillsTab';
 import ReportsTab from './components/ReportsTab';
 import BillPrintLayout from './components/BillPrintLayout';
 import BulkBillPrintLayout from './components/BulkBillPrintLayout';
@@ -227,7 +226,12 @@ const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGH
   if (!currentUser) return false;
   if (currentUser.role === 'ADMIN') return true;
 
-  const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+  let userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+  if (userCellNames.includes('CBS Integrated Development Cell')) {
+    return true;
+  } else {
+    userCellNames = Array.from(new Set([...userCellNames, 'CBS Integrated Development Cell']));
+  }
 
   // 1. Direct cell name match
   if (o.cellName && userCellNames.includes(o.cellName)) {
@@ -273,7 +277,7 @@ export default function BillingPage() {
   const userCellNamesString = currentUser?.cells?.map(c => c.name).sort().join(',') || '';
   const userRole = currentUser?.role || '';
   const userUsername = currentUser?.username || '';
-  const [activeTab, setActiveTab] = useState<'ledger' | 'orders' | 'bills' | 'reports'>('ledger');
+  const [activeTab, setActiveTab] = useState<'ledger' | 'orders' | 'reports'>('ledger');
   const [viewingOrder, setViewingOrder] = useState<OfficeOrder | null>(null);
   const [viewingOrders, setViewingOrders] = useState<OfficeOrder[] | null>(null);
   const [reportDate, setReportDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -1841,9 +1845,7 @@ export default function BillingPage() {
       archivedBillNormalizedRefs.has(getNormalizedRef(o.orderRef))
     );
   }, [filteredOrdersList, archivedBillNormalizedRefs, getNormalizedRef]);
-
   const filteredBillMemos = useMemo(() => getFilteredOrders('bills'), [getFilteredOrders]);
-
   const allActiveOfficeOrders = useMemo(() => {
     return filteredOrdersList.filter(o => o.status !== 'Deleted');
   }, [filteredOrdersList]);
@@ -1851,25 +1853,38 @@ export default function BillingPage() {
   const ledgerActiveOfficeOrders = useMemo<OfficeOrder[]>(() => {
     const active = allActiveOfficeOrders;
     if (active.length === 0) return [];
-    
+
+    const orderWithBillingDates = active.map(order => {
+      const norm = getNormalizedRef(order.orderRef);
+      const bill = archivedOrders.find(o => 
+        o.category?.startsWith('BILL_') && 
+        o.status !== 'Deleted' && 
+        getNormalizedRef(o.orderRef) === norm
+      );
+      const billingDateStr = bill ? bill.orderDate : order.orderDate;
+      const cleanDate = billingDateStr ? billingDateStr.substring(0, 10) : "";
+      return { order, cleanDate };
+    });
+
     let latestDateStr = "";
     let latestDateTime = -1;
-    
-    active.forEach(order => {
-      if (order.orderDate) {
-        const dStr = order.orderDate.substring(0, 10);
-        const t = new Date(dStr).getTime();
+
+    orderWithBillingDates.forEach(item => {
+      if (item.cleanDate) {
+        const t = new Date(item.cleanDate).getTime();
         if (t > latestDateTime) {
           latestDateTime = t;
-          latestDateStr = dStr;
+          latestDateStr = item.cleanDate;
         }
       }
     });
-    
+
     if (!latestDateStr) return active;
-    
-    return active.filter(order => order.orderDate && order.orderDate.substring(0, 10) === latestDateStr);
-  }, [allActiveOfficeOrders]);
+
+    return orderWithBillingDates
+      .filter(item => item.cleanDate === latestDateStr)
+      .map(item => item.order);
+  }, [allActiveOfficeOrders, archivedOrders, getNormalizedRef]);
 
   const ledgerGrandTotal = useMemo(() => {
     return ledgerActiveOfficeOrders.reduce((sum: number, order: OfficeOrder) => {
@@ -2684,23 +2699,7 @@ export default function BillingPage() {
                 {toBanglaDigits(pendingBillingOfficeOrders.length)}
               </span>
             </button>
-            <button
-              onClick={() => setActiveTab('bills')}
-              className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 relative cursor-pointer ${
-                activeTab === 'bills'
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}
-            >
-              জেনারেটেড এবং প্রিন্টেড সেকশন
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                activeTab === 'bills'
-                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400'
-                  : 'bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400'
-              }`}>
-                {toBanglaDigits(latestPrintedCount)}
-              </span>
-            </button>
+
             <button
               onClick={() => setActiveTab('reports')}
               className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 relative cursor-pointer ${
@@ -2750,18 +2749,7 @@ export default function BillingPage() {
             />
           )}
 
-          {activeTab === 'bills' && (
-            <BillsTab
-              loading={loading}
-              filteredBillMemos={filteredBillMemos}
-              handleLoadBillForEditing={handleLoadBillForEditing}
-              hasEditPermission={hasEditPermission}
-              hasDeletePermission={hasDeletePermission}
-              handleDeleteOrder={handleDeleteOrder}
-              setViewingOrder={setViewingOrder}
-              onBulkPrintPreview={(orders) => setViewingOrders(orders)}
-            />
-          )}
+
 
           {activeTab === 'reports' && (
             <ReportsTab

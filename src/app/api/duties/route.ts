@@ -45,19 +45,22 @@ export async function POST(request: Request) {
       const conflictType = error.details?.conflictType || 'DUTY_DUPLICATE';
       const formattedDates = error.details?.dates?.map((d: string) => d.split('-').reverse().join('-'));
 
-      const bengaliExplanation = await explainConflictInBengali({
-        type: conflictType,
-        employeeName: error.details?.employeeName,
-        dates: formattedDates,
-        existingLeaveStart: error.details?.existingLeaveStart ? new Date(error.details.existingLeaveStart).toLocaleDateString("bn-BD") : undefined,
-        existingLeaveEnd: error.details?.existingLeaveEnd ? new Date(error.details.existingLeaveEnd).toLocaleDateString("bn-BD") : undefined,
-        cellName: error.details?.cellName
-      });
+      let message = error.message;
+      if (!message || message === 'late_sitting_night_shift_conflict' || message === 'leave_conflict' || message === 'duty_conflict' || message === 'conflict') {
+        message = await explainConflictInBengali({
+          type: conflictType,
+          employeeName: error.details?.employeeName,
+          dates: formattedDates,
+          existingLeaveStart: error.details?.existingLeaveStart ? new Date(error.details.existingLeaveStart).toLocaleDateString("bn-BD") : undefined,
+          existingLeaveEnd: error.details?.existingLeaveEnd ? new Date(error.details.existingLeaveEnd).toLocaleDateString("bn-BD") : undefined,
+          cellName: error.details?.cellName
+        });
+      }
 
       return NextResponse.json(
         {
           error: "duty_collision",
-          message: bengaliExplanation,
+          message,
           conflictType,
           conflictingDates: error.details?.dates
         },

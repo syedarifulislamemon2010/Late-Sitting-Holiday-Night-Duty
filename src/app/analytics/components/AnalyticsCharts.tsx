@@ -29,7 +29,7 @@ interface AnalyticsChartsProps {
 }
 
 // Colors for Pie Chart
-const COLORS = ['#0b5e9e', '#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+const COLORS = ['#0f75b8', '#10b981', '#f59e0b', '#ef4444', '#4f46e5', '#38bdf8', '#8b5cf6'];
 
 const MONTHS_BN = [
   'জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
@@ -107,7 +107,7 @@ export default function AnalyticsCharts({
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart data={formattedPersonalTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" strokeOpacity={0.4} />
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
                 <YAxis 
                   stroke="#94a3b8" 
@@ -117,7 +117,7 @@ export default function AnalyticsCharts({
                 />
                 <Tooltip 
                   formatter={(val) => [`৳${toBanglaDigits(Number(val).toLocaleString())}`, 'প্রাপ্ত ভাতা']}
-                  contentStyle={{ borderRadius: '16px', border: '1px solid var(--card-border)', backgroundColor: 'var(--surface-bright)', color: 'var(--foreground)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid var(--card-border)', backgroundColor: 'var(--card-bg)', color: 'var(--foreground)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', padding: '10px' }}
                 />
                 <Line 
                   type="monotone" 
@@ -146,7 +146,7 @@ export default function AnalyticsCharts({
           ) : (
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart data={formattedTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" strokeOpacity={0.4} />
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
                 <YAxis 
                   stroke="#94a3b8" 
@@ -156,12 +156,12 @@ export default function AnalyticsCharts({
                 />
                 <Tooltip 
                   formatter={(val) => [`৳${toBanglaDigits(Number(val).toLocaleString())}`, isEmployee ? 'প্রাপ্ত ভাতা' : 'মোট ভাতা খরচ']}
-                  contentStyle={{ borderRadius: '16px', border: '1px solid var(--card-border)', backgroundColor: 'var(--surface-bright)', color: 'var(--foreground)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid var(--card-border)', backgroundColor: 'var(--card-bg)', color: 'var(--foreground)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', padding: '10px' }}
                 />
                 <Line 
                   type="monotone" 
                   dataKey="allowance" 
-                  stroke="#0b5e9e" 
+                  stroke="#0f75b8" 
                   strokeWidth={3} 
                   activeDot={{ r: 6 }} 
                   dot={{ strokeWidth: 2, r: 4 }}
@@ -184,7 +184,7 @@ export default function AnalyticsCharts({
             ) : (
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <BarChart data={topPerformers} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" strokeOpacity={0.4} />
                   <XAxis 
                     dataKey="employeeName" 
                     stroke="#94a3b8" 
@@ -204,11 +204,11 @@ export default function AnalyticsCharts({
                       const emp = topPerformers[idx as number];
                       return emp ? `${emp.employeeName} (${emp.designation})` : '';
                     }}
-                    contentStyle={{ borderRadius: '16px', border: '1px solid var(--card-border)', backgroundColor: 'var(--surface-bright)', color: 'var(--foreground)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
+                    contentStyle={{ borderRadius: '12px', border: '1px solid var(--card-border)', backgroundColor: 'var(--card-bg)', color: 'var(--foreground)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', padding: '10px' }}
                   />
                   <Bar dataKey="count" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={28}>
                     {topPerformers.map((entry, index) => (
-                      <RechartsCell key={`cell-${index}`} fill={index === 0 ? '#0b5e9e' : '#4f46e5'} />
+                      <RechartsCell key={`cell-${index}`} fill={index === 0 ? '#0f75b8' : '#4f46e5'} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -248,7 +248,7 @@ export default function AnalyticsCharts({
                       </Pie>
                       <Tooltip 
                         formatter={(val) => [`৳${toBanglaDigits(Number(val).toLocaleString())}`, 'মোট খরচ']}
-                        contentStyle={{ borderRadius: '16px', border: '1px solid var(--card-border)', backgroundColor: 'var(--surface-bright)', color: 'var(--foreground)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
+                        contentStyle={{ borderRadius: '12px', border: '1px solid var(--card-border)', backgroundColor: 'var(--card-bg)', color: 'var(--foreground)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', padding: '10px' }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -287,7 +287,7 @@ export default function AnalyticsCharts({
           ) : (
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart data={formattedLeaveData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" strokeOpacity={0.4} />
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
                 <YAxis 
                   stroke="#94a3b8" 
@@ -297,7 +297,7 @@ export default function AnalyticsCharts({
                 />
                 <Tooltip 
                   formatter={(val) => [toBanglaDigits(String(val)), 'আবেদন সংখ্যা']}
-                  contentStyle={{ borderRadius: '16px', border: '1px solid var(--card-border)', backgroundColor: 'var(--surface-bright)', color: 'var(--foreground)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid var(--card-border)', backgroundColor: 'var(--card-bg)', color: 'var(--foreground)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', padding: '10px' }}
                 />
                 <Legend verticalAlign="top" height={36} iconType="circle" />
                 {years.map((yr, idx) => (
@@ -328,7 +328,7 @@ export default function AnalyticsCharts({
           ) : (
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={billReleases.map(d => ({ name: formatOrderDate(d.orderDate), count: d.count }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" strokeOpacity={0.4} />
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
                 <YAxis 
                   stroke="#94a3b8" 
@@ -338,7 +338,7 @@ export default function AnalyticsCharts({
                 />
                 <Tooltip 
                   formatter={(val) => [toBanglaDigits(String(val)), 'বিল সংখ্যা']}
-                  contentStyle={{ borderRadius: '16px', border: '1px solid var(--card-border)', backgroundColor: 'var(--surface-bright)', color: 'var(--foreground)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid var(--card-border)', backgroundColor: 'var(--card-bg)', color: 'var(--foreground)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', padding: '10px' }}
                 />
                 <Bar dataKey="count" fill="#0ea5e9" radius={[6, 6, 0, 0]} barSize={28}>
                   {billReleases.map((entry, index) => (

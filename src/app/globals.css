@@ -6,6 +6,63 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --color-primary-50: #f0f7fc;
+  --color-primary-100: #e0f0fa;
+  --color-primary-200: #bfe2f7;
+  --color-primary-300: #8ccdf1;
+  --color-primary-400: #4cb0e7;
+  --color-primary-500: #1e90d6;
+  --color-primary-600: #0f75b8;
+  --color-primary-700: #0d5e94;
+  --color-primary-800: #0f507b;
+  --color-primary-900: #114264;
+  --color-primary-950: #0b2b42;
+
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-success-800: #065f46;
+  --color-success-900: #064e3b;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+  --color-neutral-950: #020617;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card-bg: var(--card-bg);
@@ -16,29 +73,34 @@
   --color-success: var(--success);
   --color-indigo-650: #493ee0;
   --font-sans: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 250ms;
 }
 
 :root {
-  --background: #f1f5f9;
+  --background: #f8fafc;
   --foreground: #0f172a;
-  --card-bg: rgba(255, 255, 255, 0.75);
-  --card-border: color-mix(in srgb, var(--primary) 12%, rgba(203, 213, 225, 0.4));
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-border: #e2e8f0;
   --primary: #0b5e9e;
-  --primary-hover: #094d82;
-  --accent: #0ea5e9;
+  --primary-hover: #0d5e94;
+  --accent: #0f75b8;
   --success: #10b981;
-  --surface-dim: #e2e8f0;
+  --surface-dim: #f1f5f9;
   --surface-bright: #ffffff;
   --text-muted: #64748b;
   --text-caption: #94a3b8;
-  --border-subtle: color-mix(in srgb, var(--primary) 8%, rgba(203, 213, 225, 0.2));
+  --border-subtle: #cbd5e1;
 }
 
 .dark {
-  --background: #030712;
+  --background: #020617;
   --foreground: #f8fafc;
-  --card-bg: rgba(15, 23, 42, 0.65);
-  --card-border: color-mix(in srgb, var(--primary) 15%, transparent);
+  --card-bg: rgba(15, 23, 42, 0.8);
+  --card-border: #1e293b;
   --primary: #60a5fa;
   --primary-hover: #93c5fd;
   --accent: #38bdf8;
@@ -47,7 +109,7 @@
   --surface-bright: #1e293b;
   --text-muted: #94a3b8;
   --text-caption: #64748b;
-  --border-subtle: color-mix(in srgb, var(--primary) 10%, transparent);
+  --border-subtle: #334155;
 }
 
 body {
@@ -183,10 +245,10 @@ body {
   html, body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-family: 'Nikosh', 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
+    font-family: 'SolaimanLipi', 'Noto Sans Bengali', 'Nikosh', sans-serif !important;
     padding: 0 !important;
     margin: 0 !important;
-    font-size: 13px !important;
+    font-size: 11px !important;
     line-height: 1.4 !important;
     letter-spacing: normal !important;
     word-spacing: normal !important;

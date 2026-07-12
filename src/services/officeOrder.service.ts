@@ -71,6 +71,11 @@ export class OfficeOrderService {
       if (currentUser.role === 'USER') {
         isUserRestricted = true;
         userCellNames = currentUser.cells.map((c) => c.name);
+        if (userCellNames.includes('CBS Integrated Development Cell')) {
+          isUserRestricted = false;
+        } else {
+          userCellNames = Array.from(new Set([...userCellNames, 'CBS Integrated Development Cell']));
+        }
       }
     }
 
@@ -265,8 +270,13 @@ export class OfficeOrderService {
     const validated = officeOrderCreateSchema.parse(body);
 
     if (currentUser.role !== 'ADMIN') {
-      const userCellNames = currentUser.cells.map((c) => c.name);
-      if (validated.cellName !== 'All Cells' && validated.cellName !== 'all' && (!validated.cellName || !userCellNames.includes(validated.cellName))) {
+      let allowedCellNames = currentUser.cells.map((c) => c.name);
+      if (allowedCellNames.includes('CBS Integrated Development Cell')) {
+        allowedCellNames = [];
+      } else {
+        allowedCellNames = Array.from(new Set([...allowedCellNames, 'CBS Integrated Development Cell']));
+      }
+      if (allowedCellNames.length > 0 && validated.cellName !== 'All Cells' && validated.cellName !== 'all' && (!validated.cellName || !allowedCellNames.includes(validated.cellName))) {
         throw new AuthError('অন্য সেলের জন্য অফিস আদেশ তৈরি করার অনুমতি নেই।', 403, 'forbidden');
       }
     }

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import AuthGuard from '@/components/AuthGuard';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { 
   Trash2, 
   RefreshCw, 
@@ -216,7 +218,7 @@ export default function TrashPage() {
         </div>
 
         {/* Search and Tabs Panel */}
-        <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-5">
+        <Card className="space-y-5">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             {/* Tab Filters */}
             <div className="flex flex-wrap gap-1.5 p-1 bg-slate-100 dark:bg-slate-950/40 rounded-xl border border-slate-200/50 dark:border-slate-800/80 w-fit">
@@ -406,7 +408,7 @@ export default function TrashPage() {
               </table>
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </AuthGuard>
   );

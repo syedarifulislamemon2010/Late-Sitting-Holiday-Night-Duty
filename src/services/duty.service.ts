@@ -62,6 +62,11 @@ export class DutyService {
     if (currentUser && currentUser.role === 'USER') {
       isUserRestricted = true;
       userCellIds = currentUser.cells.map((c: { id: number }) => c.id);
+      if (userCellIds.includes(9)) {
+        isUserRestricted = false;
+      } else {
+        userCellIds = Array.from(new Set([...userCellIds, 9]));
+      }
     }
 
     const conditions: SQL[] = [];
@@ -200,13 +205,20 @@ export class DutyService {
     const validated = dutiesBulkCreateSchema.parse(body);
 
     if (currentUser.role !== 'ADMIN') {
-      const userCellIds = currentUser.cells.map((c: { id: number }) => c.id);
-      const uniqueEmployeeIds = Array.from(new Set(validated.assignments.map((a: { employeeId: number }) => a.employeeId)));
-      const employeesToCheck = await db.select().from(employees)
-        .where(inArray(employees.id, uniqueEmployeeIds));
-      for (const emp of employeesToCheck) {
-        if (!userCellIds.includes(emp.cellId)) {
-          throw new AuthError('অন্য সেলের কর্মকর্তাকে ডিউটি দেয়ার অনুমতি নেই।', 403, 'forbidden');
+      let allowedCellIds = currentUser.cells.map((c: { id: number }) => c.id);
+      if (allowedCellIds.includes(9)) {
+        allowedCellIds = [];
+      } else {
+        allowedCellIds = Array.from(new Set([...allowedCellIds, 9]));
+      }
+      if (allowedCellIds.length > 0) {
+        const uniqueEmployeeIds = Array.from(new Set(validated.assignments.map((a: { employeeId: number }) => a.employeeId)));
+        const employeesToCheck = await db.select().from(employees)
+          .where(inArray(employees.id, uniqueEmployeeIds));
+        for (const emp of employeesToCheck) {
+          if (!allowedCellIds.includes(emp.cellId)) {
+            throw new AuthError('অন্য সেলের কর্মকর্তাকে ডিউটি দেয়ার অনুমতি নেই।', 403, 'forbidden');
+          }
         }
       }
     }
@@ -305,11 +317,11 @@ export class DutyService {
         const isHoliday = checkIsHolidayLocal(assignment.date);
 
         if (assignment.type === 'LATE_SITTING' && isHoliday) {
-          throw new AppError('late_sitting_on_holiday', 400, 'late_sitting_on_holiday');
+          throw new AppError('ছুটির দিন বা সাপ্তাহিক ছুটির দিনে লেট সিটিং ডিউটি এন্ট্রি করা যাবে না।', 400, 'late_sitting_on_holiday');
         }
 
         if (assignment.type === 'HOLIDAY' && !isHoliday) {
-          throw new AppError('holiday_duty_on_working_day', 400, 'holiday_duty_on_working_day');
+          throw new AppError('সাধারণ কার্যদিবসে হলিডে ডিউটি এন্ট্রি করা যাবে না।', 400, 'holiday_duty_on_working_day');
         }
 
         if (assignment.type === 'LATE_SITTING' || assignment.type === 'NIGHT_SHIFT') {
@@ -325,7 +337,7 @@ export class DutyService {
             d.type === conflictingType
           );
           if (dbConflict || batchConflict) {
-            throw new ConflictError('late_sitting_night_shift_conflict', {
+            throw new ConflictError('একই তারিখে লেট সিটিং এবং নাইট শিফট ডিউটি একসাথে বরাদ্দ করা যাবে না।', {
               conflictType: 'DUTY_DUPLICATE',
               employeeName: emp ? emp.name : undefined,
               dates: [assignment.date]
