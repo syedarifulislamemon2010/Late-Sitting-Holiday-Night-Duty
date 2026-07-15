@@ -2025,7 +2025,7 @@ export default function LeaveGeneratorPage() {
                 {/* 5. RECOMMENDATION & HIERARCHY APPROVAL BOXES */}
                 <div 
                   className="pt-0.5 text-xs text-black font-sans space-y-0"
-                  style={{ marginTop: '0.55in' }}
+                  style={{ marginTop: '0.3in' }}
                 >
                   {/* Recommendation notice line */}
                   <div className="text-left text-black mb-6">
@@ -2035,7 +2035,7 @@ export default function LeaveGeneratorPage() {
                   {/* Recommendation signatures */}
                   <div 
                     className="flex justify-between items-center text-xs text-black"
-                    style={{ paddingTop: '0.5in', paddingBottom: '0.75in' }}
+                    style={{ paddingTop: '0.3in', paddingBottom: '0.3in' }}
                   >
                     <div className="text-left leading-normal">
                       <span>সেল ইনচার্জ</span>
@@ -2047,16 +2047,16 @@ export default function LeaveGeneratorPage() {
                   </div>
 
                   {/* AGM/DGM/SPO routing lines */}
-                  <div className="text-left" style={{ paddingBottom: '0.75in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.3in' }}>
                     <span>এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
-                  <div className="text-left" style={{ paddingBottom: '0.75in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.3in' }}>
                     <span>ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
-                  <div className="text-left" style={{ paddingBottom: '0.75in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.3in' }}>
                     <span>এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
-                  <div className="text-left" style={{ paddingBottom: '0.75in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.15in' }}>
                     <span>এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                 </div>
@@ -2080,7 +2080,7 @@ export default function LeaveGeneratorPage() {
         /* Universal Kalpurush size 10 normal weight styles */
         #printable-leave-sheet, #printable-leave-sheet * {
           font-family: 'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif !important;
-          font-size: 12px !important;
+          font-size: 15px !important;
           font-style: normal;
           line-height: 1.45 !important;
           color: #000000;
