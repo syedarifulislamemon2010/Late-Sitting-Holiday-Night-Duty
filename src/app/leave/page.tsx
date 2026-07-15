@@ -2035,7 +2035,7 @@ export default function LeaveGeneratorPage() {
                   {/* Recommendation signatures */}
                   <div 
                     className="flex justify-between items-center text-xs text-black"
-                    style={{ paddingTop: '0.3in', paddingBottom: '0.3in' }}
+                    style={{ paddingTop: '0.35in', paddingBottom: '0.45in' }}
                   >
                     <div className="text-left leading-normal">
                       <span>সেল ইনচার্জ</span>
@@ -2047,16 +2047,16 @@ export default function LeaveGeneratorPage() {
                   </div>
 
                   {/* AGM/DGM/SPO routing lines */}
-                  <div className="text-left" style={{ paddingBottom: '0.3in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.45in' }}>
                     <span>এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
-                  <div className="text-left" style={{ paddingBottom: '0.3in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.45in' }}>
                     <span>ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
-                  <div className="text-left" style={{ paddingBottom: '0.3in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.45in' }}>
                     <span>এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
-                  <div className="text-left" style={{ paddingBottom: '0.15in' }}>
+                  <div className="text-left" style={{ paddingBottom: '0.3in' }}>
                     <span>এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</span>
                   </div>
                 </div>
