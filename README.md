@@ -497,3 +497,5 @@ In the event of database failure or migration to a fresh host machine, restore r
 | **ISO 27001** | A.12.4.1: Event Logging | Event auditing logged in database and written to file |
 | **ISO 27001** | A.10.1.1: Cryptography | Cryptographic hashes on user records and encrypted internal files |
 | **NIST SP 800-53** | AC-3: Access Enforcement | Cell boundaries (RBAC) enforced on REST API and DB queries |
+#   L a t e - S i t t i n g - H o l i d a y - N i g h t - D u t y  
+ 
