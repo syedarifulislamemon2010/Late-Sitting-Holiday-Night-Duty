@@ -1898,6 +1898,16 @@ export default function LeaveGeneratorPage() {
             {/* RIGHT: Pixel-Perfect A4 Document Sheet Preview (8 columns) */}
             <div className="xl:col-span-8 flex flex-col items-center pb-8">
               
+              {/* Live Editor Notification Banner */}
+              <div className="no-print w-full max-w-[216mm] mb-3">
+                <div className="p-3 bg-indigo-50/90 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 text-xs font-bold rounded-2xl flex items-center justify-between shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <FileEdit size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                    <span><strong>লাইভ অন-স্ক্রিন এডিটর সক্রিয়:</strong> দরখাস্তের যেকোনো লেখায় সরাসরি মাউস দিয়ে ক্লিক করে টাইপ করে এডিট করতে পারবেন। প্রিন্ট বা PDF ফাইলে সংশোধিত ফাইলটিই সেভ হবে।</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Dropdown Validation Message Banner */}
               <div className="no-print w-full max-w-[216mm] mb-4">
                 {validation.isValid ? (
@@ -1925,7 +1935,7 @@ export default function LeaveGeneratorPage() {
                 {/* 1. Header (Date + Leaves Table) */}
                 <div className="flex justify-between items-start font-sans leading-tight">
                   {/* Left block (Date and To address) */}
-                  <div className="space-y-4 pt-1 text-xs">
+                  <div className="space-y-4 pt-1 text-xs" contentEditable suppressContentEditableWarning title="ক্লিক করে ঠিকানা এডিট করুন">
                     <p className="font-semibold text-black">
                       তারিখ: {toBanglaFullDateStr(applicationDate)} ইং
                     </p>
@@ -1954,7 +1964,7 @@ export default function LeaveGeneratorPage() {
                           <th className="border border-black px-1 py-0.5 w-[14mm]">অবশিষ্ট</th>
                         </tr>
                       </thead>
-                      <tbody className="font-semibold">
+                      <tbody className="font-semibold" contentEditable suppressContentEditableWarning title="ক্লিক করে ঘরের মান পরিবর্তন করুন">
                         <tr className="border-b border-black">
                           <td className="border border-black px-1 py-0.5">০১.</td>
                           <td className="border border-black px-1.5 py-0.5 text-left">নৈমিত্তিক ছুটি</td>
@@ -1982,14 +1992,14 @@ export default function LeaveGeneratorPage() {
                 </div>
 
                 {/* 2. SUBJECT */}
-                <div style={{ marginTop: '0.55in', marginBottom: '0.25in' }}>
+                <div style={{ marginTop: '0.55in', marginBottom: '0.25in' }} contentEditable suppressContentEditableWarning title="ক্লিক করে বিষয় এডিট করুন">
                   <p className="text-black text-xs pb-0.5 w-fit bold-text">
                     {leaveDetails.actualDeducted > 0 || isSingleDay ? formatSubject() : 'বিষয়ঃ নৈমিত্তিক ছুটি মঞ্জুরির আবেদন।'}
                   </p>
                 </div>
 
                 {/* 3. LETTER BODY */}
-                <div className="mt-1.5 text-xs text-black leading-relaxed text-justify space-y-1.5">
+                <div className="mt-1.5 text-xs text-black leading-relaxed text-justify space-y-1.5" contentEditable suppressContentEditableWarning title="ক্লিক করে দরখাস্তের মূল বক্তব্য এডিট করুন">
                   <p className="text-xs">{leaveType === 'STATION_LEAVE' ? 'মহোদয়,' : 'প্রিয় মহোদয়,'}</p>
                   
                   {leaveType === 'POST_FACTO' ? (
@@ -2085,6 +2095,9 @@ export default function LeaveGeneratorPage() {
                 <div 
                   className="flex justify-between items-start text-xs font-sans leading-tight text-black"
                   style={{ marginTop: '0.55in' }}
+                  contentEditable
+                  suppressContentEditableWarning
+                  title="ক্লিক করে আবেদনকারীর তথ্য ও অবস্থান এডিট করুন"
                 >
                   {/* Left Block (Applicant Info Signature block) */}
                   <div className="space-y-1 text-black">
