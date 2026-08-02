@@ -65,7 +65,9 @@ interface BulkEmployeeInput {
 interface Employee {
   id: number;
   name: string;
+  nameEn?: string | null;
   designation: string;
+  designationEn?: string | null;
   bankId: string | null;
   fileNo: string | null;
   mobile: string | null;
@@ -269,7 +271,9 @@ export default function EmployeesPage() {
   // Form states
   const [empForm, setEmpForm] = useState({
     name: '',
+    nameEn: '',
     designation: STRICT_DESIGNATIONS[0],
+    designationEn: '',
     bankId: '',
     fileNo: '',
     mobile: '',
@@ -471,7 +475,7 @@ export default function EmployeesPage() {
 
       setIsEmpModalOpen(false);
       setEditingEmp(null);
-      setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', mobile: '', cellId: '' });
+      setEmpForm({ name: '', nameEn: '', designation: STRICT_DESIGNATIONS[0], designationEn: '', bankId: '', fileNo: '', mobile: '', cellId: '' });
       loadData();
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
@@ -882,7 +886,9 @@ export default function EmployeesPage() {
     setEditingEmp(emp);
     setEmpForm({
       name: emp.name,
+      nameEn: emp.nameEn || '',
       designation: STRICT_DESIGNATIONS.includes(emp.designation) ? emp.designation : STRICT_DESIGNATIONS[0],
+      designationEn: emp.designationEn || '',
       bankId: emp.bankId || '',
       fileNo: emp.fileNo || '',
       mobile: emp.mobile || '',
@@ -1153,7 +1159,7 @@ export default function EmployeesPage() {
                   <button
                     onClick={() => {
                       setEditingEmp(null);
-                      setEmpForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '', mobile: '', cellId: formSelectableCells[0]?.id.toString() || '' });
+                      setEmpForm({ name: '', nameEn: '', designation: STRICT_DESIGNATIONS[0], designationEn: '', bankId: '', fileNo: '', mobile: '', cellId: formSelectableCells[0]?.id.toString() || '' });
                       setErrorMessage('');
                       setIsEmpModalOpen(true);
                     }}
@@ -1613,7 +1619,19 @@ export default function EmployeesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="emp_designation" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">পদবী *</label>
+                <label htmlFor="emp_nameEn" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ইংরেজি নাম (Name in English)</label>
+                <input
+                  id="emp_nameEn"
+                  type="text"
+                  placeholder="যেমন: Md. Ashraful Islam"
+                  value={empForm.nameEn}
+                  onChange={(e) => setEmpForm({ ...empForm, nameEn: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="emp_designation" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">পদবী (বাংলা) *</label>
                 <select
                   id="emp_designation"
                   value={empForm.designation}
@@ -1625,6 +1643,18 @@ export default function EmployeesPage() {
                     <option key={desig} value={desig}>{desig}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="emp_designationEn" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ইংরেজি পদবী (Designation in English)</label>
+                <input
+                  id="emp_designationEn"
+                  type="text"
+                  placeholder="যেমন: Senior Officer (IT)"
+                  value={empForm.designationEn}
+                  onChange={(e) => setEmpForm({ ...empForm, designationEn: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -1976,6 +2006,9 @@ export default function EmployeesPage() {
             <div className="pt-14 pb-8 px-6 text-center space-y-6">
               <div>
                 <h4 className="font-extrabold text-slate-850 dark:text-slate-50 text-lg leading-tight">{profileEmp.name}</h4>
+                {profileEmp.nameEn && (
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-sans mt-0.5">{profileEmp.nameEn}</p>
+                )}
               </div>
 
               {/* Grid of Attributes */}
@@ -1983,6 +2016,9 @@ export default function EmployeesPage() {
                 <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">পদবী</span>
                   <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{profileEmp.designation}</p>
+                  {profileEmp.designationEn && (
+                    <p className="text-[11px] font-semibold text-slate-500 font-sans">{profileEmp.designationEn}</p>
+                  )}
                 </div>
                 <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">সেল</span>

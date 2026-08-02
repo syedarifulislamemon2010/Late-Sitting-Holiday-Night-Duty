@@ -47,7 +47,9 @@ export const userCells = pgTable('_UserCells', {
 export const employees = pgTable('Employee', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
+  nameEn: text('nameEn'),
   designation: text('designation').notNull(),
+  designationEn: text('designationEn'),
   bankId: text('bankId'),
   fileNo: text('fileNo'),
   mobile: text('mobile'),
@@ -82,6 +84,7 @@ export const duties = pgTable('Duty', {
     employeeIdIdx: index('Duty_employeeId_idx').on(table.employeeId),
     dateIdx: index('Duty_date_idx').on(table.date),
     typeIdx: index('Duty_type_idx').on(table.type),
+    empDateIdx: index('idx_duties_emp_date').on(table.employeeId, table.date),
   };
 });
 

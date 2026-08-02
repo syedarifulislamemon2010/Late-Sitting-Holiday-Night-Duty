@@ -9,7 +9,8 @@ import {
   LogOut,
   Search,
   Sun,
-  Moon
+  Moon,
+  Languages
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
@@ -196,6 +197,20 @@ export default function Navbar() {
 
   const userDisplayName = (currentUser?.name || '').replace(/^(জনাব|জনাবা)\s+/, '').trim();
 
+  const [lang, setLang] = useState<'bn' | 'en'>('bn');
+
+  useEffect(() => {
+    const storedLang = (localStorage.getItem('lang') as 'bn' | 'en') || 'bn';
+    setLang(storedLang);
+  }, []);
+
+  const toggleLang = () => {
+    const nextLang = lang === 'bn' ? 'en' : 'bn';
+    setLang(nextLang);
+    localStorage.setItem('lang', nextLang);
+    window.dispatchEvent(new Event('languageChange'));
+  };
+
   return (
     <header className="no-print sticky top-0 z-40 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between px-4 h-14 font-sans select-none">
       {/* Left section: Breadcrumbs */}
@@ -220,8 +235,18 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Right section: Corporate Profile Avatar / Janata Bank Badge */}
-      <div className="flex items-center gap-3 justify-end w-[220px] md:w-[300px] shrink-0">
+      {/* Right section: Corporate Profile Avatar & Control Buttons */}
+      <div className="flex items-center gap-2.5 justify-end w-[260px] md:w-[340px] shrink-0">
+        {/* Language Switcher Toggle Button */}
+        <button 
+          onClick={toggleLang}
+          className="px-2.5 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold text-xs transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+          title={lang === 'bn' ? "Switch to English" : "বাংলায় সুইচ করুন"}
+        >
+          <Languages size={15} className="text-indigo-600 dark:text-indigo-400" />
+          <span className="font-mono text-[11px] uppercase tracking-wider">{lang === 'bn' ? 'BN' : 'EN'}</span>
+        </button>
+
         {/* Theme Toggle Button */}
         <button 
           onClick={toggleTheme}

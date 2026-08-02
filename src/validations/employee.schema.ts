@@ -2,7 +2,9 @@ import { z } from 'zod';
 
 export const employeeCreateSchema = z.object({
   name: z.string({ message: 'name_required' }).trim().min(1, { message: 'name_required' }),
+  nameEn: z.string().trim().nullable().optional(),
   designation: z.string({ message: 'designation_required' }).trim().min(1, { message: 'designation_required' }),
+  designationEn: z.string().trim().nullable().optional(),
   bankId: z.string().trim().nullable().optional(),
   fileNo: z.string().trim().nullable().optional(),
   mobile: z.string().trim().nullable().optional(),

@@ -4,6 +4,7 @@ import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import AuthGuard from "@/components/AuthGuard";
 import CommandCenter from "@/components/CommandCenter";
+import CommandPalette from "@/components/CommandPalette";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { LayoutProvider } from "@/context/LayoutContext";
 import { TopProgressBar } from "@/components/TopProgressBar";
@@ -26,10 +27,19 @@ export default function RootLayout({
   return (
     <html lang="bn" className="h-full" suppressHydrationWarning={true}>
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0b5e9e" />
         <script
           suppressHydrationWarning={true}
           dangerouslySetInnerHTML={{
             __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                    console.log('SW reg failed: ', err);
+                  });
+                });
+              }
               (function() {
                 const removeBisSkinChecked = (el) => {
                   if (el.hasAttribute && el.hasAttribute('bis_skin_checked')) {
@@ -74,6 +84,7 @@ export default function RootLayout({
                 <main className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
                   <Navbar />
                   <CommandCenter />
+                  <CommandPalette />
                   <div className="flex-1 p-4 lg:p-8 overflow-y-auto flex flex-col justify-between" suppressHydrationWarning={true}>
                   <div className="flex-1">
                     {children}

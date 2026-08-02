@@ -5,8 +5,9 @@ import { useProfile } from '@/context/ProfileContext';
 import { useLayout, LayoutPriority } from '@/context/LayoutContext';
 import { TableSkeleton } from "@/components/SkeletonLoader";
 import { sortEmployeesBySeniority } from '@/lib/seniority';
+import dynamic from 'next/dynamic';
 import { cleanBracketName, renderDatesInPairs } from '@/lib/print-helpers';
-import RosterOCRImport from './components/RosterOCRImport';
+const RosterOCRImport = dynamic(() => import('./components/RosterOCRImport'), { ssr: false });
 
 import { 
   Trash2, 

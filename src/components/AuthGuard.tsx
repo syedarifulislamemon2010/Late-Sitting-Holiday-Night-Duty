@@ -442,7 +442,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-between p-4 relative overflow-y-auto overflow-x-hidden font-sans z-0" suppressHydrationWarning={true}>
         {/* Animated Premium Mesh Background */}
-        <div className="absolute inset-0 -z-20 overflow-hidden bg-[#e8f4fd] dark:bg-slate-950 transition-colors duration-500">
+        <div className="absolute inset-0 -z-20 overflow-hidden bg-[#e8f4fd] transition-colors duration-500">
           <div className="absolute -inset-[10px] opacity-60">
             <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-gradient-to-br from-blue-300 to-sky-400/80 blur-[130px] animate-blob1" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-gradient-to-br from-indigo-300 to-purple-400/80 blur-[130px] animate-blob2" style={{ animationDelay: '2s' }} />
@@ -456,7 +456,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           <div 
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`w-full bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl rounded-[32px] shadow-[0_20px_50px_rgba(21,101,192,0.12)] border border-white/60 dark:border-slate-800/60 overflow-hidden transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1) p-6 flex flex-col justify-between ${
+            className={`w-full bg-white/90 backdrop-blur-xl rounded-[32px] shadow-[0_20px_50px_rgba(21,101,192,0.12)] border border-white/80 overflow-hidden transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1) p-6 flex flex-col justify-between ${
               isExpanded 
                 ? 'max-w-[420px] min-h-[580px] p-6 sm:p-8 space-y-6' 
                 : 'max-w-[280px] h-[280px] items-center justify-center space-y-4 cursor-pointer scale-100 hover:scale-[1.03] hover:shadow-[0_20px_50px_rgba(21,101,192,0.22)]'
@@ -555,7 +555,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
                     {/* Username Input */}
                     <div className="space-y-1.5 text-left group">
-                      <label htmlFor="username-input" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">ইউজারনেম</label>
+                      <label htmlFor="username-input" className="text-xs font-bold text-slate-600 uppercase tracking-wider px-1">ইউজারনেম</label>
                       <div className="relative flex items-center">
                         <span className="absolute left-4 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
                           <User size={16} />
@@ -568,7 +568,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                           onFocus={() => setFocusField('username')}
                           onBlur={() => setFocusField('none')}
                           placeholder="যেমন: 026799 (ব্যাংক আইডি)"
-                          className="w-full pl-11 pr-4 py-3 border border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/80 text-slate-800 dark:text-slate-200 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/40 rounded-2xl text-sm font-semibold outline-none transition-all"
+                          className="w-full pl-11 pr-4 py-3 border border-slate-200 bg-white text-slate-900 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 rounded-2xl text-sm font-semibold outline-none transition-all"
                           required
                         />
                       </div>
@@ -576,7 +576,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
                     {/* Password Input */}
                     <div className="space-y-1.5 text-left relative font-sans group">
-                      <label htmlFor="password-input" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
+                      <label htmlFor="password-input" className="text-xs font-bold text-slate-600 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
                       <div className="relative flex items-center">
                         <span className="absolute left-4 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
                           <KeyRound size={16} />
@@ -589,7 +589,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                           onFocus={() => setFocusField('password')}
                           onBlur={() => setFocusField('none')}
                           placeholder="••••••••"
-                          className="w-full pl-11 pr-12 py-3 border border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/80 text-slate-800 dark:text-slate-200 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/40 rounded-2xl text-sm font-semibold outline-none transition-all font-mono"
+                          className="w-full pl-11 pr-12 py-3 border border-slate-200 bg-white text-slate-900 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 rounded-2xl text-sm font-semibold outline-none transition-all font-mono"
                           required
                         />
                         <button

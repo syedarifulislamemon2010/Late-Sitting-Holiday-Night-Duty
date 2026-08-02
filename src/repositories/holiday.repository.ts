@@ -1,6 +1,15 @@
 import { db } from '@/lib/db';
 import { holidays as holidaysTable } from '@/db/schema';
 import { eq, inArray } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
+
+const getCachedHolidays = unstable_cache(
+  async () => {
+    return db.select().from(holidaysTable);
+  },
+  ['all-holidays-cache'],
+  { revalidate: 3600, tags: ['holidays'] }
+);
 
 export class HolidayRepository {
   static async findByDate(date: string) {
@@ -13,6 +22,6 @@ export class HolidayRepository {
   }
 
   static async listAll() {
-    return db.select().from(holidaysTable);
+    return getCachedHolidays();
   }
 }

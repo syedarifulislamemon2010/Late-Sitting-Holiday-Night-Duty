@@ -1,0 +1,16 @@
+{
+  "short_name": "JB LHN Portal",
+  "name": "Janata Bank LHN Duty Management Portal",
+  "icons": [
+    {
+      "src": "/janata-bank-logo-real.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#0b5e9e",
+  "display": "standalone",
+  "orientation": "portrait"
+}

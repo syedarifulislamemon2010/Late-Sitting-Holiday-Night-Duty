@@ -35,7 +35,9 @@ interface EmployeeWithCell {
 
 interface EmployeeInput {
   name: string;
+  nameEn?: string | null;
   designation: string;
+  designationEn?: string | null;
   bankId?: string | null;
   fileNo?: string | null;
   mobile: string;
@@ -44,7 +46,9 @@ interface EmployeeInput {
 
 interface EmployeeUpdateInput {
   name?: string;
+  nameEn?: string | null;
   designation?: string;
+  designationEn?: string | null;
   bankId?: string | null;
   fileNo?: string | null;
   mobile?: string;
