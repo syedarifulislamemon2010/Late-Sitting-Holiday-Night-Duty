@@ -527,6 +527,14 @@ export default function RosterPage() {
     description: ''
   });
 
+  // Conflict modal and bulk selection states
+  const [conflictModalData, setConflictModalData] = useState<{
+    message: string;
+    details?: any;
+    assignments: any[];
+  } | null>(null);
+  const [selectedDutyIds, setSelectedDutyIds] = useState<number[]>([]);
+
   // Entry mode: EMPLOYEE_WISE or DATE_WISE
   const [entryMode, setEntryMode] = useState<'EMPLOYEE_WISE' | 'DATE_WISE'>('EMPLOYEE_WISE');
   
@@ -2159,6 +2167,71 @@ export default function RosterPage() {
     }
   };
 
+  const handleOverwriteAndSave = async () => {
+    if (!conflictModalData || !conflictModalData.assignments) return;
+    try {
+      setSubmitting(true);
+      const assignments = conflictModalData.assignments;
+      setConflictModalData(null);
+
+      const res = await fetch('/api/duties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          assignments,
+          overwriteConflicts: true,
+          orderRef: isEditingArchive ? orderRef : undefined,
+          originalOrderRef: isEditingArchive ? originalOrderRef : undefined
+        })
+      });
+
+      if (res.ok) {
+        showToast('কনফ্লিক্টিং ডাটা প্রতিস্থাপন করে নতুন ডাটা সফলভাবে সংরক্ষিত হয়েছে!', 'success');
+        if (entryMode === 'EMPLOYEE_WISE') {
+          setOpt1Assignments({});
+        } else {
+          setAssignmentForm(prev => ({ ...prev, selectedEmployeeIds: [] }));
+        }
+        await loadDuties();
+      } else {
+        const err = await res.json();
+        setErrorMessage(err.message || err.error || 'ডাটা সেভ করতে সমস্যা হয়েছে।');
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMessage('একটি নেটওয়ার্ক সমস্যা হয়েছে।');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRedirectToConflictingDuties = () => {
+    setConflictModalData(null);
+    const tableEl = document.getElementById('duties-table-container');
+    if (tableEl) {
+      tableEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleBulkDeleteDuties = async () => {
+    if (selectedDutyIds.length === 0) return;
+    if (!window.confirm(`আপনি কি নিশ্চিত যে নির্বাচিত ${toBanglaDigits(selectedDutyIds.length)} টি ডিউটি মুছে ফেলতে চান?`)) {
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await Promise.all(selectedDutyIds.map(id => fetch(`/api/duties/${id}`, { method: 'DELETE' })));
+      showToast('নির্বাচিত ডিউটিগুলো সফলভাবে মুছে ফেলা হয়েছে।', 'success');
+      setSelectedDutyIds([]);
+      await loadDuties();
+    } catch (err) {
+      console.error(err);
+      alert('ডিউটি মুছে ফেলতে সমস্যা হয়েছে।');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleAssignmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -2392,10 +2465,13 @@ export default function RosterPage() {
       if (!res.ok) {
         const err = await res.json();
         if (res.status === 409) {
-          setErrorMessage(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।');
-          showToast(err.message || 'ডিউটি সংঘর্ষ বা ছুটি ওভারল্যাপ হয়েছে।', 'error');
-        } else if (err.error === 'duplicate_duty_on_date') {
-          setErrorMessage(err.message || 'এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।');
+          setConflictModalData({
+            message: err.message || 'এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে।',
+            details: err.details,
+            assignments
+          });
+          setSubmitting(false);
+          return;
         } else if (err.error === 'late_sitting_on_holiday') {
           setErrorMessage('ছুটির দিনে লেট সিটিং ডিউটি দেওয়া সম্ভব নয়।');
         } else if (err.error === 'holiday_duty_on_working_day') {
@@ -2945,28 +3021,84 @@ export default function RosterPage() {
       }, {} as Record<string, { employee: Employee; type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'; duties: Duty[]; totalBill: number }>)
     ).map(([, val]) => val);
 
+    const allGroupDutyIds = groupedDuties.flatMap(g => g.duties.map(d => d.id));
+    const isAllSelected = allGroupDutyIds.length > 0 && allGroupDutyIds.every(id => selectedDutyIds.includes(id));
+
+    const toggleSelectAll = () => {
+      if (isAllSelected) {
+        setSelectedDutyIds(prev => prev.filter(id => !allGroupDutyIds.includes(id)));
+      } else {
+        setSelectedDutyIds(prev => Array.from(new Set([...prev, ...allGroupDutyIds])));
+      }
+    };
+
     return (
-      <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/30">
-        <table className="w-full text-left text-xs leading-normal">
-          <thead>
-            <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-              <th className="px-5 py-3">তারিখ</th>
-              <th className={`px-5 py-3 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>সেল</th>
-              <th className="px-5 py-3">কর্মকর্তা</th>
-              <th className={`px-5 py-3 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>পদবী</th>
-              <th className={`px-5 py-3 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>ডিউটির ক্যাটাগরি</th>
-              <th className="px-5 py-3">মোট বিল</th>
-              <th className={`px-5 py-3 no-print ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>অ্যাকশন</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium">
-            {groupedDuties.map((group) => {
-              const datesSorted = group.duties.sort((a, b) => a.date.localeCompare(b.date));
-              const datesJoined = datesSorted.map(d => d.date).join(', ');
-              const bnDatesJoined = datesSorted.map(d => getBanglaDate(d.date)).join(', ');
-              
-              return (
-                <tr key={`${group.employee.id}-${group.type}`} className="hover:bg-slate-50/40 dark:hover:bg-slate-955/20 text-slate-600 dark:text-slate-300">
+      <div id="duties-table-container" className="space-y-2">
+        {selectedDutyIds.length > 0 && (
+          <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl flex items-center justify-between no-print animate-in fade-in duration-200">
+            <span className="text-xs font-bold text-rose-800 dark:text-rose-200 flex items-center gap-2">
+              <Trash2 size={15} />
+              {toBanglaDigits(selectedDutyIds.length)} টি ডিউটি রেকর্ড নির্বাচিত করা হয়েছে
+            </span>
+            <button
+              type="button"
+              onClick={handleBulkDeleteDuties}
+              className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 size={13} />
+              নির্বাচিত টেস্ট ডাটা মুছে ফেলুন (Bulk Delete)
+            </button>
+          </div>
+        )}
+
+        <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/30">
+          <table className="w-full text-left text-xs leading-normal">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
+                <th className="px-3 py-3 w-8 text-center no-print">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={toggleSelectAll}
+                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    title="সব সিলেক্ট করুন"
+                  />
+                </th>
+                <th className="px-5 py-3">তারিখ</th>
+                <th className={`px-5 py-3 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>সেল</th>
+                <th className="px-5 py-3">কর্মকর্তা</th>
+                <th className={`px-5 py-3 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>পদবী</th>
+                <th className={`px-5 py-3 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>ডিউটির ক্যাটাগরি</th>
+                <th className="px-5 py-3">মোট বিল</th>
+                <th className={`px-5 py-3 no-print ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>অ্যাকশন</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium">
+              {groupedDuties.map((group) => {
+                const datesSorted = group.duties.sort((a, b) => a.date.localeCompare(b.date));
+                const datesJoined = datesSorted.map(d => d.date).join(', ');
+                const bnDatesJoined = datesSorted.map(d => getBanglaDate(d.date)).join(', ');
+                const groupDutyIds = group.duties.map(d => d.id);
+                const isGroupSelected = groupDutyIds.every(id => selectedDutyIds.includes(id));
+
+                const toggleGroupSelect = () => {
+                  if (isGroupSelected) {
+                    setSelectedDutyIds(prev => prev.filter(id => !groupDutyIds.includes(id)));
+                  } else {
+                    setSelectedDutyIds(prev => Array.from(new Set([...prev, ...groupDutyIds])));
+                  }
+                };
+
+                return (
+                  <tr key={`${group.employee.id}-${group.type}`} className={`hover:bg-slate-50/40 dark:hover:bg-slate-955/20 text-slate-600 dark:text-slate-300 ${isGroupSelected ? 'bg-indigo-50/30 dark:bg-indigo-950/20' : ''}`}>
+                    <td className="px-3 py-3.5 text-center no-print">
+                      <input
+                        type="checkbox"
+                        checked={isGroupSelected}
+                        onChange={toggleGroupSelect}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      />
+                    </td>
                   <td className="px-5 py-3.5 font-sans font-semibold text-slate-800 dark:text-slate-200 leading-snug">
                     {datesJoined}
                     <p className="text-[10px] text-slate-400 mt-0.5 font-normal leading-normal">{bnDatesJoined}</p>
@@ -3016,7 +3148,8 @@ export default function RosterPage() {
           </tbody>
         </table>
       </div>
-    );
+    </div>
+  );
   };
 
   const pendingDuties = useMemo(() => {
@@ -4275,6 +4408,57 @@ export default function RosterPage() {
                 </div>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Conflict Resolution & Auto-Redirect Modal */}
+      {conflictModalData && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 font-sans">
+            <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
+              <div className="p-3 bg-amber-100 dark:bg-amber-950/50 rounded-2xl">
+                <AlertCircle size={24} />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-800 dark:text-slate-100">
+                  ⚠️ ডাটা আগে থেকেই সংরক্ষিত ছিল! (Conflict Detected)
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">ইনপুট কৃত তারিখ ও কর্মকর্তার তথ্য সিস্টেমে আগেই সংরক্ষিত ছিল।</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 rounded-2xl text-xs text-amber-900 dark:text-amber-200 font-medium whitespace-pre-line leading-relaxed">
+              {conflictModalData.message}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setConflictModalData(null)}
+                className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                বাতিল
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleRedirectToConflictingDuties}
+                className="w-full sm:w-auto px-4 py-2.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Eye size={14} />
+                তালিকায় কনফ্লিক্টিং ডাটা দেখুন
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOverwriteAndSave}
+                className="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 size={14} />
+                কনফ্লিক্টিং ডাটা মুছে সেভ করুন
+              </button>
             </div>
           </div>
         </div>

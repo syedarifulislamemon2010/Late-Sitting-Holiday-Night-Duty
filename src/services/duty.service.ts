@@ -252,7 +252,7 @@ export class DutyService {
       const dutiesToDeleteSet = new Set(validated.dutiesToDelete || []);
       const isUpdateMode = validated.dutiesToDelete !== undefined;
       
-      if (isUpdateMode) {
+      if (isUpdateMode || validated.overwriteConflicts) {
         for (const assignment of validated.assignments) {
           const conflicts = allExistingDutiesFromDb.filter(d =>
             d.employeeId === assignment.employeeId &&

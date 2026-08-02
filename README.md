@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🏛️ Janata Bank LHN Portal
-### **Late-Sitting, Holiday, and Night Duty Management System**
+### **Late-Sitting, Holiday, and Night Duty Management & Administrative Automation System**
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
@@ -13,7 +13,7 @@
 
 ---
 
-*A production-ready administrative, financial utility, and roster management portal built exclusively for the **Online Banking Department** of Janata Bank PLC. It automates duty scheduling, allowance bill ledger generation, leave processing with sandwich rules, executive seniority tracking, and audit-compliant print layouts.*
+*An enterprise-grade administrative, financial utility, and roster management portal engineered exclusively for the **Online Banking Department** of Janata Bank PLC. It automates duty assignments, allowance bill ledger generation, leave processing with sandwich rules, executive seniority tracking, live PDF/Letter editing, editable DOCX exports, and conflict resolution.*
 
 </div>
 
@@ -21,13 +21,15 @@
 
 ## 📌 Table of Contents
 
-- [✨ Key Features](#-key-features)
+- [✨ Comprehensive Feature List](#-comprehensive-feature-list)
 - [🏛️ System Architecture](#️-system-architecture)
 - [⚙️ Tech Stack \& Technical Rationale](#️-tech-stack--technical-rationale)
-- [🧠 Core Algorithmic Mechanisms](#-core-algorithmic-mechanisms)
+- [🧠 Core Algorithmic Engines](#-core-algorithmic-engines)
+- [📝 Live PDF Editor \& Editable DOCX Export](#-live-pdf-editor--editable-docx-export)
+- [⚡ Single \& Bulk Duty Management with Conflict Resolution](#-single--bulk-duty-management-with-conflict-resolution)
 - [💾 Database Schema \& Data Dictionary](#-database-schema--data-dictionary)
 - [🌐 API Specifications](#-api-specifications)
-- [🛡️ Security \& Threat Modeling](#️-security--threat-modeling)
+- [🛡️ Security \& Threat Modeling](#-security--threat-modeling)
 - [🧪 Testing Strategy](#-testing-strategy)
 - [📖 Operator \& User Manual](#-operator--user-manual)
 - [🚀 Quick Start \& Development](#-quick-start--development)
@@ -37,14 +39,18 @@
 
 ---
 
-## ✨ Key Features
+## ✨ Comprehensive Feature List
 
-- 📅 **Automated Duty Roster Management**: Assign and track Late-Sitting (৳300/day), Holiday Duty (৳500/day), and Night Duty (৳1000/day).
+- 📅 **Automated Duty Roster Management**: Schedule, track, and manage Late-Sitting (৳300/day), Holiday Duty (৳500/day), and Night Duty (৳1000/day).
+- ⚙️ **Single & Bulk Duty Management**: Multi-select checkboxes to edit or bulk-delete test data and old entries in one batch click.
+- ⚠️ **Conflict Auto-Redirect & Overwrite Engine**: Smart detection when saving real data conflicts with existing test data. Provides 1-click options to overwrite conflicts or auto-scroll directly to conflicting entries in the table.
 - 💰 **৳7,500 Budget Splitter Engine**: Automatically partitions large duty memos exceeding ৳7,500 into contiguous, audit-compliant sub-orders with non-colliding reference dates.
-- 📆 **Working Days \& Holiday Override**: Dynamic calculation of working days per month with custom calendar overrides for special workdays/holidays.
+- 📆 **Working Days & Holiday Override**: Dynamic calculation of active working days per month with custom calendar overrides for special workdays/holidays.
+- 📝 **Live On-Screen WYSIWYG PDF Text Editor**: Click-and-type live editing of leave letters directly inside the browser preview before downloading or printing.
+- 📝 **Editable Microsoft Word (.docx) Export**: Download generated leave applications and office orders in `.docx` format for manual editing in Microsoft Word.
 - ✉️ **Leave Application Generator**: Full leave request creation with dynamic Sandwich Rule calculations and printable bank-formatted leave letters.
-- 👔 **Seniority \& Executive Directory**: Automatic employee hierarchy ranking and seniority calculation.
-- 🖨️ **US-Legal Print \& PDF Rendering**: Bank-compliant print formats with pixel-perfect alignment for official records.
+- 👔 **Seniority & Executive Directory**: Automatic employee hierarchy ranking and seniority calculation.
+- 🖨️ **US-Legal Print & PDF Rendering**: Bank-compliant print formats with pixel-perfect alignment for official records.
 - 🗑️ **Soft-Delete Recycle Bin**: Restore accidentally deleted records without losing database integrity.
 - 🛡️ **Role-Based Cell Security**: Enforces cell-level isolation and operator scope limits across all administrative endpoints.
 
@@ -62,7 +68,7 @@ graph TD
     classDef box fill:#1e293b,stroke:#475569,stroke-width:1px,color:#cbd5e1;
 
     subgraph Client["React Client Layer (Next.js Frontend)"]
-        UI["React & Tailwind CSS UI Components"]:::client --> State["State & Context (ProfileContext, Hooks)"]:::client
+        UI["React & Tailwind CSS UI Components"]:::client --> State["State & Context (ProfileContext, LayoutContext)"]:::client
         State --> Proxy["HTTP Request Proxy / API Fetch Call"]:::client
     end
 
@@ -74,8 +80,8 @@ graph TD
         
         Logic --> LimitSplitter["৳7,500 Bill Splitter Engine"]:::server
         Logic --> CalendarEngine["Calendar Working Days Engine"]:::server
-        Logic --> CryptoEngine["AES-256 Crypto Engine"]:::server
-        Logic --> PrintStyles["US-Legal PDF Print Renderer"]:::server
+        Logic --> DocxEngine["Docx & PDF Generation Engine"]:::server
+        Logic --> ConflictEngine["Conflict Auto-Redirect Engine"]:::server
     end
 
     subgraph Storage["Database Layer"]
@@ -94,16 +100,17 @@ graph TD
 | :--- | :--- | :--- |
 | **Framework** | Next.js 16 (App Router) | High-performance React framework with Server Components, hybrid SSR/SSG, and API route handling. |
 | **UI Engine** | React 19 | Cutting-edge React UI library with enhanced server action performance. |
-| **Language** | TypeScript 5 | Strict compile-time type safety, preventing runtime exceptions and enhancing developer experience. |
+| **Language** | TypeScript 5.9 | Strict compile-time type safety, preventing runtime exceptions and enhancing developer experience. |
 | **Authentication** | Auth.js (NextAuth) | Custom self-hosted session validation, zero third-party dependencies, lightweight and secure. |
 | **Database ORM** | Drizzle ORM 0.45 | Type-safe SQL query builder with zero cold-start latency, superior execution speed over traditional ORMs. |
 | **Styling** | Tailwind CSS 4.3 | Modern utility-first styling with zero runtime compilation overhead and responsive dark mode support. |
+| **Document Generator** | docx 9.x | Programmatic Microsoft Word (.docx) generation library. |
 | **Database** | PostgreSQL 15 | Enterprise-grade relational database with strict constraint validation and index optimization. |
 | **Testing** | Vitest 4.1 | Lightning-fast ESM-native test runner for unit, integration, and service contract verification. |
 
 ---
 
-## 🧠 Core Algorithmic Mechanisms
+## 🧠 Core Algorithmic Engines
 
 > [!IMPORTANT]
 > ### 1. ৳7,500 Budget Limit Splitter
@@ -122,6 +129,31 @@ graph TD
 > ### 3. Leave Calculation & Sandwich Rule Engine
 > * **Operation:** Calculates exact leave duration for Casual, Station, and Post-Facto Leave requests.
 > * **Sandwich Rule Execution:** If requested leave dates sandwich a weekend or official holiday, those non-working days are programmatically counted against the user's available leave balance in compliance with bank service regulations.
+
+---
+
+## 📝 Live PDF Editor & Editable DOCX Export
+
+### 1. In-App WYSIWYG Live Text Editor
+- **Interactive Editing**: Clicking any text block (Date, Addressee, Subject, Body Text, Signatures) inside the A4/Legal letter preview turns it into an active editable field.
+- **Direct PDF & Print**: Pressing **"ডাউনলোড পিডিএফ"** or **"প্রিন্ট প্রিভিউ"** instantly renders the modified text into the final PDF/Print output without needing third-party PDF editors.
+
+### 2. Microsoft Word (.docx) Document Generator
+- **Native Word Export**: Generates `.docx` binary files via the **"ডাউনলোড ওয়ার্ড (.docx)"** button.
+- **Full Customization**: Allows operators to open the document in Microsoft Word or LibreOffice to make any manual formatting tweaks before physical submission.
+
+---
+
+## ⚡ Single & Bulk Duty Management with Conflict Resolution
+
+### 1. Single & Bulk Duty Selection & Delete
+- **Multi-Select Checkboxes**: Select single duty rows or use "Select All" checkboxes across the duty roster tables.
+- **Bulk Delete Toolbar**: A batch action bar (`🗑️ নির্বাচিত N-টি মুছে ফেলুন`) allows 1-click removal of test entries or obsolete duty logs.
+
+### 2. Conflict Auto-Redirect & Overwrite Dialog
+- **Duplicate & Conflict Detection**: When entering real duty assignments, if test data or previous entries already exist for that officer/date, the system triggers an interactive **Conflict Resolution Dialog**.
+- **1-Click Overwrite**: Select *"🗑️ কনফ্লিক্টিং ডাটা মুছে সেভ করুন"* to delete old conflicting test entries and save the new data immediately.
+- **Auto-Redirect to Existing Table**: Select *"🔍 তালিকায় কনফ্লিক্টিং ডাটা দেখুন"* to scroll directly to the existing entries in the table for manual editing.
 
 ---
 
@@ -216,18 +248,6 @@ graph TD
 | `applicationDate`| `timestamp`| ❌ No | Application submission date |
 | `createdAt` | `timestamp` | ❌ No | Submission timestamp |
 
-#### 7. Table: `auditLogs` (Security Trail)
-| Column | Type | Nullable | Description |
-| :--- | :--- | :---: | :--- |
-| `id` | `serial` | ❌ No | Primary key identifier |
-| `username` | `text` | ❌ No | Operator identity |
-| `action` | `text` | ❌ No | Action (`CREATE`, `UPDATE`, `DELETE`, `RESTORE`) |
-| `entityType` | `text` | ⚠️ Yes | Target entity table |
-| `entityId` | `text` | ⚠️ Yes | Target record ID |
-| `ipAddress` | `text` | ⚠️ Yes | Client IP address |
-| `details` | `text` | ❌ No | Comprehensive Bengali audit summary |
-| `createdAt` | `timestamp` | ❌ No | Audit timestamp |
-
 ---
 
 ## 🌐 API Specifications
@@ -270,9 +290,10 @@ paths:
                 employeeId: { type: integer }
                 dates: { type: array, items: { type: string } }
                 type: { type: string, enum: [LATE_SITTING, HOLIDAY, NIGHT_SHIFT] }
+                overwriteConflicts: { type: boolean }
       responses:
         '201': { description: Duties scheduled }
-        '409': { description: Collision with existing duty or leave }
+        '409': { description: Conflict detected with existing data }
 
   /api/leaves:
     post:
@@ -292,15 +313,6 @@ paths:
 - 🔑 **CSRF & Session Security**: HTTP-only, `SameSite=Strict`, secure cookie policy.
 - ⚡ **Rate Limiting**: IP-based token-bucket rate limiting on critical API endpoints.
 - 👁️ **Access Control**: Role-based access control (RBAC) enforced on both API and UI level.
-
-### STRIDE Assessment
-
-| Threat Type | Mitigation Implementation |
-| :--- | :--- |
-| **Spoofing** | Strict JWT session validation with automatic timeout. |
-| **Tampering** | Fixed server-side allowance calculation rates (৳300, ৳500, ৳1000). |
-| **Repudiation** | Immutable dual-logging (PostgreSQL `auditLogs` + local file stream). |
-| **Information Disclosure** | Cell-based row-level filtering applied to all queries. |
 
 ---
 
@@ -331,9 +343,10 @@ npx tsc --noEmit
 2. **Recycle Bin**: Access **Trash / রিসাইকেল বিন** to restore soft-deleted duty logs, employees, or office orders.
 
 ### 2. Cell Operators
-1. **Duty Roster**: Select Cell, Choose Category (Late Sitting / Holiday / Night Duty), Pick Employees, and Select Dates.
-2. **Bill Memos**: Go to **Billing**, choose month & cell, click **Create Bill Memo**. System auto-applies ৳7,500 split limits.
-3. **Leave Applications**: Fill out leave requests with backdate support and auto-sandwich calculations.
+1. **Duty Roster**: Select Cell, Choose Category (Late Sitting / Holiday / Night Duty), Pick Employees, and Select Dates. Use checkboxes for **Bulk Delete** of old test data.
+2. **Conflict Overwrite**: If duplicate data warnings appear, click *"🗑️ কনফ্লিক্টিং ডাটা মুছে সেভ করুন"* to replace old test entries automatically.
+3. **Bill Memos**: Go to **Billing**, choose month & cell, click **Create Bill Memo**. System auto-applies ৳7,500 split limits.
+4. **Leave Applications**: Fill out leave requests with backdate support. Click text in preview to edit live, or export to **Word (.docx)** or **PDF**.
 
 ---
 
