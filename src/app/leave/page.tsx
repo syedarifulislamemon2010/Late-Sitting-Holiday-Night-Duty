@@ -640,7 +640,10 @@ export default function LeaveGeneratorPage() {
   // Initialize application date to today
   useEffect(() => {
     const today = new Date();
-    const formatted = today.toISOString().split('T')[0];
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const date = String(today.getDate()).padStart(2, '0');
+    const formatted = `${year}-${month}-${date}`;
     const timer = setTimeout(() => {
       setApplicationDate(formatted);
     }, 0);
@@ -1376,7 +1379,6 @@ export default function LeaveGeneratorPage() {
                       onChange={setApplicationDate}
                       isNonWorkingDay={isNonWorkingDay}
                       toBanglaDigits={toBanglaDigits}
-                      minDate={todayStr}
                       placeholder="আবেদনের তারিখ নির্বাচন..."
                     />
                   </div>
