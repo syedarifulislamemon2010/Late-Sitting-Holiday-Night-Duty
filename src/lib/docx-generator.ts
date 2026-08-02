@@ -1,16 +1,3 @@
-import {
-  Document,
-  Paragraph,
-  TextRun,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
-  AlignmentType,
-  BorderStyle,
-  Packer
-} from 'docx';
-
 export interface LeaveDocxData {
   applicationDateStr: string;
   applicantName: string;
@@ -38,6 +25,19 @@ export interface LeaveDocxData {
 }
 
 export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
+  const {
+    Document,
+    Paragraph,
+    TextRun,
+    Table,
+    TableRow,
+    TableCell,
+    WidthType,
+    AlignmentType,
+    BorderStyle,
+    Packer
+  } = await import('docx');
+
   const doc = new Document({
     sections: [
       {
@@ -169,7 +169,7 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
 
           // Body Paragraphs
           ...data.bodyParagraphs.map(
-            (p) =>
+            (p: string) =>
               new Paragraph({
                 alignment: AlignmentType.JUSTIFIED,
                 spacing: { line: 320 },
@@ -256,6 +256,19 @@ export interface HardwareReqDocxData {
 }
 
 export async function generateHardwareRequisitionDocx(data: HardwareReqDocxData): Promise<Blob> {
+  const {
+    Document,
+    Paragraph,
+    TextRun,
+    Table,
+    TableRow,
+    TableCell,
+    WidthType,
+    AlignmentType,
+    BorderStyle,
+    Packer
+  } = await import('docx');
+
   const tableRows = [
     new TableRow({
       children: [
@@ -341,6 +354,19 @@ export interface OfficeOrderDocxData {
 }
 
 export async function generateOfficeOrderDocx(data: OfficeOrderDocxData): Promise<Blob> {
+  const {
+    Document,
+    Paragraph,
+    TextRun,
+    Table,
+    TableRow,
+    TableCell,
+    WidthType,
+    AlignmentType,
+    BorderStyle,
+    Packer
+  } = await import('docx');
+
   const tableRows = [
     new TableRow({
       children: [
