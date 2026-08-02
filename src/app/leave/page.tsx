@@ -26,7 +26,9 @@ import {
   CalendarRange,
   Info,
   Trash2,
-  Edit2
+  Edit2,
+  Download,
+  FileEdit
 } from 'lucide-react';
 
 // Helper to clean designations by removing duplicate parenthesized abbreviations (e.g. "সিনিয়র অফিসার-আইটি (এসও-আইটি)" -> "সিনিয়র অফিসার-আইটি")
@@ -1070,6 +1072,77 @@ export default function LeaveGeneratorPage() {
     }
   };
 
+  const handleDownloadDocx = async () => {
+    const valResult = getDropdownValidation();
+    if (!valResult.isValid) {
+      setShowValidationErrors(true);
+      setErrorMsg(valResult.message);
+      setTimeout(() => setErrorMsg(''), 4000);
+      return;
+    }
+
+    try {
+      const { generateLeaveDocx } = await import('@/lib/docx-generator');
+      const delegateEmp = employees.find(e => String(e.id) === delegateId);
+
+      let bodyText = '';
+      if (leaveType === 'POST_FACTO') {
+        bodyText = isSingleDay
+          ? `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত ${startDate ? toDisplayDateStr(startDate) : ''} ইং তারিখে ০১ (এক) দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত ০১ (এক) দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`
+          : `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত ${startDate ? toDisplayDateStr(startDate) : ''} হতে ${endDate ? toDisplayDateStr(endDate) : ''} ইং তারিখ পর্যন্ত মোট ${displayDaysWord} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`;
+      } else if (leaveType === 'STATION_LEAVE') {
+        bodyText = isSingleDay
+          ? `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} ইং তারিখে আমার ${selectedDistrict || 'ঢাকার বাইরে'} অবস্থান করা প্রয়োজন। উক্ত ০১ (এক) দিন কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`
+          : `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} হতে ${endDate ? toDisplayDateStr(endDate) : ''} ইং তারিখ পর্যন্ত আমার ${selectedDistrict || 'ঢাকার বাইরে'} অবস্থান করা প্রয়োজন। উক্ত ${displayDaysWord} দিন কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`;
+      } else {
+        bodyText = isSingleDay
+          ? `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} ইং তারিখে আমার ছুটি প্রয়োজন। উক্ত ০১ (এক) দিনের নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`
+          : `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} হতে ${endDate ? toDisplayDateStr(endDate) : ''} ইং তারিখ পর্যন্ত মোট ${displayDaysWord} দিনের নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`;
+      }
+
+      const blob = await generateLeaveDocx({
+        applicationDateStr: toBanglaFullDateStr(applicationDate),
+        applicantName,
+        designation,
+        bankId,
+        fileNo,
+        cellName,
+        leaveType,
+        subjectText: leaveDetails.actualDeducted > 0 || isSingleDay ? formatSubject() : 'বিষয়ঃ নৈমিত্তিক ছুটি মঞ্জুরির আবেদন।',
+        bodyParagraphs: [
+          leaveType === 'STATION_LEAVE' ? 'মহোদয়,' : 'প্রিয় মহোদয়,',
+          bodyText,
+          'অতএব, মহোদয়ের নিকট বিনীত প্রার্থনা এই যে, আমাকে উক্ত ছুটি মঞ্জুর করে বাধিত করবেন।'
+        ],
+        leaveLocation: selectedDistrict || 'ঢাকা',
+        mobileNo,
+        delegateOfficerName: delegateEmp?.name,
+        delegateOfficerDesig: cleanDesignationForLeave(delegateEmp?.designation || ''),
+        appYear: toBanglaDigits(appYear),
+        casualTotal: toBanglaDigits(casualTotal),
+        casualUsed: toBanglaDigits(currentCasualUsed),
+        casualRemaining: toBanglaDigits(currentCasualRemaining),
+        ordinaryTotal: toBanglaDigits(ordinaryTotal),
+        ordinaryUsed: toBanglaDigits(ordinaryUsed),
+        ordinaryRemaining: toBanglaDigits(currentOrdinaryRemaining),
+        specialTotal: toBanglaDigits(specialTotal),
+        specialUsed: toBanglaDigits(specialUsed),
+        specialRemaining: toBanglaDigits(currentSpecialRemaining)
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Leave_Application_${bankId || 'Officer'}_${applicationDate}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error generating DOCX document:', err);
+    }
+  };
+
   const validation = getDropdownValidation();
 
   return (
@@ -1088,7 +1161,7 @@ export default function LeaveGeneratorPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Link href="/" className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer">
               <ArrowLeft size={14} />
               ড্যাশবোর্ড
@@ -1100,6 +1173,15 @@ export default function LeaveGeneratorPage() {
             >
               <Printer size={14} />
               প্রিন্ট প্রিভিউ
+            </button>
+
+            <button
+              onClick={handleDownloadDocx}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              title="সম্পাদনা করার জন্য Word (.docx) ফাইল ডাউনলোড করুন"
+            >
+              <FileEdit size={14} />
+              ডাউনলোড ওয়ার্ড (.docx)
             </button>
 
             <button
