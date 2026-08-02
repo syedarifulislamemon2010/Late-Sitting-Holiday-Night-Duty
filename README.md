@@ -1,90 +1,131 @@
-# Janata Bank Late-Sitting, Holiday, and Night Duty Portal (LHN Portal)
+<div align="center">
 
-A production-ready administrative and financial utility management portal built specifically for the **Online Banking Department** of Janata Bank PLC. It automates late-sitting, holiday, and night duty assignments, computes conveyance and entertainment allowance bill ledgers, manages executive seniority directories, processes leave requests, and generates bank-compliant print layouts and PDFs.
+# 🏛️ Janata Bank LHN Portal
+### **Late-Sitting, Holiday, and Night Duty Management System**
+
+[![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.38-C5F74F?style=for-the-badge&logo=drizzle)](https://orm.drizzle.team/)
+[![Vitest](https://img.shields.io/badge/Vitest-4.1-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
 
 ---
 
-## 🏛️ System Architecture & Design Patterns
+*A production-ready administrative, financial utility, and roster management portal built exclusively for the **Online Banking Department** of Janata Bank PLC. It automates duty scheduling, allowance bill ledger generation, leave processing with sandwich rules, executive seniority tracking, and audit-compliant print layouts.*
 
-The portal is designed using a modern Next.js **App Router** architecture, delivering a highly decoupled, reactive data flow between client and server layers.
+</div>
+
+---
+
+## 📌 Table of Contents
+
+- [✨ Key Features](#-key-features)
+- [🏛️ System Architecture](#️-system-architecture)
+- [⚙️ Tech Stack \& Technical Rationale](#️-tech-stack--technical-rationale)
+- [🧠 Core Algorithmic Mechanisms](#-core-algorithmic-mechanisms)
+- [💾 Database Schema \& Data Dictionary](#-database-schema--data-dictionary)
+- [🌐 API Specifications](#-api-specifications)
+- [🛡️ Security \& Threat Modeling](#️-security--threat-modeling)
+- [🧪 Testing Strategy](#-testing-strategy)
+- [📖 Operator \& User Manual](#-operator--user-manual)
+- [🚀 Quick Start \& Development](#-quick-start--development)
+- [📂 Production Deployment Guide](#-production-deployment-guide-rhel-89)
+- [🔄 Disaster Recovery (DR)](#-disaster-recovery-dr)
+- [📜 Compliance Mapping Matrix](#-compliance-mapping-matrix)
+
+---
+
+## ✨ Key Features
+
+- 📅 **Automated Duty Roster Management**: Assign and track Late-Sitting (৳300/day), Holiday Duty (৳500/day), and Night Duty (৳1000/day).
+- 💰 **৳7,500 Budget Splitter Engine**: Automatically partitions large duty memos exceeding ৳7,500 into contiguous, audit-compliant sub-orders with non-colliding reference dates.
+- 📆 **Working Days \& Holiday Override**: Dynamic calculation of working days per month with custom calendar overrides for special workdays/holidays.
+- ✉️ **Leave Application Generator**: Full leave request creation with dynamic Sandwich Rule calculations and printable bank-formatted leave letters.
+- 👔 **Seniority \& Executive Directory**: Automatic employee hierarchy ranking and seniority calculation.
+- 🖨️ **US-Legal Print \& PDF Rendering**: Bank-compliant print formats with pixel-perfect alignment for official records.
+- 🗑️ **Soft-Delete Recycle Bin**: Restore accidentally deleted records without losing database integrity.
+- 🛡️ **Role-Based Cell Security**: Enforces cell-level isolation and operator scope limits across all administrative endpoints.
+
+---
+
+## 🏛️ System Architecture
+
+The portal leverages Next.js **App Router** for a reactive, client-server decoupled data flow.
 
 ```mermaid
 graph TD
-    %% Styling
     classDef client fill:#1e1b4b,stroke:#4f46e5,stroke-width:2px,color:#fff;
     classDef server fill:#312e81,stroke:#6366f1,stroke-width:2px,color:#fff;
     classDef storage fill:#0f172a,stroke:#3b82f6,stroke-width:2px,color:#fff;
     classDef box fill:#1e293b,stroke:#475569,stroke-width:1px,color:#cbd5e1;
 
-    subgraph Client["Next.js Client Layer (React Application)"]
-        UI["React & TailwindCSS UI Components"]:::client --> State["React Hooks (useState, useEffect, Web Clipboard)"]:::client
-        State --> Proxy["Next.js HTTP Request Proxy / API Fetch Call"]:::client
+    subgraph Client["React Client Layer (Next.js Frontend)"]
+        UI["React & Tailwind CSS UI Components"]:::client --> State["State & Context (ProfileContext, Hooks)"]:::client
+        State --> Proxy["HTTP Request Proxy / API Fetch Call"]:::client
     end
 
-    subgraph Server["Next.js Application Server (App Router Routes)"]
-        Proxy --> Router["App Router Engine & Middleware"]:::server
-        Router --> Auth["Session Cookies Validator & AuthGuard"]:::server
-        Auth --> Endpoints["API Route Handlers (/api/*)"]:::server
-        Endpoints --> BusinessLogic["Business Logic Controllers"]:::server
+    subgraph Server["Next.js Application Server (App Router)"]
+        Proxy --> Router["App Router Middleware & Engine"]:::server
+        Router --> Auth["Session Validator & AuthGuard"]:::server
+        Auth --> Endpoints["API Routes (/api/*)"]:::server
+        Endpoints --> Logic["Business Logic Controllers"]:::server
         
-        %% Mechanisms
-        BusinessLogic --> LimitSplitter["7,500 Bill Splitter Engine"]:::server
-        BusinessLogic --> CalendarEngine["Calendar Working Days Engine"]:::server
-        BusinessLogic --> CryptoEngine["AES-256 Crypto Engine"]:::server
-        BusinessLogic --> PrintStyles["US-Legal PDF Print Renderer"]:::server
-        BusinessLogic --> ExtensionFix["Extension Hydration Prevention Engine"]:::server
+        Logic --> LimitSplitter["৳7,500 Bill Splitter Engine"]:::server
+        Logic --> CalendarEngine["Calendar Working Days Engine"]:::server
+        Logic --> CryptoEngine["AES-256 Crypto Engine"]:::server
+        Logic --> PrintStyles["US-Legal PDF Print Renderer"]:::server
     end
 
-    subgraph Storage["Database & Persistence Layer"]
-        BusinessLogic --> Drizzle["Drizzle ORM Client Wrapper"]:::server
-        Drizzle --> NeonPostgreSQL["PostgreSQL Database"]:::storage
+    subgraph Storage["Database Layer"]
+        Logic --> Drizzle["Drizzle ORM Client"]:::server
+        Drizzle --> PostgreSQL["PostgreSQL Database"]:::storage
     end
 
     class Client,Server,Storage box;
 ```
 
-### ⚙️ Technical Rationale & Technology Selection
+---
 
-| Category | Technology | Rationale & Alternatives Comparison |
+## ⚙️ Tech Stack & Technical Rationale
+
+| Category | Technology | Rationale & Selection |
 | :--- | :--- | :--- |
-| **Core Framework** | Next.js (App Router) | State-of-the-art React framework offering Server Components, server-side rendering, and API route endpoints. Consolidates API endpoints and presentation layers into a single compiled codebase. |
-| **Language** | TypeScript | Ensures compile-time type safety, preventing common runtime bugs and offering autocomplete guides for developers. |
-| **Authentication** | Auth.js (NextAuth.js) | Fully client-owned, self-hosted session validation. No user limit or hidden costs. Integrates cleanly with local database schemas. |
-| **ORM Client** | Drizzle ORM | Ultra-lightweight and type-safe SQL mapper. Significantly faster than Prisma with zero cold-start latency. |
-| **Styling** | Tailwind CSS 4.0 | Utility-first styling with high performance and zero CSS runtime compilation. |
-| **UI Components** | Custom Tailwind CSS | Custom high-fidelity components built with Tailwind for maximum flexibility and styling consistency. |
-| **Cryptography** | Web Cryptography API | Native Web and Node crypto libraries. Encrypts sensitive logs and data using AES-256-CBC without external package dependencies. |
+| **Framework** | Next.js 15 (App Router) | High-performance React framework with Server Components, hybrid SSR/SSG, and API route handling. |
+| **Language** | TypeScript 5 | Strict compile-time type safety, preventing runtime exceptions and enhancing developer experience. |
+| **Authentication** | Auth.js (NextAuth) | Custom self-hosted session validation, zero third-party dependencies, lightweight and secure. |
+| **Database ORM** | Drizzle ORM | Type-safe SQL query builder with zero cold-start latency, superior execution speed over traditional ORMs. |
+| **Styling** | Tailwind CSS 4 | Modern utility-first styling with zero runtime compilation overhead and responsive dark mode support. |
+| **Database** | PostgreSQL 15 | Enterprise-grade relational database with strict constraint validation and index optimization. |
+| **Testing** | Vitest | Lightning-fast ESM-native test runner for unit, integration, and service contract verification. |
 
 ---
 
 ## 🧠 Core Algorithmic Mechanisms
 
-### 1. ৳7,500 Budget Limit Splitter
-Internal audit rules mandate that any single office order/bill memo with an entertainment expenditure exceeding ৳7,500 requires additional administrative clearance.
-* **Mechanism:**
-  - When a user compiles duties for a month, the Roster engine aggregates the total bill amount.
-  - If the limit is exceeded, the engine splits the assignments into contiguous, chronological chunks.
-  - It sorts duties chronologically and groups them into separate orders, keeping each order under the ৳7,500 limit.
-  - To prevent date conflicts (collision) during sequential order generation, the engine assigns staggered unique reference dates, ensuring audit compliance.
+> [!IMPORTANT]
+> ### 1. ৳7,500 Budget Limit Splitter
+> Bank audit compliance mandates that any single duty memo exceeding **৳7,500** requires special administrative pre-approval.
+> * **Operation:**
+>   - The roster calculation engine aggregates monthly allowances.
+>   - If the memo sum exceeds ৳7,500, the system automatically groups duties into contiguous chronological chunks, keeping each sub-memo strictly under ৳7,500.
+>   - Each split memo is assigned a unique, staggered reference date to eliminate reference collisions during audit verification.
 
-### 2. Calendar Working Days Generator & Override Mechanism
-Conveyance and lunch allowances require calculating active working days per month. However, public holidays shift yearly, and weekends may occasionally be declared as active working days.
-* **Mechanism:**
-  - The system reads weekends dynamically (Friday/Saturday) based on a date range.
-  - It intersects these days with override records stored in the `Holiday` table.
-  - **Override Logic:** If a calendar weekend matches a database override flagged with `isWorkingDay = true`, it is treated as a normal working day. Conversely, if a calendar weekday matches a holiday override, it is excluded from working days.
+> [!NOTE]
+> ### 2. Calendar Working Days & Override Engine
+> * **Operation:** Calculates actual active working days by identifying standard weekends (Friday/Saturday) within a selected month.
+> * **Override Handling:** Intersects dates with the `Holiday` database table. If a weekend date is marked `isWorkingDay = true`, it is added to the count; if a weekday is flagged as a public holiday, it is subtracted.
 
-### 3. Leave Application Engine & Sandwich Rule
-Casual and station leave forms must calculate total leave days dynamically, accounting for the "sandwich rule" (where weekends sandwiched between leave days are deducted from the user's leave balance).
-* **Mechanism:**
-  - The engine determines the interval between start and end dates.
-  - It checks if weekends immediately precede or succeed the requested dates. If consecutive leaves sandwich a weekend, those weekends are programmatically deducted from the user's remaining balance.
+> [!TIP]
+> ### 3. Leave Calculation & Sandwich Rule Engine
+> * **Operation:** Calculates exact leave duration for Casual, Station, and Post-Facto Leave requests.
+> * **Sandwich Rule Execution:** If requested leave dates sandwich a weekend or official holiday, those non-working days are programmatically counted against the user's available leave balance in compliance with bank service regulations.
 
 ---
 
-## 💾 Database Schema & Relationships
+## 💾 Database Schema & Data Dictionary
 
-The database utilizes optimized foreign-key relationships to maintain high referential integrity.
+### Entity Relationship Structure
 
 ```text
   +------------+             +--------------+             +------------+
@@ -101,103 +142,101 @@ The database utilizes optimized foreign-key relationships to maintain high refer
                                                            +------------+
 ```
 
-### 📋 Data Dictionary
+---
 
-#### 1. Table: `cells` (Cell Registry)
+### 📋 Data Dictionary Overview
+
+#### 1. Table: `cells` (Department Operational Cells)
 | Column | Type | Nullable | Description |
 | :--- | :--- | :---: | :--- |
-| `id` | serial | No | Primary key identifier for the cell |
-| `name` | text | No | Name of the operational cell (Unique) |
-| `description` | text | Yes | Description of cell's responsibilities |
-| `createdAt` | timestamp | No | Creation timestamp (default now) |
+| `id` | `serial` | ❌ No | Primary key identifier |
+| `name` | `text` | ❌ No | Unique cell name |
+| `description` | `text` | ⚠️ Yes | Cell responsibilities summary |
+| `createdAt` | `timestamp` | ❌ No | Record creation timestamp |
 
-#### 2. Table: `users` (System Operators)
+#### 2. Table: `users` (System Operators & Admins)
 | Column | Type | Nullable | Description |
 | :--- | :--- | :---: | :--- |
-| `id` | serial | No | Primary key identifier for the user |
-| `username` | text | No | Unique login bank ID code (Unique) |
-| `password` | text | No | Bcrypt-hashed user password |
-| `name` | text | No | User's full name |
-| `role` | text | No | Role designation (`ADMIN` or `USER`) |
-| `mobile` | text | Yes | Contact number |
-| `cellDuties` | text | Yes | Context role (`PRIMARY`, `ADDITIONAL`, `INCHARGE`) |
-| `createdAt` | timestamp | No | Creation timestamp (default now) |
+| `id` | `serial` | ❌ No | Primary key identifier |
+| `username` | `text` | ❌ No | Unique Bank ID code |
+| `password` | `text` | ❌ No | Bcrypt encrypted password hash |
+| `name` | `text` | ❌ No | Full operator name |
+| `role` | `text` | ❌ No | Operator privilege (`ADMIN` / `USER`) |
+| `mobile` | `text` | ⚠️ Yes | Contact phone number |
+| `cellDuties` | `text` | ⚠️ Yes | Context role (`PRIMARY`, `ADDITIONAL`, `INCHARGE`) |
+| `createdAt` | `timestamp` | ❌ No | Account creation timestamp |
 
-#### 3. Table: `employees` (Employee Directory)
+#### 3. Table: `employees` (Employee Registry)
 | Column | Type | Nullable | Description |
 | :--- | :--- | :---: | :--- |
-| `id` | serial | No | Primary key identifier for the employee |
-| `name` | text | No | Full name of the employee |
-| `designation` | text | No | Official designation (e.g., SPO, PO, Officer) |
-| `bankId` | text | No | Alphanumeric bank ID (Unique) |
-| `fileNo` | text | No | Employee file reference number |
-| `mobile` | text | Yes | Contact number |
-| `cellId` | integer | No | Foreign key referencing `cells.id` |
-| `createdAt` | timestamp | No | Creation timestamp (default now) |
+| `id` | `serial` | ❌ No | Primary key identifier |
+| `name` | `text` | ❌ No | Officer full name |
+| `designation` | `text` | ❌ No | Official designation |
+| `bankId` | `text` | ❌ No | Unique alphanumeric Bank ID |
+| `fileNo` | `text` | ⚠️ Yes | Employee file reference number |
+| `mobile` | `text` | ⚠️ Yes | Official mobile number |
+| `cellId` | `integer` | ❌ No | Foreign key mapping to `cells.id` |
+| `createdAt` | `timestamp` | ❌ No | Record creation timestamp |
 
-#### 4. Table: `duties` (Duty Assignments)
+#### 4. Table: `duties` (Assigned Duty Records)
 | Column | Type | Nullable | Description |
 | :--- | :--- | :---: | :--- |
-| `id` | serial | No | Primary key identifier for the duty log |
-| `employeeId` | integer | No | Foreign key referencing `employees.id` (cascade delete) |
-| `type` | text | No | Shift type (`LATE_SITTING`, `HOLIDAY`, `NIGHT_SHIFT`) |
-| `date` | timestamp | No | Date of duty |
-| `allowanceRate`| integer | No | Rate in BDT (300, 500, 1000) |
-| `orderRef` | text | Yes | Foreign key referencing `officeOrders.orderRef` |
-| `createdAt` | timestamp | No | Creation timestamp (default now) |
+| `id` | `serial` | ❌ No | Primary key identifier |
+| `employeeId` | `integer` | ❌ No | Foreign key referencing `employees.id` |
+| `type` | `text` | ❌ No | Duty type (`LATE_SITTING`, `HOLIDAY`, `NIGHT_SHIFT`) |
+| `date` | `timestamp` | ❌ No | Date of duty |
+| `allowanceRate`| `integer` | ❌ No | BDT Rate (৳300, ৳500, ৳1000) |
+| `orderRef` | `text` | ⚠️ Yes | Foreign key referencing `officeOrders.orderRef` |
+| `createdAt` | `timestamp` | ❌ No | Creation timestamp |
 
-#### 5. Table: `officeOrders` (Generated Orders)
+#### 5. Table: `officeOrders` (Generated Bill Memos)
 | Column | Type | Nullable | Description |
 | :--- | :--- | :---: | :--- |
-| `id` | serial | No | Primary key identifier |
-| `orderRef` | text | No | Dynamic alphanumeric reference string (Unique) |
-| `orderDate` | timestamp | No | Order compilation date |
-| `category` | text | No | Associated duty category |
-| `fileNo` | text | No | Roster reference file number |
-| `details` | text | Yes | Roster notes |
-| `status` | text | No | Roster state (`Generated`, `Printed`, `Modified`) |
-| `compiledPayload`| jsonb | No | Frozen payload of duties and calculated allowances |
-| `createdAt` | timestamp | No | Creation timestamp (default now) |
+| `id` | `serial` | ❌ No | Primary key identifier |
+| `orderRef` | `text` | ❌ No | Unique memo reference code |
+| `orderDate` | `timestamp` | ❌ No | Compilation date |
+| `category` | `text` | ❌ No | Duty category string |
+| `fileNo` | `text` | ❌ No | Department file reference |
+| `status` | `text` | ❌ No | Order status (`Generated`, `Printed`, `Modified`) |
+| `compiledPayload`| `jsonb` | ❌ No | Immutable snapshot of duties & rates |
+| `createdAt` | `timestamp` | ❌ No | Creation timestamp |
 
-#### 6. Table: `leaveApplications` (Leave Log)
+#### 6. Table: `leaveApplications` (Leave Audit Trail)
 | Column | Type | Nullable | Description |
 | :--- | :--- | :---: | :--- |
-| `id` | serial | No | Primary key identifier |
-| `applicantName`| text | No | Employee name |
-| `designation` | text | No | Designation |
-| `bankId` | text | No | Bank ID |
-| `fileNo` | text | No | File number |
-| `cellName` | text | No | Cell name |
-| `leaveType` | text | No | Leave type (`CASUAL`, `STATION`, `SPECIAL`) |
-| `startDate` | timestamp | No | Leave start date |
-| `endDate` | timestamp | No | Leave end date |
-| `selectedDistrict`| text | Yes | Destination district station |
-| `delegateId` | text | Yes | Stand-in delegate employee ID |
-| `createdAt` | timestamp | No | Submission timestamp (default now) |
+| `id` | `serial` | ❌ No | Primary key identifier |
+| `applicantName`| `text` | ❌ No | Applicant full name |
+| `designation` | `text` | ❌ No | Applicant designation |
+| `bankId` | `text` | ❌ No | Applicant Bank ID |
+| `leaveType` | `text` | ❌ No | Type (`CASUAL`, `STATION_LEAVE`, `POST_FACTO`) |
+| `startDate` | `timestamp` | ❌ No | Leave start date |
+| `endDate` | `timestamp` | ❌ No | Leave end date |
+| `applicationDate`| `timestamp`| ❌ No | Application submission date |
+| `createdAt` | `timestamp` | ❌ No | Submission timestamp |
 
 #### 7. Table: `auditLogs` (Security Trail)
 | Column | Type | Nullable | Description |
 | :--- | :--- | :---: | :--- |
-| `id` | serial | No | Primary key identifier |
-| `username` | text | No | Identity of acting operator |
-| `action` | text | No | Action type (`CREATE`, `UPDATE`, `DELETE`, `LOGIN`, `RESTORE`) |
-| `entityType` | text | Yes | Target database table name |
-| `entityId` | text | Yes | Target record ID |
-| `ipAddress` | text | Yes | Client IP address |
-| `userAgent` | text | Yes | Browser signature |
-| `details` | text | No | Detailed description in Bengali |
-| `createdAt` | timestamp | No | Audit timestamp (default now) |
+| `id` | `serial` | ❌ No | Primary key identifier |
+| `username` | `text` | ❌ No | Operator identity |
+| `action` | `text` | ❌ No | Action (`CREATE`, `UPDATE`, `DELETE`, `RESTORE`) |
+| `entityType` | `text` | ⚠️ Yes | Target entity table |
+| `entityId` | `text` | ⚠️ Yes | Target record ID |
+| `ipAddress` | `text` | ⚠️ Yes | Client IP address |
+| `details` | `text` | ❌ No | Comprehensive Bengali audit summary |
+| `createdAt` | `timestamp` | ❌ No | Audit timestamp |
 
 ---
 
-## 🌐 API Contract Specifications (OpenAPI 3.0.0)
+## 🌐 API Specifications
+
+Below is an overview of key REST API endpoints implemented in the App Router:
 
 ```yaml
 openapi: 3.0.0
 info:
-  title: Late-Sitting, Holiday, and Night Duty (LHN) API
+  title: Janata Bank LHN Portal API
   version: 1.0.0
-  description: API contract definitions for cell-based automation registries and billing workflows at Janata Bank PLC.
 paths:
   /api/auth/signin:
     post:
@@ -209,21 +248,16 @@ paths:
             schema:
               type: object
               properties:
-                username:
-                  type: string
-                password:
-                  type: string
-              required: [username, password]
+                username: { type: string }
+                password: { type: string }
       responses:
-        '200':
-          description: Signed JWT Session cookie returned
-        '401':
-          description: Invalid credentials
+        '200': { description: Session cookie established }
+        '401': { description: Invalid bank ID or password }
+
   /api/duties:
     post:
-      summary: Register Duty Assignment
-      security:
-        - cookieAuth: []
+      summary: Register New Duty Assignments
+      security: [{ cookieAuth: [] }]
       requestBody:
         required: true
         content:
@@ -231,221 +265,135 @@ paths:
             schema:
               type: object
               properties:
-                employeeId:
-                  type: integer
-                dates:
-                  type: array
-                  items:
-                    type: string
-                    format: date
-                type:
-                  type: string
-                  enum: [LATE_SITTING, HOLIDAY, NIGHT_SHIFT]
+                employeeId: { type: integer }
+                dates: { type: array, items: { type: string } }
+                type: { type: string, enum: [LATE_SITTING, HOLIDAY, NIGHT_SHIFT] }
       responses:
-        '201':
-          description: Duty records created successfully
-        '409':
-          description: Leave collision or duplicate duty scheduling
+        '201': { description: Duties scheduled }
+        '409': { description: Collision with existing duty or leave }
+
   /api/leaves:
     post:
-      summary: Submit Leave Application
-      security:
-        - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                bankId:
-                  type: string
-                startDate:
-                  type: string
-                  format: date
-                endDate:
-                  type: string
-                  format: date
-                leaveType:
-                  type: string
-                  enum: [CASUAL, STATION, SPECIAL]
+      summary: Process Leave Request
+      security: [{ cookieAuth: [] }]
       responses:
-        '201':
-          description: Leave application accepted and sandwich rules applied
-  /api/documents/generate-bill-memo:
-    post:
-      summary: Compile and Split Bill Memo
-      security:
-        - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                orderRef:
-                  type: string
-                category:
-                  type: string
-                dutyIds:
-                  type: array
-                  items:
-                    type: integer
-      responses:
-        '200':
-          description: PDF Compiled successfully
+        '201': { description: Leave saved and sandwich rules applied }
 ```
 
 ---
 
-## 🛡️ Security Architecture & Threat Modeling
+## 🛡️ Security & Threat Modeling
 
-### OWASP Security Controls Mapping
-* **SQL Injection:** Prevented by Drizzle ORM's parameterized query bindings.
-* **XSS:** Mitigated by React's automatic string-escaping during DOM renders.
-* **CSRF:** NextAuth secure JWT session validation restricts third-party cross-site invocations.
-* **Session Hijacking:** Authorization cookies are flagged as `HttpOnly`, `Secure`, and `SameSite=Strict`.
-* **Brute Force:** In-memory token-bucket middleware rate-limits API endpoints to 10 requests per minute per IP.
-* **Privilege Escalation:** API gateways perform explicit session checks on user role scopes before routing requests.
+### OWASP Security Controls
+- 🔒 **SQL Injection Defense**: Handled automatically via Drizzle ORM parameterized binding.
+- 🛡️ **Cross-Site Scripting (XSS)**: Prevented via React's string sanitization during rendering.
+- 🔑 **CSRF & Session Security**: HTTP-only, `SameSite=Strict`, secure cookie policy.
+- ⚡ **Rate Limiting**: IP-based token-bucket rate limiting on critical API endpoints.
+- 👁️ **Access Control**: Role-based access control (RBAC) enforced on both API and UI level.
 
-### STRIDE Threat Analysis
-* **Spoofing:** Enforces NextAuth.js JWT authentication. Cookies are signed, encrypted, and restricted to loop hosts.
-* **Tampering:** Server-side rate validation routines read rates directly from secure database schemas (`LATE_SITTING` = 300, `HOLIDAY` = 500, `NIGHT_SHIFT` = 1000), ignoring client-side rate injections.
-* **Repudiation:** Every action is recorded inside an immutable database-backed `AuditLog` table and written to a secure local `audit.log` file on disk.
-* **Information Disclosure:** Row-level cell filtering inside Drizzle queries (e.g. `inArray(employees.cellId, userCellIds)`) filters all responses based on verified user session profiles.
+### STRIDE Assessment
+
+| Threat Type | Mitigation Implementation |
+| :--- | :--- |
+| **Spoofing** | Strict JWT session validation with automatic timeout. |
+| **Tampering** | Fixed server-side allowance calculation rates (৳300, ৳500, ৳1000). |
+| **Repudiation** | Immutable dual-logging (PostgreSQL `auditLogs` + local file stream). |
+| **Information Disclosure** | Cell-based row-level filtering applied to all queries. |
 
 ---
 
-## 🧪 Testing Strategy & Execution Guide
+## 🧪 Testing Strategy
 
-The portal incorporates multiple tiers of testing to validate codebase robustness:
+Run tests with Vitest to ensure system stability:
 
-### 1. Vitest Unit Tests
-Validates core math, business logic, and date validation functions (leave sandwiching, budget splits, and allowance calculations) in isolation:
 ```bash
+# Run unit & logic tests
 npx vitest run
-```
-*Continuous Watch Mode:*
-```bash
+
+# Run in continuous watch mode
 npm run test:watch
-```
 
-### 2. Integration Tests
-Verifies database query mappings, relational integrity, soft-deletion triggers, and mock service integrations under Vitest environment configurations:
-```bash
+# Run integration tests
 npm run test:integration
-```
 
-### 3. API Contract Tests
-Validates backend REST endpoint responses, status codes, response headers, role-based cell scope filters, and JSON payload structures:
-```bash
-npm run test:contract
-```
-
-### 4. TypeScript Type Check
-Ensures compile-time type safety across all frontend and backend components:
-```bash
+# Run TypeScript compile validation
 npx tsc --noEmit
 ```
 
 ---
 
-## 📋 User Manual & Operator Guide
+## 📖 Operator & User Manual
 
-### 1. Administrators Guide
+### 1. Administrators
+1. **User Management**: Navigate to **Users** -> **Add Operator**. Specify Bank ID, Role (`ADMIN`/`USER`), and assigned operational Cell.
+2. **Recycle Bin**: Access **Trash / রিসাইকেল বিন** to restore soft-deleted duty logs, employees, or office orders.
 
-#### A. Creating User Accounts
-1. Sign in to the portal using an account mapped to the `ADMIN` role.
-2. Go to the **Users** directory screen.
-3. Click the **Add Operator** button.
-4. Input the user's details: name (in Bengali), unique login username (e.g., Bank ID code `026795`), Bcrypt password, mobile number, and cell assignments role configuration (**PRIMARY / মূল দায়িত্ব**, **ADDITIONAL / অতিরিক্ত দায়িত্ব**, or **INCHARGE / ইনচার্জ**).
-5. Map the user to their corresponding **Cell(s)**.
-6. Click **Submit** to create the user account.
-
-#### B. Recycle Bin Recovery (Trash)
-1. Go to the **Trash** / **রিসাইকেল বিন** screen from the sidebar menu.
-2. Click the **Restore** button next to any soft-deleted item.
-3. The item is serialized back to its original table, and all child relations are restored.
-
-### 2. Cell Operators Guide
-
-#### A. Duty Roster Assignment
-1. Open the **Roster** / **ডিউটি রোস্টার** page from the left sidebar.
-2. Select the **Duty Category** dropdown (e.g., Late Sitting / লেট সিটিং).
-3. Select the target **Employee(s)**.
-4. Select the **Date Range** on the calendar picker.
-5. Click **Submit**.
-   - *Validation Engine:* The system automatically checks for overlapping duty assignments or approved leaves. If collisions are found, the request is rejected with a Bengali description of the conflict.
-
-#### B. Generating Monthly Billing Memos
-1. Go to the **Billing** / **বিল নথি** page.
-2. Select the mapped operational cell and billing period.
-3. Click the **Create Bill Memo** button.
-4. The system aggregates all unbilled duties for that cell:
-   - Calculates conveyance and entertainment allowances based on shift categories (৳300/day for Late Sitting, ৳500/day for Holiday, ৳1000/day for Night Shift).
-   - Enforces the ৳7,500 billing split limits: any total exceeding ৳7,500 is programmatically partitioned into chronological, compliant sub-orders with staggered reference dates.
-5. Review and click **Print/Download** to compile standard high-density Legal-size PDF billing sheets.
+### 2. Cell Operators
+1. **Duty Roster**: Select Cell, Choose Category (Late Sitting / Holiday / Night Duty), Pick Employees, and Select Dates.
+2. **Bill Memos**: Go to **Billing**, choose month & cell, click **Create Bill Memo**. System auto-applies ৳7,500 split limits.
+3. **Leave Applications**: Fill out leave requests with backdate support and auto-sandwich calculations.
 
 ---
 
-## 🟢 Development Setup
+## 🚀 Quick Start & Development
 
-### 1. Install Dependencies
+### 1. Prerequisites
+- Node.js (v18.x or v20.x recommended)
+- PostgreSQL (v15+)
+
+### 2. Setup
 ```bash
+# Clone the repository & install dependencies
+git clone https://github.com/syedarifulislamemon2010/Late-Sitting-Holiday-Night-Duty.git
+cd Late-Sitting-Holiday-Night-Duty
 npm install
 ```
 
-### 2. Configure Environment
+### 3. Environment Setup
 Create a `.env` file in the root directory:
 ```env
-DATABASE_URL="postgresql://username:password@host:port/database"
-NEXTAUTH_SECRET="your_nextauth_secret_token"
+DATABASE_URL="postgresql://postgres:password@localhost:5432/lhn_db"
+NEXTAUTH_SECRET="your_secure_random_jwt_secret"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
-### 3. Initialize & Seed Database
-Push schema structure and run seed migrations:
+### 4. Database Setup & Server Launch
 ```bash
+# Push database schema & seed initial records
 npm run db:push
 npm run db:seed
-```
 
-### 4. Run Development Server
-```bash
+# Start dev server
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to view the portal.
+Access the application at `http://localhost:3000`.
 
 ---
 
 ## 📂 Production Deployment Guide (RHEL 8/9)
 
-### 1. PostgreSQL Configuration
-Enable the PostgreSQL 15 AppStream module and install the packages:
+### 1. Install & Configure PostgreSQL
 ```bash
 sudo dnf module enable postgresql:15 -y
 sudo dnf install postgresql-server postgresql-contrib -y
 sudo postgresql-setup --initdb
 sudo systemctl enable postgresql --now
 ```
-Update local connection authentication inside `/var/lib/pgsql/data/pg_hba.conf` from `ident`/`peer` to `scram-sha-256`, restart the service, and initialize the database instance.
 
-### 2. PM2 Node.js Process Management
-Deploy the Next.js production build using PM2 to keep the service running persistently:
+### 2. Node.js PM2 Process Setup
 ```bash
 sudo npm install -g pm2
+npm run build
 pm2 start npm --name "lhn-portal" -- run start -- -p 3000
-pm2 startup systemd
 pm2 save
+pm2 startup systemd
 ```
 
 ### 3. Nginx Reverse Proxy
-Install Nginx and configure it to route public port 80 traffic to Next.js on port 3000:
 ```nginx
 server {
     listen 80;
-    server_name your_server_ip_or_domain;
+    server_name portal.janatabank.com;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
@@ -458,44 +406,38 @@ server {
 }
 ```
 
-### 4. Firewall & SELinux Adjustments
-```bash
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --reload
-sudo setsebool -P httpd_can_network_connect 1
-```
-
 ---
 
-## 🔄 Disaster Recovery (DR) & Backup Restoration
+## 🔄 Disaster Recovery (DR)
 
-### Bare-Metal Database Restoration
-In the event of database failure or migration to a fresh host machine, restore records using the latest `postgres_dump.json` file:
+To restore database from `postgres_dump.json`:
 
-1. **Clear Existing Schemas:**
-   ```bash
-   psql -U postgres -d neondb -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-   ```
-2. **Migrate Table Structures:**
-   ```bash
-   npx drizzle-kit push
-   ```
-3. **Seed Backups & Reset Sequences:**
-   ```bash
-   npm run db:seed
-   ```
-   *The database seed script detects `postgres_dump.json` in the root folder, restores all records with original primary keys, and correctly increments Postgres sequence indexes to prevent duplicate key crashes.*
+```bash
+# 1. Reset public schema
+psql -U postgres -d lhn_db -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+
+# 2. Re-apply schema structures
+npx drizzle-kit push
+
+# 3. Seed records from backup dump
+npm run db:seed
+```
 
 ---
 
 ## 📜 Compliance Mapping Matrix
 
-| Standard / Guidelines | Control Reference | System Implementation |
+| Regulatory Guideline | Control Scope | Implementation Mechanism |
 | :--- | :--- | :--- |
-| **Bangladesh Bank ICT Security Guidelines** | Chapter 4.2: User Authentication | Secured NextAuth Credentials login |
-| **Bangladesh Bank ICT Security Guidelines** | Chapter 5.1: Database Audits | Immutable database-backed audit log indexed by username |
-| **ISO 27001** | A.12.4.1: Event Logging | Event auditing logged in database and written to file |
-| **ISO 27001** | A.10.1.1: Cryptography | Cryptographic hashes on user records and encrypted internal files |
-| **NIST SP 800-53** | AC-3: Access Enforcement | Cell boundaries (RBAC) enforced on REST API and DB queries |
-#   L a t e - S i t t i n g - H o l i d a y - N i g h t - D u t y  
- 
+| **Bangladesh Bank ICT Guidelines (Ch 4.2)** | User Authentication | Secured session authentication & password hashing |
+| **Bangladesh Bank ICT Guidelines (Ch 5.1)** | Audit & Accountability | Database-backed audit trail for all CRUD actions |
+| **ISO/IEC 27001 (A.12.4.1)** | System Event Logging | Centralized audit logging with IP & Browser tracing |
+| **NIST SP 800-53 (AC-3)** | Access Control | Role-based & Cell-restricted database access control |
+
+---
+
+<div align="center">
+
+Developed with ❤️ for **Janata Bank PLC — Online Banking Department**
+
+</div>
