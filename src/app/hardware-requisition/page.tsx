@@ -1073,7 +1073,7 @@ export default function HardwareRequisitionPage() {
               >
                 
                 {/* Upper block */}
-                <div className="flex flex-col justify-start">
+                <div className="flex flex-col justify-start" contentEditable={true} suppressContentEditableWarning={true}>
                   
                   {/* Top Header */}
                   <div className="text-right space-y-1 font-bold pr-1">
@@ -1126,7 +1126,7 @@ export default function HardwareRequisitionPage() {
                 </div>
 
                 {/* Bottom Signature and Receivers block */}
-                <div className="mt-10 space-y-12">
+                <div className="mt-10 space-y-12" contentEditable={true} suppressContentEditableWarning={true}>
                   
                   {/* Signature block */}
                   <div className="flex justify-end">

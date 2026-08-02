@@ -13,7 +13,7 @@
 
 ---
 
-*An enterprise-grade administrative, financial utility, and roster management portal engineered exclusively for the **Online Banking Department** of Janata Bank PLC. It automates duty assignments, allowance bill ledger generation, leave processing with sandwich rules, executive seniority tracking, live PDF/Letter editing, editable DOCX exports, and conflict resolution.*
+*An enterprise-grade administrative, financial utility, and roster management portal engineered exclusively for the **Online Banking Department** of Janata Bank PLC. It automates duty assignments, allowance bill ledger generation, leave processing with sandwich rules, executive seniority tracking, **universal live PDF/Letter editing**, **system-wide editable DOCX exports**, and **conflict resolution with auto-redirection**.*
 
 </div>
 
@@ -25,7 +25,7 @@
 - [🏛️ System Architecture](#️-system-architecture)
 - [⚙️ Tech Stack \& Technical Rationale](#️-tech-stack--technical-rationale)
 - [🧠 Core Algorithmic Engines](#-core-algorithmic-engines)
-- [📝 Live PDF Editor \& Editable DOCX Export](#-live-pdf-editor--editable-docx-export)
+- [📝 Universal Live PDF Editor \& Editable DOCX Export (System-Wide)](#-universal-live-pdf-editor--editable-docx-export-system-wide)
 - [⚡ Single \& Bulk Duty Management with Conflict Resolution](#-single--bulk-duty-management-with-conflict-resolution)
 - [💾 Database Schema \& Data Dictionary](#-database-schema--data-dictionary)
 - [🌐 API Specifications](#-api-specifications)
@@ -46,11 +46,13 @@
 - ⚠️ **Conflict Auto-Redirect & Overwrite Engine**: Smart detection when saving real data conflicts with existing test data. Provides 1-click options to overwrite conflicts or auto-scroll directly to conflicting entries in the table.
 - 💰 **৳7,500 Budget Splitter Engine**: Automatically partitions large duty memos exceeding ৳7,500 into contiguous, audit-compliant sub-orders with non-colliding reference dates.
 - 📆 **Working Days & Holiday Override**: Dynamic calculation of active working days per month with custom calendar overrides for special workdays/holidays.
-- 📝 **Live On-Screen WYSIWYG PDF Text Editor**: Click-and-type live editing of leave letters directly inside the browser preview before downloading or printing.
-- 📝 **Editable Microsoft Word (.docx) Export**: Download generated leave applications and office orders in `.docx` format for manual editing in Microsoft Word.
+- 📝 **Universal Live On-Screen WYSIWYG Text Editor**: Click-and-type live editing of **ALL** system documents (Leave Applications, Duty Memos, Office Orders, Hardware Requisitions, Lunch Bills) directly inside the browser preview before downloading or printing.
+- 📝 **Universal Editable Microsoft Word (.docx) Export**: Download **ALL** generated documents across the portal in editable `.docx` format for manual tweaking in Microsoft Word.
 - ✉️ **Leave Application Generator**: Full leave request creation with dynamic Sandwich Rule calculations and printable bank-formatted leave letters.
+- 💻 **Hardware Requisition Portal**: Generate, track, and export hardware (UPS, Printer, Scanner) requisitions for department officers.
+- 🍱 **Lunch & Closing Allowance Billing**: Compute and format official lunch bills and monthly bill preparation statements.
 - 👔 **Seniority & Executive Directory**: Automatic employee hierarchy ranking and seniority calculation.
-- 🖨️ **US-Legal Print & PDF Rendering**: Bank-compliant print formats with pixel-perfect alignment for official records.
+- 🖨️ **US-Legal & A4 Print Engine**: Bank-compliant print formats with pixel-perfect alignment for official records.
 - 🗑️ **Soft-Delete Recycle Bin**: Restore accidentally deleted records without losing database integrity.
 - 🛡️ **Role-Based Cell Security**: Enforces cell-level isolation and operator scope limits across all administrative endpoints.
 
@@ -80,7 +82,7 @@ graph TD
         
         Logic --> LimitSplitter["৳7,500 Bill Splitter Engine"]:::server
         Logic --> CalendarEngine["Calendar Working Days Engine"]:::server
-        Logic --> DocxEngine["Docx & PDF Generation Engine"]:::server
+        Logic --> DocxEngine["Universal DOCX & PDF Engine"]:::server
         Logic --> ConflictEngine["Conflict Auto-Redirect Engine"]:::server
     end
 
@@ -132,15 +134,24 @@ graph TD
 
 ---
 
-## 📝 Live PDF Editor & Editable DOCX Export
+## 📝 Universal Live PDF Editor & Editable DOCX Export (System-Wide)
 
-### 1. In-App WYSIWYG Live Text Editor
-- **Interactive Editing**: Clicking any text block (Date, Addressee, Subject, Body Text, Signatures) inside the A4/Legal letter preview turns it into an active editable field.
-- **Direct PDF & Print**: Pressing **"ডাউনলোড পিডিএফ"** or **"প্রিন্ট প্রিভিউ"** instantly renders the modified text into the final PDF/Print output without needing third-party PDF editors.
+> [!IMPORTANT]
+> **Universal Document Customization**: The portal provides system-wide on-screen live text editing (`contentEditable`) and Microsoft Word (`.docx`) file exports across **ALL** document types.
 
-### 2. Microsoft Word (.docx) Document Generator
-- **Native Word Export**: Generates `.docx` binary files via the **"ডাউনলোড ওয়ার্ড (.docx)"** button.
-- **Full Customization**: Allows operators to open the document in Microsoft Word or LibreOffice to make any manual formatting tweaks before physical submission.
+### 1. In-App WYSIWYG Live Text Editor (All Modules)
+- **Supported Documents**:
+  - ✉️ Leave Applications (`/leave`)
+  - 📜 Office Orders & Duty Allowance Bills (`/roster`)
+  - 💻 Hardware Requisition Notes (`/hardware-requisition`)
+  - 🍱 Lunch Allowance Bill Sheets (`/documents`)
+  - 📄 Bill Preparation & Closing Statements (`/closing-bill`)
+- **Interactive Execution**: Clicking any line of text (Date, Recipient, Subject, Paragraphs, Tables, Signatures) inside the preview sheet enables instant editing directly in the browser.
+- **Direct PDF Output**: Pressing **"ডাউনলোড পিডিএফ"** or **"প্রিন্ট"** renders your modified text cleanly into the final PDF/Print output.
+
+### 2. Microsoft Word (.docx) Document Generator (System-Wide)
+- **Native Word Export**: Dedicated **"ডাউনলোড ওয়ার্ড (.docx)"** buttons are integrated into all modules.
+- **Binary Generation**: Programmatically constructs `.docx` binary files with structured tables, headers, and footers ready for desktop editing in Microsoft Word.
 
 ---
 
@@ -346,7 +357,7 @@ npx tsc --noEmit
 1. **Duty Roster**: Select Cell, Choose Category (Late Sitting / Holiday / Night Duty), Pick Employees, and Select Dates. Use checkboxes for **Bulk Delete** of old test data.
 2. **Conflict Overwrite**: If duplicate data warnings appear, click *"🗑️ কনফ্লিক্টিং ডাটা মুছে সেভ করুন"* to replace old test entries automatically.
 3. **Bill Memos**: Go to **Billing**, choose month & cell, click **Create Bill Memo**. System auto-applies ৳7,500 split limits.
-4. **Leave Applications**: Fill out leave requests with backdate support. Click text in preview to edit live, or export to **Word (.docx)** or **PDF**.
+4. **Universal Document Editing**: Fill out Leave, Hardware Requisition, or Duty Orders. Click text in preview to edit live, or export to **Word (.docx)** or **PDF**.
 
 ---
 

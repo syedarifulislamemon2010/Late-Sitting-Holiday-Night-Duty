@@ -2439,7 +2439,7 @@ export default function DocumentsPage() {
                     className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-sans leading-none text-[11px] shrink-0"
                     style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
                   >
-                    <div className="flex flex-col h-full justify-between">
+                    <div className="flex flex-col h-full justify-between" contentEditable={true} suppressContentEditableWarning={true}>
                       <div>
                         {/* Official Header */}
                         <div className="w-full flex justify-end text-right mb-4">

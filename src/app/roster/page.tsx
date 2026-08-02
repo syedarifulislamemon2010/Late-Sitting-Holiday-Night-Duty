@@ -23,8 +23,10 @@ import {
   FileSignature,
   CheckCircle,
   X,
-  Lock
+  Lock,
+  Download
 } from 'lucide-react';
+import { generateOfficeOrderDocx } from '@/lib/docx-generator';
 
 interface Cell {
   id: number;
@@ -534,6 +536,19 @@ export default function RosterPage() {
     assignments: any[];
   } | null>(null);
   const [selectedDutyIds, setSelectedDutyIds] = useState<number[]>([]);
+
+  // Filter form employees list based on search or cell
+  const [formSearchQuery, setFormSearchQuery] = useState('');
+  const [formCellFilter, setFormCellFilter] = useState('all');
+
+  const filteredFormEmployees = useMemo(() => {
+    return employees.filter(emp => {
+      const matchesSearch = emp.name.toLowerCase().includes(formSearchQuery.toLowerCase()) || 
+                            emp.designation.toLowerCase().includes(formSearchQuery.toLowerCase());
+      const matchesCell = formCellFilter === 'all' || emp.cellId.toString() === formCellFilter;
+      return matchesSearch && matchesCell;
+    });
+  }, [employees, formSearchQuery, formCellFilter]);
 
   // Entry mode: EMPLOYEE_WISE or DATE_WISE
   const [entryMode, setEntryMode] = useState<'EMPLOYEE_WISE' | 'DATE_WISE'>('EMPLOYEE_WISE');
@@ -2990,18 +3005,45 @@ export default function RosterPage() {
     );
   };
 
-  // Filter form employees list based on search or cell
-  const [formSearchQuery, setFormSearchQuery] = useState('');
-  const [formCellFilter, setFormCellFilter] = useState('all');
+  const handleDownloadOfficeOrderDocx = async () => {
+    try {
+      const grouped = getGroupedDuties();
+      const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
+      const mappedDuties = grouped.map((g, idx) => ({
+        slNo: idx + 1,
+        name: g.employee.name,
+        designation: getShortDesignation(g.employee.designation),
+        cellName: g.employee.cell?.name || '',
+        daysCount: g.dates.length,
+        datesListStr: g.dates.map(d => d.split('-').reverse().join('-')).join(', '),
+        totalBill: g.dates.length * apyaonRate
+      }));
+      const grandTotal = mappedDuties.reduce((sum, d) => sum + d.totalBill, 0);
 
-  const filteredFormEmployees = employees.filter(emp => {
-    const matchesSearch = emp.name.toLowerCase().includes(formSearchQuery.toLowerCase()) || 
-                          emp.designation.toLowerCase().includes(formSearchQuery.toLowerCase());
-    const matchesCell = formCellFilter === 'all' || emp.cellId.toString() === formCellFilter;
-    return matchesSearch && matchesCell;
-  });
+      const blob = await generateOfficeOrderDocx({
+        orderRef: orderRef,
+        orderDateStr: toBanglaDigits(new Date(orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')),
+        orderText: orderText,
+        duties: mappedDuties,
+        grandTotal: grandTotal,
+        signingOfficer: signingOfficer,
+        signingDesignation: signingDesignation,
+        copies: copies
+      });
 
-  // Dynamic scaling parameters based on duties count
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Office_Order_${orderRef.replace(/\//g, '_')}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert('ওয়ার্ড ফাইল জেনারেট করতে সমস্যা হয়েছে।');
+    }
+  };
 
   const renderDutiesTable = (dutiesList: Duty[], isAssignmentPrimary: boolean) => {
     const groupedDuties = Object.entries(
@@ -4341,7 +4383,7 @@ export default function RosterPage() {
               </div>
 
               {/* Title and Main Body */}
-              <div className="flex-1 flex flex-col justify-start pt-2 text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
+              <div className="flex-1 flex flex-col justify-start pt-2 text-[12px]" contentEditable={true} suppressContentEditableWarning={true} style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
                 <div className="space-y-2.5">
                   <h2 className="text-center text-[14.5px] font-extrabold underline decoration-black underline-offset-2" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14.5px', lineHeight: '1.4' }}>
                     অফিস নির্দেশ

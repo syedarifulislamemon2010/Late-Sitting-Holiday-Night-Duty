@@ -240,3 +240,178 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
 
   return await Packer.toBlob(doc);
 }
+
+export interface HardwareReqDocxData {
+  requisitionDateStr: string;
+  subjectLine: string;
+  bodyParagraph: string;
+  items: {
+    serialNo: string | number;
+    officerNameSnapshot: string;
+    officerDesignationSnapshot: string;
+    hardwareLabel: string;
+  }[];
+  requesterName: string;
+  requesterDesignation: string;
+}
+
+export async function generateHardwareRequisitionDocx(data: HardwareReqDocxData): Promise<Blob> {
+  const tableRows = [
+    new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ক্রমিক নং', bold: true, size: 18 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'কর্মকর্তার নাম', bold: true, size: 18 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'পদবী', bold: true, size: 18 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'প্রয়োজনীয় হার্ডওয়্যার', bold: true, size: 18 })] })] })
+      ]
+    }),
+    ...data.items.map(item => new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(item.serialNo), size: 18 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: item.officerNameSnapshot, size: 18 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: item.officerDesignationSnapshot, size: 18 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: item.hardwareLabel, size: 18 })] })] })
+      ]
+    }))
+  ];
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 }
+          }
+        },
+        children: [
+          new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'অনলাইন ব্যাংকিং ডিপার্টমেন্ট', bold: true, size: 24 })] }),
+          new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: `তারিখঃ ${data.requisitionDateStr} ইং`, size: 20 })] }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ children: [new TextRun({ text: data.subjectLine, bold: true, underline: {}, size: 22 })] }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [new TextRun({ text: data.bodyParagraph, size: 20 })] }),
+          new Paragraph({ text: '' }),
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+              bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+              left: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+              right: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+              insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+              insideVertical: { style: BorderStyle.SINGLE, size: 4, color: '000000' }
+            },
+            rows: tableRows
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [new TextRun({ text: 'এমতাবস্থায়, উপরে উল্লেখিত সমস্যা সমাধানের জন্য প্রয়োজনীয় ব্যবস্থা গ্রহণের অনুরোধ জানিয়ে নথিটি অত্র ডিপার্টমেন্টের হার্ডওয়্যার সেল বরাবর প্রেরণ করা যেতে পারে।', size: 20 })] }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: `(${data.requesterName})`, bold: true, size: 22 })] }),
+          new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: data.requesterDesignation, size: 20 })] }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ children: [new TextRun({ text: 'এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', underline: {}, size: 20 })] }),
+          new Paragraph({ children: [new TextRun({ text: 'এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', underline: {}, size: 20 })] }),
+          new Paragraph({ children: [new TextRun({ text: 'ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', underline: {}, size: 20 })] })
+        ]
+      }
+    ]
+  });
+
+  return await Packer.toBlob(doc);
+}
+
+export interface OfficeOrderDocxData {
+  orderRef: string;
+  orderDateStr: string;
+  orderText: string;
+  duties: {
+    slNo: string | number;
+    name: string;
+    designation: string;
+    cellName: string;
+    daysCount: number;
+    datesListStr: string;
+    totalBill: number;
+  }[];
+  grandTotal: number;
+  signingOfficer: string;
+  signingDesignation: string;
+  copies: string[];
+}
+
+export async function generateOfficeOrderDocx(data: OfficeOrderDocxData): Promise<Blob> {
+  const tableRows = [
+    new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ক্রমিক নং', bold: true, size: 16 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'কর্মকর্তার নাম ও পদবী', bold: true, size: 16 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ডিউটির তারিখসমূহ', bold: true, size: 16 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'মোট দিন', bold: true, size: 16 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'মোট বিল (৳)', bold: true, size: 16 })] })] })
+      ]
+    }),
+    ...data.duties.map(d => new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(d.slNo), size: 16 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${d.name}\n${d.designation}`, size: 16 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: d.datesListStr, size: 16 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(d.daysCount), size: 16 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(d.totalBill), bold: true, size: 16 })] })] })
+      ]
+    })),
+    new TableRow({
+      children: [
+        new TableCell({ columnSpan: 4, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'সর্বমোট বিল টাকাঃ', bold: true, size: 18 })] })] }),
+        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `৳${data.grandTotal}`, bold: true, size: 18 })] })] })
+      ]
+    })
+  ];
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {
+          page: { margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 } }
+        },
+        children: [
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'জনতা ব্যাংক পিএলসি', bold: true, size: 28 })] }),
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'অনলাইন ব্যাংকিং ডিপার্টমেন্ট, প্রধান কার্যালয়, ঢাকা', bold: true, size: 22 })] }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [new TextRun({ text: `স্মারক নং: ${data.orderRef}`, bold: true, size: 20 })] }),
+          new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: `তারিখঃ ${data.orderDateStr} ইং`, size: 20 })] }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'অফিস নির্দেশ', bold: true, underline: {}, size: 24 })] }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [new TextRun({ text: data.orderText, size: 20 })] }),
+          new Paragraph({ text: '' }),
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+              bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+              left: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+              right: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+              insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+              insideVertical: { style: BorderStyle.SINGLE, size: 4, color: '000000' }
+            },
+            rows: tableRows
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: `(${data.signingOfficer})`, bold: true, size: 22 })] }),
+          new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: data.signingDesignation, size: 20 })] }),
+          ...(data.copies && data.copies.length > 0
+            ? [
+                new Paragraph({ text: '' }),
+                new Paragraph({ children: [new TextRun({ text: 'অনুলিপি অবগতির জন্য প্রেরণ করা হলো:', bold: true, underline: {}, size: 20 })] }),
+                ...data.copies.map(c => new Paragraph({ children: [new TextRun({ text: `- ${c}`, size: 18 })] }))
+              ]
+            : [])
+        ]
+      }
+    ]
+  });
+
+  return await Packer.toBlob(doc);
+}
