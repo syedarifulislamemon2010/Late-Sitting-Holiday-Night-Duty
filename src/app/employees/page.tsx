@@ -5,6 +5,7 @@ import { sortEmployeesBySeniority } from '@/lib/seniority';
 import { useProfile } from '@/context/ProfileContext';
 import InlineEdit from '@/components/InlineEdit';
 import { TableSkeleton, CardSkeleton } from "@/components/SkeletonLoader";
+import { useLanguage } from '@/context/LanguageContext';
 
 
 import { 
@@ -130,6 +131,8 @@ const STRICT_DESIGNATIONS = [
 
 export default function EmployeesPage() {
   const { currentUser } = useProfile();
+  const { lang, t } = useLanguage();
+  const isEn = lang === 'en';
   const [activeTab, setActiveTab] = useState<'employees' | 'cells'>('employees');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -1387,27 +1390,27 @@ export default function EmployeesPage() {
                                     )}
                                     <div>
                                       <h3 className={`app-card-title transition-colors flex flex-wrap items-center gap-1.5 ${isCellIncharge ? 'text-teal-700 dark:text-teal-400 group-hover:text-teal-800' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400'}`}>
-                                        <span>{emp.name}</span>
+                                        <span>{isEn && emp.nameEn ? emp.nameEn : emp.name}</span>
                                         {emp.dutyType === 'INCHARGE' ? (
                                           <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 text-[9px] font-extrabold rounded-lg">
-                                            সেল ইনচার্জ
+                                            {isEn ? 'Cell Incharge' : 'সেল ইনচার্জ'}
                                           </span>
                                         ) : emp.dutyType === 'ADDITIONAL' ? (
                                           <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-[9px] font-extrabold rounded-lg">
-                                            অতিরিক্ত দায়িত্ব
+                                            {isEn ? 'Additional Duty' : 'অতিরিক্ত দায়িত্ব'}
                                           </span>
                                         ) : (
                                           <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800 text-[9px] font-extrabold rounded-lg">
-                                            মূল দায়িত্ব
+                                            {isEn ? 'Primary Duty' : 'মূল দায়িত্ব'}
                                           </span>
                                         )}
                                       </h3>
                                       <div className="text-[13px] font-medium text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1.5 min-h-[26px]">
                                         <Briefcase size={12} className="text-slate-400 shrink-0" />
                                         <InlineEdit
-                                          value={emp.designation}
-                                          placeholder="পদবী লিখুন"
-                                          onSave={(val) => handleInlineSave(emp.id, 'designation', val)}
+                                          value={isEn && emp.designationEn ? emp.designationEn : emp.designation}
+                                          placeholder={isEn ? "Enter designation" : "পদবী লিখুন"}
+                                          onSave={(val) => handleInlineSave(emp.id, isEn ? 'designationEn' : 'designation', val)}
                                           canEdit={canInlineEdit}
                                         />
                                       </div>

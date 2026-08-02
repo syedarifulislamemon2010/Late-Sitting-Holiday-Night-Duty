@@ -13,6 +13,7 @@ import {
   Languages
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface UserSession {
   id: number;
@@ -195,21 +196,8 @@ export default function Navbar() {
     );
   };
 
+  const { lang, toggleLang } = useLanguage();
   const userDisplayName = (currentUser?.name || '').replace(/^(জনাব|জনাবা)\s+/, '').trim();
-
-  const [lang, setLang] = useState<'bn' | 'en'>('bn');
-
-  useEffect(() => {
-    const storedLang = (localStorage.getItem('lang') as 'bn' | 'en') || 'bn';
-    setLang(storedLang);
-  }, []);
-
-  const toggleLang = () => {
-    const nextLang = lang === 'bn' ? 'en' : 'bn';
-    setLang(nextLang);
-    localStorage.setItem('lang', nextLang);
-    window.dispatchEvent(new Event('languageChange'));
-  };
 
   return (
     <header className="no-print sticky top-0 z-40 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between px-4 h-14 font-sans select-none">

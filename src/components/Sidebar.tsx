@@ -25,6 +25,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import { useLanguage } from '@/context/LanguageContext';
 
 
 interface UserSession {
@@ -95,6 +96,9 @@ export default function Sidebar() {
     }
   };
 
+  const { lang, t } = useLanguage();
+  const isEn = lang === 'en';
+
   const isEmployee = currentUser?.role === 'EMPLOYEE';
   const isAdmin = currentUser?.role === 'ADMIN';
   const currentMonth = new Date().getMonth() + 1; // 1-12
@@ -102,57 +106,57 @@ export default function Sidebar() {
 
   const rawSections = isEmployee ? [
     {
-      title: 'আমার সার্ভিস',
+      title: isEn ? 'My Services' : 'আমার সার্ভিস',
       items: [
-        { name: 'আমার পোর্টাল', href: '/my-portal', icon: LayoutDashboard },
-        { name: 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
+        { name: isEn ? 'My Portal' : 'আমার পোর্টাল', href: '/my-portal', icon: LayoutDashboard },
+        { name: isEn ? 'Analytics' : 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
       ]
     }
   ] : [
     {
-      title: 'ড্যাশবোর্ড',
+      title: isEn ? 'Dashboard' : 'ড্যাশবোর্ড',
       items: [
-        { name: 'ড্যাশবোর্ড', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
+        { name: isEn ? 'Dashboard' : 'ড্যাশবোর্ড', href: '/dashboard', icon: LayoutDashboard },
+        { name: isEn ? 'Analytics' : 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
       ]
     },
     {
-      title: 'প্রশাসনিক কার্যক্রম',
+      title: isEn ? 'Administration' : 'প্রশাসনিক কার্যক্রম',
       items: [
-        { name: 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
-        { name: 'লেট হলি নাইট অর্ডার', href: '/roster', icon: CalendarRange }
+        { name: isEn ? 'Employees' : 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
+        { name: isEn ? 'Duty Orders & Roster' : 'লেট হলি নাইট অর্ডার', href: '/roster', icon: CalendarRange }
       ]
     },
     {
-      title: 'বিল ও ভাতাসমূহ',
+      title: isEn ? 'Bills & Allowances' : 'বিল ও ভাতাসমূহ',
       items: [
-        { name: 'বিল প্রস্তুতকরণ', href: '/billing', icon: Receipt },
-        { name: 'লাঞ্চ বিল শিট', href: '/lunch-bill', icon: Utensils },
-        ...(showClosingBill ? [{ name: 'ক্লোজিং বিল শিট', href: '/closing-bill', icon: CalendarCheck }] : [])
+        { name: isEn ? 'Bill Preparation' : 'বিল প্রস্তুতকরণ', href: '/billing', icon: Receipt },
+        { name: isEn ? 'Lunch Bill Sheet' : 'লাঞ্চ বিল শিট', href: '/lunch-bill', icon: Utensils },
+        ...(showClosingBill ? [{ name: isEn ? 'Closing Bill Sheet' : 'ক্লোজিং বিল শিট', href: '/closing-bill', icon: CalendarCheck }] : [])
       ]
     },
     {
-      title: 'আবেদনপত্র',
+      title: isEn ? 'Applications' : 'আবেদনপত্র',
       items: [
-        { name: 'ছুটির আবেদন', href: '/leave', icon: CalendarCheck },
-        { name: 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive },
-        { name: 'TAZ কমিটি ফরম', href: '/taz-committee-form', icon: ClipboardPen }
+        { name: isEn ? 'Leave Application' : 'ছুটির আবেদন', href: '/leave', icon: CalendarCheck },
+        { name: isEn ? 'Hardware Requisition' : 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive },
+        { name: isEn ? 'TAZ Committee Form' : 'TAZ কমিটি ফরম', href: '/taz-committee-form', icon: ClipboardPen }
       ]
     },
     {
-      title: 'সিস্টেম/সেটিংস',
+      title: isEn ? 'System & Settings' : 'সিস্টেম/সেটিংস',
       items: [
         ...(isAdmin ? [
-          { name: 'নির্বাহী প্যানেল', href: '/executive', icon: Users },
-          { name: 'অডিট লগ', href: '/audit', icon: ClipboardList }
+          { name: isEn ? 'Executive Panel' : 'নির্বাহী প্যানেল', href: '/executive', icon: Users },
+          { name: isEn ? 'Audit Log' : 'অডিট লগ', href: '/audit', icon: ClipboardList }
         ] : [])
       ]
     },
     {
-      title: 'অন্যান্য',
+      title: isEn ? 'Other Tools' : 'অন্যান্য',
       items: [
-        { name: 'নথিপত্র আর্কাইভ', href: '/documents', icon: FileText },
-        ...(isAdmin ? [{ name: 'রিসাইকেল বিন', href: '/trash', icon: Trash2 }] : [])
+        { name: isEn ? 'Documents Archive' : 'নথিপত্র আর্কাইভ', href: '/documents', icon: FileText },
+        ...(isAdmin ? [{ name: isEn ? 'Recycle Bin' : 'রিসাইকেল বিন', href: '/trash', icon: Trash2 }] : [])
       ]
     }
   ];

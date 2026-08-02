@@ -9,6 +9,7 @@ import { ProfileProvider } from "@/context/ProfileContext";
 import { LayoutProvider } from "@/context/LayoutContext";
 import { TopProgressBar } from "@/components/TopProgressBar";
 
+import { LanguageProvider } from "@/context/LanguageContext";
 import { ToastProvider } from "@/context/ToastContext";
 
 export const metadata: Metadata = {
@@ -75,32 +76,34 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300" suppressHydrationWarning={true}>
         <TopProgressBar />
-        <ProfileProvider>
-          <LayoutProvider>
-            <ToastProvider>
-              <AuthGuard>
-                <div className="flex-1 flex flex-col lg:flex-row min-h-0" suppressHydrationWarning={true}>
-                <Sidebar />
-                <main className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
-                  <Navbar />
-                  <CommandCenter />
-                  <CommandPalette />
-                  <div className="flex-1 p-4 lg:p-8 overflow-y-auto flex flex-col justify-between" suppressHydrationWarning={true}>
-                  <div className="flex-1">
-                    {children}
+        <LanguageProvider>
+          <ProfileProvider>
+            <LayoutProvider>
+              <ToastProvider>
+                <AuthGuard>
+                  <div className="flex-1 flex flex-col lg:flex-row min-h-0" suppressHydrationWarning={true}>
+                  <Sidebar />
+                  <main className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
+                    <Navbar />
+                    <CommandCenter />
+                    <CommandPalette />
+                    <div className="flex-1 p-4 lg:p-8 overflow-y-auto flex flex-col justify-between" suppressHydrationWarning={true}>
+                    <div className="flex-1">
+                      {children}
+                    </div>
+                    
+                    {/* Premium Dashboard Footer */}
+                    <footer className="no-print print:hidden py-4 mt-auto text-slate-400 text-center app-footer-text text-xs font-sans">
+                      ডিজাইন ও ডেভেলপমেন্ট: অনলাইন ব্যাংকিং ডিপার্টমেন্ট | সংস্করণ ১.০.০
+                    </footer>
                   </div>
-                  
-                  {/* Premium Dashboard Footer */}
-                  <footer className="no-print print:hidden py-4 mt-auto text-slate-400 text-center app-footer-text text-xs font-sans">
-                    ডিজাইন ও ডেভেলপমেন্ট: অনলাইন ব্যাংকিং ডিপার্টমেন্ট | সংস্করণ ১.০.০
-                  </footer>
+                  </main>
                 </div>
-                </main>
-              </div>
-            </AuthGuard>
-          </ToastProvider>
-        </LayoutProvider>
-      </ProfileProvider>
+              </AuthGuard>
+            </ToastProvider>
+          </LayoutProvider>
+        </ProfileProvider>
+      </LanguageProvider>
       </body>
     </html>
   );
