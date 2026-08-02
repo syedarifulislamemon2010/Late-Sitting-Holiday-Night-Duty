@@ -20,6 +20,7 @@ import MyDutySummaryCard from './components/MyDutySummaryCard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/context/ToastContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Custom Bangla digit converter
 function toBanglaDigits(num: number | string): string {
@@ -79,10 +80,13 @@ interface Holiday {
 
 export default function DashboardPage() {
   const { showToast } = useToast();
+  const { lang, t, formatNumber, formatMonthYear, getWeekdays } = useLanguage();
+  const isEn = lang === 'en';
+
   const dutyOptions = [
-    { value: 'LATE_SITTING', label: 'লেট সিটিং', icon: '⏰', activeColor: 'bg-amber-500 text-white', hoverColor: 'hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50' },
-    { value: 'HOLIDAY', label: 'হলিডে', icon: '📅', activeColor: 'bg-rose-500 text-white', hoverColor: 'hover:bg-rose-50 dark:hover:bg-rose-955/20 text-rose-650 dark:text-rose-450 border-rose-200 dark:border-rose-900/50' },
-    { value: 'NIGHT_SHIFT', label: 'নাইট শিফট', icon: '🌙', activeColor: 'bg-purple-500 text-white', hoverColor: 'hover:bg-purple-50 dark:hover:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900/50' },
+    { value: 'LATE_SITTING', label: isEn ? 'Late Sitting' : 'লেট সিটিং', icon: '⏰', activeColor: 'bg-amber-500 text-white', hoverColor: 'hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50' },
+    { value: 'HOLIDAY', label: isEn ? 'Holiday Duty' : 'হলিডে', icon: '📅', activeColor: 'bg-rose-500 text-white', hoverColor: 'hover:bg-rose-50 dark:hover:bg-rose-955/20 text-rose-650 dark:text-rose-450 border-rose-200 dark:border-rose-900/50' },
+    { value: 'NIGHT_SHIFT', label: isEn ? 'Night Shift' : 'নাইট শিফট', icon: '🌙', activeColor: 'bg-purple-500 text-white', hoverColor: 'hover:bg-purple-50 dark:hover:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900/50' },
   ];
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
@@ -497,35 +501,35 @@ export default function DashboardPage() {
             </div>
 
             {/* Interactive Grid Calendar */}
-            <div className="border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 bg-slate-50/20 w-full">
+            <div className="border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md shadow-sm w-full">
               
               {/* Month Name and Summary Header */}
               <div className="text-center pb-4">
-                <h4 className="text-lg sm:text-xl font-extrabold text-slate-800 dark:text-slate-200">
-                  {MONTH_NAMES[selectedMonth]} ২০২৬
+                <h4 className="text-lg sm:text-xl font-extrabold text-slate-850 dark:text-slate-100 tracking-tight">
+                  {formatMonthYear(selectedMonth, 2026)}
                 </h4>
-                <p className="font-sans mt-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-4">
-                  <span className="text-red-505 font-extrabold text-base sm:text-lg">
-                    মোট সরকারি ছুটি: {toBanglaDigits(selectedMonthHolidays.length)} টি
+                <p className="font-sans mt-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-4 text-xs sm:text-sm">
+                  <span className="text-rose-600 dark:text-rose-400 font-extrabold">
+                    {isEn ? 'Total Public Holidays:' : 'মোট সরকারি ছুটি:'} {formatNumber(selectedMonthHolidays.length)} {isEn ? 'days' : 'টি'}
                   </span>
                   <span className="hidden sm:inline text-slate-300">|</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-base sm:text-lg">
-                    মোট কার্যদিবস: {toBanglaDigits(slots.filter(s => s.day !== null && !s.isWeekend && !s.isHoliday).length)} দিন
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                    {isEn ? 'Total Working Days:' : 'মোট কার্যদিবস:'} {formatNumber(slots.filter(s => s.day !== null && !s.isWeekend && !s.isHoliday).length)} {isEn ? 'days' : 'দিন'}
                   </span>
                 </p>
               </div>
 
               {/* Day-of-week Headers */}
-              <div className="grid grid-cols-7 gap-1.5 text-center font-bold text-[10px] uppercase text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800/60">
-                {WEEKDAYS.map((w, index) => (
-                  <div key={w} className={index === 5 || index === 6 ? 'text-rose-500' : ''}>
+              <div className="grid grid-cols-7 gap-2 text-center font-extrabold text-[11px] uppercase tracking-wider text-slate-400 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+                {getWeekdays().map((w, index) => (
+                  <div key={w} className={index === 5 || index === 6 ? 'text-rose-500 font-black' : ''}>
                     {w}
                   </div>
                 ))}
               </div>
 
               {/* Calendar Slots */}
-              <div className="grid grid-cols-7 gap-1.5 mt-2.5">
+              <div className="grid grid-cols-7 gap-2 mt-3">
                 {slots.map((slot, idx) => {
                   if (slot.day === null) {
                     return <div key={`empty-${idx}`} className="aspect-square" />;
@@ -535,20 +539,20 @@ export default function DashboardPage() {
                   const existingDuty = myDuties.find(d => d.date === slot.dateStr);
                   const isSelected = slot.dateStr ? selectedDates.includes(slot.dateStr) : false;
 
-                  let cellClass = 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60 cursor-pointer relative';
+                  let cellClass = 'bg-white/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-xl hover:scale-105 hover:z-20 cursor-pointer relative transition-all duration-300 ease-out';
 
                   if (existingDuty) {
                     if (existingDuty.type === 'LATE_SITTING') {
-                      cellClass = 'bg-amber-105 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-900/50 cursor-pointer relative';
+                      cellClass = 'bg-amber-500/15 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-extrabold border border-amber-300 dark:border-amber-700/60 shadow-xs hover:scale-105 hover:z-20 transition-all duration-300 cursor-pointer relative';
                     } else if (existingDuty.type === 'HOLIDAY') {
-                      cellClass = 'bg-rose-105 dark:bg-rose-955/20 text-rose-700 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-900/50 cursor-pointer relative';
+                      cellClass = 'bg-rose-500/15 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 font-extrabold border border-rose-300 dark:border-rose-700/60 shadow-xs hover:scale-105 hover:z-20 transition-all duration-300 cursor-pointer relative';
                     } else if (existingDuty.type === 'NIGHT_SHIFT') {
-                      cellClass = 'bg-purple-105 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 font-bold border border-purple-200 dark:border-purple-900/50 cursor-pointer relative';
+                      cellClass = 'bg-purple-500/15 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 font-extrabold border border-purple-300 dark:border-purple-700/60 shadow-xs hover:scale-105 hover:z-20 transition-all duration-300 cursor-pointer relative';
                     }
                   } else if (slot.isHoliday) {
-                    cellClass = 'bg-rose-500 text-white font-extrabold shadow-sm scale-[1.02] border border-rose-600 hover:bg-rose-600 shadow-rose-500/10 cursor-pointer relative group';
+                    cellClass = 'bg-gradient-to-br from-rose-500 to-red-600 text-white font-black shadow-lg scale-[1.02] border border-rose-400 hover:scale-105 hover:z-20 shadow-rose-500/30 cursor-pointer relative group transition-all duration-300';
                   } else if (slot.isWeekend) {
-                    cellClass = 'bg-rose-50/40 dark:bg-rose-950/10 text-rose-600 dark:text-rose-400 font-bold border border-rose-100/50 dark:border-rose-950/20 cursor-pointer hover:bg-rose-100/30';
+                    cellClass = 'bg-rose-50/60 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 font-bold border border-rose-150/70 dark:border-rose-900/30 cursor-pointer hover:bg-rose-100/50 hover:scale-105 hover:z-20 transition-all duration-300';
                   }
 
                   if (isToday) {

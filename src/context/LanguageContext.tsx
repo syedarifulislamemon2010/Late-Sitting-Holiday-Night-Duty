@@ -9,7 +9,29 @@ interface LanguageContextType {
   setLang: (lang: Language) => void;
   toggleLang: () => void;
   t: (key: string, fallbackBn?: string, fallbackEn?: string) => string;
+  formatNumber: (num: number | string) => string;
+  formatMonthYear: (monthIndex: number, year?: number) => string;
+  getWeekdays: (short?: boolean) => string[];
+  matchesSearch: (query: string, targetBn?: string | null, targetEn?: string | null, extra?: string | null) => boolean;
 }
+
+const BANG_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+
+const MONTH_NAMES_BN = [
+  'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+  'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+];
+
+const MONTH_NAMES_EN = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const WEEKDAYS_BN = ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'];
+const WEEKDAYS_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const WEEKDAYS_SHORT_BN = ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি'];
+const WEEKDAYS_SHORT_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const translations: Record<string, { bn: string; en: string }> = {
   // Navigation & Branding
@@ -19,7 +41,7 @@ const translations: Record<string, { bn: string; en: string }> = {
   'nav_dashboard': { bn: 'ড্যাশবোর্ড', en: 'Dashboard' },
   'nav_analytics': { bn: 'অ্যানালিটিক্স', en: 'Analytics' },
   'nav_employees': { bn: 'কর্মকর্তাবৃন্দ', en: 'Employees' },
-  'nav_roster': { bn: 'লেট হোলি নাইট অর্ডার', en: 'Duty Orders & Roster' },
+  'nav_roster': { bn: 'লেট হলি নাইট অর্ডার', en: 'Duty Orders & Roster' },
   'nav_billing': { bn: 'বিল প্রস্তুতকরণ', en: 'Bill Preparation' },
   'nav_lunch_bill': { bn: 'লাঞ্চ বিল শিট', en: 'Lunch Allowance Bills' },
   'nav_closing_bill': { bn: 'ক্লোজিং বিল শিট', en: 'Closing Bill Statements' },
@@ -31,6 +53,21 @@ const translations: Record<string, { bn: string; en: string }> = {
   'nav_trash': { bn: 'রিসাইকেল বিন', en: 'Recycle Bin' },
   'nav_executive': { bn: 'নির্বাহী প্যানেল', en: 'Executive Panel' },
   
+  // Dashboard & Calendar Labels
+  'dash_total_holidays': { bn: 'মোট সরকারি ছুটি', en: 'Total Public Holidays' },
+  'dash_total_working_days': { bn: 'মোট কার্যদিবস', en: 'Total Working Days' },
+  'dash_days_unit': { bn: 'টি', en: 'days' },
+  'dash_workdays_unit': { bn: 'দিন', en: 'days' },
+  'dash_select_duty_type': { bn: 'ডিউটির ধরণ সিলেক্ট করুন', en: 'Select Duty Type' },
+  'dash_my_portal': { bn: 'আমার ব্যক্তিগত পোর্টাল', en: 'My Personal Portal' },
+  'dash_quick_stats': { bn: 'ডিপার্টমেন্ট ওভারভিউ ও সামারি', en: 'Department Overview & Summary' },
+  'dash_calendar_title': { bn: 'ডিউটি ক্যালেন্ডার ও ছুটির তালিকা', en: 'Duty Calendar & Holiday Schedule' },
+
+  // Duty Types
+  'duty_late_sitting': { bn: 'লেট সিটিং', en: 'Late Sitting' },
+  'duty_holiday': { bn: 'হলিডে ডিউটি', en: 'Holiday Duty' },
+  'duty_night_shift': { bn: 'নাইট শিফট', en: 'Night Shift' },
+
   // Action Buttons
   'btn_save': { bn: 'সংরক্ষণ করুন', en: 'Save Record' },
   'btn_cancel': { bn: 'বাতিল', en: 'Cancel' },
@@ -67,7 +104,11 @@ const LanguageContext = createContext<LanguageContextType>({
   lang: 'bn',
   setLang: () => {},
   toggleLang: () => {},
-  t: (key: string, fallbackBn?: string, fallbackEn?: string) => fallbackBn || key
+  t: (key: string, fallbackBn?: string, fallbackEn?: string) => fallbackBn || key,
+  formatNumber: (num: number | string) => num.toString(),
+  formatMonthYear: (m: number, y?: number) => `${MONTH_NAMES_BN[m]} ${y || 2026}`,
+  getWeekdays: () => WEEKDAYS_BN,
+  matchesSearch: () => true
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -100,8 +141,51 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return key;
   };
 
+  const formatNumber = (num: number | string): string => {
+    if (num === null || num === undefined) return '';
+    const str = num.toString();
+    if (lang === 'en') return str;
+    return str.replace(/\d/g, (digit) => BANG_DIGITS[parseInt(digit, 10)]);
+  };
+
+  const formatMonthYear = (monthIndex: number, year: number = 2026): string => {
+    const monthName = lang === 'en' ? MONTH_NAMES_EN[monthIndex] : MONTH_NAMES_BN[monthIndex];
+    const yearStr = formatNumber(year);
+    return `${monthName} ${yearStr}`;
+  };
+
+  const getWeekdays = (short: boolean = false): string[] => {
+    if (lang === 'en') {
+      return short ? WEEKDAYS_SHORT_EN : WEEKDAYS_EN;
+    }
+    return short ? WEEKDAYS_SHORT_BN : WEEKDAYS_BN;
+  };
+
+  const matchesSearch = (
+    query: string, 
+    targetBn?: string | null, 
+    targetEn?: string | null, 
+    extra?: string | null
+  ): boolean => {
+    if (!query || !query.trim()) return true;
+    const q = query.trim().toLowerCase();
+    const bn = (targetBn || '').toLowerCase();
+    const en = (targetEn || '').toLowerCase();
+    const ex = (extra || '').toLowerCase();
+    return bn.includes(q) || en.includes(q) || ex.includes(q);
+  };
+
   return (
-    <LanguageContext.Provider value={{ lang, setLang, toggleLang, t }}>
+    <LanguageContext.Provider value={{ 
+      lang, 
+      setLang, 
+      toggleLang, 
+      t, 
+      formatNumber, 
+      formatMonthYear, 
+      getWeekdays,
+      matchesSearch
+    }}>
       {children}
     </LanguageContext.Provider>
   );

@@ -212,9 +212,21 @@ Pressing **`Ctrl + K`** (or **`Cmd + K`** on macOS) anywhere inside the applicat
 
 ## 🌐 Multi-Language (Bangla ⇄ English) & Custom Transliteration
 
+- **100% Full-Screen Dynamic Translation Engine (`LanguageProvider`)**: Clicking the **`BN | EN`** navbar toggle button instantly translates the entire application UI:
+  - **Navigation & Sidebar**: Dashboard, Employees, Duty Roster, Bill Preparation, Lunch Bills, Closing Statements, Leave Applications, Hardware Requisitions, Cell Units, Audit Logs, and Recycle Bin.
+  - **Duty Calendar & Date Digits**: Month titles (`August 2026` vs `আগস্ট ২০২৬`), weekdays (`Sunday` vs `রবিবার`), summary metrics, and calendar cell date digits (`1, 2, 3...` vs `১, ২, ৩...`).
+  - **Employee Names & Designations**: Renders English spellings (`nameEn`, `designationEn`) in EN mode and Bangla in BN mode.
 - **Dual-Field Support**: Officers' names and designations support both Bangla (`name`, `designation`) and English (`nameEn`, `designationEn`) fields.
 - **Editable Transliteration**: If automatic transliteration requires adjustment, operators can manually edit English spellings in the Employee Management portal (`/employees`).
-- **Navbar Toggle Button**: A dedicated **`BN | EN`** button in the navbar allows 1-click language switching.
+- **Navbar Toggle Button**: A dedicated **`BN | EN`** button in the navbar allows 1-click language switching with persistent `localStorage` memory.
+
+---
+
+## 🎨 10 / 10 Ultra-Premium Design System
+
+- **Glassmorphism & Vibrant Palette**: Tailored HSL color palettes with soft backdrop blurs and subtle dark mode contrast ratios.
+- **Micro-Animations & Hover Effects**: Interactive calendar cells with glowing rings, scale transitions, and active day indicators.
+- **Modern Typography & Pixel-Perfect Alignment**: Google Fonts Inter & Outfit fallback hierarchy for bank-grade document previews and high-contrast accessibility.
 
 ---
 

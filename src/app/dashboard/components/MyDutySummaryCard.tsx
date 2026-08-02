@@ -13,8 +13,10 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-// Custom Bangla digit converter
+import { useLanguage } from '@/context/LanguageContext';
+
 function toBanglaDigits(num: number | string): string {
+  if (num === null || num === undefined) return '';
   const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
 }
@@ -56,6 +58,9 @@ interface Employee {
 }
 
 export default function MyDutySummaryCard() {
+  const { lang, t, formatNumber, formatMonthYear } = useLanguage();
+  const isEn = lang === 'en';
+
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [duties, setDuties] = useState<Duty[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance | null>(null);

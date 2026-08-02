@@ -14,17 +14,20 @@ import {
   X, 
   Command 
 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface SearchResultItem {
   id: string;
   title: string;
   subtitle: string;
-  category: 'কর্মকর্তা' | 'অফিস আদেশ' | 'সেল' | 'পেজ';
+  category: string;
   href: string;
   icon: any;
 }
 
 export default function CommandPalette() {
+  const { lang, t } = useLanguage();
+  const isEn = lang === 'en';
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResultItem[]>([]);
@@ -81,19 +84,22 @@ export default function CommandPalette() {
 
         const qLower = query.toLowerCase();
 
-        // Filter employees
+        // Filter employees (Dual Bangla & English search support)
         const empMatches: SearchResultItem[] = (Array.isArray(empRes) ? empRes : [])
           .filter((emp: any) => 
             emp.name?.toLowerCase().includes(qLower) || 
+            emp.nameEn?.toLowerCase().includes(qLower) || 
             emp.bankId?.toLowerCase().includes(qLower) ||
-            emp.designation?.toLowerCase().includes(qLower)
+            emp.designation?.toLowerCase().includes(qLower) ||
+            emp.designationEn?.toLowerCase().includes(qLower) ||
+            emp.fileNo?.toLowerCase().includes(qLower)
           )
           .slice(0, 5)
           .map((emp: any) => ({
             id: `emp-${emp.id}`,
-            title: `${emp.name} (${emp.designation})`,
-            subtitle: `ব্যাংক আইডি: ${emp.bankId || 'N/A'} • মোবাইল: ${emp.mobile || 'N/A'}`,
-            category: 'কর্মকর্তা',
+            title: isEn && emp.nameEn ? `${emp.nameEn} (${emp.designationEn || emp.designation})` : `${emp.name} (${emp.designation})`,
+            subtitle: `${isEn ? 'Bank ID:' : 'ব্যাংক আইডি:'} ${emp.bankId || 'N/A'} • ${isEn ? 'Mobile:' : 'মোবাইল:'} ${emp.mobile || 'N/A'}`,
+            category: isEn ? 'Employee' : 'কর্মকর্তা',
             href: `/employees`,
             icon: User
           }));
@@ -104,9 +110,9 @@ export default function CommandPalette() {
           .slice(0, 3)
           .map((c: any) => ({
             id: `cell-${c.id}`,
-            title: `সেল: ${c.name}`,
-            subtitle: c.description || 'অনলাইন ব্যাংকিং ডিপার্টমেন্ট',
-            category: 'সেল',
+            title: `${isEn ? 'Cell:' : 'সেল:'} ${c.name}`,
+            subtitle: c.description || (isEn ? 'Online Banking Department' : 'অনলাইন ব্যাংকিং ডিপার্টমেন্ট'),
+            category: isEn ? 'Cell' : 'সেল',
             href: `/users`,
             icon: Building2
           }));
