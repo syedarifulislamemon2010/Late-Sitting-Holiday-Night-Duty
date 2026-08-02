@@ -412,8 +412,10 @@ NEXTAUTH_URL="http://localhost:3000"
 
 ### 4. Database Setup & Server Launch
 ```bash
-# Push database schema & seed initial records
-npm run db:push
+# Push database schema (Safe for production and development)
+npx drizzle-kit push
+
+# Seed initial records (DEVELOPMENT / FIRST-TIME SETUP ONLY - DO NOT RUN IN PRODUCTION)
 npm run db:seed
 
 # Start dev server
@@ -425,6 +427,9 @@ Access the application at `http://localhost:3000`.
 
 ## 📂 Production Deployment Guide (RHEL 8/9)
 
+> [!CAUTION]
+> **PRODUCTION DATA SAFETY WARNING**: Never run `npm run db:seed` on a live production server as it resets database tables. Use `npx drizzle-kit push` to safely update database schemas without deleting data.
+
 ### 1. Install & Configure PostgreSQL
 ```bash
 sudo dnf module enable postgresql:15 -y
@@ -433,10 +438,15 @@ sudo postgresql-setup --initdb
 sudo systemctl enable postgresql --now
 ```
 
-### 2. Node.js PM2 Process Setup
+### 2. Node.js PM2 Production Build & Launch
 ```bash
 sudo npm install -g pm2
+
+# Build production bundle and sync database schema safely
 npm run build
+npx drizzle-kit push
+
+# Launch PM2 process manager
 pm2 start npm --name "lhn-portal" -- run start -- -p 3000
 pm2 save
 pm2 startup systemd

@@ -21,6 +21,13 @@ try {
 
 async function main() {
   console.log('Drizzle Seeding Engine starting...');
+
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_SEED !== 'true') {
+    console.error('❌ SAFETY ABORT: Running "db:seed" in Production environment is disabled to prevent accidental data loss.');
+    console.error('If you REALLY intend to overwrite production data, set ALLOW_SEED=true in environment variables.');
+    process.exit(1);
+  }
+
   const { db } = await import('../lib/db');
 
   const dumpPath = path.resolve(process.cwd(), 'postgres_dump.json');
