@@ -3,11 +3,12 @@
 # 🏛️ Janata Bank LHN Portal
 ### **Late-Sitting, Holiday, and Night Duty Management System**
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
-[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.38-C5F74F?style=for-the-badge&logo=drizzle)](https://orm.drizzle.team/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?style=for-the-badge&logo=drizzle)](https://orm.drizzle.team/)
 [![Vitest](https://img.shields.io/badge/Vitest-4.1-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
 
 ---
@@ -91,13 +92,14 @@ graph TD
 
 | Category | Technology | Rationale & Selection |
 | :--- | :--- | :--- |
-| **Framework** | Next.js 15 (App Router) | High-performance React framework with Server Components, hybrid SSR/SSG, and API route handling. |
+| **Framework** | Next.js 16 (App Router) | High-performance React framework with Server Components, hybrid SSR/SSG, and API route handling. |
+| **UI Engine** | React 19 | Cutting-edge React UI library with enhanced server action performance. |
 | **Language** | TypeScript 5 | Strict compile-time type safety, preventing runtime exceptions and enhancing developer experience. |
 | **Authentication** | Auth.js (NextAuth) | Custom self-hosted session validation, zero third-party dependencies, lightweight and secure. |
-| **Database ORM** | Drizzle ORM | Type-safe SQL query builder with zero cold-start latency, superior execution speed over traditional ORMs. |
-| **Styling** | Tailwind CSS 4 | Modern utility-first styling with zero runtime compilation overhead and responsive dark mode support. |
+| **Database ORM** | Drizzle ORM 0.45 | Type-safe SQL query builder with zero cold-start latency, superior execution speed over traditional ORMs. |
+| **Styling** | Tailwind CSS 4.3 | Modern utility-first styling with zero runtime compilation overhead and responsive dark mode support. |
 | **Database** | PostgreSQL 15 | Enterprise-grade relational database with strict constraint validation and index optimization. |
-| **Testing** | Vitest | Lightning-fast ESM-native test runner for unit, integration, and service contract verification. |
+| **Testing** | Vitest 4.1 | Lightning-fast ESM-native test runner for unit, integration, and service contract verification. |
 
 ---
 
