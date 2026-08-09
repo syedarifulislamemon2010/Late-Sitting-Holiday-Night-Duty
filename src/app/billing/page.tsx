@@ -1215,34 +1215,101 @@ export default function BillingPage() {
     const calculatedApyaon = (totalLateDays * 100) + (totalHolidayDays * 250) + (totalNightDays * 600);
     const calculatedTransport = (totalLateDays * 200) + (totalHolidayDays * 250) + (totalNightDays * 400);
 
-    const payeesSummary = employeesBreakdown.map(emp => {
-      const empApyaon = (emp.lateSittingDays * 100) + (emp.holidayDays * 250) + (emp.nightShiftDays * 600);
-      const empTransport = (emp.lateSittingDays * 200) + (emp.holidayDays * 250) + (emp.nightShiftDays * 400);
+    const payeeMap = new Map<string, {
+      payeeName: string;
+      designation: string;
+      billCount: number;
+      transportAllowance: number;
+      apyaonAllowance: number;
+      grandTotal: number;
+    }>();
 
-      // Count how many bill memos belong to or contain this officer
-      let billCount = 0;
-      targetBills.forEach(bill => {
-        let dutiesList: any[] = (bill.duties as any) || [];
-        if (dutiesList.length === 0 && bill.dutiesJson) {
-          try { dutiesList = JSON.parse(bill.dutiesJson); } catch (e) {}
+    targetBills.forEach(bill => {
+      const payeeName = bill.employeeName || 'অজ্ঞাত কর্মকর্তা';
+      const designation = bill.content?.representativeDesignation || '';
+      
+      let dutiesList: any[] = (bill.duties as any) || [];
+      if (dutiesList.length === 0 && bill.dutiesJson) {
+        try {
+          dutiesList = JSON.parse(bill.dutiesJson);
+        } catch (e) {
+          console.error('Failed to parse bill dutiesJson in reportData:', e);
         }
-        const isInDuties = dutiesList.some(d => cleanName(d.employeeName || d.name || '') === cleanName(emp.employeeName));
-        const isBillPayee = cleanName(bill.employeeName || '') === cleanName(emp.employeeName);
-        if (isInDuties || isBillPayee) {
-          billCount++;
+      }
+
+      const isLateSitting = bill.category === 'BILL_LATE_SITTING';
+      const isHoliday = bill.category === 'BILL_HOLIDAY';
+      const isNight = bill.category === 'BILL_NIGHT_SHIFT';
+
+      let billTransport = 0;
+      let billApyaon = 0;
+      let billGrandTotal = 0;
+
+      dutiesList.forEach(duty => {
+        const days = Number(duty.days || (duty.dates && duty.dates.length) || 0);
+        let transport = Number(duty.totalTransport || 0);
+        let apyaon = Number(duty.totalApyaon || 0);
+        let total = Number(duty.grandTotal || (transport + apyaon) || 0);
+
+        if (!transport || !apyaon || total === 0) {
+          if (isLateSitting) {
+            apyaon = days * 100;
+            transport = days * 200;
+            total = days * 300;
+          } else if (isHoliday) {
+            apyaon = days * 250;
+            transport = days * 250;
+            total = days * 500;
+          } else if (isNight) {
+            apyaon = days * 600;
+            transport = days * 400;
+            total = days * 1000;
+          }
         }
+
+        billTransport += transport;
+        billApyaon += apyaon;
+        billGrandTotal += total;
       });
-      if (billCount === 0) billCount = 1;
 
-      return {
-        payeeName: emp.employeeName,
-        designation: emp.designation,
-        billCount,
-        transportAllowance: empTransport,
-        apyaonAllowance: empApyaon,
-        grandTotal: emp.grandTotal
-      };
-    }).sort((a, b) => b.grandTotal - a.grandTotal);
+      if (billGrandTotal === 0 && bill.content?.grandTotal) {
+        billGrandTotal = bill.content.grandTotal;
+        if (isLateSitting) {
+          billApyaon = Math.round(billGrandTotal / 3);
+          billTransport = billGrandTotal - billApyaon;
+        } else if (isHoliday) {
+          billApyaon = Math.round(billGrandTotal / 2);
+          billTransport = billGrandTotal - billApyaon;
+        } else if (isNight) {
+          billApyaon = Math.round(billGrandTotal * 0.6);
+          billTransport = billGrandTotal - billApyaon;
+        }
+      }
+
+      const key = payeeName.trim().toLowerCase();
+      if (!payeeMap.has(key)) {
+        payeeMap.set(key, {
+          payeeName,
+          designation,
+          billCount: 0,
+          transportAllowance: 0,
+          apyaonAllowance: 0,
+          grandTotal: 0
+        });
+      }
+
+      const record = payeeMap.get(key)!;
+      record.billCount += 1;
+      record.transportAllowance += billTransport;
+      record.apyaonAllowance += billApyaon;
+      record.grandTotal += billGrandTotal;
+
+      if (!record.designation && designation) {
+        record.designation = designation;
+      }
+    });
+
+    const payeesSummary = Array.from(payeeMap.values()).sort((a, b) => b.grandTotal - a.grandTotal);
 
     return {
       targetBills,
