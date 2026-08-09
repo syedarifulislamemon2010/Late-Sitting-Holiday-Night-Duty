@@ -1208,10 +1208,19 @@ export default function BillingPage() {
     const totalDaysSum = employeesBreakdown.reduce((sum, r) => sum + r.totalDays, 0);
     const grandTotalSum = employeesBreakdown.reduce((sum, r) => sum + r.grandTotal, 0);
 
+    // Official Janata Bank Allowance Rules:
+    // Late Sitting (৳300/day): Refreshment=৳100, Conveyance=৳200
+    // Holiday Duty (৳500/day): Lunch=৳250, Conveyance=৳250
+    // Night Shift (৳1000/day): Dinner=৳600, Conveyance=৳400
+    const calculatedApyaon = (totalLateDays * 100) + (totalHolidayDays * 250) + (totalNightDays * 600);
+    const calculatedTransport = (totalLateDays * 200) + (totalHolidayDays * 250) + (totalNightDays * 400);
+
     const payeeMap = new Map<string, {
       payeeName: string;
       designation: string;
       billCount: number;
+      transportAllowance: number;
+      apyaonAllowance: number;
       grandTotal: number;
     }>();
 
@@ -1219,40 +1228,35 @@ export default function BillingPage() {
       const payeeName = bill.employeeName || 'অজ্ঞাত কর্মকর্তা';
       const designation = bill.content?.representativeDesignation || '';
       
-      let billTotal = 0;
-      if (bill.content?.grandTotal !== undefined && bill.content?.grandTotal !== null) {
-        billTotal = bill.content.grandTotal;
-      } else {
-        let dutiesList: any[] = (bill.duties as any) || [];
-        if (dutiesList.length === 0 && bill.dutiesJson) {
-          try {
-            dutiesList = JSON.parse(bill.dutiesJson);
-          } catch (e) {
-            console.error('Failed to parse bill dutiesJson in reportData:', e);
-          }
-        }
-        billTotal = dutiesList.reduce((sum, d) => {
-          const transport = Number(d.totalTransport || 0);
-          const apyaon = Number(d.totalApyaon || 0);
-          return sum + Number(d.grandTotal || (transport + apyaon) || 0);
-        }, 0);
-      }
-
       const key = payeeName.trim().toLowerCase();
       if (!payeeMap.has(key)) {
         payeeMap.set(key, {
           payeeName,
           designation,
           billCount: 0,
+          transportAllowance: 0,
+          apyaonAllowance: 0,
           grandTotal: 0
         });
       }
 
       const record = payeeMap.get(key)!;
       record.billCount += 1;
-      record.grandTotal += billTotal;
       if (!record.designation && designation) {
         record.designation = designation;
+      }
+    });
+
+    employeesBreakdown.forEach(emp => {
+      const key = emp.employeeName.trim().toLowerCase();
+      if (payeeMap.has(key)) {
+        const record = payeeMap.get(key)!;
+        const empApyaon = (emp.lateSittingDays * 100) + (emp.holidayDays * 250) + (emp.nightShiftDays * 600);
+        const empTransport = (emp.lateSittingDays * 200) + (emp.holidayDays * 250) + (emp.nightShiftDays * 400);
+
+        record.apyaonAllowance += empApyaon;
+        record.transportAllowance += empTransport;
+        record.grandTotal += emp.grandTotal;
       }
     });
 
@@ -1261,13 +1265,13 @@ export default function BillingPage() {
     return {
       targetBills,
       totalBillsCount,
-      totalDays,
-      totalTransport,
-      totalApyaon,
-      grandTotal,
-      lateSittingAmount,
-      holidayAmount,
-      nightShiftAmount,
+      totalDays: totalDaysSum,
+      totalTransport: calculatedTransport,
+      totalApyaon: calculatedApyaon,
+      grandTotal: grandTotalSum,
+      lateSittingAmount: totalLateAmount,
+      holidayAmount: totalHolidayAmount,
+      nightShiftAmount: totalNightAmount,
       employeesBreakdown,
       payeesSummary,
       totalLateDays,
@@ -2241,28 +2245,40 @@ export default function BillingPage() {
           <table className="w-full text-xs border-collapse" style={{ border: '1px solid #000' }}>
             <thead>
               <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
-                <th className="p-1.5 border-r border-black w-12" style={{ borderRight: '1px solid #000' }}>ক্রমিক</th>
+                <th className="p-1.5 border-r border-black w-10" style={{ borderRight: '1px solid #000' }}>ক্রমিক</th>
                 <th className="p-1.5 border-r border-black text-left pl-2" style={{ borderRight: '1px solid #000' }}>কর্মকর্তার নাম ও পদবী (Payee Name & Designation)</th>
-                <th className="p-1.5 border-r border-black w-28 text-center" style={{ borderRight: '1px solid #000' }}>বিলের সংখ্যা</th>
-                <th className="p-1.5 text-right pr-4 w-40">মোট বিলের পরিমাণ (টাকা)</th>
+                <th className="p-1.5 border-r border-black w-24 text-center" style={{ borderRight: '1px solid #000' }}>বিলের সংখ্যা</th>
+                <th className="p-1.5 border-r border-black w-28 text-right pr-2" style={{ borderRight: '1px solid #000' }}>যাতায়াত ভাতা</th>
+                <th className="p-1.5 border-r border-black w-28 text-right pr-2" style={{ borderRight: '1px solid #000' }}>আপ্যায়ন ভাতা</th>
+                <th className="p-1.5 text-right pr-4 w-36">মোট বিলের পরিমাণ (টাকা)</th>
               </tr>
             </thead>
             <tbody>
-              {payeesSummary.map((payee, idx) => (
-                <tr key={idx} style={{ borderTop: '1px solid #000' }}>
-                  <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(idx + 1)}</td>
-                  <td className="p-1.5 border-r border-black text-left pl-2 font-bold" style={{ borderRight: '1px solid #000' }}>
-                    {payee.payeeName} {payee.designation ? `(${payee.designation})` : ''}
-                  </td>
-                  <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(payee.billCount)} টি</td>
-                  <td className="p-1.5 text-right pr-4 font-bold">{toBanglaDigits(payee.grandTotal)}/-</td>
-                </tr>
-              ))}
+              {payeesSummary.map((payee, idx) => {
+                return (
+                  <tr key={idx} style={{ borderTop: '1px solid #000' }}>
+                    <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(idx + 1)}</td>
+                    <td className="p-1.5 border-r border-black text-left pl-2 font-bold" style={{ borderRight: '1px solid #000' }}>
+                      {payee.payeeName} {payee.designation ? `(${payee.designation})` : ''}
+                    </td>
+                    <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(payee.billCount)} টি</td>
+                    <td className="p-1.5 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(payee.transportAllowance || 0)}/-</td>
+                    <td className="p-1.5 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(payee.apyaonAllowance || 0)}/-</td>
+                    <td className="p-1.5 text-right pr-4 font-bold">{toBanglaDigits(payee.grandTotal)}/-</td>
+                  </tr>
+                );
+              })}
               <tr style={{ borderTop: '2px solid #000', fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
                 <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}></td>
                 <td className="p-1.5 border-r border-black text-left pl-2 font-bold" style={{ borderRight: '1px solid #000' }}>সর্বমোট</td>
                 <td className="p-1.5 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
                   {toBanglaDigits(payeesSummary.reduce((sum, p) => sum + p.billCount, 0))} টি
+                </td>
+                <td className="p-1.5 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>
+                  {toBanglaDigits(payeesSummary.reduce((sum, p) => sum + (p.transportAllowance || 0), 0))}/-
+                </td>
+                <td className="p-1.5 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>
+                  {toBanglaDigits(payeesSummary.reduce((sum, p) => sum + (p.apyaonAllowance || 0), 0))}/-
                 </td>
                 <td className="p-1.5 text-right pr-4 font-bold">
                   {toBanglaDigits(payeesSummary.reduce((sum, p) => sum + p.grandTotal, 0))}/-
@@ -2278,14 +2294,15 @@ export default function BillingPage() {
           <table className="w-full text-xs border-collapse" style={{ border: '1px solid #000' }}>
             <thead>
               <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
-                <th className="p-1 border-r border-black w-8" style={{ borderRight: '1px solid #000' }}>#</th>
-                <th className="p-1 border-r border-black" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>কর্মকর্তার নাম</th>
-                <th className="p-1 border-r border-black w-28" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>পদবী</th>
+                <th className="p-1 border-r border-black w-7" style={{ borderRight: '1px solid #000' }}>#</th>
+                <th className="p-1 border-r border-black w-36" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>কর্মকর্তার নাম</th>
+                <th className="p-1 border-r border-black w-32" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>পদবী</th>
                 <th className="p-1 border-r border-black w-24" style={{ borderRight: '1px solid #000' }}>লেট-সিটিং (দিন/টাকা)</th>
                 <th className="p-1 border-r border-black w-24" style={{ borderRight: '1px solid #000' }}>ছুটির দিন (দিন/টাকা)</th>
                 <th className="p-1 border-r border-black w-24" style={{ borderRight: '1px solid #000' }}>নাইট শিফট (দিন/টাকা)</th>
-                <th className="p-1 border-r border-black w-14" style={{ borderRight: '1px solid #000' }}>মোট দিন</th>
-                <th className="p-1 text-right pr-2 w-24">সর্বমোট (টাকা)</th>
+                <th className="p-1 border-r border-black w-12" style={{ borderRight: '1px solid #000' }}>মোট দিন</th>
+                <th className="p-1 border-r border-black text-right pr-2 w-24" style={{ borderRight: '1px solid #000' }}>সর্বমোট (টাকা)</th>
+                <th className="p-1 text-center w-16">কর্তন</th>
               </tr>
             </thead>
             <tbody>
@@ -2304,7 +2321,8 @@ export default function BillingPage() {
                     {record.nightShiftDays > 0 ? `${toBanglaDigits(record.nightShiftDays)} (${toBanglaDigits(record.nightShiftAmount)}/-)` : '-'}
                   </td>
                   <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(record.totalDays)}</td>
-                  <td className="p-1 text-right pr-2 font-bold">{toBanglaDigits(record.grandTotal)}/-</td>
+                  <td className="p-1 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(record.grandTotal)}/-</td>
+                  <td className="p-1 text-center font-bold"></td>
                 </tr>
               ))}
               <tr style={{ borderTop: '2px solid #000', fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
@@ -2320,7 +2338,8 @@ export default function BillingPage() {
                   {totalNightDays > 0 ? `${toBanglaDigits(totalNightDays)} (${toBanglaDigits(totalNightAmount)}/-)` : '-'}
                 </td>
                 <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(totalDaysSum)}</td>
-                <td className="p-1 text-right pr-2 font-bold">{toBanglaDigits(grandTotalSum)}/-</td>
+                <td className="p-1 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(grandTotalSum)}/-</td>
+                <td className="p-1 text-center font-bold"></td>
               </tr>
             </tbody>
           </table>

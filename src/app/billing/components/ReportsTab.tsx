@@ -49,6 +49,8 @@ interface PayeeSummary {
   payeeName: string;
   designation: string;
   billCount: number;
+  transportAllowance: number;
+  apyaonAllowance: number;
   grandTotal: number;
 }
 
@@ -541,26 +543,38 @@ export default function ReportsTab({
                     <tr className="bg-slate-100/50 dark:bg-slate-900/80 text-[10px] font-bold text-slate-600 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
                       <th className="p-3 text-center w-12">#</th>
                       <th className="p-3">কর্মকর্তার নাম ও পদবী (Payee Name & Designation)</th>
-                      <th className="p-3 text-center w-36">বিলের সংখ্যা</th>
-                      <th className="p-3 text-right pr-6 w-48">মোট বিলের পরিমাণ (টাকা)</th>
+                      <th className="p-3 text-center w-28">বিলের সংখ্যা</th>
+                      <th className="p-3 text-right w-36">যাতায়াত ভাতা (টাকা)</th>
+                      <th className="p-3 text-right w-36">আপ্যায়ন ভাতা (টাকা)</th>
+                      <th className="p-3 text-right pr-6 w-44">মোট বিলের পরিমাণ (টাকা)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs font-medium">
-                    {reportData.payeesSummary?.map((payee, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/30 dark:hover:bg-slate-850/10 text-slate-600 dark:text-slate-350">
-                        <td className="p-3 text-center font-mono text-[10px] text-slate-450">{toBanglaDigits(idx + 1)}</td>
-                        <td className="p-3 text-slate-800 dark:text-slate-200 font-bold">
-                          {payee.payeeName} {payee.designation ? `(${payee.designation})` : ''}
-                        </td>
-                        <td className="p-3 text-center font-bold">{toBanglaDigits(payee.billCount)} টি</td>
-                        <td className="p-3 text-right pr-6 font-extrabold text-slate-800 dark:text-slate-200">{toBanglaDigits(payee.grandTotal)}/-</td>
-                      </tr>
-                    ))}
+                    {reportData.payeesSummary?.map((payee, idx) => {
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50/30 dark:hover:bg-slate-850/10 text-slate-600 dark:text-slate-350">
+                          <td className="p-3 text-center font-mono text-[10px] text-slate-450">{toBanglaDigits(idx + 1)}</td>
+                          <td className="p-3 text-slate-800 dark:text-slate-200 font-bold">
+                            {payee.payeeName} {payee.designation ? `(${payee.designation})` : ''}
+                          </td>
+                          <td className="p-3 text-center font-bold">{toBanglaDigits(payee.billCount)} টি</td>
+                          <td className="p-3 text-right font-extrabold text-cyan-950 dark:text-cyan-400">{toBanglaDigits(payee.transportAllowance || 0)}/-</td>
+                          <td className="p-3 text-right font-extrabold text-cyan-950 dark:text-cyan-400">{toBanglaDigits(payee.apyaonAllowance || 0)}/-</td>
+                          <td className="p-3 text-right pr-6 font-extrabold text-slate-800 dark:text-slate-200">{toBanglaDigits(payee.grandTotal)}/-</td>
+                        </tr>
+                      );
+                    })}
                     <tr className="bg-slate-100/50 dark:bg-slate-900/60 font-bold text-slate-850 dark:text-slate-200 border-t-2 border-slate-300 dark:border-slate-700">
                       <td className="p-3 text-center"></td>
                       <td className="p-3 text-left font-extrabold font-sans">সর্বমোট</td>
                       <td className="p-3 text-center font-bold">
                         {toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + p.billCount, 0) || 0)} টি
+                      </td>
+                      <td className="p-3 text-right font-extrabold text-cyan-950 dark:text-cyan-300">
+                        {toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + (p.transportAllowance || 0), 0) || 0)}/-
+                      </td>
+                      <td className="p-3 text-right font-extrabold text-cyan-950 dark:text-cyan-300">
+                        {toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + (p.apyaonAllowance || 0), 0) || 0)}/-
                       </td>
                       <td className="p-3 text-right pr-6 font-extrabold text-slate-950 dark:text-slate-100">
                         {toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + p.grandTotal, 0) || 0)}/-
@@ -576,7 +590,7 @@ export default function ReportsTab({
               <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h4 className="text-xs font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
                   <Users size={14} className="text-indigo-500" />
-                  ২. কর্মকর্তা ভিত্তিক সমন্বিত বিস্তারিত বিবরণী (Consolidated Payee Details)
+                  ২. কর্মচারী ভিত্তিক সমন্বিত বিস্তারিত বিবরণী (Consolidated Payee Details)
                 </h4>
                 <button
                   onClick={handleExportReportCSV}
@@ -590,14 +604,15 @@ export default function ReportsTab({
                 <table className="w-full text-left border-collapse font-sans">
                   <thead>
                     <tr className="bg-slate-100/50 dark:bg-slate-900/80 text-[10px] font-bold text-slate-600 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
-                      <th className="p-3 text-center w-12">#</th>
-                      <th className="p-3">কর্মকর্তার নাম</th>
-                      <th className="p-3">পদবী</th>
+                      <th className="p-3 text-center w-10">#</th>
+                      <th className="p-3 w-48">কর্মকর্তার নাম</th>
+                      <th className="p-3 w-40">পদবী</th>
                       <th className="p-3 text-center">লেট-সিটিং দিন (টাকা)</th>
                       <th className="p-3 text-center">ছুটির দিন দিন (টাকা)</th>
                       <th className="p-3 text-center">নাইট শিফট দিন (টাকা)</th>
-                      <th className="p-3 text-center">মোট দিন</th>
-                      <th className="p-3 text-right pr-6">সর্বমোট প্রদেয় (টাকা)</th>
+                      <th className="p-3 text-center w-16">মোট দিন</th>
+                      <th className="p-3 text-right pr-4 w-32">সর্বমোট (টাকা)</th>
+                      <th className="p-3 text-center w-20">কর্তন</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs font-medium">
@@ -628,7 +643,8 @@ export default function ReportsTab({
                           )}
                         </td>
                         <td className="p-3 text-center font-bold">{toBanglaDigits(record.totalDays)}</td>
-                        <td className="p-3 text-right pr-6 font-extrabold text-slate-800 dark:text-slate-200">{toBanglaDigits(record.grandTotal)}/-</td>
+                        <td className="p-3 text-right pr-4 font-extrabold text-slate-800 dark:text-slate-200">{toBanglaDigits(record.grandTotal)}/-</td>
+                        <td className="p-3 text-center text-slate-350 dark:text-slate-600 font-bold">-</td>
                       </tr>
                     ))}
                     <tr className="bg-slate-100/50 dark:bg-slate-900/60 font-bold text-slate-850 dark:text-slate-200 border-t-2 border-slate-300 dark:border-slate-700">
@@ -656,7 +672,8 @@ export default function ReportsTab({
                         )}
                       </td>
                       <td className="p-3 text-center font-bold">{toBanglaDigits(reportData.totalDaysSum)}</td>
-                      <td className="p-3 text-right pr-6 font-extrabold text-slate-950 dark:text-slate-100">{toBanglaDigits(reportData.grandTotalSum)}/-</td>
+                      <td className="p-3 text-right pr-4 font-extrabold text-slate-950 dark:text-slate-100">{toBanglaDigits(reportData.grandTotalSum)}/-</td>
+                      <td className="p-3 text-center text-slate-400 font-bold">-</td>
                     </tr>
                   </tbody>
                 </table>
