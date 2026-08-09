@@ -1215,52 +1215,34 @@ export default function BillingPage() {
     const calculatedApyaon = (totalLateDays * 100) + (totalHolidayDays * 250) + (totalNightDays * 600);
     const calculatedTransport = (totalLateDays * 200) + (totalHolidayDays * 250) + (totalNightDays * 400);
 
-    const payeeMap = new Map<string, {
-      payeeName: string;
-      designation: string;
-      billCount: number;
-      transportAllowance: number;
-      apyaonAllowance: number;
-      grandTotal: number;
-    }>();
+    const payeesSummary = employeesBreakdown.map(emp => {
+      const empApyaon = (emp.lateSittingDays * 100) + (emp.holidayDays * 250) + (emp.nightShiftDays * 600);
+      const empTransport = (emp.lateSittingDays * 200) + (emp.holidayDays * 250) + (emp.nightShiftDays * 400);
 
-    targetBills.forEach(bill => {
-      const payeeName = bill.employeeName || 'অজ্ঞাত কর্মকর্তা';
-      const designation = bill.content?.representativeDesignation || '';
-      
-      const key = payeeName.trim().toLowerCase();
-      if (!payeeMap.has(key)) {
-        payeeMap.set(key, {
-          payeeName,
-          designation,
-          billCount: 0,
-          transportAllowance: 0,
-          apyaonAllowance: 0,
-          grandTotal: 0
-        });
-      }
+      // Count how many bill memos belong to or contain this officer
+      let billCount = 0;
+      targetBills.forEach(bill => {
+        let dutiesList: any[] = (bill.duties as any) || [];
+        if (dutiesList.length === 0 && bill.dutiesJson) {
+          try { dutiesList = JSON.parse(bill.dutiesJson); } catch (e) {}
+        }
+        const isInDuties = dutiesList.some(d => cleanName(d.employeeName || d.name || '') === cleanName(emp.employeeName));
+        const isBillPayee = cleanName(bill.employeeName || '') === cleanName(emp.employeeName);
+        if (isInDuties || isBillPayee) {
+          billCount++;
+        }
+      });
+      if (billCount === 0) billCount = 1;
 
-      const record = payeeMap.get(key)!;
-      record.billCount += 1;
-      if (!record.designation && designation) {
-        record.designation = designation;
-      }
-    });
-
-    employeesBreakdown.forEach(emp => {
-      const key = emp.employeeName.trim().toLowerCase();
-      if (payeeMap.has(key)) {
-        const record = payeeMap.get(key)!;
-        const empApyaon = (emp.lateSittingDays * 100) + (emp.holidayDays * 250) + (emp.nightShiftDays * 600);
-        const empTransport = (emp.lateSittingDays * 200) + (emp.holidayDays * 250) + (emp.nightShiftDays * 400);
-
-        record.apyaonAllowance += empApyaon;
-        record.transportAllowance += empTransport;
-        record.grandTotal += emp.grandTotal;
-      }
-    });
-
-    const payeesSummary = Array.from(payeeMap.values()).sort((a, b) => b.grandTotal - a.grandTotal);
+      return {
+        payeeName: emp.employeeName,
+        designation: emp.designation,
+        billCount,
+        transportAllowance: empTransport,
+        apyaonAllowance: empApyaon,
+        grandTotal: emp.grandTotal
+      };
+    }).sort((a, b) => b.grandTotal - a.grandTotal);
 
     return {
       targetBills,
