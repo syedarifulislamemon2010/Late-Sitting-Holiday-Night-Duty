@@ -58,6 +58,22 @@ export default function RootLayout({
           suppressHydrationWarning={true}
           dangerouslySetInnerHTML={{
             __html: `
+              // Suppress third-party chrome extension errors (e.g. eppiocemhmnlbhjplcgkofciiegomcon, M_ID)
+              window.addEventListener('error', function(e) {
+                if ((e.filename && e.filename.indexOf('chrome-extension://') !== -1) || 
+                    (e.message && (e.message.indexOf('M_ID') !== -1 || e.message.indexOf('chrome-extension') !== -1))) {
+                  e.stopImmediatePropagation();
+                  e.preventDefault();
+                  return true;
+                }
+              }, true);
+              window.addEventListener('unhandledrejection', function(e) {
+                if (e.reason && (String(e.reason).indexOf('chrome-extension://') !== -1 || String(e.reason.stack || '').indexOf('chrome-extension://') !== -1)) {
+                  e.stopImmediatePropagation();
+                  e.preventDefault();
+                }
+              }, true);
+
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').catch(function(err) {
