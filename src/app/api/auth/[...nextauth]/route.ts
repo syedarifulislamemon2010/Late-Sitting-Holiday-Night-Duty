@@ -134,6 +134,15 @@ export const authOptions: NextAuthOptions = {
         sessionUser.username = sessionUser.email;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      try {
+        const urlObj = new URL(url);
+        const baseObj = new URL(baseUrl);
+        if (urlObj.origin === baseObj.origin || urlObj.hostname === baseObj.hostname) return url;
+      } catch {}
+      return url;
     }
   },
   pages: {
