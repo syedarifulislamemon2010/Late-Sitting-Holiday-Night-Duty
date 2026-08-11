@@ -25,7 +25,8 @@ import {
   FileText,
   Users,
   Banknote,
-  Edit3
+  Edit3,
+  FileSpreadsheet
 } from 'lucide-react';
 
 import LedgerTab from './components/LedgerTab';

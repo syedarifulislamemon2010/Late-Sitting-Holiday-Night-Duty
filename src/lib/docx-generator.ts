@@ -46,11 +46,15 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
       {
         properties: {
           page: {
+            size: {
+              width: 12240,
+              height: 20160,
+            },
             margin: {
-              top: 1440, // 1 inch
-              bottom: 1440,
-              left: 1440,
-              right: 1440
+              top: 720,
+              bottom: 720,
+              left: 1080,
+              right: 1080
             }
           }
         },
@@ -75,14 +79,14 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
                     children: [
                       new Paragraph({
                         children: [
-                          new TextRun({ text: `তারিখ: ${data.applicationDateStr} ইং`, bold: true, size: 22 })
+                          new TextRun({ text: `তারিখ: ${data.applicationDateStr} ইং`, font: 'Noto Sans Bengali', bold: true, size: 20 })
                         ]
                       }),
                       new Paragraph({ text: '' }),
-                      new Paragraph({ children: [new TextRun({ text: 'উপ-মহাব্যবস্থাপক', bold: true, size: 22 })] }),
-                      new Paragraph({ children: [new TextRun({ text: 'অনলাইন ব্যাংকিং ডিপার্টমেন্ট', bold: true, size: 22 })] }),
-                      new Paragraph({ children: [new TextRun({ text: 'জনতা ব্যাংক পিএলসি,', bold: true, size: 22 })] }),
-                      new Paragraph({ children: [new TextRun({ text: 'প্রধান কার্যালয়, ঢাকা।', bold: true, size: 22 })] })
+                      new Paragraph({ children: [new TextRun({ text: 'উপ-মহাব্যবস্থাপক', font: 'Noto Sans Bengali', bold: true, size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'অনলাইন ব্যাংকিং ডিপার্টমেন্ট', font: 'Noto Sans Bengali', bold: true, size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'জনতা ব্যাংক পিএলসি,', font: 'Noto Sans Bengali', bold: true, size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'প্রধান কার্যালয়, ঢাকা।', font: 'Noto Sans Bengali', bold: true, size: 20 })] })
                     ]
                   }),
                   // Right Cell: Balance Table
@@ -107,7 +111,7 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
                                 children: [
                                   new Paragraph({
                                     alignment: AlignmentType.CENTER,
-                                    children: [new TextRun({ text: `${data.appYear} সালের ছুটির বিবরণ`, bold: true, size: 18 })]
+                                    children: [new TextRun({ text: `${data.appYear} সালের ছুটির বিবরণ`, font: 'Noto Sans Bengali', bold: true, size: 18 })]
                                   })
                                 ]
                               })
@@ -115,38 +119,38 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
                           }),
                           new TableRow({
                             children: [
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ক্র.নং', bold: true, size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ছুটির ধরণ', bold: true, size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'প্রাপ্তব্য', bold: true, size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ভোগকৃত', bold: true, size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'অবশিষ্ট', bold: true, size: 16 })] })] })
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ক্র.নং', font: 'Noto Sans Bengali', bold: true, size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ছুটির ধরণ', font: 'Noto Sans Bengali', bold: true, size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'প্রাপ্তব্য', font: 'Noto Sans Bengali', bold: true, size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'ভোগকৃত', font: 'Noto Sans Bengali', bold: true, size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'অবশিষ্ট', font: 'Noto Sans Bengali', bold: true, size: 16 })] })] })
                             ]
                           }),
                           new TableRow({
                             children: [
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '০১.', size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'নৈমিত্তিক', size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.casualTotal), bold: true, size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.casualUsed), bold: true, size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.casualRemaining), bold: true, size: 16 })] })] })
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '০১.', font: 'Noto Sans Bengali', size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'নৈমিত্তিক', font: 'Noto Sans Bengali', size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.casualTotal), font: 'Noto Sans Bengali', bold: true, size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.casualUsed), font: 'Noto Sans Bengali', bold: true, size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.casualRemaining), font: 'Noto Sans Bengali', bold: true, size: 16 })] })] })
                             ]
                           }),
                           new TableRow({
                             children: [
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '০২.', size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'সাধারণ', size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.ordinaryTotal), bold: true, size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.ordinaryUsed), bold: true, size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.ordinaryRemaining), bold: true, size: 16 })] })] })
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '০২.', font: 'Noto Sans Bengali', size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'সাধারণ', font: 'Noto Sans Bengali', size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.ordinaryTotal), font: 'Noto Sans Bengali', bold: true, size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.ordinaryUsed), font: 'Noto Sans Bengali', bold: true, size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.ordinaryRemaining), font: 'Noto Sans Bengali', bold: true, size: 16 })] })] })
                             ]
                           }),
                           new TableRow({
                             children: [
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '০৩.', size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'বিশেষ', size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.specialTotal), bold: true, size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.specialUsed), bold: true, size: 16 })] })] }),
-                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.specialRemaining), bold: true, size: 16 })] })] })
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '০৩.', font: 'Noto Sans Bengali', size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'বিশেষ', font: 'Noto Sans Bengali', size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.specialTotal), font: 'Noto Sans Bengali', bold: true, size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.specialUsed), font: 'Noto Sans Bengali', bold: true, size: 16 })] })] }),
+                              new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(data.specialRemaining), font: 'Noto Sans Bengali', bold: true, size: 16 })] })] })
                             ]
                           })
                         ]
@@ -159,12 +163,11 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
           }),
 
           new Paragraph({ text: '' }),
-          new Paragraph({ text: '' }),
 
           // Subject
           new Paragraph({
             children: [
-              new TextRun({ text: data.subjectText, bold: true, underline: {}, size: 24 })
+              new TextRun({ text: data.subjectText, font: 'Noto Sans Bengali', bold: true, underline: {}, size: 22 })
             ]
           }),
 
@@ -175,12 +178,11 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
             (p: string) =>
               new Paragraph({
                 alignment: AlignmentType.JUSTIFIED,
-                spacing: { line: 320 },
-                children: [new TextRun({ text: p, size: 22 })]
+                spacing: { line: 276 },
+                children: [new TextRun({ text: p, font: 'Noto Sans Bengali', size: 20 })]
               })
           ),
 
-          new Paragraph({ text: '' }),
           new Paragraph({ text: '' }),
 
           // Delegate officer section if applicable
@@ -190,8 +192,9 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
                   children: [
                     new TextRun({
                       text: `ছুটিবোর সময়ে আমার দায়িত্ব পালন করবেন: জনাব ${data.delegateOfficerName}, ${data.delegateOfficerDesig || ''}`,
+                      font: 'Noto Sans Bengali',
                       bold: true,
-                      size: 22
+                      size: 20
                     })
                   ]
                 }),
@@ -217,24 +220,24 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
                   new TableCell({
                     width: { size: 50, type: WidthType.PERCENTAGE },
                     children: [
-                      new Paragraph({ children: [new TextRun({ text: 'আপনার বিশ্বস্ত,', size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'আপনার বিশ্বস্ত,', font: 'Noto Sans Bengali', size: 20 })] }),
                       new Paragraph({ text: '' }),
                       new Paragraph({ text: '' }),
-                      new Paragraph({ children: [new TextRun({ text: 'নামঃ ', size: 20 }), new TextRun({ text: data.applicantName || 'সৈয়দ আরিফুল ইসলাম ইমন', italics: true, bold: true, size: 20 })] }),
-                      new Paragraph({ children: [new TextRun({ text: `পদবীঃ ${data.designation || 'সিনিয়র অফিসার-আইটি'}`, size: 20 })] }),
-                      new Paragraph({ children: [new TextRun({ text: `ব্যাংক আইডিঃ ${data.bankId || '০২৬৭৯৫'}`, size: 20 })] }),
-                      ...(data.fileNo ? [new Paragraph({ children: [new TextRun({ text: `ব্যক্তিগত নথি নংঃ ${data.fileNo}`, size: 20 })] })] : []),
-                      new Paragraph({ children: [new TextRun({ text: data.cellName, size: 20 })] }),
-                      new Paragraph({ children: [new TextRun({ text: 'জনতা ব্যাংক পিএলসি,', size: 20 })] }),
-                      new Paragraph({ children: [new TextRun({ text: 'প্রধান কার্যালয়, ঢাকা।', size: 20 })] })
+                      new Paragraph({ children: [new TextRun({ text: 'নামঃ ', font: 'Noto Sans Bengali', size: 20 }), new TextRun({ text: data.applicantName || 'সৈয়দ আরিফুল ইসলাম ইমন', font: 'Noto Sans Bengali', italics: true, bold: true, size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: `পদবীঃ ${data.designation || 'সিনিয়র অফিসার-আইটি'}`, font: 'Noto Sans Bengali', size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: `ব্যাংক আইডিঃ ${data.bankId || '০২৬৭৯৫'}`, font: 'Noto Sans Bengali', size: 20 })] }),
+                      ...(data.fileNo ? [new Paragraph({ children: [new TextRun({ text: `ব্যক্তিগত নথি নংঃ ${data.fileNo}`, font: 'Noto Sans Bengali', size: 20 })] })] : []),
+                      new Paragraph({ children: [new TextRun({ text: data.cellName, font: 'Noto Sans Bengali', size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'জনতা ব্যাংক পিএলসি,', font: 'Noto Sans Bengali', size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'প্রধান কার্যালয়, ঢাকা।', font: 'Noto Sans Bengali', size: 20 })] })
                     ]
                   }),
                   // Right Cell: Stay location & Mobile
                   new TableCell({
                     width: { size: 50, type: WidthType.PERCENTAGE },
                     children: [
-                      new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'ছুটিতে থাকাকালীন অবস্থানঃ ', size: 20 }), new TextRun({ text: data.leaveLocation, italics: true, bold: true, size: 20 })] }),
-                      new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: `মোবাইল নংঃ ${data.mobileNo}`, size: 20 })] })
+                      new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'ছুটিতে থাকাকালীন অবস্থানঃ ', font: 'Noto Sans Bengali', size: 20 }), new TextRun({ text: data.leaveLocation, font: 'Noto Sans Bengali', italics: true, bold: true, size: 20 })] }),
+                      new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: `মোবাইল নংঃ ${data.mobileNo}`, font: 'Noto Sans Bengali', size: 20 })] })
                     ]
                   })
                 ]
@@ -243,19 +246,16 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
           }),
 
           new Paragraph({ text: '' }),
-          new Paragraph({ text: '' }),
-          new Paragraph({ text: '' }),
 
           // Recommendation & Approval Routing
           new Paragraph({
             children: [
-              new TextRun({ text: 'আবেদনকারীর অনুকূলে উক্ত ', size: 20 }),
-              new TextRun({ text: data.daysInBanglaWords || '০১ (এক)', italics: true, bold: true, size: 20 }),
-              new TextRun({ text: ` দিনের ${data.leaveTypeBangla || 'নৈমিত্তিক'} ছুটি মঞ্জুরীর সুপারিশ করা হলো।`, size: 20 })
+              new TextRun({ text: 'আবেদনকারীর অনুকূলে উক্ত ', font: 'Noto Sans Bengali', size: 20 }),
+              new TextRun({ text: data.daysInBanglaWords || '০১ (এক)', font: 'Noto Sans Bengali', italics: true, bold: true, size: 20 }),
+              new TextRun({ text: ` দিনের ${data.leaveTypeBangla || 'নৈমিত্তিক'} ছুটি মঞ্জুরীর সুপারিশ করা হলো।`, font: 'Noto Sans Bengali', size: 20 })
             ]
           }),
 
-          new Paragraph({ text: '' }),
           new Paragraph({ text: '' }),
           new Paragraph({ text: '' }),
 
@@ -275,11 +275,11 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
                 children: [
                   new TableCell({
                     width: { size: 50, type: WidthType.PERCENTAGE },
-                    children: [new Paragraph({ children: [new TextRun({ text: 'সেল ইনচার্জ', size: 20 })] })]
+                    children: [new Paragraph({ children: [new TextRun({ text: 'সেল ইনচার্জ', font: 'Noto Sans Bengali', size: 20 })] })]
                   }),
                   new TableCell({
                     width: { size: 50, type: WidthType.PERCENTAGE },
-                    children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'সহকারী মহাব্যবস্থাপক', size: 20 })] })]
+                    children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'সহকারী মহাব্যবস্থাপক', font: 'Noto Sans Bengali', size: 20 })] })]
                   })
                 ]
               })
@@ -288,20 +288,16 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
 
           new Paragraph({ text: '' }),
           new Paragraph({ text: '' }),
-          new Paragraph({ text: '' }),
-          new Paragraph({ children: [new TextRun({ text: 'এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', size: 20 })] }),
-          new Paragraph({ text: '' }),
+          new Paragraph({ children: [new TextRun({ text: 'এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', font: 'Noto Sans Bengali', size: 20 })] }),
           new Paragraph({ text: '' }),
           new Paragraph({ text: '' }),
-          new Paragraph({ children: [new TextRun({ text: 'ডিজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', size: 20 })] }),
+          new Paragraph({ children: [new TextRun({ text: 'ডিজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', font: 'Noto Sans Bengali', size: 20 })] }),
           new Paragraph({ text: '' }),
           new Paragraph({ text: '' }),
-          new Paragraph({ text: '' }),
-          new Paragraph({ children: [new TextRun({ text: 'এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', size: 20 })] }),
-          new Paragraph({ text: '' }),
+          new Paragraph({ children: [new TextRun({ text: 'এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', font: 'Noto Sans Bengali', size: 20 })] }),
           new Paragraph({ text: '' }),
           new Paragraph({ text: '' }),
-          new Paragraph({ children: [new TextRun({ text: 'এসপিও (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', size: 20 })] })
+          new Paragraph({ children: [new TextRun({ text: 'এসপিও (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', font: 'Noto Sans Bengali', size: 20 })] })
         ]
       }
     ]

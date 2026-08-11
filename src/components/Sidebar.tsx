@@ -176,7 +176,7 @@ export default function Sidebar() {
         <Link 
           href={isEmployee ? "/my-portal" : "/dashboard"} 
           onClick={(e) => {
-            if (typeof window !== 'undefined' && (window as any).__unsavedChanges) {
+            if (typeof window !== 'undefined' && (window as Window & { __unsavedChanges?: boolean }).__unsavedChanges) {
               e.preventDefault();
               setTargetHref(isEmployee ? '/my-portal' : '/dashboard');
               setShowWarningModal(true);
@@ -232,7 +232,7 @@ export default function Sidebar() {
           <Link 
             href={isEmployee ? "/my-portal" : "/"} 
             onClick={(e) => {
-              if (typeof window !== 'undefined' && (window as any).__unsavedChanges) {
+              if (typeof window !== 'undefined' && (window as Window & { __unsavedChanges?: boolean }).__unsavedChanges) {
                 e.preventDefault();
                 setTargetHref(isEmployee ? '/my-portal' : '/');
                 setShowWarningModal(true);
@@ -303,7 +303,7 @@ export default function Sidebar() {
                       href={item.href}
                       onClick={(e) => {
                         setIsOpen(false);
-                        if (typeof window !== 'undefined' && (window as any).__unsavedChanges) {
+                        if (typeof window !== 'undefined' && (window as Window & { __unsavedChanges?: boolean }).__unsavedChanges) {
                           e.preventDefault();
                           setTargetHref(item.href);
                           setShowWarningModal(true);
@@ -384,7 +384,7 @@ export default function Sidebar() {
               <button
                 onClick={() => {
                   if (typeof window !== 'undefined') {
-                    (window as any).__unsavedChanges = false;
+                    (window as Window & { __unsavedChanges?: boolean }).__unsavedChanges = false;
                   }
                   setShowWarningModal(false);
                   window.location.href = targetHref;
