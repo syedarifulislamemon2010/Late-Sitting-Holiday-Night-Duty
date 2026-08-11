@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       let message = error.message;
       if (!message || message === 'late_sitting_night_shift_conflict' || message === 'leave_conflict' || message === 'duty_conflict' || message === 'conflict') {
         message = await explainConflictInBengali({
-          type: conflictType,
+          type: conflictType as import('@/lib/ai-explainer').ConflictType,
           employeeName: error.details?.employeeName,
           dates: formattedDates,
           existingLeaveStart: error.details?.existingLeaveStart ? new Date(error.details.existingLeaveStart).toLocaleDateString("bn-BD") : undefined,

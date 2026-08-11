@@ -114,7 +114,7 @@ export class OfficeOrderService {
     .from(employeesTableHelper())
     .innerJoin(cells, eq(employees.cellId, cells.id));
 
-    const findCellNameForEmp = (s: any): string | null => {
+    const findCellNameForEmp = (s: { employeeId?: string | number, employeeName?: string }): string | null => {
       const match = allEmps.find((e) => {
         if (s.employeeId) {
           const sEmpIdStr = s.employeeId.toString().trim();
@@ -131,7 +131,7 @@ export class OfficeOrderService {
     };
 
     const res = ordersList.map((order) => {
-      let parsedDuties: any[] = order.dutiesJson ? JSON.parse(order.dutiesJson) : [];
+      let parsedDuties: import('@/types/app').DutyRecord[] = order.dutiesJson ? JSON.parse(order.dutiesJson) : [];
       
       if (order.category.startsWith('BILL_')) {
         if (parsedDuties.length === 0) {
@@ -249,7 +249,7 @@ export class OfficeOrderService {
         }
 
         // 2. Overlap check: Check if any duty linked to this order belongs to an employee in one of the user's cells
-        const hasOverlap = order.duties && Array.isArray(order.duties) && order.duties.some((d: any) => d.cellName && userCellNames.includes(d.cellName));
+        const hasOverlap = order.duties && Array.isArray(order.duties) && order.duties.some((d: import('@/types/app').DutyRecord) => d.cellName && userCellNames.includes(d.cellName));
 
         return hasOverlap;
       });

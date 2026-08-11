@@ -54,7 +54,7 @@ export async function PUT(
       const formattedDates = error.details?.dates?.map((d: string) => d.split('-').reverse().join('-'));
 
       const bengaliExplanation = await explainConflictInBengali({
-        type: conflictType,
+        type: conflictType as import('@/lib/ai-explainer').ConflictType,
         employeeName: error.details?.employeeName,
         dates: formattedDates,
         existingLeaveStart: error.details?.existingLeaveStart ? new Date(error.details.existingLeaveStart).toLocaleDateString("bn-BD") : undefined,

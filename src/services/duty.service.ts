@@ -74,7 +74,7 @@ export class DutyService {
     if (isUserRestricted) {
       if (filters.orderRef) {
         // Find the office order to see if the user has access to it
-        const allowedNames = [...(currentUser?.cells || []).map((c: any) => c.name), 'All Cells', 'All My Cells', 'IT Department'];
+        const allowedNames = [...(currentUser?.cells || []).map((c: { name: string }) => c.name), 'All Cells', 'All My Cells', 'IT Department'];
         const order = await OfficeOrderRepository.findByOrderRef(filters.orderRef);
         if (order) {
           if (order.cellName && !allowedNames.includes(order.cellName)) {

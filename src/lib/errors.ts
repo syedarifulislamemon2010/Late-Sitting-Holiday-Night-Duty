@@ -33,7 +33,7 @@ export class DatabaseError extends AppError {
 }
 
 export class ConflictError extends AppError {
-  constructor(message: string, public details?: any) {
+  constructor(message: string, public details?: import('@/types/app').DutyConflictDetails) {
     super(message, 409, 'conflict');
   }
 }

@@ -102,7 +102,7 @@ export class LeaveService {
       .where(eq(employees.bankId, validated.bankId))
       .then(r => r[0]);
 
-      const userCellIds = currentUser.cells?.map((c: any) => c.id) || [];
+      const userCellIds = currentUser.cells?.map((c: { id: number }) => c.id) || [];
       if (emp && !userCellIds.includes(emp.cellId)) {
         throw new ConflictError('cell_forbidden', {
           conflictType: 'CELL_FORBIDDEN',
@@ -201,7 +201,7 @@ export class LeaveService {
       .where(eq(employees.bankId, validated.bankId))
       .then(r => r[0]);
 
-      const userCellIds = currentUser.cells?.map((c: any) => c.id) || [];
+      const userCellIds = currentUser.cells?.map((c: { id: number }) => c.id) || [];
       if (emp && !userCellIds.includes(emp.cellId)) {
         throw new ConflictError('cell_forbidden', {
           conflictType: 'CELL_FORBIDDEN',
