@@ -17,6 +17,7 @@ export default function BackupPage() {
   
   const [previewData, setPreviewData] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
     const userStr = localStorage.getItem('currentUser');
@@ -24,6 +25,10 @@ export default function BackupPage() {
       const user = JSON.parse(userStr);
       if (user?.role === 'ADMIN') {
         setIsAdmin(true);
+        fetch('/api/backup?action=history')
+          .then(res => res.json())
+          .then(data => setHistory(data))
+          .catch(err => logger.error('Failed to fetch backup history', err));
       } else {
         window.location.href = '/dashboard';
       }
@@ -170,7 +175,7 @@ export default function BackupPage() {
             <CheckCircle className="text-blue-500" size={24} />
             <div>
               <p className="text-sm text-slate-500 dark:text-slate-400">{isEn ? 'Encryption' : 'এনক্রিপশন'}</p>
-              <p className="font-semibold text-blue-700 dark:text-blue-400">{isEn ? 'Standard (In-transit)' : 'স্ট্যান্ডার্ড (পরিবহনকালীন)'}</p>
+              <p className="font-semibold text-blue-700 dark:text-blue-400">{isEn ? 'AES-256 Sealed & SHA-256 Verified' : 'AES-256 সিল্ড এবং SHA-256 দ্বারা যাচাইকৃত'}</p>
             </div>
           </div>
           <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 p-4 rounded-xl flex items-center gap-3">
@@ -298,7 +303,7 @@ export default function BackupPage() {
           
           <div className="relative group">
             <div className="bg-slate-900 text-slate-300 p-4 rounded-xl font-mono text-xs md:text-sm overflow-x-auto">
-              curl -H &quot;Authorization: Bearer YOUR_CRON_SECRET&quot; {typeof window !== 'undefined' ? window.location.origin : 'https://yourdomain.com'}/api/backup/cron
+              curl -H &quot;Authorization: Bearer YOUR_CRON_SECRET&quot; {typeof window !== 'undefined' ? window.location.origin : 'https://yourdomain.com'}/api/backup
             </div>
             <button 
               onClick={copyCronCommand}
@@ -316,6 +321,31 @@ export default function BackupPage() {
           <div className="text-sm text-slate-600 dark:text-slate-400">
             <strong>{isEn ? 'Note:' : 'বিঃদ্রঃ'}</strong> {isEn ? 'It is highly recommended to take a fresh backup before attempting a restore operation. Restoring a database replaces all current information with the contents of the backup file.' : 'রিস্টোর অপারেশন করার আগে একটি নতুন ব্যাকআপ নেওয়া অত্যন্ত বাঞ্ছনীয়। ডাটাবেস রিস্টোর করলে বর্তমান সমস্ত তথ্য ব্যাকআপ ফাইলের কন্টেন্ট দিয়ে প্রতিস্থাপিত হয়।'}
           </div>
+        </div>
+
+        {/* Backup History Timeline */}
+        <div className="glass-card p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-2 mb-4">
+            <History className="text-indigo-500" size={24} />
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{isEn ? 'Backup History' : 'ব্যাকআপ ইতিহাস'}</h3>
+          </div>
+          {history.length === 0 ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400">{isEn ? 'No backup snapshots found.' : 'কোনো ব্যাকআপ স্ন্যাপশট পাওয়া যায়নি।'}</p>
+          ) : (
+            <div className="space-y-4">
+              {history.slice().reverse().map((snap, idx) => (
+                <div key={idx} className="flex items-start gap-3 border-l-2 border-indigo-200 dark:border-indigo-800 pl-4 py-1 relative">
+                  <div className="absolute w-3 h-3 bg-indigo-500 rounded-full -left-[7px] top-2 shadow"></div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{new Date(snap.date).toLocaleString(isEn ? 'en-US' : 'bn-BD')}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      {snap.id} &bull; {(snap.size / 1024).toFixed(1)} KB &bull; {snap.tablesCount} {isEn ? 'tables' : 'টেবিল'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </AuthGuard>

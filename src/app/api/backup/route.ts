@@ -6,11 +6,66 @@ import * as schema from '@/db/schema';
 import { sql } from 'drizzle-orm';
 
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+
+const BACKUP_DIR = path.join(process.cwd(), 'backups');
+const HISTORY_FILE = path.join(BACKUP_DIR, 'history.json');
+
+// Ensure backup directory exists
+if (!fs.existsSync(BACKUP_DIR)) {
+  fs.mkdirSync(BACKUP_DIR, { recursive: true });
+}
+
+if (!fs.existsSync(HISTORY_FILE)) {
+  fs.writeFileSync(HISTORY_FILE, JSON.stringify([]));
+}
+
+const ENCRYPTION_KEY = crypto.createHash('sha256').update(process.env.BACKUP_ENCRYPTION_KEY || 'default-secure-key-12345').digest();
+
+function encryptData(data: string) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
+  const encrypted = Buffer.concat([cipher.update(data, 'utf8'), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return {
+    encryptedData: encrypted.toString('base64'),
+    iv: iv.toString('base64'),
+    authTag: authTag.toString('base64')
+  };
+}
+
+function decryptData(encryptedData: string, ivBase64: string, authTagBase64: string) {
+  const decipher = crypto.createDecipheriv('aes-256-gcm', ENCRYPTION_KEY, Buffer.from(ivBase64, 'base64'));
+  decipher.setAuthTag(Buffer.from(authTagBase64, 'base64'));
+  const decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedData, 'base64')), decipher.final()]);
+  return decrypted.toString('utf8');
+}
+
+function addHistoryLog(log: any) {
+  try {
+    const history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
+    history.push(log);
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
+  } catch (error) {
+    logger.error('Failed to write backup history', error);
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
+    const action = req.nextUrl.searchParams.get('action');
+    if (action === 'history') {
+      const history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
+      return NextResponse.json(history);
+    }
+
     const currentUser = await getCurrentUser();
-    if (!currentUser || currentUser.role !== 'ADMIN') {
+    // Allow cron secret bypass
+    const cronSecret = req.headers.get('authorization')?.split(' ')[1] || req.headers.get('cron_secret');
+    const isCron = cronSecret === process.env.CRON_SECRET;
+    
+    if (!isCron && (!currentUser || currentUser.role !== 'ADMIN')) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }
 
@@ -46,14 +101,31 @@ export async function GET(req: NextRequest) {
         recordCounts[key] = (allData as any)[key].length;
       });
 
+      const encrypted = encryptData(dataString);
+
       responseData = {
         version: '1.0',
         timestamp: new Date().toISOString(),
         checksum,
         tablesCount: Object.keys(allData).length,
         recordCounts,
-        data: allData,
+        payload: encrypted, // Add encrypted payload
+        data: req.nextUrl.searchParams.get('encryptOnly') === 'true' ? undefined : allData, // Optional raw data based on parameter
       };
+
+      // Save locally
+      const fileName = `backup-${new Date().toISOString().split('T')[0]}-${Date.now()}.json`;
+      const filePath = path.join(BACKUP_DIR, fileName);
+      fs.writeFileSync(filePath, JSON.stringify(responseData, null, 2));
+
+      // Log to history
+      addHistoryLog({
+        id: fileName,
+        date: new Date().toISOString(),
+        size: fs.statSync(filePath).size,
+        status: 'success',
+        tablesCount: Object.keys(allData).length,
+      });
     }
 
     return new NextResponse(JSON.stringify(responseData), {
@@ -89,9 +161,21 @@ export async function POST(req: NextRequest) {
     let backupData = parsedInput;
     let isManifest = false;
     
-    if (parsedInput.version === '1.0' && parsedInput.data) {
+    if (parsedInput.version === '1.0') {
       isManifest = true;
-      backupData = parsedInput.data;
+      
+      if (parsedInput.payload && parsedInput.payload.encryptedData) {
+        try {
+          const decryptedStr = decryptData(parsedInput.payload.encryptedData, parsedInput.payload.iv, parsedInput.payload.authTag);
+          backupData = JSON.parse(decryptedStr);
+        } catch (err) {
+          return NextResponse.json({ error: 'decryption_failed', message: 'Failed to decrypt backup data. Invalid key or corrupted data.' }, { status: 400 });
+        }
+      } else if (parsedInput.data) {
+        backupData = parsedInput.data;
+      } else {
+         return NextResponse.json({ error: 'invalid_format', message: 'No valid data payload found in backup file.' }, { status: 400 });
+      }
       
       const dataString = JSON.stringify(backupData);
       const computedChecksum = crypto.createHash('sha256').update(dataString).digest('hex');
