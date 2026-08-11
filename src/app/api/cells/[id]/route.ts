@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -52,7 +53,7 @@ export async function PUT(
     
     return NextResponse.json(cell);
   } catch (error) {
-    console.error('Error updating cell:', error);
+    logger.error('Error updating cell:', error);
     return NextResponse.json({ error: 'failed_to_update_cell' }, { status: 500 });
   }
 }
@@ -105,7 +106,7 @@ export async function DELETE(
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting cell:', error);
+    logger.error('Error deleting cell:', error);
     return NextResponse.json({ error: 'failed_to_delete_cell' }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { AppError, AuthError } from '@/lib/errors';
 import { officeOrderCreateSchema, officeOrderUpdateSchema } from '@/validations/officeOrder.schema';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 
 interface UserSession {
   id: number;
@@ -127,11 +128,6 @@ export class OfficeOrderService {
         return false;
       });
       return match ? match.cellName : null;
-    };
-
-    const toBanglaDigits = (num: string | number): string => {
-      const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-      return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit)]);
     };
 
     const res = ordersList.map((order) => {

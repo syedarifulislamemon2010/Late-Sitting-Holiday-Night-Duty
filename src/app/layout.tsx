@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
@@ -11,6 +12,29 @@ import { TopProgressBar } from "@/components/TopProgressBar";
 
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ToastProvider } from "@/context/ToastContext";
+import PageTransition from "@/components/PageTransition";
+import { Inter, Noto_Sans_Bengali, Hind_Siliguri } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const notoSansBengali = Noto_Sans_Bengali({
+  subsets: ["bengali"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-noto-sans-bengali",
+  display: "swap",
+});
+
+const hindSiliguri = Hind_Siliguri({
+  subsets: ["bengali"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hind-siliguri",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল",
@@ -26,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" className="h-full" suppressHydrationWarning={true}>
+    <html lang="bn" className={`h-full ${inter.variable} ${notoSansBengali.variable} ${hindSiliguri.variable}`} suppressHydrationWarning={true}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0b5e9e" />
@@ -37,7 +61,7 @@ export default function RootLayout({
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').catch(function(err) {
-                    console.log('SW reg failed: ', err);
+                    logger.info('SW reg failed: ', err);
                   });
                 });
               }
@@ -75,6 +99,9 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300" suppressHydrationWarning={true}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:shadow-lg">
+          মূল বিষয়বস্তুতে যান
+        </a>
         <TopProgressBar />
         <LanguageProvider>
           <ProfileProvider>
@@ -83,13 +110,13 @@ export default function RootLayout({
                 <AuthGuard>
                   <div className="flex-1 flex flex-col lg:flex-row min-h-0" suppressHydrationWarning={true}>
                   <Sidebar />
-                  <main className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
+                  <main id="main-content" className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
                     <Navbar />
                     <CommandCenter />
                     <CommandPalette />
                     <div className="flex-1 p-4 lg:p-8 overflow-y-auto flex flex-col justify-between" suppressHydrationWarning={true}>
                     <div className="flex-1">
-                      {children}
+                      <PageTransition>{children}</PageTransition>
                     </div>
                     
                     {/* Premium Dashboard Footer */}

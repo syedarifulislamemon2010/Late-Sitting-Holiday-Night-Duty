@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useProfile } from '@/context/ProfileContext';
@@ -7,6 +8,7 @@ import { TableSkeleton } from "@/components/SkeletonLoader";
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 import dynamic from 'next/dynamic';
 import { cleanBracketName, renderDatesInPairs } from '@/lib/print-helpers';
+import { toBanglaDigits, getBanglaNumberWords } from '@/lib/bengali-converter';
 const RosterOCRImport = dynamic(() => import('./components/RosterOCRImport'), { ssr: false });
 
 import { 
@@ -153,11 +155,6 @@ const isNameMatchingRef = (empName: string, ref: string): boolean => {
   return firstWord ? cleanRef.includes(firstWord) : false;
 };
 
-const toBanglaDigits = (num: number | string) => {
-  const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-  return num.toString().replace(/\d/g, d => bn[parseInt(d, 10)]);
-};
-
 const getBanglaMonthYearLabel = (ym: string) => {
   if (!ym || !ym.includes('-')) return '';
   const [yearStr, monthStr] = ym.split('-');
@@ -181,51 +178,7 @@ const getDefaultDescription = (empName: string | null | undefined, category: str
 };
 
 
-const getBanglaNumberWords = (num: number) => {
-  if (num === 0) return 'শূন্য';
-  
-  const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
-  const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
-  const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
 
-  const convertTens = (n: number): string => {
-    if (n < 10) return singleWords[n];
-    if (n >= 10 && n < 20) return teenWords[n - 10];
-    const ten = Math.floor(n / 10);
-    const unit = n % 10;
-    return doubleWords[ten] + (unit > 0 ? ' ' + singleWords[unit] : '');
-  };
-
-  let wordStr = '';
-  
-  // Lac portion
-  if (num >= 100000) {
-    const lac = Math.floor(num / 100000);
-    wordStr += convertTens(lac) + ' লক্ষ ';
-    num %= 100000;
-  }
-
-  // Thousand portion
-  if (num >= 1000) {
-    const thousand = Math.floor(num / 1000);
-    wordStr += convertTens(thousand) + ' হাজার ';
-    num %= 1000;
-  }
-  
-  // Hundred portion
-  if (num >= 100) {
-    const hundred = Math.floor(num / 100);
-    wordStr += singleWords[hundred] + ' শত ';
-    num %= 100;
-  }
-  
-  // Tens portion
-  if (num > 0) {
-    wordStr += convertTens(num);
-  }
-  
-  return wordStr.trim() + ' টাকা মাত্র';
-};
 
 const LATE_SITTING_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>ছুটির পর (Late Sitting)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
 const NIGHT_SHIFT_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>রাত্রিকালীন (Night Shift)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
@@ -1300,7 +1253,7 @@ export default function RosterPage() {
         }, 300);
       }
     } catch (err) {
-      console.error('Error in archiveOrder:', err);
+      logger.error('Error in archiveOrder:', err);
       alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     }
   };
@@ -1357,7 +1310,7 @@ export default function RosterPage() {
       });
 
       if (res.ok) {
-        console.log('Office order saved to archive successfully!');
+        logger.info('Office order saved to archive successfully!');
         setIsArchived(true);
         
         await updateAssociatedBill(orderRef, isEditingArchive ? originalOrderRef : undefined);
@@ -1381,7 +1334,7 @@ export default function RosterPage() {
         alert(`আর্কাইভে সংরক্ষণ করতে ব্যর্থ হয়েছে। সার্ভার মেসেজ: ${errData.message || errData.error || 'অজানা ত্রুটি'}`);
       }
     } catch (err) {
-      console.error('Error in saveOrderToArchive:', err);
+      logger.error('Error in saveOrderToArchive:', err);
       alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     } finally {
       setSubmitting(false);
@@ -1437,7 +1390,7 @@ export default function RosterPage() {
         list = Array.isArray(data) ? data : [];
       }
     } catch (err) {
-      console.error('Error loading duties for preview:', err);
+      logger.error('Error loading duties for preview:', err);
     }
 
     if (list.length === 0 && order.duties && order.duties.length > 0) {
@@ -1522,7 +1475,7 @@ export default function RosterPage() {
         alert(`মুছে ফেলতে ব্যর্থ হয়েছে: ${data.message || data.error || 'অজানা ত্রুটি'}`);
       }
     } catch (err) {
-      console.error('Error deleting office order:', err);
+      logger.error('Error deleting office order:', err);
       alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     }
   };
@@ -1562,7 +1515,7 @@ export default function RosterPage() {
       const orders = await ordersRes.json();
       const existingBill = orders.find((o: OfficeOrder) => o.orderRef === billRef || (oldBillRef && o.orderRef === oldBillRef));
       if (!existingBill) {
-        console.log("No existing bill found for this office order. Skipping bill update.");
+        logger.info("No existing bill found for this office order. Skipping bill update.");
         return;
       }
       
@@ -1695,9 +1648,9 @@ export default function RosterPage() {
         body: JSON.stringify(pdfPayload)
       });
       
-      console.log("Associated bill and PDF updated successfully!");
+      logger.info("Associated bill and PDF updated successfully!");
     } catch (err) {
-      console.error("Failed to update associated bill:", err);
+      logger.error("Failed to update associated bill:", err);
     }
   };
 
@@ -1760,7 +1713,7 @@ export default function RosterPage() {
         }
       }
     } catch (err) {
-      console.error('Error loading static data:', err);
+      logger.error('Error loading static data:', err);
     } finally {
       setIsLoading(false);
     }
@@ -1817,7 +1770,7 @@ export default function RosterPage() {
       
       setDuties(filteredList);
     } catch (err) {
-      console.error('Error loading duties:', err);
+      logger.error('Error loading duties:', err);
     }
   }, [isEditingArchive, selectedMonths, selectedCell, isPrintMode, isArchived, orderRef]);
 
@@ -1829,7 +1782,7 @@ export default function RosterPage() {
         setOfficeOrders(Array.isArray(data) ? data : []);
       }
     } catch (err) {
-      console.error('Error loading office orders:', err);
+      logger.error('Error loading office orders:', err);
     }
   }, []);
 
@@ -1868,7 +1821,7 @@ export default function RosterPage() {
       const params = new URLSearchParams(window.location.search);
       const editRef = params.get('edit_ref');
       if (editRef) {
-        console.log("Loading archived order for editing:", editRef);
+        logger.info("Loading archived order for editing:", editRef);
         
         const loadArchivedDuties = async () => {
           try {
@@ -2038,7 +1991,7 @@ export default function RosterPage() {
               }
             }
           } catch (e) {
-            console.error("Failed to load archived duties for editing:", e);
+            logger.error("Failed to load archived duties for editing:", e);
           } finally {
             setTimeout(() => {
               isInitializingArchiveRef.current = false;
@@ -2176,7 +2129,7 @@ export default function RosterPage() {
         loadDuties();
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       alert('ডিউটি ইম্পোর্ট করতে সমস্যা হয়েছে।');
     } finally {
       setSubmitting(false);
@@ -2214,7 +2167,7 @@ export default function RosterPage() {
         setErrorMessage(err.message || err.error || 'ডাটা সেভ করতে সমস্যা হয়েছে।');
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setErrorMessage('একটি নেটওয়ার্ক সমস্যা হয়েছে।');
     } finally {
       setSubmitting(false);
@@ -2241,7 +2194,7 @@ export default function RosterPage() {
       setSelectedDutyIds([]);
       await loadDuties();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       alert('ডিউটি মুছে ফেলতে সমস্যা হয়েছে।');
     } finally {
       setSubmitting(false);
@@ -2364,7 +2317,7 @@ export default function RosterPage() {
         loadDuties();
         alert('ডিউটি সফলভাবে আপডেট করা হয়েছে!');
       } catch (err) {
-        console.error('Error updating duty:', err);
+        logger.error('Error updating duty:', err);
         setErrorMessage('সার্ভার কানেকশন ব্যর্থ হয়েছে।');
       } finally {
         setSubmitting(false);
@@ -2612,7 +2565,7 @@ export default function RosterPage() {
       // Show success toast/alert
       alert('ডিউটি রোস্টার সফলভাবে সংরক্ষণ করা হয়েছে!');
     } catch (err) {
-      console.error('Error assigning roster:', err);
+      logger.error('Error assigning roster:', err);
       const errorMsg = err instanceof Error ? err.message : String(err);
       if (errorMsg === 'duplicate_duty_on_date') {
         setErrorMessage('এই তারিখের মধ্যে কোনো কোনো কর্মকর্তার জন্য ইতিমধ্যে অন্য ডিউটি বা লেট সিটিং বরাদ্দ আছে। ডুপ্লিকেট এন্ট্রি করা সম্ভব নয়।');
@@ -2640,7 +2593,7 @@ export default function RosterPage() {
       loadDuties();
       alert('ডিউটি রেকর্ডসমূহ সফলভাবে মুছে ফেলা হয়েছে।');
     } catch (err) {
-      console.error('Error deleting duties:', err);
+      logger.error('Error deleting duties:', err);
       alert('ডিউটি রেকর্ড মুছতে ব্যর্থ হয়েছে।');
     }
   };
@@ -2684,7 +2637,7 @@ export default function RosterPage() {
         [representative.employeeId]: ym
       });
     } catch (err) {
-      console.error('Error loading edit duties:', err);
+      logger.error('Error loading edit duties:', err);
       setEditingDuties(dutiesList);
       
       // Set common form values
@@ -3041,7 +2994,7 @@ export default function RosterPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       alert('ওয়ার্ড ফাইল জেনারেট করতে সমস্যা হয়েছে।');
     }
   };

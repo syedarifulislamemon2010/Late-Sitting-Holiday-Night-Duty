@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { 
@@ -123,7 +124,7 @@ export default function MyPortalPage() {
         setMobileNo(data.employee.mobile);
       }
     } catch (err: any) {
-      console.error(err);
+      logger.error(err);
       setError(err.message || 'সার্ভার থেকে তথ্য সংগ্রহ করা যাচ্ছে না।');
     } finally {
       setLoading(false);

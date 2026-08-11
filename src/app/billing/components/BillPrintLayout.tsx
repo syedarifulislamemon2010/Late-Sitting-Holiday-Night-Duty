@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import React from 'react';
 import Image from 'next/image';
 import { FileText, Printer, X } from 'lucide-react';
@@ -103,7 +104,7 @@ export default function BillPrintLayout({
         });
         fetchDutiesForBilling();
       } catch (e) {
-        console.error('Failed to update printed status:', e);
+        logger.error('Failed to update printed status:', e);
       }
     }
 
@@ -345,7 +346,7 @@ export default function BillPrintLayout({
                         try {
                           dutiesList = viewingOrder.duties || JSON.parse(viewingOrder.dutiesJson || '[]');
                         } catch (e) {
-                          console.error(e);
+                          logger.error(e);
                         }
                         if (!dutiesList || dutiesList.length === 0) return null;
 
@@ -527,7 +528,7 @@ export default function BillPrintLayout({
                       try {
                         dutiesList = JSON.parse(viewingOrder.dutiesJson);
                       } catch (e) {
-                        console.error(e);
+                        logger.error(e);
                       }
                     }
                     return dutiesList.length > 0 ? (

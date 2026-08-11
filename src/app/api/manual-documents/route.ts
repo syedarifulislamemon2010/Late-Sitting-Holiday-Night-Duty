@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -31,7 +32,7 @@ export async function GET() {
     }
     return NextResponse.json(docs);
   } catch (error) {
-    console.error('Error fetching manual documents:', error);
+    logger.error('Error fetching manual documents:', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }
@@ -108,7 +109,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, document: doc });
   } catch (error) {
-    console.error('Manual File Upload Error:', error);
+    logger.error('Manual File Upload Error:', error);
     return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
@@ -177,7 +178,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ success: true, message: 'Document updated successfully' });
   } catch (error) {
-    console.error('Error updating manual document:', error);
+    logger.error('Error updating manual document:', error);
     return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
@@ -238,7 +239,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true, message: 'Document moved to Recycle Bin' });
   } catch (error) {
-    console.error('Error deleting manual document:', error);
+    logger.error('Error deleting manual document:', error);
     return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

@@ -3,25 +3,32 @@ import type { NextRequest } from 'next/server';
 
 // Simple in-memory token bucket rate limiter
 const rateLimitMap = new Map<string, { tokens: number; lastRefilled: number }>();
-
-const BUCKET_CAPACITY = 10;
-const REFILL_RATE_MS = 6000; // Refill 1 token every 6 seconds (10 tokens per minute)
+const BUCKET_CAPACITY = 30;
+const REFILL_RATE_MS = 2000; // Refill 1 token every 2 seconds
 
 export function proxy(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+  const { pathname } = request.nextUrl;
 
-  // Rate limit POST logins and any document generation endpoints
-  const isAuthPost = pathname.startsWith('/api/auth/signin') && request.method === 'POST';
-  const isDocGen = pathname.startsWith('/api/documents/generate-');
+  // Allow unrestricted access to public paths
+  const publicPaths = ['/login', '/api/auth', '/_next', '/favicon.ico', '/manifest.json', '/sw.js', '/janata-bank-logo', '/api/ping'];
+  const isPublic = publicPaths.some(p => pathname.startsWith(p));
 
-  if (isAuthPost || isDocGen) {
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
-    const cleanIp = ip.split(',')[0].trim();
+  // Authentication Check for non-public routes
+  if (!isPublic) {
+    const token = request.cookies.get('next-auth.session-token') || request.cookies.get('__Secure-next-auth.session-token');
+    if (!token && pathname !== '/login') {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('callbackUrl', request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
 
+  // Rate Limiting for API routes
+  if (pathname.startsWith('/api/')) {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '127.0.0.1';
     const now = Date.now();
-    const limit = rateLimitMap.get(cleanIp) || { tokens: BUCKET_CAPACITY, lastRefilled: now };
+    const limit = rateLimitMap.get(ip) || { tokens: BUCKET_CAPACITY, lastRefilled: now };
 
-    // Calculate how many tokens should be refilled since last refilled
     const msPassed = now - limit.lastRefilled;
     const tokensToRefill = Math.floor(msPassed / REFILL_RATE_MS);
 
@@ -31,7 +38,6 @@ export function proxy(request: NextRequest) {
     }
 
     if (limit.tokens <= 0) {
-      // Out of tokens
       return new NextResponse(
         JSON.stringify({ 
           error: 'too_many_requests', 
@@ -44,15 +50,24 @@ export function proxy(request: NextRequest) {
       );
     }
 
-    // Deduct 1 token
     limit.tokens -= 1;
-    rateLimitMap.set(cleanIp, limit);
+    rateLimitMap.set(ip, limit);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  // Security Headers
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+  return response;
 }
 
-// Config matcher targeting authentication and document generation paths
 export const config = {
-  matcher: ['/api/auth/:path*', '/api/documents/:path*'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|janata-bank-logo).*)',
+  ],
 };

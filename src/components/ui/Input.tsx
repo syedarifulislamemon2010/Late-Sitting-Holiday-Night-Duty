@@ -34,6 +34,8 @@ export function Input({
       <input
         id={inputId}
         type={type}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${inputId}-error` : undefined}
         className={`w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-900 border ${
           error 
             ? 'border-danger-400 focus:ring-danger-500 focus:border-danger-500' 
@@ -44,6 +46,7 @@ export function Input({
       />
       {error && (
         <span 
+          id={`${inputId}-error`}
           className="text-[11px] font-semibold text-danger-700 dark:text-danger-400"
           style={{ letterSpacing: 'normal' }}
         >

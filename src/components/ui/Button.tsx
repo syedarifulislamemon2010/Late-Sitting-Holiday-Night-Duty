@@ -53,6 +53,8 @@ export function Button({
     <button
       type={type}
       disabled={isBtnDisabled}
+      aria-disabled={isBtnDisabled ? 'true' : undefined}
+      aria-busy={loading ? 'true' : undefined}
       onClick={handlePress}
       className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${isBtnDisabled ? 'opacity-50 cursor-not-allowed active:scale-100' : ''} ${className}`}
       {...props}

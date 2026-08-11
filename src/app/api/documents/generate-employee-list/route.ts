@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { cells, employees, executives as executivesTable, documents } from '@/db/schema';
@@ -109,7 +110,7 @@ export async function POST(request: Request) {
           try {
             parsedDuties = JSON.parse(u.cellDuties);
           } catch (e) {
-            console.warn('Failed to parse cellDuties for user', u.username, e);
+            logger.warn('Failed to parse cellDuties for user', u.username, e);
           }
         }
         userCellDutiesMap.set(usernameKey, parsedDuties);
@@ -603,7 +604,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('Error generating employee list document:', error);
+    logger.error('Error generating employee list document:', error);
     return NextResponse.json({ error: 'failed_to_generate_employee_list', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

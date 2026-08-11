@@ -1,6 +1,8 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 import Link from 'next/link';
 import { 
   Calendar, 
@@ -15,11 +17,6 @@ import {
 
 import { useLanguage } from '@/context/LanguageContext';
 
-function toBanglaDigits(num: number | string): string {
-  if (num === null || num === undefined) return '';
-  const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-  return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
-}
 
 function getBanglaMonthLabel(yearMonth: string): string {
   if (!yearMonth) return '';
@@ -137,7 +134,7 @@ export default function MyDutySummaryCard() {
                 });
               }
             } catch (e) {
-              console.error('Error parsing bill dutiesJson:', e);
+              logger.error('Error parsing bill dutiesJson:', e);
             }
           });
 
@@ -172,7 +169,7 @@ export default function MyDutySummaryCard() {
           }
         }
       } catch (err) {
-        console.error('Error fetching personal summary:', err);
+        logger.error('Error fetching personal summary:', err);
         setIsEmployee(false);
       } finally {
         setLoading(false);

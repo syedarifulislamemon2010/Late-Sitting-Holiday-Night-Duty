@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -38,7 +39,7 @@ export async function GET() {
           }
         }
       } catch (fileErr) {
-        console.error('Failed to unlink expired trash document file:', fileErr);
+        logger.error('Failed to unlink expired trash document file:', fileErr);
       }
     }
 
@@ -62,7 +63,7 @@ export async function GET() {
 
     return NextResponse.json(activeTrash);
   } catch (error) {
-    console.error('Error fetching/cleaning trash:', error);
+    logger.error('Error fetching/cleaning trash:', error);
     return NextResponse.json({ error: 'failed_to_fetch_trash' }, { status: 500 });
   }
 }
@@ -300,7 +301,7 @@ export async function POST(request: Request) {
           continue;
         }
       } catch (innerErr) {
-        console.error(`Error processing trash ID ${currentId}:`, innerErr);
+        logger.error(`Error processing trash ID ${currentId}:`, innerErr);
         failCount++;
         lastErrorMessage = (innerErr instanceof Error ? innerErr.message : String(innerErr)) || 'সার্ভার সমস্যা হয়েছে।';
       }
@@ -315,7 +316,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: 'সব রেকর্ড সফলভাবে প্রসেস করা হয়েছে!' });
   } catch (error) {
-    console.error('Error handling trash action:', error);
+    logger.error('Error handling trash action:', error);
     return NextResponse.json({ error: 'trash_action_failed', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

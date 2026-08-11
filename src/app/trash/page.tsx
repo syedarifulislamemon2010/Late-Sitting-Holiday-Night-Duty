@@ -1,6 +1,8 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 import AuthGuard from '@/components/AuthGuard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -45,7 +47,7 @@ export default function TrashPage() {
         setTrashItems(Array.isArray(data) ? data : []);
       }
     } catch (err) {
-      console.error('Error fetching trash:', err);
+      logger.error('Error fetching trash:', err);
     } finally {
       setLoading(false);
     }
@@ -101,7 +103,7 @@ export default function TrashPage() {
         alert(result.message || 'রেকর্ড পুনরুদ্ধার করতে ব্যর্থ হয়েছে।');
       }
     } catch (err) {
-      console.error('Error restoring:', err);
+      logger.error('Error restoring:', err);
       alert('পুনরুদ্ধার প্রক্রিয়া ব্যর্থ হয়েছে।');
     } finally {
       setActionLoading(null);
@@ -131,7 +133,7 @@ export default function TrashPage() {
         alert(result.message || 'রেকর্ড পুনরুদ্ধার করতে ব্যর্থ হয়েছে।');
       }
     } catch (err) {
-      console.error('Error bulk restoring:', err);
+      logger.error('Error bulk restoring:', err);
       alert('পুনরুদ্ধার প্রক্রিয়া ব্যর্থ হয়েছে।');
     } finally {
       setActionLoading(null);
@@ -139,11 +141,7 @@ export default function TrashPage() {
   };
 
 
-  // Convert numbers to Bengali digits
-  const toBanglaDigits = (numStr: string | number): string => {
-    const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return numStr.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
-  };
+
 
   const getRemainingDays = (deletedAtStr: string) => {
     if (nowTime === 0) return 30;

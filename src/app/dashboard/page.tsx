@@ -1,6 +1,8 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect, useMemo } from 'react';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 import Link from 'next/link';
 import { 
   Calendar,
@@ -22,11 +24,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/context/ToastContext';
 import { useLanguage } from '@/context/LanguageContext';
 
-// Custom Bangla digit converter
-function toBanglaDigits(num: number | string): string {
-  const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-  return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
-}
+
 
 const MONTH_NAMES = [
   'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
@@ -166,7 +164,7 @@ export default function DashboardPage() {
           setMonthlyTrend(trendData);
         }
       } catch (err) {
-        console.error('Analytics aggregation error:', err);
+        logger.error('Analytics aggregation error:', err);
       } finally {
         setChartLoading(false);
       }
@@ -194,7 +192,7 @@ export default function DashboardPage() {
           }
         }
       } catch (err) {
-        console.error('Error fetching dashboard stats:', err);
+        logger.error('Error fetching dashboard stats:', err);
       } finally {
         setLoading(false);
       }

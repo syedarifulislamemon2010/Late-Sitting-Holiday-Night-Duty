@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
@@ -39,7 +40,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error serving uploaded file:', error);
+    logger.error('Error serving uploaded file:', error);
     return new Response('Internal Server Error', { status: 500 });
   }
 }

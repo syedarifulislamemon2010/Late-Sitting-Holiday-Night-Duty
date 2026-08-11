@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
@@ -145,7 +146,7 @@ export default function ExecutivesPage() {
       });
       setExecutives(filteredExecs);
     } catch (err) {
-      console.error('Error loading executives:', err);
+      logger.error('Error loading executives:', err);
     } finally {
       setLoading(false);
     }
@@ -203,7 +204,7 @@ export default function ExecutivesPage() {
       setForm({ name: '', designation: STRICT_DESIGNATIONS[0], bankId: '', fileNo: '' });
       loadData();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setErrorMessage('সার্ভার সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
     }
   };
@@ -215,7 +216,7 @@ export default function ExecutivesPage() {
       const res = await fetch(`/api/executives/${id}`, { method: 'DELETE' });
       if (res.ok) loadData();
     } catch (err) {
-      console.error('Error deleting executive:', err);
+      logger.error('Error deleting executive:', err);
     }
   };
 
@@ -236,7 +237,7 @@ export default function ExecutivesPage() {
         return null;
       }
     } catch (err) {
-      console.error('Error generating employee list:', err);
+      logger.error('Error generating employee list:', err);
       setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
       return null;
     } finally {

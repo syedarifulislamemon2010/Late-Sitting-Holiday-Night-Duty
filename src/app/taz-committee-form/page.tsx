@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
@@ -290,7 +291,7 @@ export default function TazCommitteeFormPage() {
           setCells(cellList);
         }
       } catch (err) {
-        console.error('Error loading Taz form dependencies:', err);
+        logger.error('Error loading Taz form dependencies:', err);
       } finally {
         setLoading(false);
       }

@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, document: doc });
   } catch (error) {
-    console.error('File Upload Error:', error);
+    logger.error('File Upload Error:', error);
     return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

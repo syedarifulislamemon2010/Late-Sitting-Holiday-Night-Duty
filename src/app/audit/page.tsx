@@ -1,6 +1,8 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 import AuthGuard from '@/components/AuthGuard';
 import { 
   ClipboardList, 
@@ -45,7 +47,7 @@ export default function AuditPage() {
         setLogs(Array.isArray(data) ? data : []);
       }
     } catch (err) {
-      console.error('Error fetching audit logs:', err);
+      logger.error('Error fetching audit logs:', err);
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,7 @@ export default function AuditPage() {
           setLogs(Array.isArray(data) ? data : []);
         }
       } catch (err) {
-        console.error('Error fetching audit logs:', err);
+        logger.error('Error fetching audit logs:', err);
       } finally {
         if (active) setLoading(false);
       }
@@ -77,10 +79,7 @@ export default function AuditPage() {
     fetchLogs();
   };
 
-  const toBanglaDigits = (numStr: string | number): string => {
-    const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return numStr.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
-  };
+
 
   const getActionBadgeColor = (action: string) => {
     switch (action?.toUpperCase()) {

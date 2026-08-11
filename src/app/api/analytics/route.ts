@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -494,7 +495,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('Analytics GET Error:', error);
+    logger.error('Analytics GET Error:', error);
     return NextResponse.json({ error: 'database_error', message: 'ডাটাবেজ সার্ভার ত্রুটি!' }, { status: 500 });
   }
 }

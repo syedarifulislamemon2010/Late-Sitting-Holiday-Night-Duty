@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { ShieldCheck, AlertCircle, Eye, EyeOff, Lock, User, KeyRound } from 'lucide-react';
@@ -340,7 +341,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (err) {
-        console.warn('Auth verification failed (transient network error)');
+        logger.warn('Auth verification failed (transient network error)');
         setAuthenticated(false);
         setUserProfile(null);
       }

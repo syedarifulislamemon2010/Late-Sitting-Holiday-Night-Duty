@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 import { 
   ArrowUpDown, 
   Search, 
@@ -202,13 +203,7 @@ export function Table<T>({
     return paginatedData.every((item) => selectedIds.has(getRowId(item)));
   }, [paginatedData, selectedIds]);
 
-  const toBanglaDigits = (numStr: string | number) => {
-    const banglaMap: { [key: string]: string } = {
-      '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-      '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯'
-    };
-    return numStr.toString().replace(/[0-9]/g, digit => banglaMap[digit] || digit);
-  };
+
 
   return (
     <div className="space-y-4 w-full select-none font-sans">
@@ -284,22 +279,25 @@ export function Table<T>({
       {/* 2. Main Data Table Wrapper */}
       <div className="bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-850/60 rounded-2xl shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse" role="table" aria-label="Data Table">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200/60 dark:border-slate-800/80 text-xs font-bold text-slate-500 select-none">
                 {bulkActions.length > 0 && (
-                  <th className="py-3 px-4 w-10 text-center">
+                  <th className="py-3 px-4 w-10 text-center" scope="col">
                     <input
                       type="checkbox"
                       checked={allPageRowsSelected}
                       onChange={handleSelectAll}
                       className="rounded border-slate-350 text-primary-600 focus:ring-primary-500 cursor-pointer w-4 h-4"
+                      aria-label="Select all rows"
                     />
                   </th>
                 )}
                 {columns.map((col) => (
                   <th
                     key={col.key}
+                    scope="col"
+                    aria-sort={sortColumn === col.key ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                     onClick={() => col.sortable && handleSort(col.key)}
                     className={`py-3 px-4 text-xs font-bold text-slate-500 ${
                       col.sortable ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-all select-none' : ''

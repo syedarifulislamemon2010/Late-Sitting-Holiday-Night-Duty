@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
@@ -65,7 +66,7 @@ export function handleApiError(error: unknown) {
     );
   }
 
-  console.error('Unhandled API Error:', error);
+  logger.error('Unhandled API Error:', error);
 
   // Send Centralized Error Webhook Alert (Discord/Slack compatible)
   const webhookUrl = process.env.ERROR_WEBHOOK_URL;
@@ -86,7 +87,7 @@ export function handleApiError(error: unknown) {
         }]
       })
     }).catch(webhookErr => {
-      console.error('Failed to send error notification webhook:', webhookErr);
+      logger.error('Failed to send error notification webhook:', webhookErr);
     });
   }
 

@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
@@ -59,7 +60,7 @@ export const authOptions: NextAuthOptions = {
               B: user.id,
             });
 
-            console.log(`Auto-provisioned User record for Employee: ${employee.name} (${employee.bankId})`);
+            logger.info(`Auto-provisioned User record for Employee: ${employee.name} (${employee.bankId})`);
           }
         }
 
@@ -89,7 +90,7 @@ export const authOptions: NextAuthOptions = {
               details: `${user.name} (@${user.username}) সিস্টেমে সফলভাবে লগইন করেছেন (NextAuth)।`
             });
           } catch (e) {
-            console.error('Failed to log login activity in authorize callback:', e);
+            logger.error('Failed to log login activity in authorize callback:', e);
           }
 
           return {
@@ -142,10 +143,10 @@ export const authOptions: NextAuthOptions = {
   logger: {
     error(code, ...metadata) {
       if (code === 'JWT_SESSION_ERROR' && metadata.some(m => String(m).includes('decryption operation failed'))) {
-        console.warn('NextAuth: Session decryption failed (likely due to expired or mismatched browser cookies). Redirecting to login.');
+        logger.warn('NextAuth: Session decryption failed (likely due to expired or mismatched browser cookies). Redirecting to login.');
         return;
       }
-      console.error(code, ...metadata);
+      logger.error(code, ...metadata);
     }
   }
 };

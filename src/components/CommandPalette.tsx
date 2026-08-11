@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -126,7 +127,7 @@ export default function CommandPalette() {
         setResults([...empMatches, ...cellMatches, ...pageMatches]);
         setSelectedIndex(0);
       } catch (err) {
-        console.error('Spotlight search error:', err);
+        logger.error('Spotlight search error:', err);
       } finally {
         setLoading(false);
       }

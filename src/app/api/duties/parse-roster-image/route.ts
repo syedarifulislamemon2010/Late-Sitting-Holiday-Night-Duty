@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getCurrentUser } from "@/lib/auth-wrapper";
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Roster OCR error:", error);
+    logger.error("Roster OCR error:", error);
     return NextResponse.json(
       { error: "internal_server_error", message: "রোস্টার স্ক্যান করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।" },
       { status: 500 }

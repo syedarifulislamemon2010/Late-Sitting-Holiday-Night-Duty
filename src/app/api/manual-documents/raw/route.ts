@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { manualDocuments } from '@/db/schema';
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
       name: doc.name
     });
   } catch (error) {
-    console.error('Error serving raw manual document:', error);
+    logger.error('Error serving raw manual document:', error);
     return NextResponse.json({ error: 'internal_error', message: 'Internal Server Error' }, { status: 500 });
   }
 }

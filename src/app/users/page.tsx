@@ -1,9 +1,11 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 import { 
   UserPlus, 
   Shield, 
@@ -198,11 +200,6 @@ export default function UserManagement() {
     return palettes[cellId % palettes.length];
   };
 
-  const toBanglaDigits = (num: number | string): string => {
-    const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
-  };
-
   const sortUsersByBankId = (userList: User[]) => {
     return [...userList].sort((a, b) => {
       const numA = parseInt(a.username, 10);
@@ -356,7 +353,7 @@ export default function UserManagement() {
         setError('ডাটা লোড করতে ব্যর্থ হয়েছে।');
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setError('সার্ভার ত্রুটি ঘটেছে।');
     } finally {
       setLoading(false);
@@ -372,7 +369,7 @@ export default function UserManagement() {
         setAuditLogs(data);
       }
     } catch (err) {
-      console.error('Logs fetch error:', err);
+      logger.error('Logs fetch error:', err);
     } finally {
       setLoadingLogs(false);
     }
@@ -445,7 +442,7 @@ export default function UserManagement() {
       try {
         parsedCellRoles = JSON.parse(user.cellDuties);
       } catch (e) {
-        console.warn('Failed to parse cellDuties', e);
+        logger.warn('Failed to parse cellDuties', e);
       }
     }
     user.cells.forEach(c => {
@@ -541,7 +538,7 @@ export default function UserManagement() {
         setError(data.message || 'ইউজার সংরক্ষণ করতে সমস্যা হয়েছে।');
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     }
   };
@@ -569,7 +566,7 @@ export default function UserManagement() {
         setError(data.message || 'ইউজার মুছতে ব্যর্থ হয়েছে।');
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     }
   };
@@ -620,7 +617,7 @@ export default function UserManagement() {
         setProfileError(data.message || 'আপডেট করতে ব্যর্থ হয়েছে।');
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setProfileError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     } finally {
       setUpdatingProfile(false);

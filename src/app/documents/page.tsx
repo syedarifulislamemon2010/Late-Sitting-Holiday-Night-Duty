@@ -1,8 +1,10 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
@@ -210,13 +212,7 @@ export default function DocumentsPage() {
     return false;
   };
 
-  const toBanglaDigits = (numStr: string | number) => {
-    const banglaMap: { [key: string]: string } = {
-      '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-      '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯'
-    };
-    return numStr.toString().replace(/[0-9]/g, digit => banglaMap[digit] || digit);
-  };
+
 
   const getFormattedNumberWords = (num: number) => {
     if (!num) return '';
@@ -2468,7 +2464,7 @@ export default function DocumentsPage() {
                               try {
                                 dutiesList = viewingOrder.duties || JSON.parse(viewingOrder.dutiesJson || '[]');
                               } catch (e) {
-                                console.error(e);
+                                logger.error(e);
                               }
                               if (!dutiesList || dutiesList.length === 0) return null;
 
@@ -2655,7 +2651,7 @@ export default function DocumentsPage() {
                             try {
                               dutiesList = viewingOrder.duties || JSON.parse(viewingOrder.dutiesJson || '[]');
                             } catch (e) {
-                              console.error(e);
+                              logger.error(e);
                             }
                             if (!dutiesList || dutiesList.length === 0) return null;
                             return (

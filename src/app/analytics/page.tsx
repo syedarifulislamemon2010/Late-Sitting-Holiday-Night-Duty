@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -266,7 +267,7 @@ export default function AnalyticsDashboardPage() {
       setAvailableReleaseDates(data.availableReleaseDates || []);
       setResolvedReleaseDate(data.selectedReleaseDate || '');
     } catch (err: any) {
-      console.error(err);
+      logger.error(err);
       setError(err.message || 'ডাটাবেজ সংযোগ ত্রুটি।');
     } finally {
       setLoading(false);
@@ -283,7 +284,7 @@ export default function AnalyticsDashboardPage() {
             setCellsList(data);
           }
         } catch (e) {
-          console.error('Error fetching cells for analytics filter:', e);
+          logger.error('Error fetching cells for analytics filter:', e);
         }
       }
     };

@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -79,7 +80,7 @@ export async function GET() {
 
     return NextResponse.json(usersWithCells);
   } catch (error) {
-    console.error('Error fetching users and syncing:', error);
+    logger.error('Error fetching users and syncing:', error);
     return NextResponse.json({ error: 'failed_to_fetch_users' }, { status: 500 });
   }
 }
@@ -166,7 +167,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(userWithCells, { status: 201 });
   } catch (error) {
-    console.error('Error creating user:', error);
+    logger.error('Error creating user:', error);
     return NextResponse.json({ error: 'failed_to_create_user', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

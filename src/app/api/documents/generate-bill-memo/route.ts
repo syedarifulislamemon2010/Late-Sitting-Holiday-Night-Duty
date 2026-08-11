@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { officeOrders } from '@/db/schema';
@@ -435,7 +436,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('Error generating bill memo document:', error);
+    logger.error('Error generating bill memo document:', error);
     return NextResponse.json({ error: 'failed_to_generate_bill_memo', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

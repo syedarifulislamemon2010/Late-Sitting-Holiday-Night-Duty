@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { db } from './db';
 import { users, cells, userCells } from '../db/schema';
 import { eq } from 'drizzle-orm';
@@ -52,7 +53,7 @@ export async function getCurrentUser() {
     }
     return null;
   } catch (error) {
-    console.error('getCurrentUser Error:', error);
+    logger.error('getCurrentUser Error:', error);
     return null;
   }
 }

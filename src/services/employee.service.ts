@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { EmployeeRepository } from '@/repositories/employee.repository';
 import { UserRepository } from '@/repositories/user.repository';
 import { db } from '@/lib/db';
@@ -150,7 +151,7 @@ export class EmployeeService {
             try {
               parsedDuties = JSON.parse(u.cellDuties);
             } catch (e) {
-              console.warn('Failed to parse cellDuties for user', u.username, e);
+              logger.warn('Failed to parse cellDuties for user', u.username, e);
             }
           }
           userCellDutiesMap.set(u.username.trim().toLowerCase(), parsedDuties);

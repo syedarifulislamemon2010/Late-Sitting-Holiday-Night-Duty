@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Edit2, Check, X, Loader2 } from 'lucide-react';
@@ -54,7 +55,7 @@ export default function InlineEdit({
       await onSave(trimmed);
       setIsEditing(false);
     } catch (err) {
-      console.error('Inline edit save failed:', err);
+      logger.error('Inline edit save failed:', err);
       // Revert on error
       setInputValue(value);
     } finally {

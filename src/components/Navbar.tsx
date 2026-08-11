@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -93,7 +94,7 @@ export default function Navbar() {
       localStorage.removeItem('currentUser');
       window.location.href = '/';
     } catch (err) {
-      console.error('Logout error:', err);
+      logger.error('Logout error:', err);
     }
   };
 
@@ -200,7 +201,7 @@ export default function Navbar() {
   const userDisplayName = (currentUser?.name || '').replace(/^(জনাব|জনাবা)\s+/, '').trim();
 
   return (
-    <header className="no-print sticky top-0 z-40 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between px-4 h-14 font-sans select-none">
+    <header role="banner" className="no-print sticky top-0 z-40 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between px-4 h-14 font-sans select-none">
       {/* Left section: Breadcrumbs */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
         {getBreadcrumbs()}
@@ -247,6 +248,9 @@ export default function Navbar() {
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            aria-haspopup="true"
+            aria-expanded={isDropdownOpen ? 'true' : 'false'}
+            aria-label="User menu"
             className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-slate-100 dark:border-slate-800/80 shadow-sm"
           >
             <div className="w-8 h-8 rounded-lg bg-blue-50/80 dark:bg-blue-950/20 flex items-center justify-center overflow-hidden shrink-0 border border-blue-100 dark:border-blue-900/30">

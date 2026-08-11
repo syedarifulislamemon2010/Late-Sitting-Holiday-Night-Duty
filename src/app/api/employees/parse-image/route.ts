@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -7,7 +8,7 @@ async function generateContentWithRetry(model: any, content: any, retries = 2, d
     return await model.generateContent(content);
   } catch (error) {
     if (retries > 0) {
-      console.warn(`Gemini API call failed. Retrying in ${delayMs}ms... (Remaining retries: ${retries})`, error);
+      logger.warn(`Gemini API call failed. Retrying in ${delayMs}ms... (Remaining retries: ${retries})`, error);
       await new Promise(resolve => setTimeout(resolve, delayMs));
       return generateContentWithRetry(model, content, retries - 1, delayMs * 2);
     }
@@ -74,7 +75,7 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
 
     return NextResponse.json({ success: true, employees: parsedEmployees });
   } catch (error) {
-    console.error('Error parsing employee image:', error);
+    logger.error('Error parsing employee image:', error);
     return NextResponse.json({ 
       error: 'failed_to_parse_image', 
       message: `ইমেজ প্রসেস করতে ব্যর্থ হয়েছে। ছবিটির রেজোলিউশন ঠিক আছে কিনা এবং লেখাগুলো পরিষ্কার কিনা নিশ্চিত করুন। প্রয়োজনে ম্যানুয়ালি ইনপুট দিন। বিস্তারিত ত্রুটি: ${error instanceof Error ? error.message : String(error)}` 

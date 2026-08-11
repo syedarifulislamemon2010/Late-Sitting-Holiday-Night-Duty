@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -89,7 +90,7 @@ export default function CommandCenter() {
           setSelectedIndex(0);
         }
       } catch (err) {
-        console.error('Search error:', err);
+        logger.error('Search error:', err);
       } finally {
         setLoading(false);
       }

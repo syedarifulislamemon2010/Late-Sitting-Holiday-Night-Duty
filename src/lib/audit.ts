@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import fs from 'fs';
 import path from 'path';
 import { db } from '@/lib/db';
@@ -38,7 +39,7 @@ export async function logActivity(params: {
       }
     }
   } catch (dbErr) {
-    console.error('Failed to resolve user cells in logActivity:', dbErr);
+    logger.error('Failed to resolve user cells in logActivity:', dbErr);
   }
 
   const logEntry = {
@@ -54,7 +55,7 @@ export async function logActivity(params: {
   };
 
   const logLine = JSON.stringify(logEntry) + '\n';
-  console.log(`[AUDIT LOG] [${timestamp}] User: ${logEntry.bankId} (ID: ${logEntry.userId}), Cell: ${logEntry.cell}, Action: ${logEntry.actionType}, Record: ${logEntry.recordId}, Details: ${params.details}`);
+  logger.info(`[AUDIT LOG] [${timestamp}] User: ${logEntry.bankId} (ID: ${logEntry.userId}), Cell: ${logEntry.cell}, Action: ${logEntry.actionType}, Record: ${logEntry.recordId}, Details: ${params.details}`);
 
   // 1. Write to database AuditLog table
   try {
@@ -68,7 +69,7 @@ export async function logActivity(params: {
       details: params.details
     });
   } catch (dbLogErr) {
-    console.error('Failed to write audit log to database:', dbLogErr);
+    logger.error('Failed to write audit log to database:', dbLogErr);
   }
 
   // 2. Fallback: Write to local audit.log file
@@ -80,6 +81,6 @@ export async function logActivity(params: {
     const logFilePath = path.join(logsDir, 'audit.log');
     fs.appendFileSync(logFilePath, logLine, 'utf8');
   } catch (err) {
-    console.error('Failed to write audit log to file:', err);
+    logger.error('Failed to write audit log to file:', err);
   }
 }

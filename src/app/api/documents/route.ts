@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -15,7 +16,7 @@ export async function GET() {
     const docs = await db.select().from(documents).orderBy(desc(documents.uploadedAt));
     return NextResponse.json(docs);
   } catch (error) {
-    console.error('Error fetching documents:', error);
+    logger.error('Error fetching documents:', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }
@@ -69,7 +70,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true, message: 'Document soft-deleted successfully' });
   } catch (error) {
-    console.error('Error deleting document:', error);
+    logger.error('Error deleting document:', error);
     return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

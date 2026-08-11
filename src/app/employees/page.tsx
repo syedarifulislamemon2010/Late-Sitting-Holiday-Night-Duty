@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
@@ -6,6 +7,7 @@ import { useProfile } from '@/context/ProfileContext';
 import InlineEdit from '@/components/InlineEdit';
 import { TableSkeleton, CardSkeleton } from "@/components/SkeletonLoader";
 import { useLanguage } from '@/context/LanguageContext';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 
 
 import { 
@@ -180,7 +182,7 @@ export default function EmployeesPage() {
       }
       await loadData();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       throw err;
     }
   };
@@ -195,7 +197,7 @@ export default function EmployeesPage() {
       setSelectedEmps([]);
       await loadData();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       alert('কিছু কর্মকর্তার ডেটা ডিলিট করা যায়নি।');
     } finally {
       setLoading(false);
@@ -265,11 +267,7 @@ export default function EmployeesPage() {
     return palettes[cellId % palettes.length];
   };
 
-  // Helper for Bangla digits
-  const toBanglaDigits = (num: number | string): string => {
-    const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
-  };
+
 
   // Form states
   const [empForm, setEmpForm] = useState({
@@ -361,7 +359,7 @@ export default function EmployeesPage() {
         return null;
       }
     } catch (err) {
-      console.error('Error generating employee list:', err);
+      logger.error('Error generating employee list:', err);
       setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
       return null;
     } finally {
@@ -425,7 +423,7 @@ export default function EmployeesPage() {
       });
       setExecutives(filteredExecs);
     } catch (err) {
-      console.error('Error loading data:', err);
+      logger.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
@@ -531,7 +529,7 @@ export default function EmployeesPage() {
       const res = await fetch(`/api/employees/${id}`, { method: "DELETE" });
       if (res.ok) loadData();
     } catch (err) {
-      console.error("Error deleting officer:", err);
+      logger.error("Error deleting officer:", err);
     }
   };
 
@@ -552,7 +550,7 @@ export default function EmployeesPage() {
         alert(err.error === "cell_has_employees" ? "সেলটি ডিলিট করা যাচ্ছে না কারণ এতে কর্মকর্তা কর্মরত আছে।" : "সেল মুছে ফেলতে সমস্যা হয়েছে।");
       }
     } catch (err) {
-      console.error("Error deleting cell:", err);
+      logger.error("Error deleting cell:", err);
     }
   };
 

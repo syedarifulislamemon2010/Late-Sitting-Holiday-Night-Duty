@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
@@ -47,7 +48,7 @@ export default function CellsPage() {
         setCells(data);
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     } finally {
       setLoading(false);
     }
@@ -124,7 +125,7 @@ export default function CellsPage() {
         alert('সেল মুছে ফেলতে ব্যর্থ হয়েছে।');
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     }
   };
 

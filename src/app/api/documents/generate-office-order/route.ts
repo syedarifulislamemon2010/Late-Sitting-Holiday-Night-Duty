@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { officeOrders } from '@/db/schema';
@@ -409,7 +410,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('Error generating office order document:', error);
+    logger.error('Error generating office order document:', error);
     return NextResponse.json({ error: 'failed_to_generate_office_order', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

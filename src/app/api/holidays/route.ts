@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { holidays as holidaysTable } from '@/db/schema';
@@ -10,7 +11,7 @@ export async function GET() {
     const holidayList = await db.select().from(holidaysTable).orderBy(holidaysTable.date);
     return NextResponse.json(holidayList);
   } catch (error) {
-    console.error('Error fetching holidays:', error);
+    logger.error('Error fetching holidays:', error);
     return NextResponse.json({ error: 'failed_to_fetch_holidays' }, { status: 500 });
   }
 }
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, count: savedHolidays.length, data: savedHolidays });
   } catch (error) {
-    console.error('Error saving holidays:', error);
+    logger.error('Error saving holidays:', error);
     return NextResponse.json({ error: 'failed_to_save_holidays' }, { status: 500 });
   }
 }
@@ -79,7 +80,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting holiday:', error);
+    logger.error('Error deleting holiday:', error);
     return NextResponse.json({ error: 'failed_to_delete_holiday' }, { status: 500 });
   }
 }

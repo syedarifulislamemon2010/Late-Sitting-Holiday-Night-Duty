@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -22,7 +23,9 @@ import {
   TrendingUp,
   HardDrive,
   ClipboardPen,
-  LogOut
+  LogOut,
+  Database,
+  HelpCircle
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useLanguage } from '@/context/LanguageContext';
@@ -92,7 +95,7 @@ export default function Sidebar() {
       localStorage.removeItem('currentUser');
       window.location.href = '/';
     } catch (err) {
-      console.error('Logout error:', err);
+      logger.error('Logout error:', err);
     }
   };
 
@@ -148,7 +151,8 @@ export default function Sidebar() {
       items: [
         ...(isAdmin ? [
           { name: isEn ? 'Executive Panel' : 'নির্বাহী প্যানেল', href: '/executive', icon: Users },
-          { name: isEn ? 'Audit Log' : 'অডিট লগ', href: '/audit', icon: ClipboardList }
+          { name: isEn ? 'Audit Log' : 'অডিট লগ', href: '/audit', icon: ClipboardList },
+          { name: isEn ? 'Backup & Restore' : 'ব্যাকআপ ও পুনরুদ্ধার', href: '/backup', icon: Database }
         ] : [])
       ]
     },
@@ -156,7 +160,8 @@ export default function Sidebar() {
       title: isEn ? 'Other Tools' : 'অন্যান্য',
       items: [
         { name: isEn ? 'Documents Archive' : 'নথিপত্র আর্কাইভ', href: '/documents', icon: FileText },
-        ...(isAdmin ? [{ name: isEn ? 'Recycle Bin' : 'রিসাইকেল বিন', href: '/trash', icon: Trash2 }] : [])
+        ...(isAdmin ? [{ name: isEn ? 'Recycle Bin' : 'রিসাইকেল বিন', href: '/trash', icon: Trash2 }] : []),
+        { name: isEn ? 'Help & Guide' : 'সাহায্য ও নির্দেশিকা', href: '/help', icon: HelpCircle }
       ]
     }
   ];
@@ -262,7 +267,10 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Navigation Links */}
-        <nav className={`flex-1 py-6 overflow-y-auto no-scrollbar space-y-4 ${
+        <nav 
+          role="navigation" 
+          aria-label="Main navigation" 
+          className={`flex-1 py-6 overflow-y-auto no-scrollbar space-y-4 ${
           isMounted && isCollapsed ? 'px-2' : 'px-4'
         }`}>
           {sections.map((section, secIdx) => (
@@ -285,7 +293,7 @@ export default function Sidebar() {
                 )}
               </div>
               
-              <div className="space-y-1">
+              <div className="space-y-1" role="group" aria-expanded={!isCollapsed}>
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;

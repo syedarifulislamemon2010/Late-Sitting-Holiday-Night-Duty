@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -103,7 +104,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('Error in LunchBill GET:', error);
+    logger.error('Error in LunchBill GET:', error);
     return NextResponse.json({ error: 'failed_to_fetch_lunch_bills', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
@@ -211,7 +212,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, lunchBill });
 
   } catch (error) {
-    console.error('Error in LunchBill POST:', error);
+    logger.error('Error in LunchBill POST:', error);
     return NextResponse.json({ error: 'failed_to_save_lunch_bill', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

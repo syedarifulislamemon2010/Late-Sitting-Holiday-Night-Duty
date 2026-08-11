@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 
@@ -12,7 +13,7 @@ export async function GET() {
       user,
     });
   } catch (error) {
-    console.error('Profile GET API Error:', error);
+    logger.error('Profile GET API Error:', error);
     return NextResponse.json({ authenticated: false, user: null }, { status: 500 });
   }
 }

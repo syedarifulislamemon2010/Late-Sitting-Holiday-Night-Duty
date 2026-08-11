@@ -24,6 +24,7 @@ export function Select({
     <div className={`flex flex-col gap-1.5 w-full ${containerClassName}`}>
       {label && (
         <label
+          id={`${selectId}-label`}
           htmlFor={selectId}
           className="text-xs font-bold text-slate-600 dark:text-slate-400 select-none cursor-pointer"
           style={{ letterSpacing: 'normal' }}
@@ -33,6 +34,9 @@ export function Select({
       )}
       <select
         id={selectId}
+        aria-invalid={!!error}
+        aria-labelledby={label ? `${selectId}-label` : undefined}
+        aria-label={!label ? 'Select an option' : undefined}
         className={`w-full px-3.5 py-2 text-sm bg-white dark:bg-slate-900 border ${
           error 
             ? 'border-danger-400 focus:ring-danger-500 focus:border-danger-500' 

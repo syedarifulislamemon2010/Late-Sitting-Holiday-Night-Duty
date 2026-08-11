@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
@@ -320,7 +321,7 @@ export default function HardwareRequisitionPage() {
           }
         }
       } catch (err) {
-        console.error('Error fetching hardware requisition dependencies:', err);
+        logger.error('Error fetching hardware requisition dependencies:', err);
       } finally {
         setLoading(false);
       }
@@ -337,7 +338,7 @@ export default function HardwareRequisitionPage() {
         setRequisitions(data);
       }
     } catch (e) {
-      console.error('Failed to reload requisitions:', e);
+      logger.error('Failed to reload requisitions:', e);
     }
   };
 
@@ -601,7 +602,7 @@ export default function HardwareRequisitionPage() {
         alert('ডিলিট করতে ব্যর্থ হয়েছে।');
       }
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     }
   };
 

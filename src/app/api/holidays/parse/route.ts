@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -193,7 +194,7 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
           throw new Error('AI returned non-array structure');
         }
       } catch (aiError) {
-        console.error('AI parsing failed, falling back to regex parser:', aiError);
+        logger.error('AI parsing failed, falling back to regex parser:', aiError);
         parsedHolidays = fallbackParseHolidays(text || '', defaultYear);
       }
     } else {
@@ -203,7 +204,7 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
 
     return NextResponse.json({ success: true, holidays: parsedHolidays });
   } catch (error) {
-    console.error('Error parsing holidays:', error);
+    logger.error('Error parsing holidays:', error);
     return NextResponse.json({ error: 'failed_to_parse_holidays', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

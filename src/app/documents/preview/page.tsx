@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { Suspense, useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -109,7 +110,7 @@ function PreviewContent() {
             window.print();
           }, 500);
         } catch (err) {
-          console.error('Error rendering PDF:', err);
+          logger.error('Error rendering PDF:', err);
           setError('নথি লোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে ফাইলটি ডাউনলোড করে প্রিন্ট করুন।');
           setLoading(false);
         }
@@ -147,7 +148,7 @@ function PreviewContent() {
             throw new Error('No valid file source provided');
           }
         } catch (err) {
-          console.error('Error loading image:', err);
+          logger.error('Error loading image:', err);
           setError('ছবিটি লোড করতে ব্যর্থ হয়েছে।');
           setLoading(false);
         }

@@ -22,6 +22,9 @@ export interface LeaveDocxData {
   specialTotal: string | number;
   specialUsed: string | number;
   specialRemaining: string | number;
+  daysCount?: number;
+  daysInBanglaWords?: string;
+  leaveTypeBangla?: string;
 }
 
 export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
@@ -196,43 +199,109 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
               ]
             : []),
 
-          // Applicant Signature Section
-          new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            children: [
-              new TextRun({ text: 'বিনীত নিবেদক,', bold: true, size: 22 })
+          // Applicant Signature Section (2-column layout)
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+              top: { style: BorderStyle.NONE },
+              bottom: { style: BorderStyle.NONE },
+              left: { style: BorderStyle.NONE },
+              right: { style: BorderStyle.NONE },
+              insideHorizontal: { style: BorderStyle.NONE },
+              insideVertical: { style: BorderStyle.NONE }
+            },
+            rows: [
+              new TableRow({
+                children: [
+                  // Left Cell: Applicant Signature Block
+                  new TableCell({
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    children: [
+                      new Paragraph({ children: [new TextRun({ text: 'আপনার বিশ্বস্ত,', size: 20 })] }),
+                      new Paragraph({ text: '' }),
+                      new Paragraph({ text: '' }),
+                      new Paragraph({ children: [new TextRun({ text: 'নামঃ ', size: 20 }), new TextRun({ text: data.applicantName || 'সৈয়দ আরিফুল ইসলাম ইমন', italics: true, bold: true, size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: `পদবীঃ ${data.designation || 'সিনিয়র অফিসার-আইটি'}`, size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: `ব্যাংক আইডিঃ ${data.bankId || '০২৬৭৯৫'}`, size: 20 })] }),
+                      ...(data.fileNo ? [new Paragraph({ children: [new TextRun({ text: `ব্যক্তিগত নথি নংঃ ${data.fileNo}`, size: 20 })] })] : []),
+                      new Paragraph({ children: [new TextRun({ text: data.cellName, size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'জনতা ব্যাংক পিএলসি,', size: 20 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'প্রধান কার্যালয়, ঢাকা।', size: 20 })] })
+                    ]
+                  }),
+                  // Right Cell: Stay location & Mobile
+                  new TableCell({
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    children: [
+                      new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'ছুটিতে থাকাকালীন অবস্থানঃ ', size: 20 }), new TextRun({ text: data.leaveLocation, italics: true, bold: true, size: 20 })] }),
+                      new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: `মোবাইল নংঃ ${data.mobileNo}`, size: 20 })] })
+                    ]
+                  })
+                ]
+              })
             ]
           }),
+
           new Paragraph({ text: '' }),
           new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+
+          // Recommendation & Approval Routing
           new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            children: [new TextRun({ text: `(জনাব ${data.applicantName})`, bold: true, size: 22 })]
+            children: [
+              new TextRun({ text: 'আবেদনকারীর অনুকূলে উক্ত ', size: 20 }),
+              new TextRun({ text: data.daysInBanglaWords || '০১ (এক)', italics: true, bold: true, size: 20 }),
+              new TextRun({ text: ` দিনের ${data.leaveTypeBangla || 'নৈমিত্তিক'} ছুটি মঞ্জুরীর সুপারিশ করা হলো।`, size: 20 })
+            ]
           }),
-          new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            children: [new TextRun({ text: `${data.designation}`, size: 20 })]
+
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+
+          // Recommendation signatures
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+              top: { style: BorderStyle.NONE },
+              bottom: { style: BorderStyle.NONE },
+              left: { style: BorderStyle.NONE },
+              right: { style: BorderStyle.NONE },
+              insideHorizontal: { style: BorderStyle.NONE },
+              insideVertical: { style: BorderStyle.NONE }
+            },
+            rows: [
+              new TableRow({
+                children: [
+                  new TableCell({
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({ children: [new TextRun({ text: 'সেল ইনচার্জ', size: 20 })] })]
+                  }),
+                  new TableCell({
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'সহকারী মহাব্যবস্থাপক', size: 20 })] })]
+                  })
+                ]
+              })
+            ]
           }),
-          new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            children: [new TextRun({ text: `ব্যক্তিগত নম্বর: ${data.bankId}`, size: 20 })]
-          }),
-          new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            children: [new TextRun({ text: `${data.cellName}`, size: 20 })]
-          }),
-          new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            children: [new TextRun({ text: `জনতা ব্যাংক পিএলসি, প্রধান কার্যালয়, ঢাকা।`, size: 20 })]
-          }),
-          ...(data.mobileNo
-            ? [
-                new Paragraph({
-                  alignment: AlignmentType.RIGHT,
-                  children: [new TextRun({ text: `মোবাইল: ${data.mobileNo}`, size: 20 })]
-                })
-              ]
-            : [])
+
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ children: [new TextRun({ text: 'এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', size: 20 })] }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ children: [new TextRun({ text: 'ডিজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', size: 20 })] }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ children: [new TextRun({ text: 'এজিএম (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', size: 20 })] }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ children: [new TextRun({ text: 'এসপিও (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ', size: 20 })] })
         ]
       }
     ]

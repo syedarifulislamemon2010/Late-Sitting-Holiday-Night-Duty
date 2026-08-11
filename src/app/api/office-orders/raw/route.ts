@@ -1,8 +1,10 @@
+import logger from '@/lib/logger';
 import { db } from '@/lib/db';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
 import { officeOrders } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth-wrapper';
+import { getBanglaNumberWords } from '@/lib/bengali-converter';
 
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
@@ -44,51 +46,7 @@ const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGH
   return { transportRate, apyaonRate };
 };
 
-const getBanglaNumberWords = (num: number) => {
-  if (num === 0) return 'শূন্য';
-  
-  const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
-  const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
-  const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
 
-  const convertTens = (n: number): string => {
-    if (n < 10) return singleWords[n];
-    if (n >= 10 && n < 20) return teenWords[n - 10];
-    const ten = Math.floor(n / 10);
-    const unit = n % 10;
-    return doubleWords[ten] + (unit > 0 ? ' ' + singleWords[unit] : '');
-  };
-
-  let wordStr = '';
-  
-  // Lac portion
-  if (num >= 100000) {
-    const lac = Math.floor(num / 100000);
-    wordStr += convertTens(lac) + ' লক্ষ ';
-    num %= 100000;
-  }
-
-  // Thousand portion
-  if (num >= 1000) {
-    const thousand = Math.floor(num / 1000);
-    wordStr += convertTens(thousand) + ' হাজার ';
-    num %= 1000;
-  }
-  
-  // Hundred portion
-  if (num >= 100) {
-    const hundred = Math.floor(num / 100);
-    wordStr += singleWords[hundred] + ' শত ';
-    num %= 100;
-  }
-  
-  // Tens portion
-  if (num > 0) {
-    wordStr += convertTens(num);
-  }
-  
-  return wordStr.trim() + ' টাকা মাত্র';
-};
 
 export async function GET(request: Request) {
   try {
@@ -679,7 +637,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('Error rendering raw document preview:', error);
+    logger.error('Error rendering raw document preview:', error);
     return new Response('Internal Server Error', { status: 500 });
   }
 }

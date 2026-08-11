@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import fs from 'fs';
@@ -39,7 +40,7 @@ export async function GET() {
 
     return NextResponse.json(logs);
   } catch (error) {
-    console.error('Error reading audit logs:', error);
+    logger.error('Error reading audit logs:', error);
     return NextResponse.json({ error: 'failed_to_read_audit_logs', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

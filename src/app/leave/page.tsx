@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import { useState, useEffect, useRef } from 'react';
 import { useProfile } from '@/context/ProfileContext';
@@ -9,6 +10,7 @@ import {
   getCalculatedLeaveDetails as libGetCalculatedLeaveDetails 
 } from '@/lib/leave-calculator';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 
 import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
@@ -320,7 +322,7 @@ export default function LeaveGeneratorPage() {
         }
       }
     } catch (err) {
-      console.error('Error fetching archived leaves:', err);
+      logger.error('Error fetching archived leaves:', err);
     }
   };
 
@@ -346,7 +348,7 @@ export default function LeaveGeneratorPage() {
             }
           }
         } catch (err) {
-          console.error('Error fetching archived leaves:', err);
+          logger.error('Error fetching archived leaves:', err);
         }
       };
       getLeavesOnMount();
@@ -440,7 +442,7 @@ export default function LeaveGeneratorPage() {
             }
           }
         } catch (empsErr) {
-          console.error('Error refreshing employees list after leave save:', empsErr);
+          logger.error('Error refreshing employees list after leave save:', empsErr);
         }
         
         // Auto switch tab
@@ -464,7 +466,7 @@ export default function LeaveGeneratorPage() {
         return false;
       }
     } catch (err) {
-      console.error('Error saving leave application:', err);
+      logger.error('Error saving leave application:', err);
       setErrorMsg('একটি নেটওয়ার্ক সমস্যা হয়েছে।');
       setTimeout(() => setErrorMsg(''), 4000);
       return false;
@@ -561,7 +563,7 @@ export default function LeaveGeneratorPage() {
         setTimeout(() => setErrorMsg(''), 4000);
       }
     } catch (err) {
-      console.error('Error deleting leave application:', err);
+      logger.error('Error deleting leave application:', err);
       setErrorMsg('একটি নেটওয়ার্ক সমস্যা হয়েছে।');
       setTimeout(() => setErrorMsg(''), 4000);
     }
@@ -678,7 +680,7 @@ export default function LeaveGeneratorPage() {
           setCells(Array.isArray(cellsData) ? cellsData : []);
         }
       } catch (err) {
-        console.error('Error fetching initial static leave data:', err);
+        logger.error('Error fetching initial static leave data:', err);
       } finally {
         setLoading(false);
       }
@@ -735,7 +737,7 @@ export default function LeaveGeneratorPage() {
         setHasSyncedProfile(true);
       } else {
         setIsProfileUnresolved(true);
-        fetch('/api/leaves/log-resolve-failed', { method: 'POST' }).catch(err => console.error(err));
+        fetch('/api/leaves/log-resolve-failed', { method: 'POST' }).catch(err => logger.error(err));
       }
     }
 
@@ -804,10 +806,7 @@ export default function LeaveGeneratorPage() {
   };
 
   // Convert numbers to Bengali digits
-  const toBanglaDigits = (num: number | string): string => {
-    const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return num.toString().replace(/\d/g, (digit) => banglaDigits[parseInt(digit, 10)]);
-  };
+
 
   // Map digits to Bengali written words
   const getBanglaDayWord = (num: number): string => {
@@ -1055,32 +1054,14 @@ export default function LeaveGeneratorPage() {
   };
 
   const handlePrint = async () => {
-    const valResult = getDropdownValidation();
-    if (!valResult.isValid) {
-      setShowValidationErrors(true);
-      setErrorMsg(valResult.message);
-      setTimeout(() => setErrorMsg(''), 4000);
-      return;
-    }
-
-    // Automatically save or update to archive first
-    const successfullySaved = await handleSaveToArchive();
+    // Automatically save or update to archive first, but make it non-blocking
+    handleSaveToArchive().catch(console.error);
     
-    // Trigger standard print viewport if save/update is completed
-    if (successfullySaved) {
-      window.print();
-    }
+    // Trigger standard print viewport immediately
+    window.print();
   };
 
   const handleDownloadDocx = async () => {
-    const valResult = getDropdownValidation();
-    if (!valResult.isValid) {
-      setShowValidationErrors(true);
-      setErrorMsg(valResult.message);
-      setTimeout(() => setErrorMsg(''), 4000);
-      return;
-    }
-
     try {
       const { generateLeaveDocx } = await import('@/lib/docx-generator');
       const delegateEmp = employees.find(e => String(e.id) === delegateId);
@@ -1127,7 +1108,10 @@ export default function LeaveGeneratorPage() {
         ordinaryRemaining: toBanglaDigits(currentOrdinaryRemaining),
         specialTotal: toBanglaDigits(specialTotal),
         specialUsed: toBanglaDigits(specialUsed),
-        specialRemaining: toBanglaDigits(currentSpecialRemaining)
+        specialRemaining: toBanglaDigits(currentSpecialRemaining),
+        daysCount: isSingleDay ? 1 : leaveDetails.actualDeducted,
+        daysInBanglaWords: displayDaysWord,
+        leaveTypeBangla: leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : leaveType === 'STATION_LEAVE' ? 'কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক' : 'নৈমিত্তিক'
       });
 
       const url = window.URL.createObjectURL(blob);
@@ -1139,7 +1123,7 @@ export default function LeaveGeneratorPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Error generating DOCX document:', err);
+      logger.error('Error generating DOCX document:', err);
     }
   };
 

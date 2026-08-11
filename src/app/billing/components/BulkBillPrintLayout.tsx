@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import React from 'react';
 import Image from 'next/image';
 import { FileText, Printer, X } from 'lucide-react';
@@ -94,7 +95,7 @@ export default function BulkBillPrintLayout({
             })
           });
         } catch (e) {
-          console.error(`Failed to update status for order: ${order.orderRef}`, e);
+          logger.error(`Failed to update status for order: ${order.orderRef}`, e);
         }
       }
     }
@@ -240,7 +241,7 @@ export default function BulkBillPrintLayout({
       try {
         dutiesList = order.duties || JSON.parse(order.dutiesJson || '[]');
       } catch (e) {
-        console.error(e);
+        logger.error(e);
       }
 
       if (isBill) {
@@ -527,7 +528,7 @@ export default function BulkBillPrintLayout({
             try {
               dutiesList = order.duties || JSON.parse(order.dutiesJson || '[]');
             } catch (e) {
-              console.error(e);
+              logger.error(e);
             }
 
             return (

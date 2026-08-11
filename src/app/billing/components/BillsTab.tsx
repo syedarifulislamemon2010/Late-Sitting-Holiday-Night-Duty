@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import React, { useState } from 'react';
 import { 
   CheckCircle, 
@@ -99,7 +100,7 @@ export default function BillsTab({
         try {
           dutiesList = JSON.parse(order.dutiesJson);
         } catch (e) {
-          console.error(e);
+          logger.error(e);
         }
       }
       const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
@@ -167,7 +168,7 @@ export default function BillsTab({
       setSelectedBills([]);
       window.location.reload();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       alert('কিছু বিল মেমো প্রিন্টেড চিহ্নিত করা সম্ভব হয়নি।');
     } finally {
       setActionLoading(false);

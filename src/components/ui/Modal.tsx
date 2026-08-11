@@ -25,15 +25,39 @@ export function Modal({
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape key press
+  // Close on Escape key press and Focus Trap
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
+
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length > 0) {
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
+
+          if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+              lastElement.focus();
+              e.preventDefault();
+            }
+          } else {
+            if (document.activeElement === lastElement) {
+              firstElement.focus();
+              e.preventDefault();
+            }
+          }
+        }
+      }
     };
 
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden'; // Lock background scroll
+      // Focus modal on open
+      setTimeout(() => modalRef.current?.focus(), 0);
     }
 
     return () => {
@@ -69,6 +93,10 @@ export function Modal({
     >
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? "modal-title" : undefined}
+        tabIndex={-1}
         className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl w-full shadow-2xl overflow-hidden flex flex-col transform transition-all animate-in scale-95 duration-slow ease-premium ${sizeStyles[size]} ${className}`}
         style={{
           maxHeight: '90vh',
@@ -78,7 +106,7 @@ export function Modal({
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-6 py-4">
           <div className="leading-tight">
             {title && (
-              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base" style={{ letterSpacing: 'normal' }}>
+              <h3 id="modal-title" className="font-extrabold text-slate-800 dark:text-slate-100 text-base" style={{ letterSpacing: 'normal' }}>
                 {title}
               </h3>
             )}

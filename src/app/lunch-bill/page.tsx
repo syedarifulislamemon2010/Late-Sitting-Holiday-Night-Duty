@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
@@ -18,6 +19,7 @@ import {
   Search
 } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
+import { toBanglaDigits, getBanglaNumberWords } from '@/lib/bengali-converter';
 
 // Default 2026 Bangladesh public holidays
 const DEFAULT_2026_HOLIDAYS = [
@@ -210,7 +212,7 @@ export default function LunchBillPage() {
         });
         setExecutives(filteredExecs);
       } catch (err) {
-        console.error('Error loading lunch structural lists:', err);
+        logger.error('Error loading lunch structural lists:', err);
       } finally {
         setLoading(false);
       }
@@ -344,7 +346,7 @@ export default function LunchBillPage() {
 
         setRecords(defaultRecords);
       } catch (err) {
-        console.error('Error loading combined sheet:', err);
+        logger.error('Error loading combined sheet:', err);
       }
     }
 
@@ -450,12 +452,7 @@ export default function LunchBillPage() {
     applyDeductionRates('designation', flatDeductionRate, updatedRates, workingDays, records);
   };
 
-  // Safe Bengali digit translation
-  const toBanglaDigits = (num: number | string | undefined | null): string => {
-    if (num === undefined || num === null) return '';
-    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
-  };
+
 
   const getBanglaMonthName = (monthStr: string): string => {
     if (!monthStr || !monthStr.includes('-')) return '';
@@ -468,46 +465,7 @@ export default function LunchBillPage() {
     return `${monthNames[idx]} ${toBanglaDigits(year)}`;
   };
 
-  const getBanglaNumberWords = (num: number) => {
-    if (num === 0) return 'অনুল্লেখ্য';
-    const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
-    const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
-    const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
 
-    const convertTens = (n: number): string => {
-      if (n < 10) return singleWords[n];
-      if (n >= 10 && n < 20) return teenWords[n - 10];
-      const ten = Math.floor(n / 10);
-      const unit = n % 10;
-      return doubleWords[ten] + (unit > 0 ? ' ' + singleWords[unit] : '');
-    };
-
-    let wordStr = '';
-    
-    if (num >= 100000) {
-      const lac = Math.floor(num / 100000);
-      wordStr += convertTens(lac) + ' লক্ষ ';
-      num %= 100000;
-    }
-
-    if (num >= 1000) {
-      const thousand = Math.floor(num / 1000);
-      wordStr += convertTens(thousand) + ' হাজার ';
-      num %= 1000;
-    }
-    
-    if (num >= 100) {
-      const hundred = Math.floor(num / 100);
-      wordStr += singleWords[hundred] + ' শত ';
-      num %= 100;
-    }
-    
-    if (num > 0) {
-      wordStr += convertTens(num);
-    }
-    
-    return wordStr.trim() + ' টাকা মাত্র';
-  };
 
   // Filter records by cell/executive for standard users
   const getFilteredRecordsForUser = (primaryCellId: number | null | undefined) => {
@@ -584,7 +542,7 @@ export default function LunchBillPage() {
         return null;
       }
     } catch (err) {
-      console.error('Error saving lunch bill:', err);
+      logger.error('Error saving lunch bill:', err);
       setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
       return null;
     } finally {
@@ -683,7 +641,7 @@ export default function LunchBillPage() {
         return null;
       }
     } catch (err) {
-      console.error('Error generating lunch bill:', err);
+      logger.error('Error generating lunch bill:', err);
       const msg = err instanceof Error ? err.message : 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।';
       setErrorMessage(msg);
       return null;

@@ -1,3 +1,4 @@
+import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to log resolve failed activity:', error);
+    logger.error('Failed to log resolve failed activity:', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }
