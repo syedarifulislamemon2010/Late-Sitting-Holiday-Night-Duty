@@ -71,7 +71,7 @@
   --color-accent: var(--accent);
   --color-success: var(--success);
   --color-indigo-650: #493ee0;
-  --font-sans: 'SolaimanLipi', var(--font-hind-siliguri), var(--font-noto-sans-bengali), var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-sans: 'SolaimanLipi', 'Noto Sans Bengali', 'Hind Siliguri', 'Inter', system-ui, -apple-system, sans-serif;
 
   --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 150ms;

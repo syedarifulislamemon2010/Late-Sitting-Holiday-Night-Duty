@@ -13,28 +13,6 @@ import { TopProgressBar } from "@/components/TopProgressBar";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ToastProvider } from "@/context/ToastContext";
 import PageTransition from "@/components/PageTransition";
-import { Inter, Noto_Sans_Bengali, Hind_Siliguri } from "next/font/google";
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const notoSansBengali = Noto_Sans_Bengali({
-  subsets: ["bengali"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-noto-sans-bengali",
-  display: "swap",
-});
-
-const hindSiliguri = Hind_Siliguri({
-  subsets: ["bengali"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-hind-siliguri",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল",
@@ -50,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" className={`h-full ${inter.variable} ${notoSansBengali.variable} ${hindSiliguri.variable}`} suppressHydrationWarning={true}>
+    <html lang="bn" className="h-full" suppressHydrationWarning={true}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0b5e9e" />
