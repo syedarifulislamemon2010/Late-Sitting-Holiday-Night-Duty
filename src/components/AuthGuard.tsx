@@ -316,29 +316,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         if (res.ok && contentType && contentType.includes('application/json')) {
           const data = await res.json();
           if (data.authenticated) {
-            // Check if tab session is active (to log out on browser/tab close)
-            if (typeof window !== 'undefined' && !sessionStorage.getItem('tab_session_active')) {
-              await signOut({ redirect: false });
-              setAuthenticated(false);
-              setUserProfile(null);
-              sessionStorage.setItem('tab_session_active', 'true');
-              return;
-            }
             setAuthenticated(true);
             setUserProfile(data.user);
           } else {
             setAuthenticated(false);
             setUserProfile(null);
-            if (typeof window !== 'undefined') {
-              sessionStorage.setItem('tab_session_active', 'true');
-            }
           }
         } else {
           setAuthenticated(false);
           setUserProfile(null);
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('tab_session_active', 'true');
-          }
         }
       } catch (err) {
         logger.warn('Auth verification failed (transient network error)');
