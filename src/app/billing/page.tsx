@@ -1,5 +1,5 @@
 'use client';
-import logger from '@/lib/logger';
+import { DUTY_RATES } from '@/constants/billing';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
@@ -245,7 +245,7 @@ const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGH
     try {
       dutiesList = JSON.parse(o.dutiesJson);
     } catch (e) {
-      logger.error(e);
+      console.error(e);
     }
   }
 
@@ -498,7 +498,7 @@ export default function BillingPage() {
           }
         }
       } catch (err) {
-        logger.error('Error loading static data:', err);
+        console.error('Error loading static data:', err);
       }
     }
     loadStaticData();
@@ -601,7 +601,7 @@ export default function BillingPage() {
         }
       }
     } catch (err) {
-      logger.error('Error loading archived bill for editing:', err);
+      console.error('Error loading archived bill for editing:', err);
     } finally {
       setTimeout(() => {
         isInitializingArchiveRef.current = false;
@@ -690,7 +690,7 @@ export default function BillingPage() {
                 try {
                   dutiesList = JSON.parse(matchedOrder.dutiesJson);
                 } catch (e) {
-                  logger.error('Failed to parse dutiesJson:', e);
+                  console.error('Failed to parse dutiesJson:', e);
                 }
               }
               
@@ -714,7 +714,7 @@ export default function BillingPage() {
             }
           }
         } catch (err) {
-          logger.error('Error loading targeted order for billing:', err);
+          console.error('Error loading targeted order for billing:', err);
         }
       }
       loadTargetOrder();
@@ -864,7 +864,7 @@ export default function BillingPage() {
 
       setDuties(filteredDuties);
     } catch (err) {
-      logger.error('Error fetching duties for billing:', err);
+      console.error('Error fetching duties for billing:', err);
     } finally {
       setLoading(false);
     }
@@ -911,7 +911,7 @@ export default function BillingPage() {
     if (isInitializingArchiveRef.current) {
       return;
     }
-    logger.info("Billing input changed, resetting billGenerated to false");
+    console.log("Billing input changed, resetting billGenerated to false");
     setBillGenerated(false);
   }, [
     selectedMonth,
@@ -979,7 +979,7 @@ export default function BillingPage() {
           try {
             orderDutiesList = JSON.parse(backingOrder.dutiesJson);
           } catch (e) {
-            logger.error('Failed to parse dutiesJson fallback:', e);
+            console.error('Failed to parse dutiesJson fallback:', e);
           }
         }
 
@@ -1134,7 +1134,7 @@ export default function BillingPage() {
         try {
           dutiesList = JSON.parse(bill.dutiesJson);
         } catch (e) {
-          logger.error('Failed to parse bill dutiesJson in report:', e);
+          console.error('Failed to parse bill dutiesJson in report:', e);
         }
       }
 
@@ -1234,7 +1234,7 @@ export default function BillingPage() {
         try {
           dutiesList = JSON.parse(bill.dutiesJson);
         } catch (e) {
-          logger.error('Failed to parse bill dutiesJson in reportData:', e);
+          console.error('Failed to parse bill dutiesJson in reportData:', e);
         }
       }
 
@@ -1589,7 +1589,7 @@ export default function BillingPage() {
       if (!archiveRes.ok) {
         throw new Error('Failed to archive bill memo metadata');
       }
-      logger.info('Bill memo metadata archived successfully!');
+      console.log('Bill memo metadata archived successfully!');
 
       if (action === 'generate') {
         // Generate PDF
@@ -1721,7 +1721,7 @@ export default function BillingPage() {
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'বিল মেমো প্রসেস করতে ব্যর্থ হয়েছে।';
-      logger.error('Error in handleGenerateAndPrint:', err);
+      console.error('Error in handleGenerateAndPrint:', err);
       setArchiveError(errorMsg);
       setTimeout(() => setArchiveError(null), 5000);
     } finally {
@@ -1823,7 +1823,7 @@ export default function BillingPage() {
             try {
               dutiesList = JSON.parse(order.dutiesJson);
             } catch (e) {
-              logger.error(e);
+              console.error(e);
             }
           }
           let hasTargetCellEmployee = false;
@@ -1947,7 +1947,7 @@ export default function BillingPage() {
         try {
           dutiesList = JSON.parse(order.dutiesJson);
         } catch (e) {
-          logger.error(e);
+          console.error(e);
         }
       }
       const totalDays = dutiesList.reduce((dSum: number, d: any) => dSum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
@@ -2017,7 +2017,7 @@ export default function BillingPage() {
         try {
           dutiesList = JSON.parse(order.dutiesJson);
         } catch (e) {
-          logger.error(e);
+          console.error(e);
         }
       }
       
@@ -2129,7 +2129,7 @@ export default function BillingPage() {
       alert('গ্রুপ সফলভাবে পরিবর্তন করা হয়েছে!');
       fetchDutiesForBilling();
     } catch (err) {
-      logger.error(err);
+      console.error(err);
       alert('গ্রুপ পরিবর্তন করতে ব্যর্থ হয়েছে।');
     }
   };
@@ -2168,7 +2168,7 @@ export default function BillingPage() {
       try {
         dutiesList = JSON.parse(order.dutiesJson);
       } catch (e) {
-        logger.error('Failed to parse dutiesJson:', e);
+        console.error('Failed to parse dutiesJson:', e);
       }
     }
     
@@ -2471,7 +2471,7 @@ export default function BillingPage() {
                   try {
                     dutiesList = JSON.parse(order.dutiesJson);
                   } catch (e) {
-                    logger.error(e);
+                    console.error(e);
                   }
                 }
                 const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);

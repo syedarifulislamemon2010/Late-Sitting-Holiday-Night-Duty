@@ -3,6 +3,7 @@ import logger from '@/lib/logger';
 
 import { useState, useEffect, useMemo } from 'react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
+import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
 import Link from 'next/link';
 import { 
   Calendar,
@@ -26,6 +27,16 @@ import { useLanguage } from '@/context/LanguageContext';
 
 
 
+
+
+
+
+
+
+
+
+
+
 const MONTH_NAMES = [
   'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
   'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
@@ -39,36 +50,6 @@ const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 // Start day of week (0 = Sunday, 1 = Monday, etc.) for each month in 2026:
 // 2026-01-01 is a Thursday (4)
 const MONTH_START_DAYS = [4, 0, 0, 3, 5, 1, 3, 6, 2, 4, 0, 2];
-
-// Default 2026 Bangladesh public holidays
-const DEFAULT_2026_HOLIDAYS = [
-  { date: '2026-02-04', name: 'পবিত্র শবে বরাত' },
-  { date: '2026-02-21', name: 'শহীদ দিবস ও আন্তর্জাতিক মাতৃভাষা দিবস' },
-  { date: '2026-03-17', name: 'পবিত্র শবে কদর' },
-  { date: '2026-03-19', name: 'পবিত্র ঈদ-উল-ফিতর' },
-  { date: '2026-03-20', name: 'পবিত্র ঈদ-উল-ফিতর' },
-  { date: '2026-03-21', name: 'পবিত্র ঈদ-উল-ফিতর' },
-  { date: '2026-03-22', name: 'পবিত্র ঈদ-উল-ফিতর' },
-  { date: '2026-03-23', name: 'পবিত্র ঈদ-উল-ফিতর' },
-  { date: '2026-03-26', name: 'স্বাধীনতা ও জাতীয় দিবস' },
-  { date: '2026-04-14', name: 'বাংলা নববর্ষ (পহেলা বৈশাখ)' },
-  { date: '2026-05-01', name: 'মে দিবস ও বুদ্ধ পূর্ণিমা' },
-  { date: '2026-05-25', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-26', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-27', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-28', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-29', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-30', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-31', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-06-26', name: 'পবিত্র আশুরা' },
-  { date: '2026-08-05', name: 'জুলাই গণঅভ্যুত্থান দিবস' },
-  { date: '2026-08-26', name: 'পবিত্র ঈদে মিলাদুন্নবী (সা.)' },
-  { date: '2026-09-04', name: 'শুভ জন্মাষ্টমী' },
-  { date: '2026-10-20', name: 'দূর্গাপূজা (মহা নবমী)' },
-  { date: '2026-10-21', name: 'দূর্গাপূজা (বিজয়া দশমী)' },
-  { date: '2026-12-16', name: 'বিজয় দিবস' },
-  { date: '2026-12-25', name: 'যীশু খ্রীষ্টের জন্মদিন (বড় দিন)' },
-];
 
 interface Holiday {
   date: string;

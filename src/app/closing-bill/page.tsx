@@ -1,5 +1,5 @@
 'use client';
-import logger from '@/lib/logger';
+import { CLOSING_BILL_RATE, REVENUE_STAMP } from '@/constants/billing';
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 import { useProfile } from '@/context/ProfileContext';
-import { toBanglaDigits, getBanglaNumberWords } from '@/lib/bengali-converter';
 
 interface Cell {
   id: number;
@@ -81,15 +80,18 @@ const getInitialClosingMonth = () => {
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth() + 1; // 1-12
-
+  const toBnDigits = (num: number | string): string => {
+    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
+  };
   if (month === 6) {
     return {
-      options: [{ value: `${year}-06`, label: `জুন ${toBanglaDigits(year)}` }],
+      options: [{ value: `${year}-06`, label: `জুন ${toBnDigits(year)}` }],
       month: `${year}-06`
     };
   } else if (month === 12) {
     return {
-      options: [{ value: `${year}-12`, label: `ডিসেম্বর ${toBanglaDigits(year)}` }],
+      options: [{ value: `${year}-12`, label: `ডিসেম্বর ${toBnDigits(year)}` }],
       month: `${year}-12`
     };
   }
@@ -165,7 +167,7 @@ export default function ClosingBillPage() {
         });
         setExecutives(filteredExecs);
       } catch (err) {
-        logger.error('Error loading structural lists:', err);
+        console.error('Error loading structural lists:', err);
       } finally {
         setLoading(false);
       }
@@ -260,14 +262,18 @@ export default function ClosingBillPage() {
 
         setRecords(defaultRecords);
       } catch (err) {
-        logger.error('Error loading closing sheet:', err);
+        console.error('Error loading closing sheet:', err);
       }
     }
 
     fetchClosingBill();
   }, [selectedMonth, employees, executives, loading]);
 
-
+  const toBanglaDigits = (num: number | string | undefined | null): string => {
+    if (num === undefined || num === null) return '';
+    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
+  };
 
   const getBanglaMonthLabel = (monthStr: string): string => {
     if (!monthStr) return '';
@@ -280,7 +286,46 @@ export default function ClosingBillPage() {
     return '';
   };
 
+  const getBanglaNumberWords = (num: number) => {
+    if (num === 0) return 'অনুল্লেখ্য';
+    const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
+    const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
+    const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
 
+    const convertTens = (n: number): string => {
+      if (n < 10) return singleWords[n];
+      if (n >= 10 && n < 20) return teenWords[n - 10];
+      const ten = Math.floor(n / 10);
+      const unit = n % 10;
+      return doubleWords[ten] + (unit > 0 ? ' ' + singleWords[unit] : '');
+    };
+
+    let wordStr = '';
+    
+    if (num >= 100000) {
+      const lac = Math.floor(num / 100000);
+      wordStr += convertTens(lac) + ' লক্ষ ';
+      num %= 100000;
+    }
+
+    if (num >= 1000) {
+      const thousand = Math.floor(num / 1000);
+      wordStr += convertTens(thousand) + ' হাজার ';
+      num %= 1000;
+    }
+    
+    if (num >= 100) {
+      const hundred = Math.floor(num / 100);
+      wordStr += singleWords[hundred] + ' শত ';
+      num %= 100;
+    }
+    
+    if (num > 0) {
+      wordStr += convertTens(num);
+    }
+    
+    return wordStr.trim() + ' টাকা মাত্র';
+  };
 
   // Filter records by cell/executives for standard users
   const getFilteredRecordsForUser = (primaryCellId: number | null) => {
@@ -341,7 +386,7 @@ export default function ClosingBillPage() {
         return null;
       }
     } catch (err) {
-      logger.error('Error saving closing bill:', err);
+      console.error('Error saving closing bill:', err);
       setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
       return null;
     } finally {
@@ -438,7 +483,7 @@ export default function ClosingBillPage() {
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।';
-      logger.error('Error generating closing bill:', err);
+      console.error('Error generating closing bill:', err);
       setErrorMessage(errorMsg);
       return null;
     } finally {

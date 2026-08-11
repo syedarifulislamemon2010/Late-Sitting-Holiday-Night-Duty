@@ -38,6 +38,8 @@
 - [📂 Production Deployment Guide (RHEL 8/9)](#-production-deployment-guide-rhel-89)
 - [🔄 Disaster Recovery (DR)](#-disaster-recovery-dr)
 - [🛡️ Security \& Threat Modeling](#-security--threat-modeling)
+- [🔒 Security Features](#-security-features)
+- [📦 Code Quality](#-code-quality)
 - [🧪 Testing Strategy](#-testing-strategy)
 - [📜 Compliance Mapping Matrix](#-compliance-mapping-matrix)
 
@@ -63,6 +65,10 @@
 - 🖨️ **US-Legal & A4 Print Engine**: Bank-compliant print formats with pixel-perfect alignment.
 - 🗑️ **Soft-Delete Recycle Bin**: Restore accidentally deleted records without losing database integrity.
 - 🛡️ **Role-Based Cell Security**: Enforces cell-level isolation and operator scope limits across all administrative endpoints.
+- 📚 **সাহায্য ও নির্দেশিকা (Help & Guide)** — কীবোর্ড শর্টকাট, FAQ, ফিচার গাইড
+- 💾 **ডাটাবেস ব্যাকআপ ও পুনরুদ্ধার (Database Backup & Restore)** — JSON ব্যাকআপ/রিস্টোর UI
+- ✨ **Framer Motion পেজ ট্রানজিশন** — স্মুথ রুট পরিবর্তন অ্যানিমেশন
+- ♥️ **কাস্টম এরর পেজ** (error.tsx, not-found.tsx, loading.tsx)
 
 ---
 
@@ -136,6 +142,7 @@ graph TD
 | **Document Generator** | docx 9.x | Programmatic Microsoft Word (.docx) generation library. |
 | **Database** | PostgreSQL 15 | Enterprise-grade relational database with strict constraint validation and index optimization. |
 | **Testing** | Vitest 4.1 | Lightning-fast ESM-native test runner for unit, integration, and service contract verification. |
+| **Animation** | framer-motion | Smooth page transitions and interactive micro-animations. |
 
 ---
 
@@ -173,8 +180,11 @@ graph TD
   - 💻 Hardware Requisition Notes (`/hardware-requisition`)
   - 🍱 Lunch Allowance Bill Sheets (`/documents`)
   - 📄 Bill Preparation & Closing Statements (`/closing-bill`)
+- **Other Page Routes**:
+  - 📚 সাহায্য ও নির্দেশিকা (Help & Guide) (`/help`)
+  - 💾 ডাটাবেস ব্যাকআপ (Database Backup, Admin only) (`/backup`)
 - **Interactive Execution**: Clicking any line of text (Date, Recipient, Subject, Paragraphs, Tables, Signatures) inside the preview sheet enables instant editing directly in the browser.
-- **Direct PDF Output**: Pressing **"ডাউনলোড পিডিএফ"** or **"প্রিন্ট"** renders your modified text cleanly into the final PDF/Print output.
+- **Direct PDF Output**: Pressing **"ডাউনলোড পিডিএফ"** বা **"প্রিন্ট"** renders your modified text cleanly into the final PDF/Print output.
 
 ### 2. Microsoft Word (.docx) Document Generator (System-Wide)
 - **Native Word Export**: Dedicated **"ডাউনলোড ওয়ার্ড (.docx)"** buttons are integrated into all modules.
@@ -495,6 +505,23 @@ npm run db:seed
 - 🔑 **CSRF & Session Security**: HTTP-only, `SameSite=Strict`, secure cookie policy.
 - 🔒 **Login Screen Light-Mode Lock**: Form styled cleanly without dark-mode contrast bleed.
 - 👁️ **Access Control**: Role-based access control (RBAC) enforced on both API and UI level.
+
+---
+
+## 🔒 Security Features
+- **Proxy-Level Route Protection**: NextAuth session validation via `src/proxy.ts`
+- **API Rate Limiting**: IP-based token bucket (30 req/min)
+- **Security Headers**: X-Frame-Options DENY, X-Content-Type-Options nosniff, X-XSS-Protection, Referrer-Policy, Permissions-Policy
+- **WCAG 2.1 AA Accessibility**: Focus traps, ARIA labels, skip-to-content, prefers-reduced-motion
+
+---
+
+## 📦 Code Quality
+- **Structured Logging**: `src/lib/logger.ts` (production-silent debug/info)
+- **Centralized API Client**: `src/lib/api-client.ts` (typed fetch wrapper)
+- **Constants Extraction**: `src/constants/billing.ts`, `src/constants/holidays.ts`
+- **Bengali Utils Consolidation**: Single source in `src/lib/bengali-converter.ts`
+- **CI/CD Pipeline**: GitHub Actions (TypeScript check, Vitest, Next.js build)
 
 ---
 
