@@ -67,6 +67,8 @@
 - 🛡️ **Role-Based Cell Security**: Enforces cell-level isolation and operator scope limits across all administrative endpoints.
 - 📚 **সাহায্য ও নির্দেশিকা (Help & Guide)** — কীবোর্ড শর্টকাট, FAQ, ফিচার গাইড
 - 💾 **ডাটাবেস ব্যাকআপ ও পুনরুদ্ধার (Database Backup & Restore)** — JSON ব্যাকআপ/রিস্টোর UI
+- 🔔 **ইন-অ্যাপ নোটিফিকেশন সেন্টার (Notification Center)** — নেভব্যারে বেল আইকন, আনরিড নোটিফিকেশন রেড পালস কাউন্টার, ক্যাটাগরি ফিল্টার এবং ড্রপডাউন অ্যালার্ট
+- 📊 **সেল-ওয়াইজ কস্ট অ্যানালাইসিস ও সমাপনী সামারি রিপোর্ট (Cost Analytics & Summary Report)** — সেলের নাইট/হলিডে ডিউটি খরচের দৃশ্যমান চার্ট এবং ১-ক্লিকে অফিশিয়াল সমাপনী সামারি প্রিন্ট/PDF রিপোর্ট
 - ✨ **Framer Motion পেজ ট্রানজিশন** — স্মুথ রুট পরিবর্তন অ্যানিমেশন
 - ♥️ **কাস্টম এরর পেজ** (error.tsx, not-found.tsx, loading.tsx)
 

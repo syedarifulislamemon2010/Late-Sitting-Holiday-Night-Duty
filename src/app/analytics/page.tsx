@@ -11,9 +11,11 @@ import {
   Calendar, 
   RefreshCw, 
   AlertCircle,
-  ChevronDown
+  ChevronDown,
+  FileSpreadsheet
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
+import SummaryReportModal from './components/SummaryReportModal';
 
 // Dynamically import the charts component to disable Server-Side Rendering (SSR) for Recharts.
 // This completely resolves hydration mismatch and SSR "window is not defined" warnings.
@@ -314,6 +316,8 @@ export default function AnalyticsDashboardPage() {
     return `${bnDay}ই ${months[parseInt(m, 10) - 1]} ${bnYear}`;
   };
 
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
       
@@ -331,14 +335,24 @@ export default function AnalyticsDashboardPage() {
           </p>
         </div>
         
-        <button 
-          onClick={loadAnalytics}
-          disabled={loading}
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 border border-slate-200 dark:border-slate-700"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          রিফ্রেশ করুন
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsReportModalOpen(true)}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer shrink-0 border border-emerald-500"
+          >
+            <FileSpreadsheet size={15} />
+            সমাপনী সামারি রিপোর্ট
+          </button>
+
+          <button 
+            onClick={loadAnalytics}
+            disabled={loading}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 border border-slate-200 dark:border-slate-700"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            রিফ্রেশ করুন
+          </button>
+        </div>
       </div>
 
       {/* KPI Summary Cards */}
@@ -532,6 +546,13 @@ export default function AnalyticsDashboardPage() {
           )}
         </div>
       )}
+
+      {/* Executive Summary Report Modal */}
+      <SummaryReportModal 
+        isOpen={isReportModalOpen} 
+        onClose={() => setIsReportModalOpen(false)} 
+        availableCells={cellsList}
+      />
 
     </div>
   );

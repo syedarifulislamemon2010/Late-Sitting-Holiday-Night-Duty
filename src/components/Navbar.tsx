@@ -16,6 +16,8 @@ import {
 import { signOut } from 'next-auth/react';
 import { useLanguage } from '@/context/LanguageContext';
 
+import NotificationCenter from '@/components/NotificationCenter';
+
 interface UserSession {
   id: number;
   name: string;
@@ -235,6 +237,9 @@ export default function Navbar() {
           <Languages size={15} className="text-indigo-600 dark:text-indigo-400" />
           <span className="font-mono text-[11px] uppercase tracking-wider">{lang === 'bn' ? 'BN' : 'EN'}</span>
         </button>
+
+        {/* Notification Center Bell Component */}
+        <NotificationCenter />
 
         {/* Theme Toggle Button */}
         <button 
