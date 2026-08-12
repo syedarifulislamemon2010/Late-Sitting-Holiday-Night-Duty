@@ -160,7 +160,7 @@ export default function Sidebar() {
       title: isEn ? 'Other Tools' : 'অন্যান্য',
       items: [
         { name: isEn ? 'Documents Archive' : 'নথিপত্র আর্কাইভ', href: '/documents', icon: FileText },
-        ...(isAdmin ? [{ name: isEn ? 'Recycle Bin' : 'রিসাইকেল বিন', href: '/trash', icon: Trash2 }] : []),
+        { name: isEn ? 'Recycle Bin' : 'রিসাইকেল বিন', href: '/trash', icon: Trash2 },
         { name: isEn ? 'Help & Guide' : 'সাহায্য ও নির্দেশিকা', href: '/help', icon: HelpCircle }
       ]
     }
