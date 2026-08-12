@@ -322,18 +322,23 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             setAuthenticated(false);
             setUserProfile(null);
           }
+        } else if (res.status === 429) {
+          // Rate limited — do NOT log out, just skip this cycle
+          logger.warn('Auth check rate limited, skipping cycle');
         } else {
           setAuthenticated(false);
           setUserProfile(null);
         }
       } catch (err) {
+        // Transient network error — do NOT log out if already authenticated
         logger.warn('Auth verification failed (transient network error)');
-        setAuthenticated(false);
-        setUserProfile(null);
+        // Only set unauthenticated if we haven't authenticated yet (initial load)
+        setAuthenticated((prev) => prev === null ? false : prev);
       }
     };
     checkAuth();
-    const interval = setInterval(checkAuth, 4000);
+    // Poll every 60 seconds instead of 4 seconds to prevent flickering and rate limit hits
+    const interval = setInterval(checkAuth, 60000);
     return () => clearInterval(interval);
   }, []);
 

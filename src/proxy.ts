@@ -3,8 +3,8 @@ import type { NextRequest } from 'next/server';
 
 // Simple in-memory token bucket rate limiter
 const rateLimitMap = new Map<string, { tokens: number; lastRefilled: number }>();
-const BUCKET_CAPACITY = 30;
-const REFILL_RATE_MS = 2000; // Refill 1 token every 2 seconds
+const BUCKET_CAPACITY = 100;
+const REFILL_RATE_MS = 1000; // Refill 1 token every second
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -24,7 +24,10 @@ export function proxy(request: NextRequest) {
   }
 
   // Rate Limiting for API routes
-  if (pathname.startsWith('/api/')) {
+  // Exempt auth-critical endpoints from rate limiting
+  const rateLimitExempt = ['/api/profile', '/api/auth'];
+  const isExempt = rateLimitExempt.some(p => pathname.startsWith(p));
+  if (pathname.startsWith('/api/') && !isExempt) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '127.0.0.1';
     const now = Date.now();
     const limit = rateLimitMap.get(ip) || { tokens: BUCKET_CAPACITY, lastRefilled: now };

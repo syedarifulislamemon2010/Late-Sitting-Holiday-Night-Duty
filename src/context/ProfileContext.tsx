@@ -55,9 +55,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchProfile();
-    // Slowly poll profile status in background every 15 seconds to ensure sessions don't silently expire
-    const interval = setInterval(fetchProfile, 15000);
-    return () => clearInterval(interval);
+    // No polling — AuthGuard handles session verification
+    // Use refetchProfile() to manually refresh when needed
   }, []);
 
   return (
