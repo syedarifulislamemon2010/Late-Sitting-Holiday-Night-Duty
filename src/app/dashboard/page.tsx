@@ -72,6 +72,16 @@ export default function DashboardPage() {
   const [employee, setEmployee] = useState<any>(null);
   const [isEmployee, setIsEmployee] = useState(false);
   const [myDuties, setMyDuties] = useState<any[]>([]);
+
+  const [showHolidayReminder, setShowHolidayReminder] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      if (user.role === 'ADMIN') setIsAdmin(true);
+    } catch {}
+  }, []);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [formDutyType, setFormDutyType] = useState('LATE_SITTING');
   const [savingDuties, setSavingDuties] = useState(false);
@@ -411,6 +421,36 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Holiday Reminder Banner for Admins */}
+      {isAdmin && new Date().getMonth() >= 10 && !holidays.some(h => h.date.startsWith((new Date().getFullYear() + 1).toString())) && showHolidayReminder && (
+        <div className="bg-gradient-to-r from-amber-50/60 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-center justify-between shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-xl">
+              <Calendar size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                📅 আগামী বছরের ({new Date().getFullYear() + 1}) সরকারি ছুটির তালিকা এখনো আপলোড করা হয়নি।
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link 
+              href="/settings" 
+              className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-sm transition-colors cursor-pointer"
+            >
+              আপলোড করুন →
+            </Link>
+            <button 
+              onClick={() => setShowHolidayReminder(false)}
+              className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200 p-1 cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Personal Summary Card Widget */}
       <MyDutySummaryCard />

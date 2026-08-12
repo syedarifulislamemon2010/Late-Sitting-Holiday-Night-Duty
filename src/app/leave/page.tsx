@@ -635,6 +635,8 @@ export default function LeaveGeneratorPage() {
   const [delegateId, setDelegateId] = useState<string>('');
   
   // Leaves Table Balance Sheet States (Editable inputs)
+  const [isAutoBalance, setIsAutoBalance] = useState(true);
+  const [balanceLoading, setBalanceLoading] = useState(false);
   const [casualTotal, setCasualTotal] = useState<number | string>(20);
   const [casualUsed, setCasualUsed] = useState<number | string>(0);
   
@@ -774,6 +776,28 @@ export default function LeaveGeneratorPage() {
       }
     }
   }, [latestLeave, editingLeaveId, selectedApplicantEmp]);
+
+  useEffect(() => {
+    if (!isAutoBalance || !bankId) return;
+    const fetchBalance = async () => {
+      setBalanceLoading(true);
+      try {
+        const year = new Date().getFullYear();
+        const res = await fetch(`/api/leaves/balance?bankId=${encodeURIComponent(bankId)}&year=${year}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.casualTotal !== undefined) setCasualTotal(String(data.casualTotal));
+          if (data.casualUsed !== undefined) setCasualUsed(String(data.casualUsed));
+          if (data.ordinaryTotal !== undefined) setOrdinaryTotal(String(data.ordinaryTotal));
+          if (data.ordinaryUsed !== undefined) setOrdinaryUsed(String(data.ordinaryUsed));
+          if (data.specialTotal !== undefined) setSpecialTotal(String(data.specialTotal));
+          if (data.specialUsed !== undefined) setSpecialUsed(String(data.specialUsed));
+        }
+      } catch { /* silent */ }
+      setBalanceLoading(false);
+    };
+    fetchBalance();
+  }, [bankId]);
 
   // Format YYYY-MM-DD date to DD/MM/YYYY
   const toDisplayDateStr = (dateStr: string): string => {
@@ -1605,6 +1629,28 @@ export default function LeaveGeneratorPage() {
               >
 
                 <div className="space-y-3.5 text-xs font-sans">
+                  {/* Auto Balance Tracking Header */}
+                  <div className="backdrop-blur-sm bg-gradient-to-r from-indigo-50/40 to-teal-50/40 dark:from-indigo-950/20 dark:to-teal-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-xl p-3 flex flex-col gap-2 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">🔄</span>
+                        <h4 className="font-bold text-indigo-900 dark:text-indigo-300 text-sm">অটো ব্যালেন্স ট্র্যাকিং</h4>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setIsAutoBalance(!isAutoBalance)}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isAutoBalance ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'}`}
+                      >
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${isAutoBalance ? 'translate-x-4.5' : 'translate-x-1'}`} style={{ transform: isAutoBalance ? 'translateX(18px)' : 'translateX(4px)' }} />
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">আবেদনকারীর ব্যাংক আইডি অনুযায়ী স্বয়ংক্রিয়ভাবে ভোগকৃত ছুটি হিসাব করা হয়েছে</p>
+                    {balanceLoading && (
+                      <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded overflow-hidden">
+                        <div className="h-full bg-indigo-500 w-1/3 rounded animate-[shimmer_1.5s_infinite] relative left-0" style={{ animationName: 'shimmerX' }} />
+                      </div>
+                    )}
+                  </div>
                   {/* Row 1 Casual leaves config */}
                   <div className="p-3 bg-indigo-50/20 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 rounded-xl space-y-2">
                     <p className="font-extrabold text-indigo-900 dark:text-indigo-400">নৈমিত্তিক ছুটি ব্যালেন্স:</p>

@@ -133,6 +133,8 @@ export default function LunchBillPage() {
   });
   
   const [workingDays, setWorkingDays] = useState<number>(17);
+  const [isAutoWorkingDays, setIsAutoWorkingDays] = useState(true);
+  const [workingDaysLoading, setWorkingDaysLoading] = useState(false);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   // Active records sheet state
@@ -415,6 +417,29 @@ export default function LunchBillPage() {
     setRecords(updated);
   };
 
+  useEffect(() => {
+    if (!isAutoWorkingDays) return;
+    const fetchWorkingDays = async () => {
+      setWorkingDaysLoading(true);
+      try {
+        const monthParam = selectedMonth && selectedMonth !== 'all' ? selectedMonth : undefined;
+        const url = monthParam ? `/api/holidays/working-days?month=${monthParam}` : '/api/holidays/working-days';
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.workingDays && typeof data.workingDays === 'number') {
+            setWorkingDays(data.workingDays);
+            // Trigger recalculation with new working days
+            applyDeductionRates(deductionMode, flatDeductionRate, designationRates, data.workingDays, records);
+          }
+        }
+      } catch (err) { /* silent fail, manual override available */ }
+      setWorkingDaysLoading(false);
+    };
+    fetchWorkingDays();
+  }, [selectedMonth]); // only depend on selectedMonth, isAutoWorkingDays checked inside
+
+
   const handleAbsenceChange = (empId: number, isExec: boolean, valStr: string) => {
     const val = parseInt(valStr, 10) || 0;
     const updated = records.map(r => 
@@ -438,6 +463,7 @@ export default function LunchBillPage() {
     const val = parseInt(daysStr, 10) || 0;
     setWorkingDays(val);
     applyDeductionRates(deductionMode, flatDeductionRate, designationRates, val, records);
+    setIsAutoWorkingDays(false);
   };
 
   const applyFlatRate = (rateVal: number) => {
@@ -767,10 +793,25 @@ export default function LunchBillPage() {
 
             {/* Working Days Input */}
             <div className="space-y-2">
-              <label htmlFor="workingDays" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                মোট কার্যদিবস
-                {!isAdmin && <span className="text-[10px] text-slate-400 normal-case ml-1.5">(লকড)</span>}
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="workingDays" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  মোট কার্যদিবস
+                  {!isAdmin && <span className="text-[10px] text-slate-400 normal-case ml-1.5">(লকড)</span>}
+                </label>
+                {isAdmin && (
+                  <button 
+                    type="button"
+                    onClick={() => setIsAutoWorkingDays(!isAutoWorkingDays)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                      isAutoWorkingDays 
+                        ? 'bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300' 
+                        : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+                    }`}
+                  >
+                    {isAutoWorkingDays ? 'Auto On' : 'Manual'}
+                  </button>
+                )}
+              </div>
               <input
                 id="workingDays"
                 type="number"
@@ -779,8 +820,19 @@ export default function LunchBillPage() {
                 disabled={!isAdmin}
                 value={workingDays}
                 onChange={(e) => handleWorkingDaysChange(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold font-sans"
+                className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold font-sans transition-all ${
+                  workingDaysLoading ? 'animate-pulse opacity-70 ring-2 ring-emerald-500/20' : ''
+                }`}
               />
+              {isAutoWorkingDays && (
+                <div className="flex items-center gap-1.5 mt-1 px-2 py-1 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-lg text-[10px] font-bold inline-flex w-fit">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  ✨ অটো-ক্যালকুলেটেড
+                </div>
+              )}
             </div>
 
 

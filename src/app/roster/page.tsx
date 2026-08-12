@@ -444,6 +444,11 @@ export default function RosterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
+  const [suggestedRef, setSuggestedRef] = useState('');
+  const [refDuplicate, setRefDuplicate] = useState(false);
+  const [preConflicts, setPreConflicts] = useState<Array<{date: string, type: string, message: string}>>([]);
+  const [billSuggestion, setBillSuggestion] = useState<{ref: string, category: string} | null>(null);
+  
   // Edit/Update Duty states
   const [editingDuty, setEditingDuty] = useState<Duty | null>(null);
   const [editingDuties, setEditingDuties] = useState<Duty[]>([]);
@@ -1130,6 +1135,72 @@ export default function RosterPage() {
     opt1Assignments
   ]);
 
+  useEffect(() => {
+    if (isPrintMode && printCategory) {
+      fetch(`/api/office-orders/next-ref?category=${printCategory}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.nextRef) setSuggestedRef(data.nextRef);
+        })
+        .catch(err => console.error(err));
+    }
+  }, [isPrintMode, printCategory]);
+
+  useEffect(() => {
+    if (orderRef) {
+      const isDupe = officeOrders.some(o => o.orderRef === orderRef && o.orderRef !== originalOrderRef);
+      setRefDuplicate(isDupe);
+    } else {
+      setRefDuplicate(false);
+    }
+  }, [orderRef, officeOrders, originalOrderRef]);
+
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      let conflicts: any[] = [];
+      const type = assignmentForm.type;
+      if (!type) return setPreConflicts([]);
+
+      if (entryMode === 'DATE_WISE') {
+        const { date, selectedEmployeeIds } = assignmentForm;
+        if (!date || selectedEmployeeIds.length === 0) return setPreConflicts([]);
+        for (const empId of selectedEmployeeIds) {
+          try {
+            const res = await fetch('/api/duties/check-conflicts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ employeeId: empId, dates: [date], type })
+            });
+            const data = await res.json();
+            if (data.conflicts && data.conflicts.length > 0) {
+              conflicts.push(...data.conflicts);
+            }
+          } catch (e) {}
+        }
+      } else {
+        const entries = Object.entries(opt1Assignments);
+        if (entries.length === 0) return setPreConflicts([]);
+        for (const [empId, dates] of entries) {
+          if (!dates || dates.length === 0) continue;
+          try {
+            const res = await fetch('/api/duties/check-conflicts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ employeeId: Number(empId), dates, type })
+            });
+            const data = await res.json();
+            if (data.conflicts && data.conflicts.length > 0) {
+              conflicts.push(...data.conflicts);
+            }
+          } catch (e) {}
+        }
+      }
+      setPreConflicts(conflicts);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [assignmentForm.date, assignmentForm.selectedEmployeeIds, assignmentForm.type, opt1Assignments, entryMode]);
+
   const [headerMode, setHeaderMode] = useState<'with_header' | 'without_header'>('with_header');
 
   const archiveOrder = async (action: 'generate' | 'print' | 'download') => {
@@ -1318,6 +1389,8 @@ export default function RosterPage() {
         alert(isEditingArchive ? 'আর্কাইভটি সফলভাবে আপডেট করা হয়েছে!' : 'অফিস আদেশটি সফলভাবে আর্কাইভে সংরক্ষণ করা হয়েছে!');
         
         loadDuties();
+        setBillSuggestion({ ref: orderRef, category: printCategory || '' });
+        setTimeout(() => setBillSuggestion(null), 15000);
         loadOfficeOrders();
         
         if (isEditingArchive) {
@@ -3359,6 +3432,17 @@ export default function RosterPage() {
                   </select>
                 </div>
 
+                {preConflicts.length > 0 && entryMode === 'EMPLOYEE_WISE' && (
+                  <div className="space-y-1.5 animate-in slide-in-from-top-1">
+                    {preConflicts.map((conf, i) => (
+                      <div key={i} className="flex items-start gap-2 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-2.5 text-xs text-amber-800 dark:text-amber-200">
+                        <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-500" />
+                        <span className="font-semibold">{conf.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {!assignmentForm.type ? (
                   <div className="p-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/10 text-center space-y-2 mt-4">
                     <Lock className="mx-auto text-slate-400 dark:text-slate-500 animate-bounce" size={20} />
@@ -3517,6 +3601,17 @@ export default function RosterPage() {
                         }
                         return null;
                       })()}
+                      
+                      {preConflicts.length > 0 && entryMode === 'DATE_WISE' && (
+                        <div className="mt-2 space-y-1.5 animate-in slide-in-from-top-1">
+                          {preConflicts.map((conf, i) => (
+                            <div key={i} className="flex items-start gap-2 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-2.5 text-xs text-amber-800 dark:text-amber-200">
+                              <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-500" />
+                              <span className="font-semibold">{conf.message}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Officer Selector Multi-select checkboxes */}
@@ -4174,6 +4269,19 @@ export default function RosterPage() {
                     onChange={(e) => setUserCustomOrderRef(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500"
                   />
+                  {suggestedRef && (
+                    <div 
+                      onClick={() => setUserCustomOrderRef(suggestedRef)}
+                      className="inline-block mt-1.5 bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 border rounded-lg px-2.5 py-1 text-[10px] text-emerald-700 dark:text-emerald-300 font-bold cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all"
+                    >
+                      💡 সাজেস্টেড: {suggestedRef}
+                    </div>
+                  )}
+                  {refDuplicate && (
+                    <div className="inline-block mt-1.5 ml-2 bg-rose-50/80 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 border rounded-lg px-2.5 py-1 text-[10px] text-rose-700 dark:text-rose-300 font-bold">
+                      ⚠️ এই সূত্র নং ইতোমধ্যে ব্যবহৃত
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
@@ -4456,6 +4564,31 @@ export default function RosterPage() {
                 কনফ্লিক্টিং ডাটা মুছে সেভ করুন
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {billSuggestion && (
+        <div className="fixed bottom-5 right-5 z-50 max-w-[420px] p-4 bg-gradient-to-r from-emerald-50 to-sky-50 dark:from-emerald-950/40 dark:to-sky-950/40 border-emerald-200 dark:border-emerald-800 border rounded-2xl shadow-xl flex flex-col gap-3 animate-in slide-in-from-bottom-5 fade-in duration-300"
+             style={{
+               fontFamily: "'SolaimanLipi', 'Nikosh', sans-serif",
+             }}>
+          <div className="flex items-start gap-3">
+            <CheckCircle className="text-emerald-500 shrink-0 mt-0.5" size={20} />
+            <div className="text-sm font-semibold text-emerald-900 dark:text-emerald-100 leading-relaxed">
+              ✅ অফিস আদেশ সফলভাবে তৈরি হয়েছে। 💰 এখন বিল মেমো তৈরি করতে চান?
+            </div>
+            <button onClick={() => setBillSuggestion(null)} className="text-slate-400 hover:text-slate-600 ml-auto p-1 rounded-lg shrink-0 cursor-pointer -mt-1 -mr-1">
+              <X size={16} />
+            </button>
+          </div>
+          <div className="flex justify-end mt-1">
+            <a 
+              href={`/billing?orderRef=${encodeURIComponent(billSuggestion.ref)}&category=${encodeURIComponent(billSuggestion.category)}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+            >
+              বিলিং পেজে যান <ChevronRight size={14} />
+            </a>
           </div>
         </div>
       )}

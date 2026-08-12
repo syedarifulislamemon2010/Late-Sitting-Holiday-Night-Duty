@@ -2,8 +2,8 @@ import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { officeOrders, lunchBills, leaveApplications, employees } from '@/db/schema';
-import { desc, eq, or } from 'drizzle-orm';
+import { officeOrders, lunchBills, leaveApplications, employees, holidays } from '@/db/schema';
+import { desc, eq, or, like } from 'drizzle-orm';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
 export interface AppNotification {
@@ -151,6 +151,59 @@ export async function GET() {
         });
       }
     });
+
+    // A: Auto-Backup Status (Admin only)
+    if (isAdmin) {
+      notifications.push({
+        id: 'sys_backup_reminder',
+        title: '💾 অটো-ব্যাকআপ সক্রিয়',
+        message: 'সিস্টেম প্রতিদিন স্বয়ংক্রিয়ভাবে ডাটাবেজ ব্যাকআপ নিচ্ছে।',
+        type: 'SYSTEM',
+        timestamp: new Date().toISOString(),
+        timeAgo: 'সিস্টেম',
+        link: '/backup',
+      });
+    }
+
+    // B: Monthly Summary Report (Admin only, 1st-7th of month)
+    const currentDate = new Date();
+    if (isAdmin && currentDate.getDate() <= 7) {
+      const lastMonth = new Date();
+      lastMonth.setMonth(currentDate.getMonth() - 1);
+      const ym = `${lastMonth.getFullYear()}_${lastMonth.getMonth() + 1}`;
+      notifications.push({
+        id: `sys_monthly_report_${ym}`,
+        title: '📊 গত মাসের সামারি রিপোর্ট প্রস্তুত',
+        message: 'গত মাসের সেল-ওয়াইজ ডিউটি খরচের বিস্তারিত রিপোর্ট দেখুন।',
+        type: 'SYSTEM',
+        timestamp: new Date().toISOString(),
+        timeAgo: 'সিস্টেম',
+        link: '/analytics',
+      });
+    }
+
+    // C: Holiday Calendar Reminder (Admin only, Nov-Dec)
+    const currentMonth = currentDate.getMonth(); // 10 = Nov, 11 = Dec
+    if (isAdmin && currentMonth >= 10) {
+      const nextYear = currentDate.getFullYear() + 1;
+      const nextYearHolidays = await db
+        .select()
+        .from(holidays)
+        .where(like(holidays.date, `${nextYear}-%`))
+        .limit(1);
+
+      if (nextYearHolidays.length === 0) {
+        notifications.push({
+          id: `sys_holiday_reminder_${nextYear}`,
+          title: '📅 ছুটির ক্যালেন্ডার আপডেট করুন',
+          message: 'আগামী বছরের সরকারি ছুটির তালিকা এখনো আপলোড করা হয়নি।',
+          type: 'SYSTEM',
+          timestamp: new Date().toISOString(),
+          timeAgo: 'সিস্টেম',
+          link: '/settings', // holidays management page could be settings or dashboard
+        });
+      }
+    }
 
     // Sort all notifications chronologically descending
     notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());

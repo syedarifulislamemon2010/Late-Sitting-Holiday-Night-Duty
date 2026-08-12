@@ -12,7 +12,8 @@ import {
   RefreshCw, 
   AlertCircle,
   ChevronDown,
-  FileSpreadsheet
+  FileSpreadsheet,
+  X
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import SummaryReportModal from './components/SummaryReportModal';
@@ -183,6 +184,7 @@ interface LeavePattern {
 export default function AnalyticsDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showMonthlySummary, setShowMonthlySummary] = useState(true);
   
   // Filters
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
@@ -354,6 +356,27 @@ export default function AnalyticsDashboardPage() {
           </button>
         </div>
       </div>
+
+      {currentUser?.role === 'ADMIN' && new Date().getDate() <= 7 && showMonthlySummary && (
+        <div className="bg-gradient-to-r from-indigo-50/60 to-purple-50/60 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200/50 dark:border-indigo-800/50 rounded-2xl p-4 flex items-start gap-4 relative animate-in fade-in overflow-hidden shadow-sm">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10" />
+          <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 z-10 relative shadow-sm border border-indigo-200 dark:border-indigo-800/80">
+            <TrendingUp size={20} />
+          </div>
+          <div className="flex-1 z-10">
+            <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-100 mb-1">📋 গত মাসের এক্সিকিউটিভ সামারি</h3>
+            <p className="text-xs text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed">
+              সেল-ওয়াইজ ডিউটি ও খরচের বিশ্লেষণ দেখতে নিচে স্ক্রল করুন
+            </p>
+          </div>
+          <button 
+            onClick={() => setShowMonthlySummary(false)}
+            className="text-indigo-400 hover:text-indigo-600 dark:text-indigo-500 dark:hover:text-indigo-300 p-1.5 rounded-xl hover:bg-indigo-100/50 dark:hover:bg-indigo-900/50 transition-colors z-10 relative cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* KPI Summary Cards */}
       {summary && (

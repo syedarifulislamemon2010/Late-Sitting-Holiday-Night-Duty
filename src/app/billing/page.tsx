@@ -4,6 +4,7 @@ import { DUTY_RATES } from '@/constants/billing';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { useProfile } from '@/context/ProfileContext';
 import { TableSkeleton, CardSkeleton } from "@/components/SkeletonLoader";
 import { 
@@ -384,6 +385,28 @@ export default function BillingPage() {
     signingDesignation: string;
   } | null>(null);
   const [msgBanner, setMsgBanner] = useState<{ type: 'success' | 'cancel'; text: string } | null>(null);
+  const [showUrlBanner, setShowUrlBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const orderRefParam = params.get('orderRef');
+      const categoryParam = params.get('category');
+      
+      let matched = false;
+      if (orderRefParam) {
+        setSelectedOrderRef(orderRefParam);
+        matched = true;
+      }
+      if (categoryParam) {
+        setPrintCategory(categoryParam as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT');
+        matched = true;
+      }
+      if (matched) {
+        setShowUrlBanner(true);
+      }
+    }
+  }, []);
   
   const isBillDirty = useMemo(() => {
     if (!isEditingArchive || !initialBillValues) return false;
@@ -2245,6 +2268,17 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-6">
+      {showUrlBanner && (
+        <div className="bg-gradient-to-r from-indigo-50 to-indigo-100/50 dark:from-indigo-950/40 dark:to-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 p-3 rounded-xl flex items-center justify-between shadow-sm backdrop-blur-sm">
+          <div className="flex items-center gap-2 text-indigo-800 dark:text-indigo-300">
+            <span>🔗</span>
+            <span className="text-sm font-bold tracking-wide">অফিস আদেশ থেকে প্রি-সিলেক্টেড</span>
+          </div>
+          <button onClick={() => setShowUrlBanner(false)} className="p-1 hover:bg-indigo-200/50 dark:hover:bg-indigo-800/50 rounded-lg text-indigo-500 transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+      )}
       {msgBanner && (
         <div className={`p-4 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 ${
           msgBanner.type === 'success' 
