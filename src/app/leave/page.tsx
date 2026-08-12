@@ -377,6 +377,14 @@ export default function LeaveGeneratorPage() {
       return false;
     }
 
+    const appliedDaysNum = (startDate || endDate) 
+      ? (isSingleDay ? 1 : (leaveDetails.actualDeducted > 0 ? leaveDetails.actualDeducted : 1)) 
+      : 0;
+    const prevUsedNum = parseInt(String(casualUsed || 0), 10) || 0;
+    const nextCasualUsedVal = (leaveType === 'CASUAL' || leaveType === 'POST_FACTO' || leaveType === 'STATION_LEAVE')
+      ? (prevUsedNum + appliedDaysNum)
+      : prevUsedNum;
+
     const payload = {
       leaveType,
       startDate,
@@ -392,7 +400,7 @@ export default function LeaveGeneratorPage() {
       selectedDistrict,
       delegateId,
       casualTotal,
-      casualUsed,
+      casualUsed: nextCasualUsedVal,
       ordinaryTotal,
       ordinaryUsed,
       specialTotal,
@@ -417,6 +425,7 @@ export default function LeaveGeneratorPage() {
 
       if (res.ok) {
         await res.json();
+        setCasualUsed(nextCasualUsedVal);
         setSuccessMsg(editingLeaveId ? 'আবেদনটি সফলভাবে আপডেট করা হয়েছে।' : 'আবেদনটি সফলভাবে আর্কাইভে সংরক্ষণ করা হয়েছে।');
         setErrorMsg('');
         
@@ -1111,6 +1120,9 @@ export default function LeaveGeneratorPage() {
 
   const handleDownloadDocx = async () => {
     try {
+      // Automatically save to archive in background to update official leave balance
+      handleSaveToArchive().catch(console.error);
+
       const { generateLeaveDocx } = await import('@/lib/docx-generator');
       const delegateEmp = employees.find(e => String(e.id) === delegateId);
 
