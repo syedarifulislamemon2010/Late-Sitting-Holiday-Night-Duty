@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { leaveApplications } from '@/db/schema';
+import { leaveApplications, holidays } from '@/db/schema';
 import { and, eq, gte, lte } from 'drizzle-orm';
+import { getCalculatedLeaveDetails } from '@/lib/leave-calculator';
 
 export async function GET(request: Request) {
   try {
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'bankId is required' }, { status: 400 });
     }
     
-    const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
+    const year = yearParam ? parseInt(yearParam, 10) : new Date().getFullYear();
     const startOfYear = `${year}-01-01`;
     const endOfYear = `${year}-12-31`;
 
@@ -29,29 +30,67 @@ export async function GET(request: Request) {
       )
     );
 
-    let casualUsed = 0;
+    const dbHolidays = await db.select().from(holidays);
+    const mappedHolidays = dbHolidays.map(h => ({
+      id: h.id,
+      date: h.date,
+      name: h.name,
+      isWorkingDay: h.isWorkingDay
+    }));
+
+    let appliedCasualDaysSum = 0;
     let ordinaryUsed = 0;
     let specialUsed = 0;
+    let casualTotal = 20;
+    let ordinaryTotal = 15;
+    let specialTotal = 5;
+    let maxRecordedCasualUsed = 0;
 
     for (const app of applications) {
-      const start = new Date(app.startDate);
-      const end = new Date(app.endDate);
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      if (app.casualTotal) casualTotal = Math.max(casualTotal, Number(app.casualTotal));
+      if (app.ordinaryTotal) ordinaryTotal = Math.max(ordinaryTotal, Number(app.ordinaryTotal));
+      if (app.specialTotal) specialTotal = Math.max(specialTotal, Number(app.specialTotal));
 
-      if (app.leaveType === 'CASUAL' || app.leaveType === 'POST_FACTO') {
-        casualUsed += diffDays;
-      } else if (app.leaveType === 'STATION_LEAVE') {
-        ordinaryUsed += diffDays;
+      if (app.casualUsed) {
+        const recordedVal = Number(app.casualUsed);
+        if (recordedVal > maxRecordedCasualUsed) {
+          maxRecordedCasualUsed = recordedVal;
+        }
+      }
+
+      const details = getCalculatedLeaveDetails(app.startDate, app.endDate, mappedHolidays);
+      const leaveDays = details.actualDeducted > 0 ? details.actualDeducted : Math.max(1, details.totalDays);
+
+      if (app.leaveType === 'CASUAL' || app.leaveType === 'POST_FACTO' || app.leaveType === 'STATION_LEAVE') {
+        appliedCasualDaysSum += leaveDays;
+      } else if (app.leaveType === 'ORDINARY') {
+        ordinaryUsed += leaveDays;
       } else {
-        specialUsed += diffDays;
+        specialUsed += leaveDays;
       }
     }
 
+    // Effective casualUsed is baseline recorded prior used + total days from current year applications
+    // Or at least maxRecordedCasualUsed if backlog recorded total used exceeds sum
+    const casualUsed = Math.max(maxRecordedCasualUsed, appliedCasualDaysSum);
+
+    const casualRemaining = Math.max(0, casualTotal - casualUsed);
+    const ordinaryRemaining = Math.max(0, ordinaryTotal - ordinaryUsed);
+    const specialRemaining = Math.max(0, specialTotal - specialUsed);
+
     return NextResponse.json({
-      casual: { total: 20, used: casualUsed, remaining: 20 - casualUsed },
-      ordinary: { total: 15, used: ordinaryUsed, remaining: 15 - ordinaryUsed },
-      special: { total: 5, used: specialUsed, remaining: 5 - specialUsed },
+      casualTotal,
+      casualUsed,
+      casualRemaining,
+      ordinaryTotal,
+      ordinaryUsed,
+      ordinaryRemaining,
+      specialTotal,
+      specialUsed,
+      specialRemaining,
+      casual: { total: casualTotal, used: casualUsed, remaining: casualRemaining },
+      ordinary: { total: ordinaryTotal, used: ordinaryUsed, remaining: ordinaryRemaining },
+      special: { total: specialTotal, used: specialUsed, remaining: specialRemaining },
       year
     });
   } catch (error) {

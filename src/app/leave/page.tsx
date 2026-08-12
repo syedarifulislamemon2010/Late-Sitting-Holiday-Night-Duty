@@ -786,18 +786,25 @@ export default function LeaveGeneratorPage() {
         const res = await fetch(`/api/leaves/balance?bankId=${encodeURIComponent(bankId)}&year=${year}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.casualTotal !== undefined) setCasualTotal(String(data.casualTotal));
-          if (data.casualUsed !== undefined) setCasualUsed(String(data.casualUsed));
-          if (data.ordinaryTotal !== undefined) setOrdinaryTotal(String(data.ordinaryTotal));
-          if (data.ordinaryUsed !== undefined) setOrdinaryUsed(String(data.ordinaryUsed));
-          if (data.specialTotal !== undefined) setSpecialTotal(String(data.specialTotal));
-          if (data.specialUsed !== undefined) setSpecialUsed(String(data.specialUsed));
+          const cUsed = data.casualUsed ?? data.casual?.used;
+          const cTotal = data.casualTotal ?? data.casual?.total;
+          const oUsed = data.ordinaryUsed ?? data.ordinary?.used;
+          const oTotal = data.ordinaryTotal ?? data.ordinary?.total;
+          const sUsed = data.specialUsed ?? data.special?.used;
+          const sTotal = data.specialTotal ?? data.special?.total;
+
+          if (cTotal !== undefined) setCasualTotal(String(cTotal));
+          if (cUsed !== undefined) setCasualUsed(String(cUsed));
+          if (oTotal !== undefined) setOrdinaryTotal(String(oTotal));
+          if (oUsed !== undefined) setOrdinaryUsed(String(oUsed));
+          if (sTotal !== undefined) setSpecialTotal(String(sTotal));
+          if (sUsed !== undefined) setSpecialUsed(String(sUsed));
         }
       } catch { /* silent */ }
       setBalanceLoading(false);
     };
     fetchBalance();
-  }, [bankId]);
+  }, [bankId, isAutoBalance, archivedLeaves]);
 
   // Format YYYY-MM-DD date to DD/MM/YYYY
   const toDisplayDateStr = (dateStr: string): string => {
