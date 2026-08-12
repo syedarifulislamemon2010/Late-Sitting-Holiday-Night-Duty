@@ -63,8 +63,11 @@
 - 🍱 **Lunch & Closing Allowance Billing**: Compute and format official lunch bills and monthly bill preparation statements.
 - 👔 **Seniority & Executive Directory**: Automatic employee hierarchy ranking and seniority calculation.
 - 🖨️ **US-Legal & A4 Print Engine**: Bank-compliant print formats with pixel-perfect alignment.
-- 🗑️ **Soft-Delete Recycle Bin**: Restore accidentally deleted records without losing database integrity.
-- 🛡️ **Role-Based Cell Security**: Enforces cell-level isolation and operator scope limits across all administrative endpoints.
+- 🗑️ **Soft-Delete Recycle Bin & 30-Day Retention Alerts**: Restore accidentally deleted records without losing database integrity. Sends automated 30-day warning alerts to Admins via the Notification Center to restore or clean up expiring records.
+- 🛡️ **Role-Based Strict Cell Security**: Enforces cell-level isolation and operator scope limits across all administrative endpoints (users only see their assigned cell data).
+- 📊 **Accurate Casual Leave Balance Engine**: Accurately tracks used leave days against entitlement, displaying correct remaining casual leave on the dashboard.
+- 🖨️ **Enhanced 12px Standard Print & PDF Reports**: Printable summary reports and PDF previews optimized with clear 12px/13px font scaling for maximum legibility.
+- 🤖 **8 Automation Pipeline Suite**: Automated working days calculation, leave balance auto-population, office order reference auto-suggestion, real-time duty conflict pre-validation, 24h background auto-backup scheduler, and automated monthly report alerts.
 - 📚 **সাহায্য ও নির্দেশিকা (Help & Guide)** — কীবোর্ড শর্টকাট, FAQ, ফিচার গাইড
 - 💾 **ডাটাবেস ব্যাকআপ ও পুনরুদ্ধার (Database Backup & Restore)** — JSON ব্যাকআপ/রিস্টোর UI
 - 🔔 **ইন-অ্যাপ নোটিফিকেশন সেন্টার (Notification Center)** — নেভব্যারে বেল আইকন, আনরিড নোটিফিকেশন রেড পালস কাউন্টার, ক্যাটাগরি ফিল্টার এবং ড্রপডাউন অ্যালার্ট
