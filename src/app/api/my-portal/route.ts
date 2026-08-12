@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { employees, duties, leaveApplications, holidays, cells, officeOrders } from '@/db/schema';
-import { eq, and, desc, sql, like } from 'drizzle-orm';
+import { eq, and, desc, sql, like, or } from 'drizzle-orm';
 import { getCalculatedLeaveDetails, DEFAULT_CASUAL_LEAVE_ENTITLEMENT } from '@/lib/leave-calculator';
 import { logActivity } from '@/lib/audit';
 import { headers } from 'next/headers';
@@ -86,10 +86,14 @@ export async function GET(request: Request) {
       .where(eq(duties.employeeId, employee.id))
       .orderBy(desc(duties.date));
 
-    // 3. Fetch leave applications
+    // 3. Fetch leave applications matching user ID OR employee bankId
     const employeeLeaves = await db.select()
       .from(leaveApplications)
-      .where(eq(leaveApplications.userId, user.id))
+      .where(
+        employee.bankId 
+          ? or(eq(leaveApplications.userId, user.id), eq(leaveApplications.bankId, employee.bankId))
+          : eq(leaveApplications.userId, user.id)
+      )
       .orderBy(desc(leaveApplications.startDate));
 
     // 4. Calculate casual leave balance
@@ -106,7 +110,9 @@ export async function GET(request: Request) {
       const type = leave.leaveType;
       if (type === 'CASUAL' || type === 'STATION_LEAVE' || type === 'POST_FACTO') {
         const details = getCalculatedLeaveDetails(leave.startDate, leave.endDate, mappedHolidays);
-        casualUsed += details.actualDeducted;
+        // Ensure at least total days or actualDeducted is counted correctly
+        const leaveDays = details.actualDeducted > 0 ? details.actualDeducted : details.totalDays;
+        casualUsed += leaveDays;
       }
     });
 

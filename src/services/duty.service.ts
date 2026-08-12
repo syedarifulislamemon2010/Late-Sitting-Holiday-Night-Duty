@@ -59,14 +59,9 @@ export class DutyService {
     let userCellIds: number[] = [];
     let isUserRestricted = false;
 
-    if (currentUser && currentUser.role === 'USER') {
+    if (currentUser && currentUser.role !== 'ADMIN') {
       isUserRestricted = true;
-      userCellIds = currentUser.cells.map((c: { id: number }) => c.id);
-      if (userCellIds.includes(9)) {
-        isUserRestricted = false;
-      } else {
-        userCellIds = Array.from(new Set([...userCellIds, 9]));
-      }
+      userCellIds = currentUser.cells ? currentUser.cells.map((c: { id: number }) => c.id) : [];
     }
 
     const conditions: SQL[] = [];

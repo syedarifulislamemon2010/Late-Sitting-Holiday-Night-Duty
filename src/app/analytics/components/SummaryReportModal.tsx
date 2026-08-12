@@ -285,6 +285,33 @@ export default function SummaryReportModal({ isOpen, onClose, availableCells = [
 
         {/* Report Content - Print Friendly Printable Layout */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 print:p-0 print:overflow-visible print:bg-white print:text-black">
+          <style jsx global>{`
+            @media print {
+              body {
+                font-size: 13px !important;
+                background: #fff !important;
+                color: #000 !important;
+              }
+              table {
+                font-size: 12px !important;
+                width: 100% !important;
+              }
+              th, td {
+                font-size: 12px !important;
+                padding: 6px 8px !important;
+                border-color: #333 !important;
+              }
+              .print-font-lg {
+                font-size: 14px !important;
+              }
+              .print-font-md {
+                font-size: 12px !important;
+              }
+              .no-print {
+                display: none !important;
+              }
+            }
+          `}</style>
           {loading ? (
             <div className="p-12 text-center text-slate-400 text-xs flex flex-col items-center gap-3">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />

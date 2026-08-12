@@ -2,7 +2,7 @@ import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { officeOrders, lunchBills, leaveApplications, employees, holidays } from '@/db/schema';
+import { officeOrders, lunchBills, leaveApplications, employees, holidays, trash } from '@/db/schema';
 import { desc, eq, or, like } from 'drizzle-orm';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
@@ -202,6 +202,31 @@ export async function GET() {
           timeAgo: 'সিস্টেম',
           link: '/settings', // holidays management page could be settings or dashboard
         });
+      }
+    }
+
+    // D: 30-Day Recycle Bin Warning Notification (Admin only)
+    if (isAdmin) {
+      try {
+        const trashItems = await db.select().from(trash).orderBy(desc(trash.deletedAt)).limit(20);
+        const nowMs = Date.now();
+        trashItems.forEach((item) => {
+          const deletedMs = new Date(item.deletedAt).getTime();
+          const daysDiff = Math.floor((nowMs - deletedMs) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 29) {
+            notifications.push({
+              id: `trash_warning_${item.id}`,
+              title: `⚠️ রিসাইকেল বিন নোটিশ: ${item.name}`,
+              message: `উক্ত তথ্যটি রিসাইকেল বিনে ${toBanglaDigits(daysDiff)} দিন সংরক্ষিত রয়েছে। আপনি কি এটি স্বস্থানে রিস্টোর করতে চান?`,
+              type: 'SYSTEM',
+              timestamp: item.deletedAt.toISOString(),
+              timeAgo: `${toBanglaDigits(daysDiff)} দিন আগে`,
+              link: '/trash',
+            });
+          }
+        });
+      } catch (err) {
+        logger.error('Error fetching trash notifications:', err);
       }
     }
 

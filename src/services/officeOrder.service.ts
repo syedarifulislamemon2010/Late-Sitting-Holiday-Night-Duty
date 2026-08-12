@@ -69,14 +69,9 @@ export class OfficeOrderService {
     let isUserRestricted = false;
 
     if (currentUser) {
-      if (currentUser.role === 'USER') {
+      if (currentUser.role !== 'ADMIN') {
         isUserRestricted = true;
-        userCellNames = currentUser.cells.map((c) => c.name);
-        if (userCellNames.includes('CBS Integrated Development Cell')) {
-          isUserRestricted = false;
-        } else {
-          userCellNames = Array.from(new Set([...userCellNames, 'CBS Integrated Development Cell']));
-        }
+        userCellNames = currentUser.cells ? currentUser.cells.map((c) => c.name) : [];
       }
     }
 
