@@ -1,4 +1,3 @@
-import logger from '@/lib/logger';
 import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
@@ -55,7 +54,7 @@ export default function RootLayout({
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').catch(function(err) {
-                    logger.info('SW reg failed: ', err);
+                    console.log('SW reg failed: ', err);
                   });
                 });
               }

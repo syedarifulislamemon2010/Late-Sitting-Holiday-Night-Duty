@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 import { DUTY_RATES } from '@/constants/billing';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -914,7 +915,7 @@ export default function BillingPage() {
     if (isInitializingArchiveRef.current) {
       return;
     }
-    console.log("Billing input changed, resetting billGenerated to false");
+    logger.debug("Billing input changed, resetting billGenerated to false");
     setBillGenerated(false);
   }, [
     selectedMonth,
@@ -1592,7 +1593,7 @@ export default function BillingPage() {
       if (!archiveRes.ok) {
         throw new Error('Failed to archive bill memo metadata');
       }
-      console.log('Bill memo metadata archived successfully!');
+      logger.info('Bill memo metadata archived successfully!');
 
       if (action === 'generate') {
         // Generate PDF

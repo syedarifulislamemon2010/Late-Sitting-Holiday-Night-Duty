@@ -1,4 +1,5 @@
 'use client';
+import logger from '@/lib/logger';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
@@ -46,7 +47,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser(null);
       }
     } catch (err) {
-      console.warn('Profile fetch failed (transient network error)');
+      logger.warn('Profile fetch failed (transient network error)');
       setCurrentUser(null);
     } finally {
       setLoading(false);

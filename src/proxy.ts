@@ -5,6 +5,20 @@ import type { NextRequest } from 'next/server';
 const rateLimitMap = new Map<string, { tokens: number; lastRefilled: number }>();
 const BUCKET_CAPACITY = 100;
 const REFILL_RATE_MS = 1000; // Refill 1 token every second
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // Clean stale entries every 5 minutes
+
+// Periodic cleanup to prevent memory leak
+if (typeof globalThis !== 'undefined' && !(globalThis as Record<string, unknown>).__rateLimitCleanup) {
+  (globalThis as Record<string, unknown>).__rateLimitCleanup = true;
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, limit] of rateLimitMap.entries()) {
+      if (now - limit.lastRefilled > CLEANUP_INTERVAL_MS) {
+        rateLimitMap.delete(ip);
+      }
+    }
+  }, CLEANUP_INTERVAL_MS);
+}
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
