@@ -82,7 +82,8 @@ export default function SummaryReportModal({ isOpen, onClose, availableCells = [
       const res = await fetch(`/api/duties?${queryParams.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        const dutiesList = data.duties || [];
+        // Support both direct Array response and object with duties key
+        const dutiesList: any[] = Array.isArray(data) ? data : (data.duties || []);
 
         // Aggregate by employee
         const empMap = new Map<number, EmployeeSummaryItem>();
@@ -90,6 +91,15 @@ export default function SummaryReportModal({ isOpen, onClose, availableCells = [
         dutiesList.forEach((d: any) => {
           const emp = d.employee;
           if (!emp) return;
+
+          // Strict Client-side Cell Filter Validation
+          if (selectedCellId !== 'all') {
+            const targetCellId = parseInt(selectedCellId, 10);
+            const empCellId = emp.cellId || emp.cell?.id;
+            if (empCellId && empCellId !== targetCellId) {
+              return;
+            }
+          }
 
           const existing = empMap.get(emp.id) || {
             id: emp.id,
