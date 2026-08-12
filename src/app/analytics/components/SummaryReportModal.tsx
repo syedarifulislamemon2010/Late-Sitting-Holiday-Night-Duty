@@ -77,7 +77,6 @@ export default function SummaryReportModal({ isOpen, onClose, availableCells = [
       const queryParams = new URLSearchParams();
       if (selectedYear) queryParams.set('year', selectedYear);
       if (selectedMonth && selectedMonth !== 'all') queryParams.set('month', `${selectedYear}-${selectedMonth}`);
-      if (selectedCellId && selectedCellId !== 'all') queryParams.set('cellId', selectedCellId);
 
       const res = await fetch(`/api/duties?${queryParams.toString()}`);
       if (res.ok) {
@@ -92,11 +91,11 @@ export default function SummaryReportModal({ isOpen, onClose, availableCells = [
           const emp = d.employee;
           if (!emp) return;
 
-          // Strict Client-side Cell Filter Validation
+          // Robust Client-side Cell Filter Validation
           if (selectedCellId !== 'all') {
             const targetCellId = parseInt(selectedCellId, 10);
-            const empCellId = emp.cellId || emp.cell?.id;
-            if (empCellId && empCellId !== targetCellId) {
+            const empCellId = emp.cellId ?? emp.cell?.id ?? d.cellId;
+            if (empCellId !== undefined && empCellId !== null && Number(empCellId) !== targetCellId) {
               return;
             }
           }
