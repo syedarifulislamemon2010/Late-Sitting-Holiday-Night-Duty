@@ -106,17 +106,36 @@ export async function GET(request: Request) {
     }));
 
     let casualUsed = 0;
-    employeeLeaves.forEach(leave => {
-      const type = leave.leaveType;
-      if (type === 'CASUAL' || type === 'STATION_LEAVE' || type === 'POST_FACTO') {
-        const details = getCalculatedLeaveDetails(leave.startDate, leave.endDate, mappedHolidays);
-        // Ensure at least total days or actualDeducted is counted correctly
-        const leaveDays = details.actualDeducted > 0 ? details.actualDeducted : details.totalDays;
-        casualUsed += leaveDays;
-      }
-    });
+    let entitlementTotal = DEFAULT_CASUAL_LEAVE_ENTITLEMENT;
 
-    const casualTotal = DEFAULT_CASUAL_LEAVE_ENTITLEMENT;
+    // Filter current year (2026) leaves
+    const currentYearStr = new Date().getFullYear().toString();
+    const currentYearLeaves = employeeLeaves.filter(l => l.startDate && l.startDate.startsWith(currentYearStr));
+
+    if (currentYearLeaves.length > 0) {
+      // Find the latest leave application record to get official recorded entitlement & backlog used
+      const latestLeaveRec = currentYearLeaves[0]; // ordered desc by startDate
+      if (latestLeaveRec.casualTotal) {
+        entitlementTotal = Number(latestLeaveRec.casualTotal);
+      }
+      
+      // Calculate total deducted days across all approved/submitted leaves of current year
+      currentYearLeaves.forEach(leave => {
+        const type = leave.leaveType;
+        if (type === 'CASUAL' || type === 'STATION_LEAVE' || type === 'POST_FACTO') {
+          const details = getCalculatedLeaveDetails(leave.startDate, leave.endDate, mappedHolidays);
+          const leaveDays = details.actualDeducted > 0 ? details.actualDeducted : details.totalDays;
+          casualUsed += Math.max(1, leaveDays);
+        }
+      });
+
+      // Also compare with the latest recorded casualUsed in application to ensure no backlog days missed
+      if (latestLeaveRec.casualUsed && Number(latestLeaveRec.casualUsed) > casualUsed) {
+        casualUsed = Number(latestLeaveRec.casualUsed);
+      }
+    }
+
+    const casualTotal = entitlementTotal;
     const casualRemaining = Math.max(0, casualTotal - casualUsed);
 
     // 5. Aggregate monthly ledger

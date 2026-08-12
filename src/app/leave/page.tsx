@@ -969,8 +969,23 @@ export default function LeaveGeneratorPage() {
     return Math.max(0, totalNum - usedNum);
   };
 
-  const currentCasualUsed = casualUsed;
-  const currentCasualRemaining = getRemaining(casualTotal, casualUsed);
+  // Single day validation and wording logic
+  const isSingleDay = startDate && endDate && startDate === endDate;
+
+  // Dynamic Leave Increment calculation: Include active application days for casual leave
+  const appliedDays = (startDate || endDate) 
+    ? (isSingleDay ? 1 : (leaveDetails.actualDeducted > 0 ? leaveDetails.actualDeducted : 1)) 
+    : 0;
+
+  const previousUsedNum = parseInt(String(casualUsed || 0), 10) || 0;
+  const totalEntitledNum = parseInt(String(casualTotal || 20), 10) || 20;
+
+  // When applying for casual / post-facto / station leave, automatically increment used days by current application days
+  const currentCasualUsed = (leaveType === 'CASUAL' || leaveType === 'POST_FACTO' || leaveType === 'STATION_LEAVE')
+    ? (previousUsedNum + appliedDays)
+    : previousUsedNum;
+
+  const currentCasualRemaining = Math.max(0, totalEntitledNum - currentCasualUsed);
 
   const currentOrdinaryRemaining = getRemaining(ordinaryTotal, ordinaryUsed);
   const currentSpecialRemaining = getRemaining(specialTotal, specialUsed);
@@ -989,7 +1004,6 @@ export default function LeaveGeneratorPage() {
   const delegateDesignation = matchedDelegate ? cleanDesignationForLeave(matchedDelegate.designation) : '';
 
   // Single day validation and wording logic
-  const isSingleDay = startDate && endDate && startDate === endDate;
   const displayDaysWord = isSingleDay ? getBanglaDayWord(1) : (leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '');
 
   const appYear = applicationDate ? applicationDate.split('-')[0] : new Date().getFullYear().toString();
