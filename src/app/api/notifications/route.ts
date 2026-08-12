@@ -2,8 +2,8 @@ import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { officeOrders, lunchBills, leaveApplications } from '@/db/schema';
-import { desc } from 'drizzle-orm';
+import { officeOrders, lunchBills, leaveApplications, employees } from '@/db/schema';
+import { desc, eq, or } from 'drizzle-orm';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
 export interface AppNotification {
@@ -23,69 +23,139 @@ export async function GET() {
       return NextResponse.json({ notifications: [] });
     }
 
+    // 1. Resolve employee details for targeted filtering
+    let userEmpName = (currentUser.name || '').trim();
+    let userBankId = (currentUser.username || '').trim();
+
+    const empRecList = await db
+      .select({
+        name: employees.name,
+        bankId: employees.bankId,
+      })
+      .from(employees)
+      .where(
+        or(
+          eq(employees.userId, currentUser.id),
+          eq(employees.bankId, currentUser.username)
+        )
+      )
+      .limit(1);
+
+    if (empRecList[0]) {
+      if (empRecList[0].name) userEmpName = empRecList[0].name.trim();
+      if (empRecList[0].bankId) userBankId = empRecList[0].bankId.trim();
+    }
+
+    const cleanUserName = userEmpName.replace(/^(জনাব|জনাবা)\s+/, '').trim();
+    const isAdmin = currentUser.role === 'ADMIN';
+
     const notifications: AppNotification[] = [];
 
-    // 1. Fetch recent office orders (last 8)
+    // Helper: check if content relates to this specific officer
+    const isTargetedToUser = (searchableText: string) => {
+      if (isAdmin) return true; // Admins receive all system notification alerts
+      if (!searchableText) return false;
+      const text = searchableText.toLowerCase();
+      if (cleanUserName && text.includes(cleanUserName.toLowerCase())) return true;
+      if (userBankId && text.includes(userBankId.toLowerCase())) return true;
+      return false;
+    };
+
+    // 2. Fetch recent office orders & bill memos (last 30)
     const recentOrders = await db
       .select()
       .from(officeOrders)
       .orderBy(desc(officeOrders.createdAt))
-      .limit(8);
+      .limit(30);
 
     recentOrders.forEach((ord) => {
-      notifications.push({
-        id: `ord_${ord.id}`,
-        title: 'নতুন অফিস আদেশ জারি',
-        message: `অফিস আদেশ নং: ${ord.orderRef} (${ord.category || 'ডিউটি'}) জারি করা হয়েছে।`,
-        type: 'ORDER',
-        timestamp: ord.createdAt.toISOString(),
-        timeAgo: formatTimeAgo(ord.createdAt),
-        link: '/documents',
-      });
+      const combinedText = `${ord.employeeName || ''} ${ord.dutiesJson || ''} ${ord.contentJson || ''} ${ord.orderRef || ''}`;
+      
+      if (isTargetedToUser(combinedText)) {
+        const isBillMemo = ord.category?.startsWith('BILL_');
+        const catName = ord.category?.replace('BILL_', '') === 'LATE_SITTING' ? 'লেট সিটিং'
+                      : ord.category?.replace('BILL_', '') === 'HOLIDAY' ? 'ছুটির দিন'
+                      : ord.category?.replace('BILL_', '') === 'NIGHT_SHIFT' ? 'নাইট শিফট'
+                      : (ord.category || 'ডিউটি');
+
+        if (isBillMemo) {
+          notifications.push({
+            id: `bill_ord_${ord.id}`,
+            title: 'আপনার ডিউটি বিল মেমো ছাড়',
+            message: `অফিস আদেশ নং: ${ord.orderRef} এর অনুকূলে ${catName} সম্মানী বিল ছাড় করা হয়েছে।`,
+            type: 'BILL',
+            timestamp: ord.createdAt.toISOString(),
+            timeAgo: formatTimeAgo(ord.createdAt),
+            link: `/billing?orderRef=${encodeURIComponent(ord.orderRef)}`,
+          });
+        } else {
+          notifications.push({
+            id: `ord_${ord.id}`,
+            title: 'নতুন অফিস আদেশ জারি',
+            message: `আপনার নামের অনুকূলে অফিস আদেশ নং: ${ord.orderRef} (${catName}) জারি করা হয়েছে।`,
+            type: 'ORDER',
+            timestamp: ord.createdAt.toISOString(),
+            timeAgo: formatTimeAgo(ord.createdAt),
+            link: '/documents',
+          });
+        }
+      }
     });
 
-    // 2. Fetch recent lunch/duty bills (last 8)
+    // 3. Fetch recent lunch bills (last 15)
     const recentBills = await db
       .select()
       .from(lunchBills)
       .orderBy(desc(lunchBills.createdAt))
-      .limit(8);
+      .limit(15);
 
     recentBills.forEach((bill) => {
-      notifications.push({
-        id: `bill_${bill.id}`,
-        title: 'বিল প্রসেস সম্পন্ন',
-        message: `${bill.month} মাসের ডিউটি বিল মেমো তৈরি ও প্রসেস করা হয়েছে।`,
-        type: 'BILL',
-        timestamp: bill.createdAt.toISOString(),
-        timeAgo: formatTimeAgo(bill.createdAt),
-        link: '/billing',
-      });
+      const combinedText = `${bill.recordsJson || ''} ${bill.generatedBy || ''} ${bill.month || ''}`;
+      if (isTargetedToUser(combinedText)) {
+        notifications.push({
+          id: `lunch_bill_${bill.id}`,
+          title: 'লাঞ্চ বিল শট প্রসেস সম্পন্ন',
+          message: `${bill.month} মাসের দুপুরের খাবার বিল শিট প্রস্তুত ও প্রসেস করা হয়েছে।`,
+          type: 'BILL',
+          timestamp: bill.createdAt.toISOString(),
+          timeAgo: formatTimeAgo(bill.createdAt),
+          link: '/lunch-bill',
+        });
+      }
     });
 
-    // 3. Fetch recent leave applications (last 8)
+    // 4. Fetch recent leave applications (last 15)
     const recentLeaves = await db
       .select()
       .from(leaveApplications)
       .orderBy(desc(leaveApplications.createdAt))
-      .limit(8);
+      .limit(15);
 
     recentLeaves.forEach((leave) => {
-      notifications.push({
-        id: `leave_${leave.id}`,
-        title: 'ছুটির আবেদন জমা',
-        message: `জনাব ${leave.applicantName} (${leave.designation}) ${leave.casualTotal || 1} দিনের ছুটির আবেদন সাবমিট করেছেন।`,
-        type: 'LEAVE',
-        timestamp: leave.createdAt.toISOString(),
-        timeAgo: formatTimeAgo(leave.createdAt),
-        link: '/leave',
-      });
+      const combinedText = `${leave.applicantName || ''} ${leave.bankId || ''} ${leave.delegateId || ''}`;
+      if (isTargetedToUser(combinedText)) {
+        const isApplicant = cleanUserName && leave.applicantName?.includes(cleanUserName);
+        const titleText = isApplicant ? 'আপনার ছুটির আবেদন সাবমিট' : 'দায়িত্ব পালন (Covering Officer) নোটিশ';
+        const msgText = isApplicant 
+          ? `আপনার ${leave.casualTotal || 1} দিনের ছুটির আবেদন জমা হয়েছে (${leave.startDate} হতে ${leave.endDate})।`
+          : `জনাব ${leave.applicantName} আপনাকে ছুটির সময়ে দায়িত্ব পালনের জন্য মনোনীত করেছেন।`;
+
+        notifications.push({
+          id: `leave_${leave.id}`,
+          title: titleText,
+          message: msgText,
+          type: 'LEAVE',
+          timestamp: leave.createdAt.toISOString(),
+          timeAgo: formatTimeAgo(leave.createdAt),
+          link: '/leave',
+        });
+      }
     });
 
     // Sort all notifications chronologically descending
     notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    return NextResponse.json({ notifications: notifications.slice(0, 15) });
+    return NextResponse.json({ notifications: notifications.slice(0, 20) });
   } catch (error) {
     logger.error('Notifications GET API Error:', error);
     return NextResponse.json({ notifications: [] });

@@ -2014,6 +2014,8 @@ export default function BillingPage() {
     let totalNightAllowance2 = 0; 
     let grandTotal = 0;
 
+    const targetCellObj = selectedCell !== 'all' ? cells.find(c => c.id.toString() === selectedCell) : null;
+
     ledgerActiveOfficeOrders.forEach(order => {
       if (selectedCategory !== 'all' && order.category !== selectedCategory) return;
       let dutiesList = (order.duties as any) || [];
@@ -2026,6 +2028,22 @@ export default function BillingPage() {
       }
       
       dutiesList.forEach((d: any) => {
+        // Cell filter check on duty/employee level
+        if (targetCellObj) {
+          const empIdStr = d.employeeId ? d.employeeId.toString() : '';
+          const empName = d.employeeName || '';
+          const matched = employees.find(e => 
+            (e.id && e.id.toString() === empIdStr) || 
+            (e.bankId && e.bankId.toString() === empIdStr) || 
+            (e.name && e.name === empName)
+          );
+          if (matched) {
+            if (matched.cell?.name !== targetCellObj.name) return;
+          } else if (order.cellName && order.cellName !== 'All Cells' && order.cellName !== 'সকল সেল' && order.cellName !== targetCellObj.name) {
+            return;
+          }
+        }
+
         const days = Array.isArray(d.dates) ? d.dates.length : (d.days || 0);
         let transportRate = 200;
         let apyaonRate = 100;
@@ -2070,7 +2088,7 @@ export default function BillingPage() {
       totalNightAllowance2,
       grandTotal
     };
-  }, [ledgerActiveOfficeOrders, selectedCategory]);
+  }, [ledgerActiveOfficeOrders, selectedCategory, selectedCell, cells, employees]);
 
   const [expandedSlots, setExpandedSlots] = useState<Record<string, boolean>>({});
 
