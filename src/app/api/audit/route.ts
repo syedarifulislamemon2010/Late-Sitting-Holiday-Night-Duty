@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth-wrapper';
 import fs from 'fs';
 import path from 'path';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -15,8 +15,15 @@ export async function GET() {
       return NextResponse.json({ error: 'forbidden', message: 'অডিট লগ দেখার অনুমতি শুধুমাত্র অ্যাডমিনদের রয়েছে।' }, { status: 403 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
+
     const logFilePath = path.join(process.cwd(), 'logs', 'audit.log');
     if (!fs.existsSync(logFilePath)) {
+      if (pageParam || limitParam) {
+        return NextResponse.json({ data: [], total: 0, page: 1, limit: 50, totalPages: 0 });
+      }
       return NextResponse.json([]);
     }
 
@@ -37,6 +44,23 @@ export async function GET() {
 
     // Newest logs first
     logs.reverse();
+
+    if (pageParam || limitParam) {
+      const page = Math.max(1, parseInt(pageParam || '1', 10));
+      const limit = Math.max(1, Math.min(200, parseInt(limitParam || '50', 10)));
+      const total = logs.length;
+      const totalPages = Math.ceil(total / limit);
+      const startIndex = (page - 1) * limit;
+      const paginatedLogs = logs.slice(startIndex, startIndex + limit);
+
+      return NextResponse.json({
+        data: paginatedLogs,
+        total,
+        page,
+        limit,
+        totalPages
+      });
+    }
 
     return NextResponse.json(logs);
   } catch (error) {

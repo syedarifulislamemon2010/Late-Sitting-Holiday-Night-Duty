@@ -54,6 +54,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'file_required', message: 'অনুগ্রহ করে ফাইল নির্বাচন করুন।' }, { status: 400 });
     }
 
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'file_too_large', message: 'ফাইল সাইজ ১০০ মেগাবাইটের (100MB) বেশি হওয়া সম্ভব নয়।' }, { status: 400 });
+    }
+
     // Validate file extension
     const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.gif', '.txt', '.csv', '.zip'];
     const fileExt = path.extname(file.name).toLowerCase();

@@ -14,6 +14,9 @@ export async function GET(request: Request) {
     const employeeId = searchParams.get('employeeId');
     const type = searchParams.get('type');
 
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
+
     const user = await getCurrentUser();
 
     const result = await DutyService.listDuties(user, {
@@ -24,6 +27,25 @@ export async function GET(request: Request) {
       employeeId,
       type
     });
+
+    if (pageParam || limitParam) {
+      const page = Math.max(1, parseInt(pageParam || '1', 10));
+      const limit = Math.max(1, Math.min(500, parseInt(limitParam || '50', 10)));
+      const dutiesList = Array.isArray(result) ? result : [];
+      const total = dutiesList.length;
+      const totalPages = Math.ceil(total / limit);
+      const startIndex = (page - 1) * limit;
+      const paginatedDuties = dutiesList.slice(startIndex, startIndex + limit);
+
+      return NextResponse.json({
+        data: paginatedDuties,
+        total,
+        page,
+        limit,
+        totalPages
+      });
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     return handleApiError(error);

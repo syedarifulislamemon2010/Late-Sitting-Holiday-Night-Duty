@@ -38,6 +38,7 @@ export default function SummaryReportModal({ isOpen, onClose, availableCells = [
   const [selectedYear, setSelectedYear] = useState('2026');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [selectedCellId, setSelectedCellId] = useState<string>('all');
+  const [printZoom, setPrintZoom] = useState<'100' | '90' | '80'>('100');
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<{
     cellName: string;
@@ -218,6 +219,32 @@ export default function SummaryReportModal({ isOpen, onClose, availableCells = [
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Zoom Selector Pills */}
+            <div className="hidden sm:flex items-center bg-slate-200 dark:bg-slate-700/80 p-0.5 rounded-xl text-xs font-semibold">
+              <span className="px-2 text-[10px] text-slate-500 font-bold uppercase">জুম:</span>
+              <button
+                type="button"
+                onClick={() => setPrintZoom('100')}
+                className={`px-2.5 py-1 rounded-lg transition-all ${printZoom === '100' ? 'bg-white dark:bg-slate-900 text-primary font-bold shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'}`}
+              >
+                100%
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrintZoom('90')}
+                className={`px-2.5 py-1 rounded-lg transition-all ${printZoom === '90' ? 'bg-white dark:bg-slate-900 text-primary font-bold shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'}`}
+              >
+                90%
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrintZoom('80')}
+                className={`px-2.5 py-1 rounded-lg transition-all ${printZoom === '80' ? 'bg-white dark:bg-slate-900 text-primary font-bold shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'}`}
+              >
+                80%
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={handlePrint}
@@ -297,17 +324,17 @@ export default function SummaryReportModal({ isOpen, onClose, availableCells = [
           <style jsx global>{`
             @media print {
               body {
-                font-size: 13px !important;
+                font-size: ${printZoom === '100' ? '13px' : printZoom === '90' ? '12px' : '11px'} !important;
                 background: #fff !important;
                 color: #000 !important;
               }
               table {
-                font-size: 12px !important;
+                font-size: ${printZoom === '100' ? '12px' : printZoom === '90' ? '11px' : '10px'} !important;
                 width: 100% !important;
               }
               th, td {
-                font-size: 12px !important;
-                padding: 6px 8px !important;
+                font-size: ${printZoom === '100' ? '12px' : printZoom === '90' ? '11px' : '10px'} !important;
+                padding: ${printZoom === '100' ? '6px 8px' : printZoom === '90' ? '4px 6px' : '3px 4px'} !important;
                 border-color: #333 !important;
               }
               .print-font-lg {

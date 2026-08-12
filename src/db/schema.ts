@@ -85,6 +85,8 @@ export const duties = pgTable('Duty', {
     dateIdx: index('Duty_date_idx').on(table.date),
     typeIdx: index('Duty_type_idx').on(table.type),
     empDateIdx: index('idx_duties_emp_date').on(table.employeeId, table.date),
+    dateTypeIdx: index('idx_duties_date_type').on(table.date, table.type),
+    empTypeDateIdx: index('idx_duties_emp_type_date').on(table.employeeId, table.type, table.date),
   };
 });
 
@@ -207,6 +209,7 @@ export const lunchBills = pgTable('LunchBill', {
 }, (table) => {
   return {
     monthCellIdUnique: uniqueIndex('LunchBill_month_cellId_key').on(table.month, table.cellId),
+    cellMonthIdx: index('idx_lunch_bills_cell_month').on(table.cellId, table.month),
   };
 });
 
