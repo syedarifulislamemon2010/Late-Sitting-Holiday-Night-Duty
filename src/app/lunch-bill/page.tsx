@@ -536,13 +536,15 @@ export default function LunchBillPage() {
     return wordStr.trim() + ' টাকা মাত্র';
   };
 
-  // Everyone can view and manage all records across cells
-  const getFilteredRecordsForUser = () => {
-    return records;
+  // Filter records by cell/executive for standard users
+  const getFilteredRecordsForUser = (primaryCellId: number | null | undefined) => {
+    if (isAdmin) return records;
+    // Standard user gets only officers belonging to their specific cell (primary cell only)
+    return records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
   };
 
   const primaryCellId = isAdmin ? (activeCellId || resolvedPrimaryCellId) : resolvedPrimaryCellId;
-  const userBaseRecords = getFilteredRecordsForUser();
+  const userBaseRecords = getFilteredRecordsForUser(primaryCellId);
 
   // Apply Search Query & Advanced Filters to activeRecords
   const activeRecords = userBaseRecords.filter(r => {
@@ -1098,7 +1100,7 @@ export default function LunchBillPage() {
             <div className="p-6 space-y-8">
               
               {/* Group B: DGM & AGM Executives */}
-              {activeRecords.some(r => r.isExecutive) && (() => {
+              {isAdmin && activeRecords.some(r => r.isExecutive) && (() => {
                 const execRecs = activeRecords.filter(r => r.isExecutive).sort((a, b) => {
                   const priority = (desig: string | null | undefined) => {
                     if (!desig) return 3;
@@ -1249,6 +1251,7 @@ export default function LunchBillPage() {
 
               {/* Group A: Cell-wise Officers */}
               {cells.map(cell => {
+                if (!isAdmin && cell.id !== primaryCellId) return null;
                 const cellRecs = activeRecords.filter(r => !r.isExecutive && r.cellId === cell.id);
                 if (cellRecs.length === 0) return null;
 
