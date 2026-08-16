@@ -1186,7 +1186,6 @@ export default function LunchBillPage() {
                                     type="number"
                                     min="0"
                                     max={workingDays}
-                                    disabled={!isAdmin}
                                     value={r.absenceDays}
                                     onChange={(e) => handleAbsenceChange(r.employeeId, true, e.target.value)}
                                     className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
@@ -1203,7 +1202,6 @@ export default function LunchBillPage() {
                                   <input
                                     type="number"
                                     min="0"
-                                    disabled={!isAdmin}
                                     value={r.additionalDeduction}
                                     onChange={(e) => handleManualDeductionChange(r.employeeId, true, e.target.value)}
                                     className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
@@ -1327,7 +1325,6 @@ export default function LunchBillPage() {
                                       type="number"
                                       min="0"
                                       max={workingDays}
-                                      disabled={!isAdmin}
                                       value={r.absenceDays}
                                       onChange={(e) => handleAbsenceChange(r.employeeId, false, e.target.value)}
                                       className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
@@ -1344,7 +1341,6 @@ export default function LunchBillPage() {
                                     <input
                                       type="number"
                                       min="0"
-                                      disabled={!isAdmin}
                                       value={r.additionalDeduction}
                                       onChange={(e) => handleManualDeductionChange(r.employeeId, false, e.target.value)}
                                       className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
