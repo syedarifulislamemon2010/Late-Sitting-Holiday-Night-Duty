@@ -6,6 +6,7 @@ import { users, employees, userCells } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { logActivity } from '@/lib/audit';
+import { toEnglishDigits } from '@/lib/bengali-converter';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -20,7 +21,8 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const username = credentials.username.trim();
+        const rawUsername = credentials.username.trim();
+        const username = toEnglishDigits(rawUsername).trim();
         const password = credentials.password;
 
         // Query user using Drizzle
@@ -55,10 +57,12 @@ export const authOptions: NextAuthOptions = {
             user = newUsers[0];
 
             // Connect user to the employee's cell (A = cellId, B = userId)
-            await db.insert(userCells).values({
-              A: employee.cellId,
-              B: user.id,
-            });
+            if (employee.cellId) {
+              await db.insert(userCells).values({
+                A: employee.cellId,
+                B: user.id,
+              }).catch((e) => logger.error('Failed to attach user cell mapping:', e));
+            }
 
             logger.info(`Auto-provisioned User record for Employee: ${employee.name} (${employee.bankId})`);
           }
@@ -70,12 +74,12 @@ export const authOptions: NextAuthOptions = {
             let userAgent = 'Unknown';
 
             if (req && req.headers) {
-              ipAddress = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || ipAddress;
-              userAgent = req.headers['user-agent'] || userAgent;
+              ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || (req.headers['x-real-ip'] as string) || ipAddress;
+              userAgent = (req.headers['user-agent'] as string) || userAgent;
             } else {
               try {
                 const reqHeaders = await headers();
-                ipAddress = reqHeaders.get('x-forwarded-for') || reqHeaders.get('x-real-ip') || ipAddress;
+                ipAddress = reqHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || reqHeaders.get('x-real-ip') || ipAddress;
                 userAgent = reqHeaders.get('user-agent') || userAgent;
               } catch {}
             }
@@ -142,11 +146,12 @@ export const authOptions: NextAuthOptions = {
         const baseObj = new URL(baseUrl);
         if (urlObj.origin === baseObj.origin || urlObj.hostname === baseObj.hostname) return url;
       } catch {}
-      return url;
+      return baseUrl;
     }
   },
   pages: {
     signIn: '/',
+    error: '/',
   },
   secret: process.env.NEXTAUTH_SECRET || 'NextAuthSecretSecretKey2026',
   logger: {

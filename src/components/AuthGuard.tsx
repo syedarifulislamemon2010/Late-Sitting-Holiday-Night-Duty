@@ -409,10 +409,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         }
         window.location.href = '/';
       } else {
-        setError('ভুল ইউজারনেম বা পাসওয়ার্ড!');
+        if (res?.error === 'CredentialsSignin' || res?.error) {
+          setError('ভুল ইউজারনেম/ব্যাংক আইডি বা পাসওয়ার্ড! (প্রথমবার লগইনের জন্য ডিফল্ট পাসওয়ার্ড: 123456)');
+        } else {
+          setError('লগইন ব্যর্থ হয়েছে। অনুগ্রহ করে ইউজারনেম ও পাসওয়ার্ড পরীক্ষা করুন।');
+        }
       }
-    } catch {
-      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    } catch (err) {
+      logger.error('Login error:', err);
+      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে। অনুগ্রহ করে ইন্টারনেট বা সার্ভার কানেকশন চেক করুন।');
     } finally {
       setLoading(false);
     }

@@ -968,6 +968,16 @@ export function toBanglaDigits(num: number | string | undefined | null): string 
   return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
 }
 
+export function toEnglishDigits(num: number | string | undefined | null): string {
+  if (num === undefined || num === null) return '';
+  const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  let str = num.toString();
+  bnDigits.forEach((digit, index) => {
+    str = str.replace(new RegExp(digit, 'g'), index.toString());
+  });
+  return str;
+}
+
 export function getBanglaDate(dateStr: string): string {
   if (!dateStr) return '';
   const [year, month, day] = dateStr.split('-');

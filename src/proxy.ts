@@ -23,22 +23,41 @@ if (typeof globalThis !== 'undefined' && !(globalThis as Record<string, unknown>
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow unrestricted access to public paths
-  const publicPaths = ['/login', '/api/auth', '/_next', '/favicon.ico', '/manifest.json', '/sw.js', '/janata-bank-logo', '/api/ping'];
+  // Allow unrestricted access to public paths and static assets
+  const publicPaths = [
+    '/login', 
+    '/api/auth', 
+    '/api/profile', 
+    '/api/ping',
+    '/_next', 
+    '/favicon.ico', 
+    '/manifest.json', 
+    '/sw.js', 
+    '/janata-bank-logo',
+    '/janata-bank-logo-real.svg',
+    '/janata-bank-logo-original.png'
+  ];
   const isPublic = publicPaths.some(p => pathname.startsWith(p));
 
   // Authentication Check for non-public routes
   if (!isPublic) {
     const token = request.cookies.get('next-auth.session-token') || request.cookies.get('__Secure-next-auth.session-token');
-    if (!token && pathname !== '/login') {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', request.url);
-      return NextResponse.redirect(loginUrl);
+    if (!token) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'unauthorized', message: 'অননুমোদিত এক্সেস। অনুগ্রহ করে লগইন করুন।' },
+          { status: 401 }
+        );
+      }
+      if (pathname !== '/login') {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('callbackUrl', request.url);
+        return NextResponse.redirect(loginUrl);
+      }
     }
   }
 
   // Rate Limiting for API routes
-  // Exempt auth-critical endpoints from rate limiting
   const rateLimitExempt = ['/api/profile', '/api/auth'];
   const isExempt = rateLimitExempt.some(p => pathname.startsWith(p));
   if (pathname.startsWith('/api/') && !isExempt) {
