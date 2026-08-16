@@ -536,15 +536,13 @@ export default function LunchBillPage() {
     return wordStr.trim() + ' টাকা মাত্র';
   };
 
-  // Filter records by cell/executive for standard users
-  const getFilteredRecordsForUser = (primaryCellId: number | null | undefined) => {
-    if (isAdmin) return records;
-    // Standard user gets only officers belonging to their specific cell (primary cell only)
-    return records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
+  // Everyone can view and manage all records across cells
+  const getFilteredRecordsForUser = () => {
+    return records;
   };
 
   const primaryCellId = isAdmin ? (activeCellId || resolvedPrimaryCellId) : resolvedPrimaryCellId;
-  const userBaseRecords = getFilteredRecordsForUser(primaryCellId);
+  const userBaseRecords = getFilteredRecordsForUser();
 
   // Apply Search Query & Advanced Filters to activeRecords
   const activeRecords = userBaseRecords.filter(r => {
@@ -597,7 +595,7 @@ export default function LunchBillPage() {
         body: JSON.stringify({
           month: selectedMonth,
           workingDays: workingDays,
-          records: isAdmin ? records : userBaseRecords // Send only complete cell records for coordinators
+          records: records
         })
       });
       const data = await res.json();
@@ -621,16 +619,8 @@ export default function LunchBillPage() {
 
   // Build Payload structures for HTML generator
   const getPrintPayload = () => {
-    const primaryCellId = isAdmin ? (activeCellId || resolvedPrimaryCellId) : resolvedPrimaryCellId;
-
-    // Filter records and cells according to user role/assigned primary cell
-    const allowedRecords = isAdmin 
-      ? records 
-      : records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
-      
-    const allowedCells = isAdmin 
-      ? cells 
-      : cells.filter(c => c.id === primaryCellId);
+    const allowedRecords = records;
+    const allowedCells = cells;
 
     // 1. Group cell officers
     const cellGroups = allowedCells.map(cell => {
@@ -646,7 +636,7 @@ export default function LunchBillPage() {
     }).filter(g => g.records.length > 0);
 
     // 2. Gather Executives
-    const execRecsUnsorted = isAdmin ? records.filter(r => r.isExecutive) : [];
+    const execRecsUnsorted = records.filter(r => r.isExecutive);
     const execRecs = [...execRecsUnsorted].sort((a, b) => {
       const priority = (desig: string | null | undefined) => {
         if (!desig) return 3;
