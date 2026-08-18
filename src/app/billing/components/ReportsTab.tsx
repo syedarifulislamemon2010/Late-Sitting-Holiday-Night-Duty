@@ -1,8 +1,8 @@
 import React from 'react';
 import { 
   Calendar, 
-  ChevronLeft, 
-  ChevronRight, 
+  ChevronDown, 
+  ChevronUp, 
   Eye, 
   Edit3, 
   Trash2, 
@@ -10,9 +10,11 @@ import {
   Printer, 
   AlertCircle, 
   Banknote,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ArrowRightLeft
 } from 'lucide-react';
 import { toBanglaDigits, getBanglaDate } from '@/lib/bengali-converter';
+import { getCategoryConfig } from '@/lib/category-colors';
 
 interface OfficeOrder {
   id: number;
@@ -105,6 +107,11 @@ export default function ReportsTab({
   getBanglaNumberWords
 }: ReportsTabProps) {
 
+  // Check if any employee has deductions to conditionally show "কর্তন" column
+  const hasAnyDeductions = React.useMemo(() => {
+    return reportData.employeesBreakdown.some((r: any) => (r.deduction && r.deduction > 0) || (r.deductions && r.deductions > 0));
+  }, [reportData.employeesBreakdown]);
+
   const handleExportReportCSV = () => {
     const headers = [
       'ক্রমিক নং', 
@@ -170,8 +177,8 @@ export default function ReportsTab({
       {/* Slot Groups Collapsible Cards */}
       <div className="space-y-4">
         <div>
-          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 font-sans">
-            <Calendar size={16} className="text-indigo-500" />
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 font-sans">
+            <Calendar size={18} className="text-primary" />
             বিলিং স্লট গ্রুপসমূহ (Billing Slots / Groups)
           </h3>
           <p className="text-xs text-slate-400 mt-0.5 font-sans">
@@ -200,34 +207,35 @@ export default function ReportsTab({
               }, 0);
 
               return (
-                <div key={group.date} className="glass-card rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:border-slate-300 dark:hover:border-slate-800 transition-all">
-                  {/* Slot Header */}
+                <div key={group.date} className="glass-card rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+                  {/* Cohesive Group Header */}
                   <div 
-                    className="p-4 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-4 cursor-pointer select-none"
+                    className="p-4 bg-slate-50/70 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer select-none"
                     onClick={() => toggleSlot(group.date)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                      <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 text-primary dark:text-blue-400 rounded-xl border border-blue-100 dark:border-blue-900/30 shrink-0">
                         <Calendar size={16} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 font-mono">
+                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 font-mono tracking-tight">
                           {group.name}
                         </h4>
-                        <p className="text-[10px] text-slate-400 font-sans">
-                          গ্রুপ তারিখ: {getBanglaDate(group.date)}
+                        <p className="text-[11px] text-slate-400 font-sans mt-0.5">
+                          গ্রুপ তারিখ: <span className="font-semibold text-slate-600 dark:text-slate-300">{getBanglaDate(group.date)}</span>
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                      <div className="text-right hidden sm:block">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-350 font-sans">
+                    <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-center">
+                      <div className="flex items-center gap-2 bg-white dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-sans">
+                        <span className="font-bold text-slate-700 dark:text-slate-300 tabular-nums">
                           {toBanglaDigits(group.bills.length)} টি বিল
                         </span>
-                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold font-sans">
-                          ৳{toBanglaDigits(slotTotalAmount)}/- BDT
-                        </p>
+                        <span className="text-slate-300 dark:text-slate-700">•</span>
+                        <span className="font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+                          ৳{toBanglaDigits(slotTotalAmount)}/-
+                        </span>
                       </div>
 
                       <button
@@ -235,33 +243,39 @@ export default function ReportsTab({
                           e.stopPropagation();
                           setReportDate(group.date);
                         }}
-                        className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer font-sans shadow-sm"
+                        className="h-8 px-3 bg-primary hover:bg-primary/90 text-white rounded-lg text-xs font-bold transition-all cursor-pointer font-sans shadow-xs flex items-center gap-1.5"
+                        title="এই স্লটের সমন্বিত প্রতিবেদন দেখুন"
                       >
-                        রিপোর্ট ভিউ
+                        <Eye size={12} />
+                        <span>রিপোর্ট দেখুন</span>
                       </button>
 
-                      <button className="text-slate-400 hover:text-slate-605 transition-colors">
-                        {isExpanded ? <ChevronLeft size={16} className="rotate-90" /> : <ChevronRight size={16} className="rotate-90" />}
+                      <button 
+                        type="button"
+                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                        aria-label={isExpanded ? 'স্লট সংক্ষেপ করুন' : 'স্লট বিস্তারিত দেখুন'}
+                      >
+                        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                       </button>
                     </div>
                   </div>
 
                   {/* Slot Body (Table of pairs) */}
                   {isExpanded && (
-                    <div className="border-t border-slate-100 dark:border-slate-800/80 overflow-x-auto">
+                    <div className="border-t border-slate-100 dark:border-slate-800 overflow-x-auto">
                       <table className="w-full text-left text-xs leading-normal font-sans border-collapse">
                         <thead>
-                          <tr className="bg-slate-100/30 dark:bg-slate-900/80 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            <th className="px-4 py-3 text-center w-12">#</th>
-                            <th className="px-4 py-3">কর্মকর্তার নাম (Payee)</th>
-                            <th className="px-4 py-3 text-center">ক্যাটাগরি</th>
-                            <th className="px-4 py-3">অফিস আদেশ (Office Order)</th>
-                            <th className="px-4 py-3">বিল মেমো (Bill Memo)</th>
-                            <th className="px-4 py-3 text-center">ডিউটি তথ্য ও বিল</th>
-                            <th className="px-4 py-3 text-center">গ্রুপ পরিবর্তন (Shift Slot)</th>
+                          <tr className="bg-slate-100/50 dark:bg-slate-900/80 border-b border-slate-150 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="px-3 py-3 text-center w-12">#</th>
+                            <th className="px-3.5 py-3 min-w-[130px]">কর্মকর্তার নাম (Payee)</th>
+                            <th className="px-3 py-3 text-center w-28">ক্যাটাগরি</th>
+                            <th className="px-3.5 py-3 min-w-[170px]">অফিস আদেশ (Office Order)</th>
+                            <th className="px-3.5 py-3 min-w-[170px]">বিল মেমো (Bill Memo)</th>
+                            <th className="px-3.5 py-3 text-center min-w-[110px]">ডিউটি ও বিল</th>
+                            <th className="px-3 py-3 text-center w-36">গ্রুপ পরিবর্তন (Shift Slot)</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 font-medium">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                           {group.bills.map((bill, bIdx) => {
                             const order = findMatchingOfficeOrder(bill);
                             let dutiesList: any[] = (bill.duties as any) || [];
@@ -271,120 +285,132 @@ export default function ReportsTab({
                             const totalDays = dutiesList.reduce((sum, d) => sum + Number(d.days || (d.dates && d.dates.length) || 0), 0);
                             const grandTotal = dutiesList.reduce((sum, d) => sum + Number(d.grandTotal || 0), 0);
 
+                            const catConfig = getCategoryConfig(bill.category);
+
                             return (
-                              <tr key={bill.id} className="hover:bg-slate-50/20 text-slate-600 dark:text-slate-300">
-                                <td className="px-4 py-3 text-center font-sans font-bold text-slate-400">
+                              <tr key={bill.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 text-slate-600 dark:text-slate-300">
+                                <td className="px-3 py-3 text-center font-mono font-bold text-slate-400">
                                   {toBanglaDigits(bIdx + 1)}
                                 </td>
-                                <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 font-sans">
+                                <td className="px-3.5 py-3 font-bold text-slate-800 dark:text-slate-100 text-xs">
                                   {bill.employeeName}
                                 </td>
-                                <td className="px-4 py-3 text-center">
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                    bill.category === 'BILL_LATE_SITTING'
-                                      ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
-                                      : bill.category === 'BILL_HOLIDAY'
-                                      ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
-                                      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                                  }`}>
-                                    {bill.category === 'BILL_LATE_SITTING' ? 'লেট সিটিং' : bill.category === 'BILL_HOLIDAY' ? 'সরকারি ছুটি' : 'রাত্রিকালীন'}
+                                <td className="px-3 py-3 text-center">
+                                  <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${catConfig.badgeClass}`}>
+                                    {catConfig.label}
                                   </span>
                                 </td>
-                                <td className="px-4 py-3">
+                                
+                                {/* Office Order Column with Micro-label & Dedicated Actions */}
+                                <td className="px-3.5 py-3">
                                   {order ? (
                                     <div className="space-y-1">
-                                      <div className="font-mono text-[10px] text-slate-600 dark:text-slate-400 break-all max-w-[180px]">
+                                      <div 
+                                        className="font-mono text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[170px] cursor-help"
+                                        title={order.orderRef}
+                                      >
                                         {order.orderRef}
                                       </div>
-                                      <div className="flex items-center gap-1.5">
+                                      <div className="flex items-center gap-1">
                                         <button 
-                                          onClick={() => {
-                                            window.open(`/documents/preview?id=${order.id}&source=office-order`, '_blank');
-                                          }}
-                                          className="text-[10px] text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
+                                          onClick={() => window.open(`/documents/preview?id=${order.id}&source=office-order`, '_blank')}
+                                          className="h-6 px-2 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[10px] text-slate-700 dark:text-slate-200 flex items-center gap-1 font-semibold transition-all cursor-pointer"
+                                          title="অফিস আদেশ প্রিভিউ দেখুন"
                                         >
-                                          <Eye size={10} /> ভিউ
+                                          <Eye size={10} className="text-primary" /> আদেশ
                                         </button>
                                         {hasDeletePermission(order) && (
                                           <>
-                                            <span className="text-slate-300">|</span>
                                             <button 
                                               onClick={() => {
                                                 window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
                                               }}
-                                              className="text-[10px] text-teal-600 hover:text-teal-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
+                                              className="h-6 px-2 rounded bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 text-[10px] text-teal-700 dark:text-teal-300 flex items-center gap-1 font-semibold transition-all cursor-pointer"
+                                              title="অফিস আদেশ সম্পাদন করুন"
                                             >
-                                              <Edit3 size={10} /> সম্পাদনা
+                                              <Edit3 size={10} /> এডিট
                                             </button>
-                                            <span className="text-slate-300">|</span>
                                             <button 
                                               onClick={() => handleDeleteOrder(order.id)}
-                                              className="text-[10px] text-red-500 hover:text-red-700 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
+                                              className="h-6 px-1.5 rounded bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 text-[10px] text-rose-600 dark:text-rose-400 flex items-center gap-0.5 font-semibold transition-all cursor-pointer"
+                                              title="অফিস আদেশ মুছুন"
                                             >
-                                              <Trash2 size={10} /> ডিলিট
+                                              <Trash2 size={10} />
                                             </button>
                                           </>
                                         )}
                                       </div>
                                     </div>
                                   ) : (
-                                    <span className="text-slate-400 italic">অর্ডার পাওয়া যায়নি</span>
+                                    <span className="text-slate-400 italic text-[11px]">অর্ডার পাওয়া যায়নি</span>
                                   )}
                                 </td>
-                                <td className="px-4 py-3">
+
+                                {/* Bill Memo Column with Micro-label & Dedicated Actions */}
+                                <td className="px-3.5 py-3">
                                   <div className="space-y-1">
-                                    <div className="font-mono text-[10px] text-slate-600 dark:text-slate-400 break-all max-w-[180px]">
+                                    <div 
+                                      className="font-mono text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[170px] cursor-help"
+                                      title={bill.orderRef}
+                                    >
                                       {bill.orderRef}
                                     </div>
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1">
                                       <button 
-                                        onClick={() => {
-                                          window.open(`/documents/preview?id=${bill.id}&source=bill`, '_blank');
-                                        }}
-                                        className="text-[10px] text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
+                                        onClick={() => window.open(`/documents/preview?id=${bill.id}&source=bill`, '_blank')}
+                                        className="h-6 px-2 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[10px] text-slate-700 dark:text-slate-200 flex items-center gap-1 font-semibold transition-all cursor-pointer"
+                                        title="বিল মেমো প্রিভিউ দেখুন"
                                       >
-                                        <Eye size={10} /> ভিউ
+                                        <Eye size={10} className="text-primary" /> মেমো
                                       </button>
                                       {hasDeletePermission(bill) && (
                                         <>
-                                          <span className="text-slate-300">|</span>
                                           <button 
                                             onClick={() => handleLoadBillForEditing(bill.orderRef)}
-                                            className="text-[10px] text-teal-600 hover:text-teal-800 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
+                                            className="h-6 px-2 rounded bg-primary/10 hover:bg-primary/20 text-[10px] text-primary dark:text-blue-300 flex items-center gap-1 font-bold transition-all cursor-pointer"
+                                            title="বিল সম্পাদন করুন"
                                           >
-                                            <Edit3 size={10} /> সম্পাদনা
+                                            <Edit3 size={10} /> এডিট
                                           </button>
-                                          <span className="text-slate-300">|</span>
                                           <button 
                                             onClick={() => handleDeleteOrder(bill.id)}
-                                            className="text-[10px] text-red-500 hover:text-red-700 hover:underline flex items-center gap-0.5 cursor-pointer font-sans font-semibold"
+                                            className="h-6 px-1.5 rounded bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 text-[10px] text-rose-600 dark:text-rose-400 flex items-center gap-0.5 font-semibold transition-all cursor-pointer"
+                                            title="বিল মেমো মুছুন"
                                           >
-                                            <Trash2 size={10} /> ডিলিট
+                                            <Trash2 size={10} />
                                           </button>
                                         </>
                                       )}
                                     </div>
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 text-center font-sans">
-                                  <div className="font-bold text-slate-800 dark:text-slate-200">
+
+                                {/* Duty & Total Amount */}
+                                <td className="px-3.5 py-3 text-center font-sans">
+                                  <div className="font-extrabold text-slate-900 dark:text-slate-100 tabular-nums">
                                     {toBanglaDigits(totalDays)} দিন
                                   </div>
-                                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                  <div className="text-[11px] text-primary dark:text-blue-400 font-black tabular-nums">
                                     ৳{toBanglaDigits(grandTotal)}/-
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 text-center">
-                                  <select
-                                    value={bill.orderDate}
-                                    onChange={(e) => handleChangeBillGroup(bill.id, bill, e.target.value)}
-                                    className="px-2 py-1 rounded border border-slate-200 bg-white text-[10px] font-semibold text-slate-700 focus:outline-none dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 font-sans"
-                                  >
-                                    {billGroups.map(g => (
-                                      <option key={g.date} value={g.date}>{g.name}</option>
-                                    ))}
-                                    <option value="custom">নতুন গ্রুপ তারিখ...</option>
-                                  </select>
+
+                                {/* Shift Slot Reassignment */}
+                                <td className="px-3 py-3 text-center">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <ArrowRightLeft size={11} className="text-slate-400 shrink-0" />
+                                    <select
+                                      value={bill.orderDate}
+                                      onChange={(e) => handleChangeBillGroup(bill.id, bill, e.target.value)}
+                                      className="h-7 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer font-sans max-w-[130px] truncate"
+                                      title="স্লট গ্রুপ পরিবর্তন করুন"
+                                    >
+                                      {billGroups.map(g => (
+                                        <option key={g.date} value={g.date}>{g.name}</option>
+                                      ))}
+                                      <option value="custom">নতুন গ্রুপ তারিখ...</option>
+                                    </select>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -404,12 +430,12 @@ export default function ReportsTab({
       <div className="border-t border-slate-200 dark:border-slate-800 pt-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 glass-card rounded-2xl">
           <div>
-            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
-              <Calendar size={16} className="text-indigo-500" />
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 font-sans">
+              <Calendar size={16} className="text-primary" />
               নির্বাচিত তারিখের সমন্বিত প্রতিবেদন (Consolidated Daily Report)
             </h3>
             <p className="text-xs text-slate-400 mt-0.5 font-sans">
-              তারিখ: {getBanglaDate(reportDate)} ({reportDate}) | মোট বিল: {toBanglaDigits(reportData.totalBillsCount)} টি | সর্বমোট পরিমাণ: ৳{toBanglaDigits(reportData.grandTotalSum)}/-
+              তারিখ: <span className="font-semibold text-slate-600 dark:text-slate-300">{getBanglaDate(reportDate)}</span> ({reportDate}) | মোট বিল: <span className="font-semibold text-slate-600 dark:text-slate-300">{toBanglaDigits(reportData.totalBillsCount)} টি</span> | সর্বমোট পরিমাণ: <span className="font-bold text-primary dark:text-blue-400">৳{toBanglaDigits(reportData.grandTotalSum)}/-</span>
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -418,16 +444,16 @@ export default function ReportsTab({
                 type="date"
                 value={reportDate}
                 onChange={(e) => setReportDate(e.target.value)}
-                className="w-full md:w-auto px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans"
+                className="w-full md:w-auto px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/40 font-sans shadow-xs cursor-pointer"
               />
             </div>
             <button
               onClick={() => setIsReportPrintMode(true)}
               disabled={reportData.totalBillsCount === 0}
-              className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-md font-sans"
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md font-sans disabled:cursor-not-allowed"
             >
               <Printer size={14} />
-              প্রিন্ট রিপোর্ট
+              <span>প্রিন্ট রিপোর্ট</span>
             </button>
           </div>
         </div>
@@ -438,7 +464,7 @@ export default function ReportsTab({
               <AlertCircle size={28} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350 font-sans">নির্বাচিত তারিখে কোনো বিল জেনারেট করা হয়নি</h3>
+              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 font-sans">নির্বাচিত তারিখে কোনো বিল জেনারেট করা হয়নি</h3>
               <p className="text-xs text-slate-400 mt-1 max-w-[320px] mx-auto font-sans">
                 {getBanglaDate(reportDate)} তারিখে কোনো অফিস আদেশ স্মারক বিবরণীর বিল জেনারেট করা পাওয়া যায়নি। অনুগ্রহ করে অন্য তারিখ নির্বাচন করুন।
               </p>
@@ -446,94 +472,94 @@ export default function ReportsTab({
           </div>
         ) : (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* KPI Cards Grid */}
+            {/* KPI Cards Grid — Unified with Category Tokens */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Card 1: Total Bills */}
-              <div className="p-5 bg-gradient-to-br from-indigo-50 to-indigo-100/30 dark:from-indigo-950/20 dark:to-indigo-900/10 border border-indigo-100/50 dark:border-indigo-950/50 rounded-2xl shadow-sm">
+              <div className="p-5 bg-gradient-to-br from-indigo-50 to-indigo-100/30 dark:from-indigo-950/20 dark:to-indigo-900/10 border border-indigo-100/60 dark:border-indigo-950/60 rounded-2xl shadow-xs">
                 <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 font-sans">মোট জেনারেটকৃত বিল</p>
-                <h4 className="text-2xl font-extrabold text-indigo-950 dark:text-indigo-350 mt-1.5 font-sans">{toBanglaDigits(reportData.totalBillsCount)} টি</h4>
-                <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1 font-sans">আজকের জেনারেটকৃত মোট বিলের সংখ্যা</p>
+                <h4 className="text-2xl font-black text-indigo-950 dark:text-indigo-200 mt-1.5 font-sans tabular-nums">{toBanglaDigits(reportData.totalBillsCount)} টি</h4>
+                <p className="text-[10px] text-slate-400 mt-1 font-sans">আজকের জেনারেটকৃত মোট বিলের সংখ্যা</p>
               </div>
 
               {/* Card 2: Total Worked Days */}
-              <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100/30 dark:from-purple-950/20 dark:to-purple-900/10 border border-purple-100/50 dark:border-purple-950/50 rounded-2xl shadow-sm">
+              <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100/30 dark:from-purple-950/20 dark:to-purple-900/10 border border-purple-100/60 dark:border-purple-950/60 rounded-2xl shadow-xs">
                 <p className="text-xs font-bold text-purple-600 dark:text-purple-400 font-sans">মোট ডিউটি দিন</p>
-                <h4 className="text-2xl font-extrabold text-purple-950 dark:text-indigo-350 mt-1.5 font-sans">{toBanglaDigits(reportData.totalDaysSum)} দিন</h4>
-                <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1 font-sans">কর্মকর্তাদের মোট পালিত দায়িত্বের পরিমাণ</p>
+                <h4 className="text-2xl font-black text-purple-950 dark:text-purple-200 mt-1.5 font-sans tabular-nums">{toBanglaDigits(reportData.totalDaysSum)} দিন</h4>
+                <p className="text-[10px] text-slate-400 mt-1 font-sans">কর্মকর্তাদের মোট পালিত দায়িত্বের পরিমাণ</p>
               </div>
 
               {/* Card 3: Allowances Breakdown */}
-              <div className="p-5 bg-gradient-to-br from-cyan-50 to-cyan-100/30 dark:from-cyan-950/20 dark:to-cyan-900/10 border border-cyan-100/50 dark:border-cyan-950/50 rounded-2xl shadow-sm flex flex-col justify-between">
+              <div className="p-5 bg-gradient-to-br from-sky-50 to-sky-100/30 dark:from-sky-950/20 dark:to-sky-900/10 border border-sky-100/60 dark:border-sky-950/60 rounded-2xl shadow-xs flex flex-col justify-between">
                 <div>
-                  <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400 font-sans">ভাতার বিভাজন</p>
+                  <p className="text-xs font-bold text-sky-600 dark:text-sky-400 font-sans">ভাতার বিভাজন</p>
                   <div className="flex items-center justify-between mt-1.5 font-sans">
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">যাতায়াত:</span>
-                    <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.totalTransport)}/- BDT</span>
+                    <span className="text-xs font-black text-sky-950 dark:text-sky-200 tabular-nums">{toBanglaDigits(reportData.totalTransport)}/- BDT</span>
                   </div>
                   <div className="flex items-center justify-between mt-1 font-sans">
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">আপ্যায়ন:</span>
-                    <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.totalApyaon)}/- BDT</span>
+                    <span className="text-xs font-black text-sky-950 dark:text-sky-200 tabular-nums">{toBanglaDigits(reportData.totalApyaon)}/- BDT</span>
                   </div>
-                  <div className="flex items-center justify-between mt-1 font-sans border-t border-dashed border-cyan-200 dark:border-cyan-800/50 pt-1">
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">লেট সিটিং:</span>
-                    <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.lateSittingAmount)}/- BDT</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5 font-sans">
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">ছুটির দিন:</span>
-                    <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.holidayAmount)}/- BDT</span>
+                  <div className="flex items-center justify-between mt-1 font-sans border-t border-dashed border-sky-200 dark:border-sky-800/50 pt-1">
+                    <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">লেট সিটিং:</span>
+                    <span className="text-xs font-bold text-purple-950 dark:text-purple-200 tabular-nums">{toBanglaDigits(reportData.lateSittingAmount)}/- BDT</span>
                   </div>
                   <div className="flex items-center justify-between mt-0.5 font-sans">
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">রাত্রিকালীন:</span>
-                    <span className="text-xs font-extrabold text-cyan-950 dark:text-indigo-300">{toBanglaDigits(reportData.nightShiftAmount)}/- BDT</span>
+                    <span className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold">ছুটির দিন:</span>
+                    <span className="text-xs font-bold text-sky-950 dark:text-sky-200 tabular-nums">{toBanglaDigits(reportData.holidayAmount)}/- BDT</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5 font-sans">
+                    <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">রাত্রিকালীন:</span>
+                    <span className="text-xs font-bold text-blue-950 dark:text-blue-200 tabular-nums">{toBanglaDigits(reportData.nightShiftAmount)}/- BDT</span>
                   </div>
                 </div>
               </div>
 
               {/* Card 4: Grand Total */}
-              <div className="p-5 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-500/20 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div className="p-5 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-500/20 rounded-2xl shadow-xs relative overflow-hidden flex flex-col justify-between">
                 <div>
                   <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-sans">সর্বমোট প্রদেয় বিল</p>
-                  <h4 className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1.5 font-sans">{toBanglaDigits(reportData.grandTotalSum)}/- BDT</h4>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1 font-medium font-sans">{getBanglaNumberWords(reportData.grandTotalSum)}</p>
+                  <h4 className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1.5 font-sans tabular-nums">{toBanglaDigits(reportData.grandTotalSum)}/- BDT</h4>
+                  <p className="text-[10px] text-slate-400 mt-1 font-medium font-sans">{getBanglaNumberWords(reportData.grandTotalSum)}</p>
                 </div>
-                <div className="absolute right-[-10px] bottom-[-10px] text-emerald-500/10 dark:text-emerald-500/5 pointer-events-none">
+                <div className="absolute right-[-10px] bottom-[-10px] text-emerald-500/15 dark:text-emerald-400/10 pointer-events-none">
                   <Banknote size={80} />
                 </div>
               </div>
             </div>
 
-            {/* Category-wise Breakdown Pills */}
-            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-wrap gap-4 items-center justify-around">
+            {/* Category-wise Breakdown Pills / Legend (Aligned with single source of truth) */}
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-2xl flex flex-wrap gap-4 items-center justify-around">
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-amber-500" />
+                <span className="w-3 h-3 rounded-full bg-purple-600 dark:bg-purple-400 ring-2 ring-purple-500/20" />
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider font-sans">লেট-সিটিং বিল</p>
-                  <p className="text-xs font-extrabold text-slate-700 dark:text-slate-350 font-sans">{toBanglaDigits(reportData.totalLateAmount)}/- টাকা</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-sans">লেট-সিটিং বিল</p>
+                  <p className="text-xs font-black text-slate-800 dark:text-slate-100 font-sans tabular-nums">{toBanglaDigits(reportData.totalLateAmount)}/- টাকা</p>
                 </div>
               </div>
-              <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 hidden md:block" />
+              <div className="h-8 w-px bg-slate-100 dark:border-slate-800 hidden md:block" />
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-teal-500" />
+                <span className="w-3 h-3 rounded-full bg-sky-600 dark:bg-sky-400 ring-2 ring-sky-500/20" />
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider font-sans">ছুটির দিনের বিল</p>
-                  <p className="text-xs font-extrabold text-slate-700 dark:text-slate-350 font-sans">{toBanglaDigits(reportData.totalHolidayAmount)}/- টাকা</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-sans">ছুটির দিনের বিল</p>
+                  <p className="text-xs font-black text-slate-800 dark:text-slate-100 font-sans tabular-nums">{toBanglaDigits(reportData.totalHolidayAmount)}/- টাকা</p>
                 </div>
               </div>
-              <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 hidden md:block" />
+              <div className="h-8 w-px bg-slate-100 dark:border-slate-800 hidden md:block" />
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-indigo-500" />
+                <span className="w-3 h-3 rounded-full bg-blue-600 dark:bg-blue-400 ring-2 ring-blue-500/20" />
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider font-sans">রাত্রিকালীন শিফট বিল</p>
-                  <p className="text-xs font-extrabold text-slate-700 dark:text-slate-350 font-sans">{toBanglaDigits(reportData.totalNightAmount)}/- টাকা</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-sans">রাত্রিকালীন শিফট বিল</p>
+                  <p className="text-xs font-black text-slate-800 dark:text-slate-100 font-sans tabular-nums">{toBanglaDigits(reportData.totalNightAmount)}/- টাকা</p>
                 </div>
               </div>
             </div>
 
             {/* Table 1: Payee Bill Summary */}
             <div className="glass-card rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800/80 mb-6">
-              <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between gap-4">
-                <h4 className="text-xs font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
-                  <Users size={14} className="text-indigo-500" />
+              <div className="p-4 bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between gap-4">
+                <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2 font-sans">
+                  <Users size={14} className="text-primary" />
                   ১. কর্মকর্তা ভিত্তিক বিলের সারসংক্ষেপ (Payee Bill Summary)
                 </h4>
               </div>
@@ -552,32 +578,32 @@ export default function ReportsTab({
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs font-medium">
                     {reportData.payeesSummary?.map((payee, idx) => {
                       return (
-                        <tr key={idx} className="hover:bg-slate-50/30 dark:hover:bg-slate-850/10 text-slate-600 dark:text-slate-350">
-                          <td className="p-3 text-center font-mono text-[10px] text-slate-450">{toBanglaDigits(idx + 1)}</td>
-                          <td className="p-3 text-slate-800 dark:text-slate-200 font-bold">
+                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 text-slate-600 dark:text-slate-300">
+                          <td className="p-3 text-center font-mono text-[10px] text-slate-400">{toBanglaDigits(idx + 1)}</td>
+                          <td className="p-3 text-slate-800 dark:text-slate-100 font-bold">
                             {payee.payeeName} {payee.designation ? `(${payee.designation})` : ''}
                           </td>
-                          <td className="p-3 text-center font-bold">{toBanglaDigits(payee.billCount)} টি</td>
-                          <td className="p-3 text-right font-extrabold text-cyan-950 dark:text-cyan-400">{toBanglaDigits(payee.transportAllowance || 0)}/-</td>
-                          <td className="p-3 text-right font-extrabold text-cyan-950 dark:text-cyan-400">{toBanglaDigits(payee.apyaonAllowance || 0)}/-</td>
-                          <td className="p-3 text-right pr-6 font-extrabold text-slate-800 dark:text-slate-200">{toBanglaDigits(payee.grandTotal)}/-</td>
+                          <td className="p-3 text-center font-bold tabular-nums">{toBanglaDigits(payee.billCount)} টি</td>
+                          <td className="p-3 text-right font-extrabold text-slate-700 dark:text-slate-300 tabular-nums">৳{toBanglaDigits(payee.transportAllowance || 0)}/-</td>
+                          <td className="p-3 text-right font-extrabold text-slate-700 dark:text-slate-300 tabular-nums">৳{toBanglaDigits(payee.apyaonAllowance || 0)}/-</td>
+                          <td className="p-3 text-right pr-6 font-black text-primary dark:text-blue-400 tabular-nums">৳{toBanglaDigits(payee.grandTotal)}/-</td>
                         </tr>
                       );
                     })}
-                    <tr className="bg-slate-100/50 dark:bg-slate-900/60 font-bold text-slate-850 dark:text-slate-200 border-t-2 border-slate-300 dark:border-slate-700">
+                    <tr className="bg-slate-100/60 dark:bg-slate-900/60 font-bold text-slate-900 dark:text-slate-100 border-t-2 border-slate-300 dark:border-slate-700">
                       <td className="p-3 text-center"></td>
-                      <td className="p-3 text-left font-extrabold font-sans">সর্বমোট</td>
-                      <td className="p-3 text-center font-bold">
+                      <td className="p-3 text-left font-black font-sans">সর্বমোট</td>
+                      <td className="p-3 text-center font-black tabular-nums">
                         {toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + p.billCount, 0) || 0)} টি
                       </td>
-                      <td className="p-3 text-right font-extrabold text-cyan-950 dark:text-cyan-300">
-                        {toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + (p.transportAllowance || 0), 0) || 0)}/-
+                      <td className="p-3 text-right font-black tabular-nums">
+                        ৳{toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + (p.transportAllowance || 0), 0) || 0)}/-
                       </td>
-                      <td className="p-3 text-right font-extrabold text-cyan-950 dark:text-cyan-300">
-                        {toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + (p.apyaonAllowance || 0), 0) || 0)}/-
+                      <td className="p-3 text-right font-black tabular-nums">
+                        ৳{toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + (p.apyaonAllowance || 0), 0) || 0)}/-
                       </td>
-                      <td className="p-3 text-right pr-6 font-extrabold text-slate-950 dark:text-slate-100">
-                        {toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + p.grandTotal, 0) || 0)}/-
+                      <td className="p-3 text-right pr-6 font-black text-primary dark:text-blue-400 text-sm tabular-nums">
+                        ৳{toBanglaDigits(reportData.payeesSummary?.reduce((sum, p) => sum + p.grandTotal, 0) || 0)}/-
                       </td>
                     </tr>
                   </tbody>
@@ -585,11 +611,11 @@ export default function ReportsTab({
               </div>
             </div>
 
-            {/* Table: Consolidated Payee Statement */}
+            {/* Table 2: Consolidated Payee Statement (Conditionally Hiding Deduction Column) */}
             <div className="glass-card rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800/80">
-              <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h4 className="text-xs font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-2 font-sans">
-                  <Users size={14} className="text-indigo-500" />
+              <div className="p-4 bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2 font-sans">
+                  <Users size={14} className="text-primary" />
                   ২. কর্মচারী ভিত্তিক সমন্বিত বিস্তারিত বিবরণী (Consolidated Payee Details)
                 </h4>
                 <button
@@ -608,72 +634,72 @@ export default function ReportsTab({
                       <th className="p-3 w-48">কর্মকর্তার নাম</th>
                       <th className="p-3 w-40">পদবী</th>
                       <th className="p-3 text-center">লেট-সিটিং দিন (টাকা)</th>
-                      <th className="p-3 text-center">ছুটির দিন দিন (টাকা)</th>
+                      <th className="p-3 text-center">ছুটির দিন (টাকা)</th>
                       <th className="p-3 text-center">নাইট শিফট দিন (টাকা)</th>
                       <th className="p-3 text-center w-16">মোট দিন</th>
                       <th className="p-3 text-right pr-4 w-32">সর্বমোট (টাকা)</th>
-                      <th className="p-3 text-center w-20">কর্তন</th>
+                      {hasAnyDeductions && <th className="p-3 text-center w-20">কর্তন</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs font-medium">
                     {reportData.employeesBreakdown.map((record, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/30 dark:hover:bg-slate-850/10 text-slate-600 dark:text-slate-350">
-                        <td className="p-3 text-center font-mono text-[10px] text-slate-450">{toBanglaDigits(idx + 1)}</td>
-                        <td className="p-3 text-slate-800 dark:text-slate-200 font-bold">{record.employeeName}</td>
+                      <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 text-slate-600 dark:text-slate-300">
+                        <td className="p-3 text-center font-mono text-[10px] text-slate-400">{toBanglaDigits(idx + 1)}</td>
+                        <td className="p-3 text-slate-800 dark:text-slate-100 font-bold">{record.employeeName}</td>
                         <td className="p-3 text-slate-400 text-[10px]">{record.designation}</td>
-                        <td className="p-3 text-center">
+                        <td className="p-3 text-center tabular-nums">
                           {record.lateSittingDays > 0 ? (
-                            <span>{toBanglaDigits(record.lateSittingDays)} দিন ({toBanglaDigits(record.lateSittingAmount)}/-)</span>
+                            <span>{toBanglaDigits(record.lateSittingDays)} দিন (৳{toBanglaDigits(record.lateSittingAmount)}/-)</span>
                           ) : (
-                            <span className="text-slate-350 dark:text-slate-700">-</span>
+                            <span className="text-slate-300 dark:text-slate-700">-</span>
                           )}
                         </td>
-                        <td className="p-3 text-center">
+                        <td className="p-3 text-center tabular-nums">
                           {record.holidayDays > 0 ? (
-                            <span>{toBanglaDigits(record.holidayDays)} দিন ({toBanglaDigits(record.holidayAmount)}/-)</span>
+                            <span>{toBanglaDigits(record.holidayDays)} দিন (৳{toBanglaDigits(record.holidayAmount)}/-)</span>
                           ) : (
-                            <span className="text-slate-350 dark:text-slate-700">-</span>
+                            <span className="text-slate-300 dark:text-slate-700">-</span>
                           )}
                         </td>
-                        <td className="p-3 text-center">
+                        <td className="p-3 text-center tabular-nums">
                           {record.nightShiftDays > 0 ? (
-                            <span>{toBanglaDigits(record.nightShiftDays)} দিন ({toBanglaDigits(record.nightShiftAmount)}/-)</span>
+                            <span>{toBanglaDigits(record.nightShiftDays)} দিন (৳{toBanglaDigits(record.nightShiftAmount)}/-)</span>
                           ) : (
-                            <span className="text-slate-350 dark:text-slate-700">-</span>
+                            <span className="text-slate-300 dark:text-slate-700">-</span>
                           )}
                         </td>
-                        <td className="p-3 text-center font-bold">{toBanglaDigits(record.totalDays)}</td>
-                        <td className="p-3 text-right pr-4 font-extrabold text-slate-800 dark:text-slate-200">{toBanglaDigits(record.grandTotal)}/-</td>
-                        <td className="p-3 text-center text-slate-350 dark:text-slate-600 font-bold">-</td>
+                        <td className="p-3 text-center font-bold tabular-nums">{toBanglaDigits(record.totalDays)}</td>
+                        <td className="p-3 text-right pr-4 font-black text-primary dark:text-blue-400 tabular-nums">৳{toBanglaDigits(record.grandTotal)}/-</td>
+                        {hasAnyDeductions && <td className="p-3 text-center text-slate-400 font-bold">-</td>}
                       </tr>
                     ))}
-                    <tr className="bg-slate-100/50 dark:bg-slate-900/60 font-bold text-slate-850 dark:text-slate-200 border-t-2 border-slate-300 dark:border-slate-700">
+                    <tr className="bg-slate-100/60 dark:bg-slate-900/60 font-bold text-slate-900 dark:text-slate-100 border-t-2 border-slate-300 dark:border-slate-700">
                       <td className="p-3 text-center"></td>
-                      <td className="p-3 text-left font-extrabold font-sans" colSpan={2}>সর্বমোট</td>
-                      <td className="p-3 text-center font-bold">
+                      <td className="p-3 text-left font-black font-sans" colSpan={2}>সর্বমোট</td>
+                      <td className="p-3 text-center font-black tabular-nums">
                         {reportData.totalLateDays > 0 ? (
-                          <span>{toBanglaDigits(reportData.totalLateDays)} দিন ({toBanglaDigits(reportData.totalLateAmount)}/-)</span>
+                          <span>{toBanglaDigits(reportData.totalLateDays)} দিন (৳{toBanglaDigits(reportData.totalLateAmount)}/-)</span>
                         ) : (
-                          <span className="text-slate-350 dark:text-slate-700">-</span>
+                          <span className="text-slate-300 dark:text-slate-700">-</span>
                         )}
                       </td>
-                      <td className="p-3 text-center font-bold">
+                      <td className="p-3 text-center font-black tabular-nums">
                         {reportData.totalHolidayDays > 0 ? (
-                          <span>{toBanglaDigits(reportData.totalHolidayDays)} দিন ({toBanglaDigits(reportData.totalHolidayAmount)}/-)</span>
+                          <span>{toBanglaDigits(reportData.totalHolidayDays)} দিন (৳{toBanglaDigits(reportData.totalHolidayAmount)}/-)</span>
                         ) : (
-                          <span className="text-slate-350 dark:text-slate-700">-</span>
+                          <span className="text-slate-300 dark:text-slate-700">-</span>
                         )}
                       </td>
-                      <td className="p-3 text-center font-bold">
+                      <td className="p-3 text-center font-black tabular-nums">
                         {reportData.totalNightDays > 0 ? (
-                          <span>{toBanglaDigits(reportData.totalNightDays)} দিন ({toBanglaDigits(reportData.totalNightAmount)}/-)</span>
+                          <span>{toBanglaDigits(reportData.totalNightDays)} দিন (৳{toBanglaDigits(reportData.totalNightAmount)}/-)</span>
                         ) : (
-                          <span className="text-slate-350 dark:text-slate-700">-</span>
+                          <span className="text-slate-300 dark:text-slate-700">-</span>
                         )}
                       </td>
-                      <td className="p-3 text-center font-bold">{toBanglaDigits(reportData.totalDaysSum)}</td>
-                      <td className="p-3 text-right pr-4 font-extrabold text-slate-950 dark:text-slate-100">{toBanglaDigits(reportData.grandTotalSum)}/-</td>
-                      <td className="p-3 text-center text-slate-400 font-bold">-</td>
+                      <td className="p-3 text-center font-black tabular-nums">{toBanglaDigits(reportData.totalDaysSum)}</td>
+                      <td className="p-3 text-right pr-4 font-black text-primary dark:text-blue-400 text-sm tabular-nums">৳{toBanglaDigits(reportData.grandTotalSum)}/-</td>
+                      {hasAnyDeductions && <td className="p-3 text-center text-slate-400 font-bold">-</td>}
                     </tr>
                   </tbody>
                 </table>

@@ -12,6 +12,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
+import { getCategoryConfig } from '@/lib/category-colors';
 
 interface OfficeOrder {
   id: number;
@@ -209,8 +210,8 @@ export default function BillsTab({
                     {order.status === 'Generated & Printed' || order.status === 'Printed' ? 'জেনারেটেড এন্ড প্রিন্টেড' : order.status}
                   </span>
                 </div>
-                <span className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-bold uppercase font-sans">
-                  {order.category === 'BILL_LATE_SITTING' ? 'লেট সিটিং বিল' : order.category === 'BILL_HOLIDAY' ? 'সরকারি ছুটি বিল' : 'রাত্রীকালীন বিল'}
+                <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border font-sans ${getCategoryConfig(order.category).badgeClass}`}>
+                  {getCategoryConfig(order.category).label}
                 </span>
               </div>
               
