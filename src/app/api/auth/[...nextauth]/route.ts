@@ -8,6 +8,13 @@ import { headers } from 'next/headers';
 import { logActivity } from '@/lib/audit';
 import { toEnglishDigits } from '@/lib/bengali-converter';
 
+import { verifyPassword, hashPassword } from '@/lib/password';
+
+// Validate NEXTAUTH_SECRET on startup
+if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === 'production') {
+  logger.warn('⚠️ [Security Warning]: NEXTAUTH_SECRET is not set in environment variables. Please configure NEXTAUTH_SECRET in your production .env file.');
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -46,10 +53,11 @@ export const authOptions: NextAuthOptions = {
           }
 
           if (employee && employee.bankId) {
-            // Create user in the database
+            // Create user in the database with secure hashed default password
+            const hashedDefaultPassword = await hashPassword('123456');
             const newUsers = await db.insert(users).values({
               username: employee.bankId.trim(),
-              password: '123456', // default password
+              password: hashedDefaultPassword, // default password hashed
               name: employee.name.trim(),
               role: 'USER',
             }).returning();
@@ -64,45 +72,61 @@ export const authOptions: NextAuthOptions = {
               }).catch((e) => logger.error('Failed to attach user cell mapping:', e));
             }
 
-            logger.info(`Auto-provisioned User record for Employee: ${employee.name} (${employee.bankId})`);
+            logger.info(`Auto-provisioned User record with hashed password for Employee: ${employee.name} (${employee.bankId})`);
           }
         }
 
-        if (user && user.password === password) {
-          try {
-            let ipAddress = '127.0.0.1';
-            let userAgent = 'Unknown';
+        if (user) {
+          // Dual-compatible verification: supports both modern bcrypt hash and legacy plaintext
+          const { isValid, needsMigration } = await verifyPassword(password, user.password);
 
-            if (req && req.headers) {
-              ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || (req.headers['x-real-ip'] as string) || ipAddress;
-              userAgent = (req.headers['user-agent'] as string) || userAgent;
-            } else {
+          if (isValid) {
+            // Lazy migration: if password matched as legacy plaintext, upgrade it to bcrypt in DB
+            if (needsMigration) {
               try {
-                const reqHeaders = await headers();
-                ipAddress = reqHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || reqHeaders.get('x-real-ip') || ipAddress;
-                userAgent = reqHeaders.get('user-agent') || userAgent;
-              } catch {}
+                const newHash = await hashPassword(password);
+                await db.update(users).set({ password: newHash }).where(eq(users.id, user.id));
+                logger.info(`[Auth] Successfully lazy-migrated password to bcrypt for user: ${user.username} (ID: ${user.id})`);
+              } catch (migErr) {
+                logger.error(`[Auth] Failed to lazy-migrate password for user: ${user.username}`, migErr);
+              }
             }
 
-            await logActivity({
-              username: user.username,
-              action: 'LOGIN',
-              entityType: 'USER',
-              entityId: String(user.id),
-              ipAddress,
-              userAgent,
-              details: `${user.name} (@${user.username}) সিস্টেমে সফলভাবে লগইন করেছেন (NextAuth)।`
-            });
-          } catch (e) {
-            logger.error('Failed to log login activity in authorize callback:', e);
-          }
+            try {
+              let ipAddress = '127.0.0.1';
+              let userAgent = 'Unknown';
 
-          return {
-            id: String(user.id),
-            name: user.name,
-            email: user.username, // using email slot for username
-            role: user.role,
-          };
+              if (req && req.headers) {
+                ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || (req.headers['x-real-ip'] as string) || ipAddress;
+                userAgent = (req.headers['user-agent'] as string) || userAgent;
+              } else {
+                try {
+                  const reqHeaders = await headers();
+                  ipAddress = reqHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || reqHeaders.get('x-real-ip') || ipAddress;
+                  userAgent = reqHeaders.get('user-agent') || userAgent;
+                } catch {}
+              }
+
+              await logActivity({
+                username: user.username,
+                action: 'LOGIN',
+                entityType: 'USER',
+                entityId: String(user.id),
+                ipAddress,
+                userAgent,
+                details: `${user.name} (@${user.username}) সিস্টেমে সফলভাবে লগইন করেছেন (NextAuth)।`
+              });
+            } catch (e) {
+              logger.error('Failed to log login activity in authorize callback:', e);
+            }
+
+            return {
+              id: String(user.id),
+              name: user.name,
+              email: user.username, // using email slot for username
+              role: user.role,
+            };
+          }
         }
 
         return null;

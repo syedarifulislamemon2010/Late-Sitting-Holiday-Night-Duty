@@ -3,17 +3,17 @@
 # 🏛️ Janata Bank LHN Portal
 ### **Late-Sitting, Holiday, and Night Duty Management & Administrative Automation System**
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7.0-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
-[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?style=for-the-badge&logo=drizzle)](https://orm.drizzle.team/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18.6-4169E1?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-1.0-C5F74F?style=for-the-badge&logo=drizzle)](https://orm.drizzle.team/)
 [![Vitest](https://img.shields.io/badge/Vitest-4.1-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
 
 ---
 
-*An enterprise-grade administrative, financial utility, and roster management portal engineered exclusively for the **Online Banking Department** of Janata Bank PLC. It automates duty assignments, allowance bill ledger generation, leave processing with sandwich rules, executive seniority tracking, **universal live PDF/Letter editing**, **system-wide editable DOCX exports**, **Ctrl+K Spotlight Search**, **PWA offline support**, **Bangla ⇄ English language switching**, and **< 5ms cached database queries**.*
+*An enterprise-grade administrative, financial utility, and roster management portal engineered exclusively for the **Online Banking Department** of Janata Bank PLC. It automates duty assignments, allowance bill ledger generation, leave processing with sandwich rules, executive seniority tracking, **universal live PDF/Letter editing**, **system-wide editable DOCX exports**, **Ctrl+K Spotlight Search**, **PWA offline support**, **Bangla ⇄ English language switching**, **zero-downtime bcrypt password hashing migration**, and **< 5ms cached database queries**.*
 
 </div>
 
@@ -49,6 +49,7 @@
 
 - 📅 **Automated Duty Roster Management**: Schedule, track, and manage Late-Sitting (৳300/day), Holiday Duty (৳500/day), and Night Duty (৳1000/day).
 - ⚡ **Zero-Latency Database Caching (`< 5ms`)**: Next.js `unstable_cache` and React `cache()` for instant server response on static reference queries.
+- 🔒 **Zero-Downtime Bcrypt Password Hashing Migration**: Dual-compatibility authentication engine that dynamically lazy-migrates legacy plaintext passwords to standard 60-character bcrypt salted hashes upon user login without breaking existing credentials.
 - 👔 **কর্মকর্তা ও সেল ডিরেক্টরি (Employee & Cell Directory)**: Sovereign Navy-styled officer cards, dynamic cell grouping, senior ranking hierarchy, executive panel with custom rank accents, inline quick-editing with empty-state pill affordances, multi-selection bulk deletion, and modal views.
 - 📊 **সিস্টেম অ্যানালিটিক্স ড্যাশবোর্ড (System Analytics & Financial Auditing)**: Parallel Neon PostgreSQL query pipeline with sub-50ms SWR caching, synchronized billing ledger totals (৳ ৩০,৪০০/- across 9 office orders), cell budget breakdowns, and monthly duty performer tracking.
 - 🔍 **Spotlight Command Palette (`Ctrl + K`)**: Global spotlight search modal to find any officer, bank ID, cell, or page in 0.1 seconds.
@@ -140,14 +141,14 @@ graph TD
 
 | Category | Technology | Rationale & Selection |
 | :--- | :--- | :--- |
-| **Framework** | Next.js 16 (App Router) | High-performance React framework with Server Components, hybrid SSR/SSG, and API route handling. |
-| **UI Engine** | React 19 | Cutting-edge React UI library with enhanced server action performance. |
-| **Language** | TypeScript 5.9 | Strict compile-time type safety, preventing runtime exceptions and enhancing developer experience. |
-| **Authentication** | Auth.js (NextAuth) | Custom self-hosted session validation, zero third-party dependencies, lightweight and secure. |
-| **Database ORM** | Drizzle ORM 0.45 | Type-safe SQL query builder with zero cold-start latency, superior execution speed over traditional ORMs. |
+| **Framework** | Next.js 16.3 (App Router) | High-performance React framework with Server Components, hybrid SSR/SSG, and API route handling. |
+| **UI Engine** | React 19.2 | Cutting-edge React UI library with enhanced server action performance. |
+| **Language** | TypeScript 7.0 | Strict compile-time type safety, preventing runtime exceptions and enhancing developer experience. |
+| **Authentication** | Auth.js (NextAuth) + bcryptjs | Custom self-hosted session validation with zero-downtime dual-compatible bcrypt password hashing. |
+| **Database ORM** | Drizzle ORM 1.0 | Type-safe SQL query builder with zero cold-start latency, superior execution speed over traditional ORMs. |
 | **Styling** | Tailwind CSS 4.3 | Modern utility-first styling with zero runtime compilation overhead and responsive dark mode support. |
 | **Document Generator** | docx 9.x | Programmatic Microsoft Word (.docx) generation library. |
-| **Database** | PostgreSQL 15 | Enterprise-grade relational database with strict constraint validation and index optimization. |
+| **Database** | PostgreSQL 18.6 | Enterprise-grade relational database with strict constraint validation and index optimization. |
 | **Testing** | Vitest 4.1 | Lightning-fast ESM-native test runner for unit, integration, and service contract verification. |
 | **Animation** | framer-motion | Smooth page transitions and interactive micro-animations. |
 
@@ -467,6 +468,12 @@ npx drizzle-kit push
 pm2 start npm --name "lhn-portal" -- run start -- -p 3000
 pm2 save
 pm2 startup systemd
+```
+
+### 3. Live Server Single-Line Safe Update Command
+When pulling updates to a live RHEL production server:
+```bash
+git pull origin main && npm install && npm run build && pm2 restart 2
 ```
 
 ### 3. Nginx Reverse Proxy

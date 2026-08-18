@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { users, employees, userCells, cells } from '@/db/schema';
 import { eq, isNotNull, sql } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
+import { hashPassword } from '@/lib/password';
 
 export async function GET() {
   try {
@@ -20,7 +21,8 @@ export async function GET() {
     const existingUsers = await db.select({ username: users.username }).from(users);
     const existingUsernames = new Set(existingUsers.map((u: { username: string }) => u.username.trim().toLowerCase()));
 
-    // 3. Sync missing users
+    // 3. Sync missing users with hashed default password
+    const hashedDefaultPassword = await hashPassword('123456');
     for (const emp of emps) {
       if (emp.bankId && emp.bankId.trim() !== '') {
         const username = emp.bankId.trim().toLowerCase();
@@ -28,7 +30,7 @@ export async function GET() {
         if (username !== 'admin' && !existingUsernames.has(username)) {
           const newUsers = await db.insert(users).values({
             username: emp.bankId.trim(),
-            password: '123456',
+            password: hashedDefaultPassword,
             name: emp.name.trim(),
             role: 'USER',
             mobile: emp.mobile ? emp.mobile.trim() : null,
@@ -106,9 +108,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'user_exists', message: 'এই ইউজারনেমটি ইতিমধ্যেই ব্যবহৃত হচ্ছে!' }, { status: 400 });
     }
 
+    const hashedPassword = await hashPassword(password.trim());
+
     const newUsers = await db.insert(users).values({
       username: username.trim(),
-      password: password.trim(),
+      password: hashedPassword,
       name: name.trim(),
       role: role || 'USER',
       cellDuties: cellDuties ? JSON.stringify(cellDuties) : null,

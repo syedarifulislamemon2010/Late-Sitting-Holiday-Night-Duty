@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { users, userCells, cells, employees } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
+import { hashPassword } from '@/lib/password';
 
 export async function PUT(
   request: Request,
@@ -75,7 +76,7 @@ export async function PUT(
       updatedFields.mobile = mobile ? mobile.trim() : null;
     }
     if (password && password.trim()) {
-      updatedFields.password = password.trim();
+      updatedFields.password = await hashPassword(password.trim());
     }
 
     // Perform update
