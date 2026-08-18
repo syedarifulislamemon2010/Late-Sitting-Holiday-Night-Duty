@@ -380,7 +380,9 @@ export default function AnalyticsDashboardPage() {
 
       {/* KPI Summary Cards (Pure Organization & Cell-level Aggregates) */}
       {summary && (() => {
-        const totalOrgBudget = cellBudget.reduce((acc, c) => acc + (c.totalAllowance || 0), 0);
+        const totalOrgBudget = summary.totalApprovedBillAmount !== undefined 
+          ? summary.totalApprovedBillAmount 
+          : cellBudget.reduce((acc, c) => acc + (c.totalAllowance || 0), 0);
         return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 font-sans">
             {/* Card 1: Total Released Bills */}

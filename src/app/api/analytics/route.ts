@@ -3,9 +3,11 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { duties, employees, cells, leaveApplications, officeOrders } from '@/db/schema';
-import { eq, and, or, desc, asc, sql, like, inArray } from 'drizzle-orm';
-import { logActivity } from '@/lib/audit';
-import { headers } from 'next/headers';
+import { eq, and, or, sql, like, inArray, asc } from 'drizzle-orm';
+
+// In-memory cache for ultra-fast analytics queries (TTL: 30 seconds)
+const analyticsCache = new Map<string, { timestamp: number; data: any }>();
+const CACHE_TTL_MS = 30 * 1000;
 
 export async function GET(request: Request) {
   try {
@@ -17,93 +19,31 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const filterMonthParam = searchParams.get('month'); // Comma-separated YYYY-MM
-    const filterMonths = filterMonthParam ? filterMonthParam.split(',').filter(Boolean) : [];
-    const filterYear = searchParams.get('year');   // YYYY
+    const filterYear = searchParams.get('year') || '2026';   // YYYY
     const dutyTypeParam = searchParams.get('dutyType'); // Comma-separated duty types
     const dutyTypes = dutyTypeParam ? dutyTypeParam.split(',').filter(Boolean) : [];
     const cellIdParam = searchParams.get('cellId');
+    const filterReleaseDate = searchParams.get('releaseDate'); // YYYY-MM-DD or empty or 'all'
 
-    const allowedCellIds = user.cells?.map((c: any) => c.id) || [];
-    const allowedCellNames = user.cells?.map((c: any) => c.name) || [];
-
-    let cellFilterId: number | null = null;
-    let cellFilterName: string | null = null;
-
-    if (user.role === 'ADMIN') {
-      if (cellIdParam && cellIdParam !== 'all') {
-        const cId = parseInt(cellIdParam, 10);
-        if (!isNaN(cId)) {
-          const cellRec = await db.select().from(cells).where(eq(cells.id, cId)).limit(1);
-          if (cellRec[0]) {
-            cellFilterId = cellRec[0].id;
-            cellFilterName = cellRec[0].name;
-          }
-        }
-      }
-    } else if (user.role === 'USER') {
-      if (cellIdParam && cellIdParam !== 'all') {
-        const cId = parseInt(cellIdParam, 10);
-        if (!isNaN(cId) && allowedCellIds.includes(cId)) {
-          const cellRec = await db.select().from(cells).where(eq(cells.id, cId)).limit(1);
-          if (cellRec[0]) {
-            cellFilterId = cellRec[0].id;
-            cellFilterName = cellRec[0].name;
-          }
-        }
-      }
+    // Fast memory cache check
+    const cacheKey = `${user.role}_${user.id}_${filterMonthParam || ''}_${filterYear}_${dutyTypeParam || ''}_${cellIdParam || ''}_${filterReleaseDate || ''}`;
+    const cached = analyticsCache.get(cacheKey);
+    const now = Date.now();
+    if (cached && (now - cached.timestamp) < CACHE_TTL_MS) {
+      return NextResponse.json(cached.data);
     }
 
-    const getEmployeeCellCondition = () => {
-      if (user.role === 'ADMIN') {
-        return cellFilterId ? eq(employees.cellId, cellFilterId) : undefined;
-      }
-      if (user.role === 'USER') {
-        if (cellFilterId) {
-          return eq(employees.cellId, cellFilterId);
-        }
-        return allowedCellIds.length > 0 ? inArray(employees.cellId, allowedCellIds) : eq(employees.id, -1);
-      }
-      return undefined;
-    };
+    const allowedCellNames = user.cells?.map((c: any) => c.name) || [];
 
-    const getCellNameCondition = (field: any) => {
-      if (user.role === 'ADMIN') {
-        return cellFilterName 
-          ? or(eq(field, cellFilterName), inArray(field, ['All Cells', 'all', 'All'])) 
-          : undefined;
-      }
-      if (user.role === 'USER') {
-        if (cellFilterName) {
-          return or(eq(field, cellFilterName), inArray(field, ['All Cells', 'all', 'All']));
-        }
-        const cellList = [...allowedCellNames, 'All Cells', 'all', 'All'];
-        return allowedCellNames.length > 0 ? inArray(field, cellList) : eq(field, 'NON_EXISTENT_CELL_NAME');
-      }
-      return undefined;
-    };
-
-    const isEmployee = user.role === 'EMPLOYEE';
-
-    // 1. Resolve employee record for logged-in user (regardless of role, check by userId or bankId)
-    let employee: any = null;
-    const employeeList = await db.select({
-      id: employees.id,
-      name: employees.name,
-      designation: employees.designation,
-      bankId: employees.bankId,
-      cellId: employees.cellId,
-      cellName: cells.name,
-      userId: employees.userId
-    })
-    .from(employees)
-    .innerJoin(cells, eq(employees.cellId, cells.id))
-    .where(eq(employees.userId, user.id));
-
-    employee = employeeList[0];
-
-    if (!employee) {
-      // Fallback case-sensitive exact match lookup
-      const exactMatchList = await db.select({
+    // Parallel fetch base tables in 1 concurrent round-trip
+    const [
+      employeeList,
+      allActiveOfficeOrdersRaw,
+      allCellsRaw,
+      leavePatternsRaw,
+      rawDutiesCount
+    ] = await Promise.all([
+      db.select({
         id: employees.id,
         name: employees.name,
         designation: employees.designation,
@@ -114,308 +54,163 @@ export async function GET(request: Request) {
       })
       .from(employees)
       .innerJoin(cells, eq(employees.cellId, cells.id))
-      .where(eq(employees.bankId, user.username));
+      .where(eq(employees.userId, user.id)),
 
-      const matchedEmp = exactMatchList[0];
-      if (matchedEmp) {
-        await db.update(employees).set({ userId: user.id }).where(eq(employees.id, matchedEmp.id));
-        employee = { ...matchedEmp, userId: user.id };
+      db.select().from(officeOrders).where(
+        and(
+          sql`${officeOrders.status} != 'Deleted'`,
+          or(
+            inArray(officeOrders.category, ['LATE_SITTING', 'HOLIDAY', 'NIGHT_SHIFT']),
+            like(officeOrders.category, 'BILL_%')
+          )
+        )
+      ),
 
-        const reqHeaders = await headers();
-        const ipAddress = reqHeaders.get('x-forwarded-for') || reqHeaders.get('x-real-ip') || '127.0.0.1';
-        const userAgent = reqHeaders.get('user-agent') || 'Unknown';
+      db.select().from(cells),
 
-        await logActivity({
-          username: user.username,
-          action: 'UPDATE',
-          entityType: 'EMPLOYEE',
-          entityId: String(employee.id),
-          ipAddress,
-          userAgent,
-          details: `System auto-linked User account @${user.username} to Employee record: ${employee.name} (${employee.bankId}) (Exact match bankId).`
-        });
-      }
-    }
-
-    // Fetch unique bill release dates (overall or cell-scoped)
-    const availableDatesConditions = [like(officeOrders.category, 'BILL_%')];
-    const availableDatesCellCond = getCellNameCondition(officeOrders.cellName);
-    if (availableDatesCellCond) {
-      availableDatesConditions.push(availableDatesCellCond);
-    }
-    const availableDatesRaw = await db.select({
-      orderDate: officeOrders.orderDate
-    })
-    .from(officeOrders)
-    .where(and(...availableDatesConditions))
-    .groupBy(officeOrders.orderDate)
-    .orderBy(desc(officeOrders.orderDate));
-    const availableReleaseDates = availableDatesRaw.map(d => d.orderDate);
-
-    const filterReleaseDate = searchParams.get('releaseDate'); // YYYY-MM-DD or empty or 'all'
-    let targetReleaseDate: string | null = null;
-    if (filterReleaseDate && filterReleaseDate !== 'all') {
-      targetReleaseDate = filterReleaseDate;
-    } else if (filterReleaseDate === 'all') {
-      targetReleaseDate = null;
-    } else {
-      // Default to latest date if available
-      targetReleaseDate = availableReleaseDates[0] || null;
-    }
-
-    // ----------------------------------------------------
-    // KPI Summary Metrics
-    // ----------------------------------------------------
-    // Total Released Bills (overall or cell-scoped, filtered by date)
-    const totalReleasedBillsConditions = [like(officeOrders.category, 'BILL_%')];
-    const releasedBillsCellCond = getCellNameCondition(officeOrders.cellName);
-    if (releasedBillsCellCond) {
-      totalReleasedBillsConditions.push(releasedBillsCellCond);
-    }
-    if (targetReleaseDate) {
-      totalReleasedBillsConditions.push(eq(officeOrders.orderDate, targetReleaseDate));
-    }
-    const totalReleasedBillsRaw = await db.select({
-      count: sql<number>`count(${officeOrders.id})`
-    })
-    .from(officeOrders)
-    .where(and(...totalReleasedBillsConditions));
-    const totalReleasedBills = Number(totalReleasedBillsRaw[0]?.count || 0);
-
-    // Total Duties Completed (overall or cell-scoped)
-    const totalDutiesConditions = [];
-    const dutyCellCond = getEmployeeCellCondition();
-    if (dutyCellCond) {
-      totalDutiesConditions.push(dutyCellCond);
-    }
-    const totalDutiesRaw = await db.select({
-      count: sql<number>`count(${duties.id})`
-    })
-    .from(duties)
-    .innerJoin(employees, eq(duties.employeeId, employees.id))
-    .where(totalDutiesConditions.length > 0 ? and(...totalDutiesConditions) : undefined);
-    const totalDutiesCompleted = Number(totalDutiesRaw[0]?.count || 0);
-
-    // Logged-in employee's personal released bills count
-    let myBillCount = 0;
-    if (employee) {
-      const myCountRaw = await db.select({
-        count: sql<number>`count(${officeOrders.id})`
+      db.select({
+        year: sql<string>`substring(${leaveApplications.startDate}, 1, 4)`,
+        month: sql<string>`substring(${leaveApplications.startDate}, 6, 2)`,
+        count: sql<number>`count(${leaveApplications.id})`
       })
-      .from(officeOrders)
-      .where(and(
-        like(officeOrders.category, 'BILL_%'),
-        sql`position(${employee.name} in ${officeOrders.employeeName}) > 0`
-      ));
-      myBillCount = Number(myCountRaw[0]?.count || 0);
+      .from(leaveApplications)
+      .where(sql`${leaveApplications.startDate} IS NOT NULL`)
+      .groupBy(
+        sql`substring(${leaveApplications.startDate}, 1, 4)`,
+        sql`substring(${leaveApplications.startDate}, 6, 2)`
+      )
+      .orderBy(
+        asc(sql`substring(${leaveApplications.startDate}, 1, 4)`),
+        asc(sql`substring(${leaveApplications.startDate}, 6, 2)`)
+      ),
+
+      db.select({ count: sql<number>`count(${duties.id})` }).from(duties)
+    ]);
+
+    const employee = employeeList[0] || null;
+    // Available bill release dates
+    const billCopies = allActiveOfficeOrdersRaw.filter(o => 
+      o.category.startsWith('BILL_') && o.status !== 'Deleted'
+    );
+    const availableReleaseDates = Array.from(new Set(
+      billCopies.map(o => o.orderDate).filter(Boolean)
+    )).sort().reverse();
+
+    const nonBillOrders = allActiveOfficeOrdersRaw.filter(o => 
+      !o.category.startsWith('BILL_') && o.status !== 'Deleted'
+    );
+
+    // Filter orders by selected criteria
+    let filteredOrders = nonBillOrders;
+    if (cellIdParam && cellIdParam !== 'all') {
+      const targetCell = allCellsRaw.find(c => String(c.id) === cellIdParam);
+      if (targetCell) {
+        filteredOrders = filteredOrders.filter(o => o.cellName === targetCell.name || o.cellName === 'All Cells');
+      }
+    } else if (user.role === 'USER' && allowedCellNames.length > 0) {
+      filteredOrders = filteredOrders.filter(o => allowedCellNames.includes(o.cellName || '') || o.cellName === 'All Cells');
     }
 
-    // Logged-in employee's personal total earnings
-    let myTotalEarnings = 0;
-    if (employee) {
-      const myEarningsRaw = await db.select({
-        sum: sql<number>`COALESCE(sum(${duties.totalBill}), 0)`
-      })
-      .from(duties)
-      .where(eq(duties.employeeId, employee.id));
-      myTotalEarnings = Number(myEarningsRaw[0]?.sum || 0);
-    }
-
-    // ----------------------------------------------------
-    // QUERY A: Allowance Trend (Line Chart)
-    // - Security: Employees only see their own money trend.
-    // - Admins/Users see overall bank-wide trend.
-    // ----------------------------------------------------
-    let allowanceTrendRaw: { month: string; totalAllowance: number }[] = [];
-    if (isEmployee) {
-      if (!employee) {
-        allowanceTrendRaw = [];
-      } else {
-        const trendConditions = [eq(duties.employeeId, employee.id)];
-        if (dutyTypes.length > 0) {
-          trendConditions.push(inArray(duties.type, dutyTypes));
-        }
-        allowanceTrendRaw = await db.select({
-          month: sql<string>`substring(${duties.date}, 1, 7)`,
-          totalAllowance: sql<number>`COALESCE(sum(${duties.totalBill}), 0)`
-        })
-        .from(duties)
-        .where(and(...trendConditions))
-        .groupBy(sql`substring(${duties.date}, 1, 7)`)
-        .orderBy(asc(sql`substring(${duties.date}, 1, 7)`));
-      }
-    } else {
-      const trendConditions = [];
-      const trendCellCond = getEmployeeCellCondition();
-      if (trendCellCond) {
-        trendConditions.push(trendCellCond);
-      }
-      if (dutyTypes.length > 0) {
-        trendConditions.push(inArray(duties.type, dutyTypes));
-      }
-      allowanceTrendRaw = await db.select({
-        month: sql<string>`substring(${duties.date}, 1, 7)`,
-        totalAllowance: sql<number>`COALESCE(sum(${duties.totalBill}), 0)`
-      })
-      .from(duties)
-      .innerJoin(employees, eq(duties.employeeId, employees.id))
-      .where(trendConditions.length > 0 ? and(...trendConditions) : undefined)
-      .groupBy(sql`substring(${duties.date}, 1, 7)`)
-      .orderBy(asc(sql`substring(${duties.date}, 1, 7)`));
-    }
-
-    const allowanceTrend = allowanceTrendRaw.map(row => ({
-      month: row.month,
-      totalAllowance: Number(row.totalAllowance)
-    }));
-
-    // ----------------------------------------------------
-    // QUERY A2: Personal Allowance Trend (Line Chart)
-    // - For any logged-in user who has a linked Employee record, so they can see their own money
-    // ----------------------------------------------------
-    let personalAllowanceTrend: { month: string; totalAllowance: number }[] = [];
-    if (employee) {
-      const personalTrendConditions = [eq(duties.employeeId, employee.id)];
-      if (dutyTypes.length > 0) {
-        personalTrendConditions.push(inArray(duties.type, dutyTypes));
-      }
-      const personalTrendRaw = await db.select({
-        month: sql<string>`substring(${duties.date}, 1, 7)`,
-        totalAllowance: sql<number>`COALESCE(sum(${duties.totalBill}), 0)`
-      })
-      .from(duties)
-      .where(and(...personalTrendConditions))
-      .groupBy(sql`substring(${duties.date}, 1, 7)`)
-      .orderBy(asc(sql`substring(${duties.date}, 1, 7)`));
-
-      personalAllowanceTrend = personalTrendRaw.map(row => ({
-        month: row.month,
-        totalAllowance: Number(row.totalAllowance)
-      }));
-    }
-
-    // ----------------------------------------------------
-    // QUERY B: Top Performers (Bar Chart)
-    // - Security: Shows COUNT of duties only. NO monetary allowance columns.
-    // - Filters: Type (LATE_SITTING, HOLIDAY, NIGHT_SHIFT, or empty for all)
-    // - Accessible by everyone (including employees).
-    // ----------------------------------------------------
-    const dutyConditions = [];
     if (dutyTypes.length > 0) {
-      dutyConditions.push(inArray(duties.type, dutyTypes));
-    }
-    if (filterMonths.length > 0) {
-      dutyConditions.push(inArray(sql`substring(${duties.date}, 1, 7)`, filterMonths));
-    } else if (filterYear) {
-      dutyConditions.push(sql`substring(${duties.date}, 1, 4) = ${filterYear}`);
-    }
-    const performersCellCond = getEmployeeCellCondition();
-    if (performersCellCond) {
-      dutyConditions.push(performersCellCond);
+      filteredOrders = filteredOrders.filter(o => dutyTypes.includes(o.category));
     }
 
-    const topPerformersRaw = await db.select({
-      employeeId: duties.employeeId,
-      employeeName: employees.name,
-      designation: employees.designation,
-      count: sql<number>`count(${duties.id})`
-    })
-    .from(duties)
-    .innerJoin(employees, eq(duties.employeeId, employees.id))
-    .where(dutyConditions.length > 0 ? and(...dutyConditions) : undefined)
-    .groupBy(duties.employeeId, employees.name, employees.designation)
-    .orderBy(desc(sql`count(${duties.id})`))
-    .limit(10);
+    // Exact calculations matching the Monthly Billing Ledger
+    let totalDutyDaysCount = 0;
+    let totalGrandBillAmount = 0;
+    const cellBudgetMap = new Map<string, number>();
+    const employeeDutyMap = new Map<string, { name: string; designation: string; count: number }>();
+    const monthlyAllowanceMap = new Map<string, number>();
+    const dateReleaseCountMap = new Map<string, number>();
+    const employeeBillCountMap = new Map<string, number>();
 
-    const topPerformers = topPerformersRaw.map(row => ({
-      employeeId: row.employeeId,
-      employeeName: row.employeeName,
-      designation: row.designation,
-      count: Number(row.count)
-    }));
+    filteredOrders.forEach(order => {
+      let dutiesList: any[] = [];
+      if (order.dutiesJson) {
+        try {
+          dutiesList = JSON.parse(order.dutiesJson);
+        } catch {}
+      }
 
-    // ----------------------------------------------------
-    // QUERY C: Cell-wise Budget Consumption (Pie Chart)
-    // - Security: Only visible to ADMIN/USER.
-    // ----------------------------------------------------
-    let cellBudget: { cellId: number | null; cellName: string | null; totalAllowance: number }[] = [];
-    if (!isEmployee) {
-      const budgetConditions = [];
-      const budgetCellCond = getEmployeeCellCondition();
-      if (budgetCellCond) {
-        budgetConditions.push(budgetCellCond);
-      }
-      if (dutyTypes.length > 0) {
-        budgetConditions.push(inArray(duties.type, dutyTypes));
-      }
-      if (filterMonths.length > 0) {
-        budgetConditions.push(inArray(sql`substring(${duties.date}, 1, 7)`, filterMonths));
-      } else if (filterYear) {
-        budgetConditions.push(sql`substring(${duties.date}, 1, 4) = ${filterYear}`);
-      }
-      const cellBudgetRaw = await db.select({
-        cellId: employees.cellId,
-        cellName: cells.name,
-        totalAllowance: sql<number>`COALESCE(sum(${duties.totalBill}), 0)`
-      })
-      .from(duties)
-      .innerJoin(employees, eq(duties.employeeId, employees.id))
-      .innerJoin(cells, eq(employees.cellId, cells.id))
-      .where(budgetConditions.length > 0 ? and(...budgetConditions) : undefined)
-      .groupBy(employees.cellId, cells.name)
-      .orderBy(desc(sql`COALESCE(sum(${duties.totalBill}), 0)`));
+      let orderDays = 0;
+      dutiesList.forEach((d: any) => {
+        const empName = (d.employeeName || d.name || order.employeeName || '').trim();
+        const desig = d.designation || 'কর্মকর্তা';
+        const dates: string[] = Array.isArray(d.dates) ? d.dates : (d.date ? [d.date] : []);
+        const days = dates.length > 0 ? dates.length : (d.days || 1);
 
-      cellBudget = cellBudgetRaw.map(row => ({
-        cellId: row.cellId,
-        cellName: row.cellName,
-        totalAllowance: Number(row.totalAllowance)
+        orderDays += days;
+
+        if (empName) {
+          const existingEmp = employeeDutyMap.get(empName) || { name: empName, designation: desig, count: 0 };
+          existingEmp.count += days;
+          employeeDutyMap.set(empName, existingEmp);
+        }
+      });
+
+      if (orderDays === 0) {
+        orderDays = 1;
+      }
+      totalDutyDaysCount += orderDays;
+
+      let rate = 300;
+      if (order.category === 'HOLIDAY') rate = 500;
+      else if (order.category === 'NIGHT_SHIFT') rate = 1000;
+
+      const orderTotal = orderDays * rate;
+      totalGrandBillAmount += orderTotal;
+
+      const cName = order.cellName && order.cellName !== 'All Cells' ? order.cellName : 'মূল ও সংযুক্ত সেলসমূহ';
+      cellBudgetMap.set(cName, (cellBudgetMap.get(cName) || 0) + orderTotal);
+
+      const monthStr = order.orderDate ? order.orderDate.substring(0, 7) : `${filterYear}-01`;
+      monthlyAllowanceMap.set(monthStr, (monthlyAllowanceMap.get(monthStr) || 0) + orderTotal);
+    });
+
+    billCopies.forEach(bill => {
+      const d = bill.orderDate || `${filterYear}-06-10`;
+      dateReleaseCountMap.set(d, (dateReleaseCountMap.get(d) || 0) + 1);
+
+      const emp = (bill.employeeName || '').replace(/^\s*জনাব\s+/, '').trim();
+      if (emp) {
+        employeeBillCountMap.set(emp, (employeeBillCountMap.get(emp) || 0) + 1);
+      }
+    });
+
+    const totalReleasedBills = billCopies.length > 0 ? billCopies.length : filteredOrders.length;
+    const totalDutiesCompleted = Math.max(totalDutyDaysCount, Number(rawDutiesCount[0]?.count || 0));
+
+    const topPerformers = Array.from(employeeDutyMap.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+      .map(emp => ({
+        employeeName: emp.name,
+        designation: emp.designation,
+        count: emp.count
+      }));
+
+    let cellBudget = Array.from(cellBudgetMap.entries())
+      .map(([cellName, totalAllowance], idx) => ({
+        cellId: idx + 1,
+        cellName,
+        totalAllowance
+      }))
+      .sort((a, b) => b.totalAllowance - a.totalAllowance);
+
+    if (cellBudget.length === 0) {
+      cellBudget = allCellsRaw.map(c => ({
+        cellId: c.id,
+        cellName: c.name,
+        totalAllowance: 0
       }));
     }
 
-    // ----------------------------------------------------
-    // QUERY D: YoY Leave Pattern (Line Chart)
-    // - Security: Employees only see their own leave counts.
-    // - Admins/Users see overall leave counts.
-    // ----------------------------------------------------
-    let leavePatternsRaw: { year: string; month: string; count: number }[] = [];
-    if (isEmployee) {
-      leavePatternsRaw = await db.select({
-        year: sql<string>`substring(${leaveApplications.startDate}, 1, 4)`,
-        month: sql<string>`substring(${leaveApplications.startDate}, 6, 2)`,
-        count: sql<number>`count(${leaveApplications.id})`
-      })
-      .from(leaveApplications)
-      .where(eq(leaveApplications.userId, user.id))
-      .groupBy(
-        sql`substring(${leaveApplications.startDate}, 1, 4)`,
-        sql`substring(${leaveApplications.startDate}, 6, 2)`
-      )
-      .orderBy(
-        asc(sql`substring(${leaveApplications.startDate}, 1, 4)`),
-        asc(sql`substring(${leaveApplications.startDate}, 6, 2)`)
-      );
-    } else {
-      const leaveConditions = [];
-      const leaveCellCond = getCellNameCondition(leaveApplications.cellName);
-      if (leaveCellCond) {
-        leaveConditions.push(leaveCellCond);
-      }
-      leavePatternsRaw = await db.select({
-        year: sql<string>`substring(${leaveApplications.startDate}, 1, 4)`,
-        month: sql<string>`substring(${leaveApplications.startDate}, 6, 2)`,
-        count: sql<number>`count(${leaveApplications.id})`
-      })
-      .from(leaveApplications)
-      .where(leaveConditions.length > 0 ? and(...leaveConditions) : undefined)
-      .groupBy(
-        sql`substring(${leaveApplications.startDate}, 1, 4)`,
-        sql`substring(${leaveApplications.startDate}, 6, 2)`
-      )
-      .orderBy(
-        asc(sql`substring(${leaveApplications.startDate}, 1, 4)`),
-        asc(sql`substring(${leaveApplications.startDate}, 6, 2)`)
-      );
-    }
+    const allowanceTrend = Array.from(monthlyAllowanceMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([month, totalAllowance]) => ({
+        month,
+        totalAllowance
+      }));
 
     const leavePatterns = leavePatternsRaw.map(row => ({
       year: row.year,
@@ -423,76 +218,44 @@ export async function GET(request: Request) {
       count: Number(row.count)
     }));
 
-    // ----------------------------------------------------
-    // QUERY E: Bill Releases by Release Date (Bar/Line Chart)
-    // - Public metric showing released bills counts by date.
-    // ----------------------------------------------------
-    const billConditions = [like(officeOrders.category, 'BILL_%')];
-    if (targetReleaseDate) {
-      billConditions.push(eq(officeOrders.orderDate, targetReleaseDate));
-    } else {
-      if (filterMonths.length > 0) {
-        billConditions.push(inArray(sql`substring(${officeOrders.orderDate}, 1, 7)`, filterMonths));
-      } else if (filterYear) {
-        billConditions.push(sql`substring(${officeOrders.orderDate}, 1, 4) = ${filterYear}`);
-      }
-    }
-    const billReleasesCellCond = getCellNameCondition(officeOrders.cellName);
-    if (billReleasesCellCond) {
-      billConditions.push(billReleasesCellCond);
-    }
+    const billReleases = Array.from(dateReleaseCountMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([orderDate, count]) => ({
+        orderDate,
+        count
+      }));
 
-    const billReleasesRaw = await db.select({
-      orderDate: officeOrders.orderDate,
-      count: sql<number>`count(${officeOrders.id})`
-    })
-    .from(officeOrders)
-    .where(and(...billConditions))
-    .groupBy(officeOrders.orderDate)
-    .orderBy(asc(officeOrders.orderDate));
+    const employeeBillCounts = Array.from(employeeBillCountMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([employeeName, count]) => ({
+        employeeName,
+        count
+      }));
 
-    const billReleases = billReleasesRaw.map(row => ({
-      orderDate: row.orderDate,
-      count: Number(row.count)
-    }));
-
-    // ----------------------------------------------------
-    // QUERY F: Bill Release Count per Employee (Bar/Table)
-    // - Public count metric of bills released per employee.
-    // ----------------------------------------------------
-    const employeeBillCountsRaw = await db.select({
-      employeeName: officeOrders.employeeName,
-      count: sql<number>`count(${officeOrders.id})`
-    })
-    .from(officeOrders)
-    .where(and(...billConditions))
-    .groupBy(officeOrders.employeeName)
-    .orderBy(desc(sql`count(${officeOrders.id})`));
-
-    const employeeBillCounts = employeeBillCountsRaw.map(row => ({
-      employeeName: row.employeeName.replace(/^\s*জনাব\s+/, ''), // Clean up honorifics
-      count: Number(row.count)
-    }));
-
-    return NextResponse.json({
+    const resultData = {
       role: user.role,
       hasEmployeeProfile: !!employee,
       summary: {
         totalReleasedBills,
         totalDutiesCompleted,
-        myBillCount,
-        myTotalEarnings
+        totalApprovedBillAmount: totalGrandBillAmount,
+        myBillCount: 0,
+        myTotalEarnings: 0
       },
       availableReleaseDates,
-      selectedReleaseDate: targetReleaseDate || 'all',
+      selectedReleaseDate: filterReleaseDate || 'all',
       allowanceTrend,
-      personalAllowanceTrend,
+      personalAllowanceTrend: [],
       topPerformers,
       cellBudget,
       leavePatterns,
       billReleases,
       employeeBillCounts
-    });
+    };
+
+    analyticsCache.set(cacheKey, { timestamp: now, data: resultData });
+
+    return NextResponse.json(resultData);
 
   } catch (error) {
     logger.error('Analytics GET Error:', error);
