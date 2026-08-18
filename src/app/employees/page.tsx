@@ -1042,14 +1042,14 @@ export default function EmployeesPage() {
           <div className="flex bg-slate-200/60 dark:bg-slate-800/60 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/80 self-start md:self-auto shadow-inner">
             <button
               onClick={() => setActiveTab('employees')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'employees' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'employees' ? 'bg-white dark:bg-slate-700 text-primary dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
             >
               <Users size={14} />
               কর্মকর্তাবৃন্দ
             </button>
             <button
               onClick={() => setActiveTab('cells')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'cells' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'cells' ? 'bg-white dark:bg-slate-700 text-primary dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
             >
               <Building2 size={14} />
               সেলসমূহ
@@ -1081,7 +1081,7 @@ export default function EmployeesPage() {
                   placeholder="কর্মকর্তার নাম, পদবী, ব্যাংক আইডি বা নথি নং দিয়ে খুঁজুন..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
                 />
               </div>
               {/* Cell Selector Filter */}
@@ -1089,7 +1089,7 @@ export default function EmployeesPage() {
                 <select
                   value={cellFilter}
                   onChange={(e) => setCellFilter(e.target.value)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-indigo-500 font-bold cursor-pointer"
+                  className="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:border-primary font-bold cursor-pointer"
                 >
                   <option value="select">সিলেক্ট করুন (Select Cell)</option>
                   <option value="all">সকল সেলের কর্মকর্তা (All Cells)</option>
@@ -1103,60 +1103,67 @@ export default function EmployeesPage() {
               <button
                 type="button"
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                className={`h-10 flex items-center justify-center gap-1.5 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                   showAdvancedFilters || filterDesignation !== 'ALL' || filterPhoneStatus !== 'ALL' || filterBankIdStatus !== 'ALL' || filterFileNoStatus !== 'ALL'
-                    ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400 font-bold'
+                    ? 'bg-blue-50 border-blue-200 text-primary dark:bg-blue-950/30 dark:border-blue-900/40 dark:text-blue-400 font-bold'
                     : 'bg-white/40 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-350'
                 }`}
               >
                 <Filter size={14} />
                 <span>ফিল্টারসমূহ</span>
                 {(filterDesignation !== 'ALL' || filterPhoneStatus !== 'ALL' || filterBankIdStatus !== 'ALL' || filterFileNoStatus !== 'ALL') && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary dark:bg-blue-400 animate-pulse" />
                 )}
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-2 w-full md:w-auto md:justify-end">
+            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto md:justify-end">
+              {/* Export CSV (Major Action) */}
               <button
                 onClick={exportEmployeesToCSV}
                 disabled={cellFilter === 'select'}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                className="h-10 flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
-                <Download size={16} />
-                এক্সপোর্ট করুন
+                <Download size={15} />
+                <span>এক্সপোর্ট করুন</span>
               </button>
               
+              {/* Print Preview (Utility Action) */}
               <button
                 onClick={handlePrintPreview}
                 disabled={generating || cellFilter === 'select'}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-10 flex items-center justify-center gap-2 px-4 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
               >
-                {generating ? <Loader2 className="animate-spin" size={16} /> : <Eye size={16} />}
-                প্রিন্ট প্রিভিউ
+                {generating ? <Loader2 className="animate-spin" size={15} /> : <Eye size={15} />}
+                <span>প্রিন্ট প্রিভিউ</span>
               </button>
               
+              {/* Download PDF (Major Action) */}
               <button
                 onClick={handleDirectPrint}
                 disabled={generating || cellFilter === 'select'}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-10 flex items-center justify-center gap-2 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {generating ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
-                ডাউনলোড পিডিএফ
+                {generating ? <Loader2 className="animate-spin" size={15} /> : <Printer size={15} />}
+                <span>ডাউনলোড পিডিএফ</span>
               </button>
+
               {(currentUser?.role === 'ADMIN' || allowedCellIds.length > 0) && selectableCells.length > 0 && (
                 <>
+                  {/* Bulk Text Upload (Utility Action) */}
                   <button
                     onClick={() => {
                       setBulkEmpText('');
                       setBulkError('');
                       setIsBulkEmpModalOpen(true);
                     }}
-                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-250 dark:border-slate-750"
+                    className="h-10 flex items-center justify-center gap-2 px-4 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer"
                   >
-                    <Plus size={16} />
-                    বাল্ক টেক্সট আপলোড
+                    <Plus size={15} />
+                    <span>বাল্ক টেক্সট আপলোড</span>
                   </button>
+
+                  {/* Add New Officer (Primary CTA) */}
                   <button
                     onClick={() => {
                       setEditingEmp(null);
@@ -1164,10 +1171,10 @@ export default function EmployeesPage() {
                       setErrorMessage('');
                       setIsEmpModalOpen(true);
                     }}
-                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors"
+                    className="h-10 flex items-center justify-center gap-2 px-4.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold shadow-md shadow-primary/20 transition-all hover:-translate-y-0.5 cursor-pointer border border-primary/20"
                   >
-                    <Plus size={16} />
-                    নতুন কর্মকর্তা যোগ করুন
+                    <Plus size={15} />
+                    <span>নতুন কর্মকর্তা যোগ করুন</span>
                   </button>
                 </>
               )}
@@ -1176,13 +1183,13 @@ export default function EmployeesPage() {
 
           {/* Advanced Filters Panel */}
           {showAdvancedFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 animate-fadeIn">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 border border-slate-200/80 dark:border-slate-800 rounded-2xl bg-slate-50/60 dark:bg-slate-900/30 animate-in fade-in">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">পদবী (Designation)</label>
                 <select
                   value={filterDesignation}
                   onChange={(e) => setFilterDesignation(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-755 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-primary cursor-pointer"
                 >
                   <option value="ALL">সকল পদবী (All)</option>
                   {STRICT_DESIGNATIONS.map(d => (
@@ -1196,7 +1203,7 @@ export default function EmployeesPage() {
                 <select
                   value={filterPhoneStatus}
                   onChange={(e) => setFilterPhoneStatus(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-755 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-primary cursor-pointer"
                 >
                   <option value="ALL">সবাই (All)</option>
                   <option value="has_phone">মোবাইল নম্বর আছে</option>
@@ -1209,7 +1216,7 @@ export default function EmployeesPage() {
                 <select
                   value={filterBankIdStatus}
                   onChange={(e) => setFilterBankIdStatus(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-855 bg-white dark:bg-slate-955 text-xs font-semibold text-slate-755 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-primary cursor-pointer"
                 >
                   <option value="ALL">সবাই (All)</option>
                   <option value="has_bank_id">ব্যাংক আইডি আছে</option>
@@ -1222,7 +1229,7 @@ export default function EmployeesPage() {
                 <select
                   value={filterFileNoStatus}
                   onChange={(e) => setFilterFileNoStatus(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-755 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-primary cursor-pointer"
                 >
                   <option value="ALL">সবাই (All)</option>
                   <option value="has_file_no">নথি নম্বর আছে</option>
@@ -1238,9 +1245,9 @@ export default function EmployeesPage() {
               
               {/* 1. Executive Panel (DGM & AGM) */}
               {isAdminOrAdminCell && cellFilter === 'executives' && sortedFilteredExecutives.length > 0 && (
-                <div className="space-y-4 animate-fade-in">
+                <div className="space-y-4 animate-in fade-in">
                   {/* Executive Header Badge */}
-                  <div className="flex items-center justify-between p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-955/5 shadow-xs" style={{ borderLeft: '4px solid #db2777' }}>
+                  <div className="flex items-center justify-between p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-955/5 shadow-xs border-l-4 border-l-rose-500">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-rose-600 animate-pulse">
                         <Users size={16} />
@@ -1250,13 +1257,13 @@ export default function EmployeesPage() {
                         <p className="text-[10px] text-slate-400 dark:text-slate-550 font-bold mt-0.5">অনলাইন ব্যাংকিং ডিপার্টমেন্টের উপ-মহাব্যবস্থাপক ও সহকারী মহাব্যবস্থাপকগণ।</p>
                       </div>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-sans bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-sans bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
                       {toBanglaDigits(sortedFilteredExecutives.length)} জন নির্বাহী কর্মকর্তা
                     </span>
                   </div>
 
                   {/* Executives Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {sortedFilteredExecutives.map((exec) => {
                       const dgmIndices = sortedFilteredExecutives
                         .filter(e => e.designation.includes('উপ-মহাব্যবস্থাপক') || e.designation.includes('ডিজিএম') || e.designation.toLowerCase().includes('dgm'))
@@ -1264,56 +1271,64 @@ export default function EmployeesPage() {
                       const dgmRank = dgmIndices.indexOf(exec.id) + 1;
                       const isDGM = dgmRank > 0;
                       
-                      let accentColor = '#db2777'; // default rose/pink for AGMs
-                      let borderClass = 'border-rose-200 dark:border-rose-900/50';
-                      let bgClass = 'bg-rose-50/10 dark:bg-rose-955/5 text-rose-850 dark:text-rose-300';
+                      let accentColor = '#db2777'; // default rose for AGMs
+                      let borderClass = 'border-rose-200/80 dark:border-rose-900/50';
+                      let bgClass = 'bg-rose-50/10 dark:bg-rose-950/5';
                       let textClass = 'text-rose-800 dark:text-rose-200 group-hover:text-rose-900';
                       
                       if (isDGM) {
                         if (dgmRank === 1) {
                           accentColor = '#2563eb'; // Royal Blue for 1st DGM
-                          borderClass = 'border-blue-200 dark:border-blue-900/50';
-                          bgClass = 'bg-blue-50/10 dark:bg-blue-955/5 text-blue-850 dark:text-blue-300';
+                          borderClass = 'border-blue-200/80 dark:border-blue-900/50';
+                          bgClass = 'bg-blue-50/10 dark:bg-blue-950/5';
                           textClass = 'text-blue-800 dark:text-blue-200 group-hover:text-blue-950';
                         } else if (dgmRank === 2) {
-                          accentColor = '#d97706'; // Amber/Orange for 2nd DGM
-                          borderClass = 'border-amber-200 dark:border-amber-900/50';
-                          bgClass = 'bg-amber-50/10 dark:bg-amber-955/5 text-amber-850 dark:text-amber-300';
-                          textClass = 'text-amber-800 dark:text-amber-250 group-hover:text-amber-950';
+                          accentColor = '#d97706'; // Amber for 2nd DGM
+                          borderClass = 'border-amber-200/80 dark:border-amber-900/50';
+                          bgClass = 'bg-amber-50/10 dark:bg-amber-950/5';
+                          textClass = 'text-amber-800 dark:text-amber-200 group-hover:text-amber-950';
                         } else {
                           accentColor = '#0d9488'; // Teal for subsequent DGMs
-                          borderClass = 'border-teal-200 dark:border-teal-900/50';
-                          bgClass = 'bg-teal-50/10 dark:bg-teal-955/5 text-teal-850 dark:text-teal-300';
-                          textClass = 'text-teal-800 dark:text-teal-250 group-hover:text-teal-950';
+                          borderClass = 'border-teal-200/80 dark:border-teal-900/50';
+                          bgClass = 'bg-teal-50/10 dark:bg-teal-950/5';
+                          textClass = 'text-teal-800 dark:text-teal-200 group-hover:text-teal-950';
                         }
                       }
                       
                       return (
-                        <div key={exec.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group border-l-3 ${borderClass} ${bgClass}`} style={{ borderLeft: `3px solid ${accentColor}` }}>
-                          <div className="space-y-4">
+                        <div 
+                          key={exec.id} 
+                          className={`p-5 rounded-2xl h-full flex flex-col justify-between hover:shadow-md transition-all duration-200 group border border-l-[3.5px] ${borderClass} ${bgClass}`} 
+                          style={{ borderLeftColor: accentColor }}
+                        >
+                          <div className="space-y-3.5">
                             <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <h3 className={`app-card-title transition-colors ${textClass}`}>{exec.name}</h3>
-                                <p className="text-[13px] sm:text-[14px] font-medium text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1.5">
-                                  <Briefcase size={12} className="text-slate-400" />
-                                  {exec.designation}
+                              <div className="min-w-0 flex-1">
+                                <h3 className={`app-card-title truncate ${textClass}`}>{exec.name}</h3>
+                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 truncate">
+                                  <Briefcase size={12} className="text-slate-400 shrink-0" />
+                                  <span className="truncate">{exec.designation}</span>
                                 </p>
                               </div>
                             </div>
 
-                            <div className="mt-3 grid grid-cols-2 gap-2 app-metadata-text text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                              <div className="flex items-center gap-1">
-                                <Hash size={12} className="text-slate-400" />
-                                <span>ব্যাংক আইডি: <strong>{exec.bankId || '-'}</strong></span>
+                            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                              <div className="flex items-center gap-1 min-w-0" title="ব্যাংক আইডি">
+                                <Hash size={12} className="text-slate-400 shrink-0" />
+                                <span className="text-[11px] font-bold text-slate-400 shrink-0">ব্যাংক আইডি:</span>
+                                <strong className="tabular-nums truncate min-w-0">{exec.bankId || '-'}</strong>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <CreditCard size={12} className="text-slate-400" />
-                                <span>নথি নং: <strong className="font-mono">{exec.fileNo || '-'}</strong></span>
+                              <div className="flex items-center gap-1 min-w-0" title="ব্যক্তিগত নথি নং">
+                                <CreditCard size={12} className="text-slate-400 shrink-0" />
+                                <span className="text-[11px] font-bold text-slate-400 shrink-0">ব্যক্তিগত নথি:</span>
+                                <strong className="font-mono truncate min-w-0">{exec.fileNo || '-'}</strong>
                               </div>
                             </div>
 
-                            <div className="mt-2 app-metadata-text text-slate-500 dark:text-slate-400 pt-2 border-t border-dashed border-slate-100 dark:border-slate-800/80">
-                              <span>মোবাইল নম্বর: <strong className="font-sans">{exec.phone ? toBanglaDigits(exec.phone) : '-'}</strong></span>
+                            <div className="mt-2 text-xs text-slate-600 dark:text-slate-400 pt-2 border-t border-dashed border-slate-100 dark:border-slate-800/80 flex items-center gap-1 min-w-0">
+                              <Phone size={12} className="text-slate-400 shrink-0" />
+                              <span className="text-[11px] font-bold text-slate-400 shrink-0">মোবাইল নম্বর:</span>
+                              <strong className="font-sans tabular-nums truncate min-w-0">{exec.phone ? toBanglaDigits(exec.phone) : 'প্রদান করা হয়নি'}</strong>
                             </div>
                           </div>
                         </div>
@@ -1339,42 +1354,51 @@ export default function EmployeesPage() {
                     <div key={cell.id} className="space-y-4">
                       
                       {/* Cell Group Header Badge */}
-                      <div className={`flex items-center justify-between p-4 rounded-2xl ${cellPal.border} ${cellPal.bg} shadow-xs`}>
+                      <div className={`flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs border-l-4 border-l-primary/70`}>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-350">
+                          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700/80 flex items-center justify-center text-primary dark:text-blue-400">
                             <Building2 size={16} />
                           </div>
                           <div>
-                            <h3 className="app-card-title text-slate-800 dark:text-slate-100 tracking-wide">{cell.name}</h3>
+                            <h3 className="app-card-title text-slate-850 dark:text-slate-100 tracking-wide">{cell.name}</h3>
                             {cell.description && (
-                              <p className="app-metadata-text text-slate-400 dark:text-slate-550 font-bold mt-0.5">{cell.description}</p>
+                              <p className="app-metadata-text text-slate-400 dark:text-slate-500 font-bold mt-0.5">{cell.description}</p>
                             )}
                           </div>
                         </div>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-sans ${cellPal.badge}`}>
+                        <span className="px-3 py-1 rounded-full text-xs font-bold font-sans bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40 shadow-xs">
                           {toBanglaDigits(cellEmps.length)} জন কর্মকর্তা
                         </span>
                       </div>
 
                       {/* Employees Grid in this Cell */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {cellEmps.map((emp) => {
                           const firstSpoId = cellEmps.find(e => e.designation === 'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)')?.id || null;
                           const isCellIncharge = emp.dutyType === 'INCHARGE' || emp.id === firstSpoId;
-                          const pal = getPalette(emp.cellId);
                           const canUserEdit = currentUser?.role === 'ADMIN' || allowedCellIds.includes(emp.cellId);
                           const isSelf = !!(emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim());
                           const canInlineEdit = currentUser?.role === 'ADMIN' || isSelf;
+                          const isSelected = selectedEmps.includes(emp.id);
                           
                           return (
-                            <div key={emp.id} className={`p-6 rounded-2xl flex flex-col justify-between hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group border-l-3 ${isCellIncharge ? 'border-teal-200 dark:border-teal-900/50 bg-teal-50/10 dark:bg-teal-955/5 shadow-xs' : pal.border} ${isCellIncharge ? '' : pal.bg}`} style={isCellIncharge ? { borderLeft: '3px solid #0d9488' } : {}}>
-                              <div className="space-y-4 cursor-pointer" onClick={() => setProfileEmp(emp)}>
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex items-start gap-2">
+                            <div 
+                              key={emp.id} 
+                              className={`p-5 rounded-2xl h-full flex flex-col justify-between hover:shadow-md transition-all duration-200 group border ${
+                                isSelected
+                                  ? 'border-primary ring-2 ring-primary/40 bg-blue-50/25 dark:bg-blue-950/20'
+                                  : isCellIncharge
+                                    ? 'border-teal-200 dark:border-teal-900/60 bg-teal-50/15 dark:bg-teal-950/10'
+                                    : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900'
+                              } border-l-[3.5px] ${isCellIncharge ? 'border-l-teal-600 dark:border-l-teal-400' : 'border-l-primary/70 dark:border-l-primary/80'}`}
+                            >
+                              <div className="space-y-3.5 cursor-pointer" onClick={() => setProfileEmp(emp)}>
+                                <div className="flex items-start justify-between gap-2.5">
+                                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
                                     {canUserEdit && (
                                       <input 
                                         type="checkbox"
-                                        checked={selectedEmps.includes(emp.id)}
+                                        checked={isSelected}
                                         onChange={(e) => {
                                           e.stopPropagation();
                                           if (e.target.checked) {
@@ -1383,87 +1407,99 @@ export default function EmployeesPage() {
                                             setSelectedEmps(prev => prev.filter(id => id !== emp.id));
                                           }
                                         }}
-                                        className="w-4.5 h-4.5 rounded-lg border-slate-350 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0 mt-1 select-none"
+                                        className="w-4 h-4 rounded-md border-slate-300 dark:border-slate-700 text-primary focus:ring-primary cursor-pointer shrink-0 mt-1 select-none accent-primary"
                                       />
                                     )}
-                                    <div>
-                                      <h3 className={`app-card-title transition-colors flex flex-wrap items-center gap-1.5 ${isCellIncharge ? 'text-teal-700 dark:text-teal-400 group-hover:text-teal-800' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400'}`}>
-                                        <span>{isEn && emp.nameEn ? emp.nameEn : emp.name}</span>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <h3 className={`app-card-title truncate ${isCellIncharge ? 'text-teal-800 dark:text-teal-300' : 'text-slate-850 dark:text-slate-100 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors'}`}>
+                                          {isEn && emp.nameEn ? emp.nameEn : emp.name}
+                                        </h3>
                                         {emp.dutyType === 'INCHARGE' ? (
-                                          <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 text-[9px] font-extrabold rounded-lg">
+                                          <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 text-[9px] font-extrabold rounded-md shrink-0">
                                             {isEn ? 'Cell Incharge' : 'সেল ইনচার্জ'}
                                           </span>
                                         ) : emp.dutyType === 'ADDITIONAL' ? (
-                                          <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-[9px] font-extrabold rounded-lg">
+                                          <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-[9px] font-extrabold rounded-md shrink-0">
                                             {isEn ? 'Additional Duty' : 'অতিরিক্ত দায়িত্ব'}
                                           </span>
                                         ) : (
-                                          <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800 text-[9px] font-extrabold rounded-lg">
+                                          <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 text-primary dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[9px] font-extrabold rounded-md shrink-0">
                                             {isEn ? 'Primary Duty' : 'মূল দায়িত্ব'}
                                           </span>
                                         )}
-                                      </h3>
-                                      <div className="text-[13px] font-medium text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1.5 min-h-[26px]">
+                                      </div>
+
+                                      <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 min-h-[26px]">
                                         <Briefcase size={12} className="text-slate-400 shrink-0" />
-                                        <InlineEdit
-                                          value={isEn && emp.designationEn ? emp.designationEn : emp.designation}
-                                          placeholder={isEn ? "Enter designation" : "পদবী লিখুন"}
-                                          onSave={(val) => handleInlineSave(emp.id, isEn ? 'designationEn' : 'designation', val)}
-                                          canEdit={canInlineEdit}
-                                        />
+                                        <div className="min-w-0 flex-1">
+                                          <InlineEdit
+                                            value={isEn && emp.designationEn ? emp.designationEn : emp.designation}
+                                            placeholder={isEn ? "Enter designation" : "পদবী লিখুন"}
+                                            onSave={(val) => handleInlineSave(emp.id, isEn ? 'designationEn' : 'designation', val)}
+                                            canEdit={canInlineEdit}
+                                          />
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="mt-3 grid grid-cols-2 gap-2 app-metadata-text text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                                  <div className="flex items-center gap-1 min-h-[26px]">
-                                    <Hash size={12} className="text-slate-400 shrink-0" />
-                                    <span className="flex items-center gap-1">আইডি: 
-                                      <InlineEdit
-                                        value={emp.bankId || ''}
-                                        placeholder="আইডি"
-                                        onSave={(val) => handleInlineSave(emp.id, 'bankId', val)}
-                                        canEdit={canInlineEdit}
-                                        className="font-bold inline-block"
-                                      />
-                                    </span>
+                                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="flex items-center gap-1 min-w-0" title="ব্যাংক আইডি">
+                                      <Hash size={12} className="text-slate-400 shrink-0" />
+                                      <span className="text-[11px] font-bold text-slate-400 shrink-0">ব্যাংক আইডি:</span>
+                                      <div className="min-w-0 flex-1">
+                                        <InlineEdit
+                                          value={emp.bankId || ''}
+                                          placeholder="আইডি দিন"
+                                          onSave={(val) => handleInlineSave(emp.id, 'bankId', val)}
+                                          canEdit={canInlineEdit}
+                                          className="font-bold tabular-nums"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1 min-w-0" title="ব্যক্তিগত নথি নং">
+                                      <CreditCard size={12} className="text-slate-400 shrink-0" />
+                                      <span className="text-[11px] font-bold text-slate-400 shrink-0">নথি নং:</span>
+                                      <div className="min-w-0 flex-1">
+                                        <InlineEdit
+                                          value={emp.fileNo || ''}
+                                          placeholder="নথি দিন"
+                                          onSave={(val) => handleInlineSave(emp.id, 'fileNo', val)}
+                                          canEdit={canInlineEdit}
+                                          className="font-mono font-bold"
+                                        />
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center gap-1 min-h-[26px]">
-                                    <CreditCard size={12} className="text-slate-400 shrink-0" />
-                                    <span className="flex items-center gap-1">নথি: 
-                                      <InlineEdit
-                                        value={emp.fileNo || ''}
-                                        placeholder="নথি"
-                                        onSave={(val) => handleInlineSave(emp.id, 'fileNo', val)}
-                                        canEdit={canInlineEdit}
-                                        className="font-mono font-bold inline-block"
-                                      />
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1 col-span-2 min-h-[26px]">
+
+                                  <div className="flex items-center gap-1 min-w-0 pt-1 border-t border-dashed border-slate-100 dark:border-slate-800/60" title="মোবাইল নম্বর">
                                     <Phone size={12} className="text-slate-400 shrink-0" />
-                                    <span className="flex items-center gap-1">মোবাইল: 
+                                    <span className="text-[11px] font-bold text-slate-400 shrink-0">মোবাইল নম্বর:</span>
+                                    <div className="min-w-0 flex-1">
                                       <InlineEdit
                                         value={emp.mobile || ''}
-                                        placeholder="তথ্য নেই"
+                                        placeholder="মোবাইল নম্বর যোগ করুন"
                                         onSave={(val) => handleInlineSave(emp.id, 'mobile', val)}
                                         canEdit={canInlineEdit}
-                                        className="font-sans font-bold inline-block"
+                                        className="font-sans font-bold tabular-nums"
                                       />
-                                    </span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
 
                               {(currentUser?.role === 'ADMIN' || allowedCellIds.includes(emp.cellId) || (emp.bankId && currentUser?.username && emp.bankId.trim() === currentUser.username.trim())) && (
-                                <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-200/50 dark:border-slate-800/80 font-sans">
+                                <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 font-sans">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       startEditEmp(emp);
                                     }}
-                                    className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
                                     title="সম্পাদনা"
                                   >
                                     <Edit2 size={13} />
@@ -1474,8 +1510,8 @@ export default function EmployeesPage() {
                                         e.stopPropagation();
                                         deleteEmployee(emp.id);
                                       }}
-                                      className="p-1.5 rounded-lg border border-slate-250 dark:border-slate-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-650 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
-                                      title="муছে ফেলুন"
+                                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-600 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                                      title="মুছে ফেলুন"
                                     >
                                       <Trash2 size={13} />
                                     </button>
@@ -1540,7 +1576,7 @@ export default function EmployeesPage() {
                       setErrorMessage("");
                       setIsCellModalOpen(true);
                     }}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-semibold transition-all shadow-sm shadow-primary/20 cursor-pointer"
                   >
                     <Plus size={16} />
                     নতুন সেল (Cell) যোগ করুন
@@ -1557,7 +1593,7 @@ export default function EmployeesPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-start">
                     <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">{cell.name}</h3>
-                    <span className="px-2.5 py-1 bg-indigo-50/70 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-indigo-950/20 rounded-lg text-xs font-bold font-sans">
+                    <span className="px-2.5 py-1 bg-blue-50/70 dark:bg-blue-950/30 text-primary dark:text-blue-300 border border-blue-100 dark:border-blue-900/40 rounded-lg text-xs font-bold font-sans">
                       {cell._count?.employees || 0} জন কর্মরত
                     </span>
                   </div>
@@ -1589,13 +1625,18 @@ export default function EmployeesPage() {
           EMPLOYEE MODAL (OFFICER)
       ---------------------------------------------------- */}
       {isEmpModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-bold text-slate-850 dark:text-slate-100 text-base">
                 {editingEmp ? 'কর্মকর্তার তথ্য সম্পাদনা' : 'নতুন কর্মকর্তা যোগ করুন'}
               </h3>
-              <button onClick={() => setIsEmpModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">×</button>
+              <button 
+                onClick={() => setIsEmpModalOpen(false)} 
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X size={16} />
+              </button>
             </div>
             
             <form onSubmit={handleEmpSubmit} className="p-6 space-y-4">
@@ -1615,7 +1656,7 @@ export default function EmployeesPage() {
                   placeholder="যেমন: জনাব মোঃ আশরাফুল ইসলাম"
                   value={empForm.name}
                   onChange={(e) => setEmpForm({ ...empForm, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
                 />
               </div>
 
@@ -1627,7 +1668,7 @@ export default function EmployeesPage() {
                   placeholder="যেমন: Md. Ashraful Islam"
                   value={empForm.nameEn}
                   onChange={(e) => setEmpForm({ ...empForm, nameEn: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 font-sans"
                 />
               </div>
 
@@ -1638,7 +1679,7 @@ export default function EmployeesPage() {
                   value={empForm.designation}
                   disabled={isSelfEditingOnly}
                   onChange={(e) => setEmpForm({ ...empForm, designation: e.target.value })}
-                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
+                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
                 >
                   {STRICT_DESIGNATIONS.map((desig) => (
                     <option key={desig} value={desig}>{desig}</option>
@@ -1654,7 +1695,7 @@ export default function EmployeesPage() {
                   placeholder="যেমন: Senior Officer (IT)"
                   value={empForm.designationEn}
                   onChange={(e) => setEmpForm({ ...empForm, designationEn: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 font-sans"
                 />
               </div>
 
@@ -1668,7 +1709,7 @@ export default function EmployeesPage() {
                   placeholder="যেমন: 026799"
                   value={empForm.bankId}
                   onChange={(e) => setEmpForm({ ...empForm, bankId: e.target.value })}
-                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
+                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 tabular-nums ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
                 />
               </div>
 
@@ -1682,7 +1723,7 @@ export default function EmployeesPage() {
                   placeholder="যেমন: SO(Com)-026799"
                   value={empForm.fileNo}
                   onChange={(e) => setEmpForm({ ...empForm, fileNo: e.target.value })}
-                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
+                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 font-mono ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
                 />
               </div>
 
@@ -1694,7 +1735,7 @@ export default function EmployeesPage() {
                   placeholder="যেমন: 017XXXXXXXX"
                   value={empForm.mobile || ''}
                   onChange={(e) => setEmpForm({ ...empForm, mobile: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 font-sans tabular-nums"
                 />
               </div>
 
@@ -1705,7 +1746,7 @@ export default function EmployeesPage() {
                   value={empForm.cellId}
                   disabled={isSelfEditingOnly}
                   onChange={(e) => setEmpForm({ ...empForm, cellId: e.target.value })}
-                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
+                  className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 font-bold ${isSelfEditingOnly ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900/60' : ''}`}
                 >
                   {formSelectableCells.map((c) => (
                     <option key={c.id} value={c.id.toString()}>{c.name}</option>
@@ -1717,13 +1758,13 @@ export default function EmployeesPage() {
                 <button
                   type="button"
                   onClick={() => setIsEmpModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   বাতিল
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm"
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all shadow-sm shadow-primary/20"
                 >
                   সংরক্ষণ করুন
                 </button>
@@ -1737,13 +1778,18 @@ export default function EmployeesPage() {
           CELL MODAL
       ---------------------------------------------------- */}
       {isCellModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-bold text-slate-850 dark:text-slate-100 text-base">
                 {editingCell ? 'সেল তথ্য সম্পাদনা' : 'নতুন সেল (Cell) যোগ করুন'}
               </h3>
-              <button onClick={() => setIsCellModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">×</button>
+              <button 
+                onClick={() => setIsCellModalOpen(false)} 
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X size={16} />
+              </button>
             </div>
             
             <form onSubmit={handleCellSubmit} className="p-6 space-y-4">
@@ -1763,23 +1809,21 @@ export default function EmployeesPage() {
                   placeholder="যেমন: R9, R22, JBNS ইত্যাদি"
                   value={cellForm.name}
                   onChange={(e) => setCellForm({ ...cellForm, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
                 />
               </div>
-
-
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsCellModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   বাতিল
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm"
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all shadow-sm shadow-primary/20"
                 >
                   সেল সংরক্ষণ করুন
                 </button>
@@ -1793,13 +1837,18 @@ export default function EmployeesPage() {
           BULK CELL IMPORT MODAL
       ---------------------------------------------------- */}
       {isBulkCellModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in font-sans">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl text-slate-800 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-bold text-slate-850 dark:text-slate-100 text-base">
                 সেল বাল্ক টেক্সট আপলোড (Bulk Import Cells)
               </h3>
-              <button onClick={() => setIsBulkCellModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-sans text-xl">×</button>
+              <button 
+                onClick={() => setIsBulkCellModalOpen(false)} 
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X size={16} />
+              </button>
             </div>
             
             <form onSubmit={handleBulkCellSubmit} className="p-6 space-y-4">
@@ -1828,7 +1877,7 @@ export default function EmployeesPage() {
                     };
                     reader.readAsText(file);
                   }}
-                  className="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 dark:file:bg-indigo-950/40 dark:file:text-indigo-400 hover:file:bg-indigo-100 transition-all cursor-pointer border border-dashed border-slate-300 dark:border-slate-800 p-2 rounded-xl bg-slate-50/20"
+                  className="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-primary dark:file:bg-blue-950/40 dark:file:text-blue-300 hover:file:bg-blue-100 transition-all cursor-pointer border border-dashed border-slate-300 dark:border-slate-800 p-2 rounded-xl bg-slate-50/20"
                 />
               </div>
 
@@ -1843,7 +1892,7 @@ export default function EmployeesPage() {
                   placeholder="যেমন:\nR9\nR22\nJBNS\nCBS Integrated Development Cell"
                   value={bulkCellText}
                   onChange={(e) => setBulkCellText(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-xs font-mono focus:outline-none focus:border-indigo-500 leading-relaxed"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-xs font-mono focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 leading-relaxed"
                 />
               </div>
 
@@ -1851,14 +1900,14 @@ export default function EmployeesPage() {
                 <button
                   type="button"
                   onClick={() => setIsBulkCellModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   বাতিল
                 </button>
                 <button
                   type="submit"
                   disabled={bulkCellImporting}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400"
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all shadow-sm shadow-primary/20 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400"
                 >
                   {bulkCellImporting ? "আমদানি হচ্ছে..." : "ইম্পোর্ট করুন"}
                 </button>
@@ -1872,13 +1921,18 @@ export default function EmployeesPage() {
           BULK EMPLOYEE IMPORT MODAL
       ---------------------------------------------------- */}
       {isBulkEmpModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in font-sans">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl text-slate-800 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-bold text-slate-850 dark:text-slate-100 text-base">
                 কর্মকর্তা বাল্ক টেক্সট আপলোড (Bulk Import)
               </h3>
-              <button onClick={() => setIsBulkEmpModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-sans text-xl">×</button>
+              <button 
+                onClick={() => setIsBulkEmpModalOpen(false)} 
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X size={16} />
+              </button>
             </div>
             
             <form onSubmit={handleBulkEmpSubmit} className="p-6 space-y-4">
@@ -1890,10 +1944,10 @@ export default function EmployeesPage() {
               )}
 
               {/* Informative Clipboard Paste Banner */}
-              <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-xl text-xs space-y-1">
-                <p className="font-bold text-indigo-700 dark:text-indigo-400">💡 ক্লিপবোর্ড ইমেজ ইম্পোর্ট (Clipboard Image Import):</p>
+              <div className="p-3 bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl text-xs space-y-1">
+                <p className="font-bold text-primary dark:text-blue-400">💡 ক্লিপবোর্ড ইমেজ ইম্পোর্ট (Clipboard Image Import):</p>
                 <p className="text-slate-600 dark:text-slate-400 leading-normal">
-                  কর্মকর্তাদের নামের তালিকা সম্বলিত কোনো ইমেজ বা স্ক্রিনশট কপি করা থাকলে সরাসরি এই টেক্সটবক্সে পেস্ট (<kbd className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded shadow-sm text-[10px] font-sans font-bold">Ctrl + V</kbd>) করুন! কৃত্রিম বুদ্ধিমত্তা ছবি থেকে সকল নাম ও পদবী স্বয়ংক্রিয়ভাবে টেক্সট হিসেবে রূপান্তর করে দেবে।
+                  কর্মকর্তাদের নামের তালিকা সম্বলিত কোনো ইমেজ বা স্ক্রিনশট কপি করা থাকলে সরাসরি এই টেক্সটবক্সে পেস্ট (<kbd className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded shadow-xs text-[10px] font-sans font-bold border border-slate-200 dark:border-slate-700">Ctrl + V</kbd>) করুন! কৃত্রিম বুদ্ধিমত্তা ছবি থেকে সকল নাম ও পদবী স্বয়ংক্রিয়ভাবে টেক্সট হিসেবে রূপান্তর করে দেবে।
                 </p>
               </div>
 
@@ -1903,7 +1957,7 @@ export default function EmployeesPage() {
                   id="bulk_emp_cell_id"
                   value={bulkEmpCellId}
                   onChange={(e) => setBulkEmpCellId(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 font-bold"
                 >
                   <option value="">সেল নির্বাচন করুন (Select Cell)</option>
                   {cells.map((c) => (
@@ -1930,7 +1984,7 @@ export default function EmployeesPage() {
                     };
                     reader.readAsText(file);
                   }}
-                  className="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 dark:file:bg-indigo-950/40 dark:file:text-indigo-400 hover:file:bg-indigo-100 transition-all cursor-pointer border border-dashed border-slate-300 dark:border-slate-800 p-2 rounded-xl bg-slate-50/20"
+                  className="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-primary dark:file:bg-blue-950/40 dark:file:text-blue-300 hover:file:bg-blue-100 transition-all cursor-pointer border border-dashed border-slate-300 dark:border-slate-800 p-2 rounded-xl bg-slate-50/20"
                 />
               </div>
 
@@ -1940,8 +1994,8 @@ export default function EmployeesPage() {
                     ২. কর্মকর্তার নাম ও পদবী (প্রতি লাইনে একজন) *
                   </label>
                   {isImageImportLoading && (
-                    <span className="text-[10px] text-indigo-600 dark:text-indigo-455 font-bold flex items-center gap-1">
-                      <span className="w-2 h-2 border border-indigo-600 border-t-transparent rounded-full animate-spin inline-block" />
+                    <span className="text-[10px] text-primary dark:text-blue-400 font-bold flex items-center gap-1">
+                      <span className="w-2 h-2 border border-primary border-t-transparent rounded-full animate-spin inline-block" />
                       ... বিশ্লেষণ করা হচ্ছে ...
                     </span>
                   )}
@@ -1954,27 +2008,26 @@ export default function EmployeesPage() {
                   value={bulkEmpText}
                   onChange={(e) => setBulkEmpText(e.target.value)}
                   onPaste={handleTextareaPaste}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-xs font-mono focus:outline-none focus:border-indigo-500 leading-relaxed"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-xs font-mono focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 leading-relaxed"
                   disabled={isImageImportLoading}
                 />
                 <p className="text-[10px] text-slate-400">
-                  প্যাটার্ন: কমা (,) বা ট্যাব বা সেমিকোলন দিয়ে আলাদা করে কলামগুলো দিন: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">নাম,পদবী,ব্যাংক আইডি,নথি নং,মোবাইল নম্বর,সেল</code>। সেল নির্বাচন করা না থাকলে নিজ নিজ সেল অনুযায়ী স্বয়ংক্রিয়ভাবে অ্যাসাইন হবে।
+                  প্যাটার্ন: কমা (,) বা ট্যাব বা সেমিকোলন দিয়ে আলাদা করে কলামগুলো দিন: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded font-bold">নাম,পদবী,ব্যাংক আইডি,নথি নং,মোবাইল নম্বর,সেল</code>। সেল নির্বাচন করা না থাকলে নিজ নিজ সেল অনুযায়ী স্বয়ংক্রিয়ভাবে অ্যাসাইন হবে।
                 </p>
               </div>
-
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 font-sans">
                 <button
                   type="button"
                   onClick={() => setIsBulkEmpModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   বাতিল
                 </button>
                 <button
                   type="submit"
                   disabled={bulkImporting || isImageImportLoading}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:bg-slate-200 dark:disabled:bg-slate-850 disabled:text-slate-400"
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all shadow-sm shadow-primary/20 disabled:bg-slate-200 dark:disabled:bg-slate-850 disabled:text-slate-400"
                 >
                   {bulkImporting ? 'আমদানি হচ্ছে...' : 'ইম্পোর্ট করুন'}
                 </button>
@@ -1989,16 +2042,16 @@ export default function EmployeesPage() {
       ---------------------------------------------------- */}
       {profileEmp && (
         <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in font-sans"
           onClick={() => setProfileEmp(null)}
         >
           <div 
-            className="bg-white dark:bg-slate-900 rounded-[28px] w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl animate-scale-up"
+            className="bg-white dark:bg-slate-900 rounded-[28px] w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Cover Image */}
-            <div className="h-28 bg-gradient-to-r from-indigo-500 to-violet-600 relative flex items-end justify-center">
-              <div className="absolute -bottom-10 px-3 h-20 min-w-20 rounded-full border-4 border-white dark:border-slate-900 bg-indigo-100 flex items-center justify-center text-indigo-650 text-sm font-extrabold shadow-md">
+            {/* Modal Cover Image - Sovereign Navy Token */}
+            <div className="h-28 bg-gradient-to-br from-slate-900 via-primary to-slate-950 relative flex items-end justify-center border-b border-primary/20">
+              <div className="absolute -bottom-10 w-20 h-20 rounded-full border-4 border-white dark:border-slate-900 bg-white dark:bg-slate-800 flex items-center justify-center text-primary dark:text-blue-400 text-base font-black shadow-xl ring-2 ring-primary/20">
                 {extractNickname(profileEmp.name)}
               </div>
             </div>
@@ -2014,32 +2067,38 @@ export default function EmployeesPage() {
 
               {/* Grid of Attributes */}
               <div className="grid grid-cols-2 gap-3 text-left">
-                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                <div className="p-3 bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800 rounded-xl space-y-1.5">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">পদবী</span>
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{profileEmp.designation}</p>
+                  <p className="text-xs font-bold text-slate-850 dark:text-slate-150">{profileEmp.designation}</p>
                   {profileEmp.designationEn && (
                     <p className="text-[11px] font-semibold text-slate-500 font-sans">{profileEmp.designationEn}</p>
                   )}
                 </div>
-                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5">
+                <div className="p-3 bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800 rounded-xl space-y-1.5">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">সেল</span>
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{profileEmp.cell?.name || 'লোডিং...'}</p>
+                  <p className="text-xs font-bold text-slate-850 dark:text-slate-150">{profileEmp.cell?.name || 'তথ্য নেই'}</p>
                 </div>
-                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
+                <div className="p-3 bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যাংক আইডি</span>
-                  <p className="text-xs font-bold text-slate-850 dark:text-slate-150 font-sans">{profileEmp.bankId || 'প্রদান করা হয়নি'}</p>
+                  <p className={`text-xs font-sans tabular-nums ${profileEmp.bankId ? 'font-bold text-slate-850 dark:text-slate-150' : 'italic text-slate-400 dark:text-slate-600'}`}>
+                    {profileEmp.bankId || 'প্রদান করা হয়নি'}
+                  </p>
                 </div>
-                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
+                <div className="p-3 bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800 rounded-xl space-y-1.5 col-span-2 sm:col-span-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">ব্যক্তিগত নথি নং</span>
-                  <p className="text-xs font-bold text-slate-850 dark:text-slate-150 font-sans">{profileEmp.fileNo || 'প্রদান করা হয়নি'}</p>
+                  <p className={`text-xs font-mono ${profileEmp.fileNo ? 'font-bold text-slate-850 dark:text-slate-150' : 'italic text-slate-400 dark:text-slate-600'}`}>
+                    {profileEmp.fileNo || 'প্রদান করা হয়নি'}
+                  </p>
                 </div>
-                <div className="p-3 bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl space-y-1.5 col-span-2">
+                <div className="p-3 bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800 rounded-xl space-y-1.5 col-span-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">মোবাইল নম্বর</span>
-                  <p className="text-xs font-bold text-slate-850 dark:text-slate-150 font-sans">{profileEmp.mobile || 'প্রদান করা হয়নি'}</p>
+                  <p className={`text-xs font-sans tabular-nums ${profileEmp.mobile ? 'font-bold text-slate-850 dark:text-slate-150' : 'italic text-slate-400 dark:text-slate-600'}`}>
+                    {profileEmp.mobile ? toBanglaDigits(profileEmp.mobile) : 'প্রদান করা হয়নি'}
+                  </p>
                 </div>
               </div>
 
-              {/* Close Buttons */}
+              {/* Action Buttons */}
               <div className="flex items-center justify-center gap-3 pt-2">
                 <button
                   onClick={() => setProfileEmp(null)}
@@ -2054,7 +2113,7 @@ export default function EmployeesPage() {
                       setProfileEmp(null);
                       startEditEmp(emp);
                     }}
-                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors"
+                    className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold cursor-pointer transition-all shadow-sm shadow-primary/20"
                   >
                     সম্পাদনা করুন
                   </button>
@@ -2084,14 +2143,14 @@ export default function EmployeesPage() {
                       iframe.contentWindow?.print();
                     }
                   }}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md cursor-pointer"
+                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm shadow-primary/20 cursor-pointer transition-all"
                 >
                   <Printer size={13} />
                   প্রিন্ট করুন
                 </button>
                 <button 
-                  onClick={() => setIsPreviewOpen(false)}
-                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 rounded-full cursor-pointer"
+                  onClick={() => setIsPreviewOpen(false)} 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -2101,7 +2160,7 @@ export default function EmployeesPage() {
             {/* Modal Body */}
             <div className="flex-1 bg-slate-50/50 dark:bg-slate-955/10 p-4 relative">
               <iframe 
-                id="preview-print-iframe"
+                id="preview-print-iframe" 
                 src={iframeUrl}
                 className="w-full h-full border border-slate-150 dark:border-slate-850 rounded-2xl shadow-inner bg-white"
               />
@@ -2122,7 +2181,7 @@ export default function EmployeesPage() {
       {selectedEmps.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-6 animate-in slide-in-from-bottom-4 duration-300 select-none">
           <div className="text-xs font-bold text-slate-700 dark:text-slate-200">
-            <span className="font-sans text-indigo-600 dark:text-indigo-400 text-sm font-extrabold">{toBanglaDigits(selectedEmps.length)}</span> জন কর্মকর্তা নির্বাচিত
+            <span className="font-sans text-primary dark:text-blue-400 text-sm font-extrabold">{toBanglaDigits(selectedEmps.length)}</span> জন কর্মকর্তা নির্বাচিত
           </div>
           <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
           <div className="flex items-center gap-2">
@@ -2134,7 +2193,7 @@ export default function EmployeesPage() {
             </button>
             <button
               onClick={handleBulkDelete}
-              className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 text-rose-655 dark:text-rose-455 border border-rose-100 dark:border-rose-950/35 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-950/35 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
               <Trash2 size={13} />
               নির্বাচিত মুছুন

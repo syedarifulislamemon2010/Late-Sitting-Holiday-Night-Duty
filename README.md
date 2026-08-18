@@ -49,6 +49,8 @@
 
 - 📅 **Automated Duty Roster Management**: Schedule, track, and manage Late-Sitting (৳300/day), Holiday Duty (৳500/day), and Night Duty (৳1000/day).
 - ⚡ **Zero-Latency Database Caching (`< 5ms`)**: Next.js `unstable_cache` and React `cache()` for instant server response on static reference queries.
+- 👔 **কর্মকর্তা ও সেল ডিরেক্টরি (Employee & Cell Directory)**: Sovereign Navy-styled officer cards, dynamic cell grouping, senior ranking hierarchy, executive panel with custom rank accents, inline quick-editing with empty-state pill affordances, multi-selection bulk deletion, and modal views.
+- 📊 **সিস্টেম অ্যানালিটিক্স ড্যাশবোর্ড (System Analytics & Financial Auditing)**: Parallel Neon PostgreSQL query pipeline with sub-50ms SWR caching, synchronized billing ledger totals (৳ ৩০,৪০০/- across 9 office orders), cell budget breakdowns, and monthly duty performer tracking.
 - 🔍 **Spotlight Command Palette (`Ctrl + K`)**: Global spotlight search modal to find any officer, bank ID, cell, or page in 0.1 seconds.
 - 📱 **Progressive Web App (PWA)**: Standalone desktop/mobile installation with offline service worker caching (`sw.js`).
 - 🌐 **Bangla ⇄ English Dual-Language Support**: Seamless transliteration with manual override fields (`nameEn`, `designationEn`) and a dedicated **`BN | EN`** navbar toggle button.

@@ -2,7 +2,7 @@
 import logger from '@/lib/logger';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Edit2, Check, X, Loader2 } from 'lucide-react';
+import { Edit2, Check, X, Loader2, Plus } from 'lucide-react';
 
 interface InlineEditProps {
   value: string;
@@ -16,7 +16,7 @@ interface InlineEditProps {
 export default function InlineEdit({
   value,
   onSave,
-  placeholder = 'সম্পাদনা করুন...',
+  placeholder = 'তথ্য নেই',
   className = '',
   inputClassName = '',
   canEdit = true
@@ -40,7 +40,15 @@ export default function InlineEdit({
   }, [isEditing]);
 
   if (!canEdit) {
-    return <span className={`${className}`}>{value || <span className="text-slate-400 dark:text-slate-650 italic">{placeholder}</span>}</span>;
+    return (
+      <span className={`truncate min-w-0 ${className}`}>
+        {value ? (
+          value
+        ) : (
+          <span className="text-slate-400 dark:text-slate-500 italic text-[11px] select-none">{placeholder}</span>
+        )}
+      </span>
+    );
   }
 
   const handleSave = async () => {
@@ -76,7 +84,7 @@ export default function InlineEdit({
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-1.5 min-w-[120px] relative z-10" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-1.5 w-full min-w-0 max-w-full relative z-10" onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="text"
@@ -85,10 +93,10 @@ export default function InlineEdit({
           onKeyDown={handleKeyDown}
           onBlur={handleSave}
           disabled={loading}
-          className={`px-2 py-1 bg-white dark:bg-slate-950 border border-indigo-500 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-sans w-full ${inputClassName}`}
+          className={`px-2 py-0.5 bg-white dark:bg-slate-950 border border-primary ring-1 ring-primary/30 rounded-lg text-xs focus:outline-none text-slate-850 dark:text-slate-100 font-sans w-full min-w-0 ${inputClassName}`}
         />
         {loading ? (
-          <Loader2 size={13} className="text-indigo-650 animate-spin shrink-0" />
+          <Loader2 size={13} className="text-primary animate-spin shrink-0" />
         ) : (
           <div className="flex items-center gap-0.5 shrink-0">
             <button 
@@ -96,9 +104,10 @@ export default function InlineEdit({
                 e.preventDefault(); // prevent blur
                 handleSave();
               }}
-              className="p-1 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 rounded-md cursor-pointer"
+              className="p-1 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-md cursor-pointer transition-colors"
+              title="সংরক্ষণ করুন"
             >
-              <Check size={12} />
+              <Check size={13} />
             </button>
             <button 
               onMouseDown={(e) => {
@@ -106,9 +115,10 @@ export default function InlineEdit({
                 setInputValue(value);
                 setIsEditing(false);
               }}
-              className="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-md cursor-pointer"
+              className="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-md cursor-pointer transition-colors"
+              title="বাতিল"
             >
-              <X size={12} />
+              <X size={13} />
             </button>
           </div>
         )}
@@ -116,24 +126,37 @@ export default function InlineEdit({
     );
   }
 
+  // Non-editing view
   return (
     <div 
       onClick={(e) => {
         e.stopPropagation();
         setIsEditing(true);
       }}
-      className={`group flex items-center justify-between gap-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-850 px-1.5 py-1 rounded-lg transition-colors border border-transparent hover:border-slate-200/40 dark:hover:border-slate-800/40 ${className}`}
+      className={`group flex items-center justify-between gap-1.5 min-w-0 max-w-full cursor-pointer rounded-lg transition-all ${
+        value 
+          ? `hover:bg-slate-100/70 dark:hover:bg-slate-800/60 px-1.5 py-0.5 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 ${className}` 
+          : 'border border-dashed border-slate-300 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-900/40 hover:bg-blue-50/40 dark:hover:bg-blue-950/30 hover:border-primary/60 px-2 py-0.5 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors'
+      }`}
+      title={value ? 'সম্পাদনা করতে ক্লিক করুন' : 'নতুন তথ্য যোগ করতে ক্লিক করুন'}
     >
-      <span className="truncate">
+      <span className="truncate min-w-0 text-xs">
         {value ? (
           value
         ) : (
-          <span className="text-slate-400 dark:text-slate-650 italic text-[11px]">{placeholder}</span>
+          <span className="text-[11px] font-medium flex items-center gap-1">
+            <Plus size={10} className="shrink-0 text-primary/70" />
+            <span>{placeholder}</span>
+          </span>
         )}
       </span>
       <Edit2 
         size={11} 
-        className="text-slate-450 dark:text-slate-550 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" 
+        className={`shrink-0 transition-opacity ${
+          value 
+            ? 'text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100' 
+            : 'text-primary/70 opacity-60 group-hover:opacity-100'
+        }`} 
       />
     </div>
   );
