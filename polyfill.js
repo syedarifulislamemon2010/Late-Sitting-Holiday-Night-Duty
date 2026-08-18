@@ -42,3 +42,18 @@ if (!Array.prototype.with) {
     writable: true
   });
 }
+
+// Silence non-fatal SWC native-to-WASM fallback warnings on RHEL/CentOS systems with GLIBC < 2.29
+const originalWarn = console.warn;
+console.warn = function (...args) {
+  if (
+    typeof args[0] === 'string' &&
+    (args[0].includes('Attempted to load @next/swc-linux-x64-gnu') ||
+     args[0].includes('Attempted to load @next/swc-linux-x64-musl') ||
+     args[0].includes('Skipping creating a lockfile'))
+  ) {
+    return;
+  }
+  originalWarn.apply(console, args);
+};
+
