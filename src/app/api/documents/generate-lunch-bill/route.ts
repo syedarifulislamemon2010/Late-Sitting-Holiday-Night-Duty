@@ -92,8 +92,8 @@ export async function POST(request: Request) {
     const payload = (await request.url.includes('generate-lunch-bill') ? await request.json() : {}) as LunchBillPayload;
     const {
       monthName,
-      groupedData, // Array of: { cellName, records, totalDays, totalClaim, totalDeduction, grandTotal }
-      executivesData, // { records, totalDays, totalClaim, totalDeduction, grandTotal }
+      groupedData,
+      executivesData,
       workingDays,
       totalClaimAll,
       grandTotalAll,
@@ -289,24 +289,38 @@ export async function POST(request: Request) {
 
     const finalTotalDeduction = totalStampAll + totalExtraAll;
 
-    // 3. Render Grand Departmental Total Summary at the bottom
+    // 3. Render Departmental/Cell Total Summary at the bottom
+    const summaryLabel = groupedData && groupedData.length === 1 && (!executivesData || !executivesData.records || executivesData.records.length === 0)
+      ? `সেলের দাবীকৃত টাকার পরিমাণ = ৳${toBnDigits(totalClaimAll)}/-`
+      : `সেলের মোট দাবীকৃত টাকার পরিমাণ = ৳${toBnDigits(totalClaimAll)}/-`;
+
     tablesHtml += `
       <div style="margin-top: 15px; margin-bottom: 12px; page-break-inside: avoid; border: 1.5px solid #000; padding: 10px 14px; background-color: #cbd5e1; text-align: center;">
-        <p style="font-size: 14px; font-weight: 900; color: #000; margin: 0; line-height: 1.6;">
-          <strong>সেলের প্রাপ্তব্য টাকার পরিমাণ = ৳${toBnDigits(totalClaimAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
+        <p style="font-size: 13px; font-weight: 900; color: #000; margin: 0; line-height: 1.6;">
+          <strong>${summaryLabel}</strong> &nbsp;&nbsp;&nbsp;&nbsp;
           <strong>রেভেনিউ স্ট্যাম্প = ৳${toBnDigits(totalStampAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
           <strong>অতিরিক্ত কর্তন = ৳${toBnDigits(totalExtraAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
           <strong>মোট কর্তন = ৳${toBnDigits(finalTotalDeduction)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
-          <span style="font-size: 16px; color: #15803d; font-weight: 900;">প্রাপ্তব্য = ৳${toBnDigits(grandTotalAll)}/-</span>
+          <span style="font-size: 15px; color: #15803d; font-weight: 900;">প্রাপ্তব্য = ৳${toBnDigits(grandTotalAll)}/-</span>
         </p>
       </div>
     `;
+
+    const isSingleCell = groupedData && groupedData.length === 1 && (!executivesData || !executivesData.records || executivesData.records.length === 0);
+    const cellDisplayName = isSingleCell ? groupedData[0].cellName : null;
+    const pageReportTitle = isSingleCell 
+      ? `${monthName} মাসের লাঞ্চ ভাতা বিল শিট - ${cellDisplayName} (মোট কার্যদিবস: ${toBnDigits(workingDays)} দিন)`
+      : `${monthName} মাসের লাঞ্চ ভাতা বিল শিট (মোট কার্যদিবস: ${toBnDigits(workingDays)} দিন)`;
+    const docRecordName = isSingleCell 
+      ? `লাঞ্চ বিল: ${cellDisplayName} (${monthName})`
+      : `সমন্বিত লাঞ্চ বিল: ${monthName}`;
 
     const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
+<title>${pageReportTitle}</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
 <script>
@@ -522,20 +536,22 @@ export async function POST(request: Request) {
 </style>
 </head>
 <body>
-  <div class="report-meta" style="margin-top: 10px;">
-    <span class="cell-title">লাঞ্চ বিল রিপোর্ট</span>
-    <div style="text-align: right;">
-      <div style="font-size: 14px; font-weight: bold; margin-bottom: 2px;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</div>
-      <span class="report-date">তারিখ: ${getBnDate(reportDate)} ইং</span>
-    </div>
+  <div class="header-container">
+    <h1 class="header-main-title">জনতা ব্যাংক পিএলসি.</h1>
+    <h2 class="header-sub-title">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+    <p class="header-loc">প্রধান কার্যালয়, ঢাকা।</p>
+  </div>
+
+  <div class="report-meta">
+    <span class="cell-title">${isSingleCell ? `লাঞ্চ বিল রিপোর্ট (${cellDisplayName})` : 'লাঞ্চ বিল রিপোর্ট'}</span>
+    <span class="report-date">তারিখ: ${getBnDate(reportDate)} ইং</span>
   </div>
 
   <div class="report-title-box">
-    <p class="report-title">${monthName} মাসের লাঞ্চ ভাতা বিল শিট (মোট কার্যদিবস: ${toBnDigits(workingDays)} দিন)</p>
+    <p class="report-title">${pageReportTitle}</p>
   </div>
 
   ${tablesHtml}
-
 
   <!-- Deductions detailed breakdown box -->
   <div class="deductions-breakdown">
@@ -549,6 +565,21 @@ export async function POST(request: Request) {
 
   <div class="bill-summary-text">
     <p>কথায়: <strong>${grandTotalInWords}</strong>।</p>
+  </div>
+
+  <div class="signature-container">
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <p class="signature-title">প্রস্তুতকারী</p>
+    </div>
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <p class="signature-title">যাচাইকারী</p>
+    </div>
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <p class="signature-title">অনুমোদনকারী কর্মকর্তা</p>
+    </div>
   </div>
   
   <script>
@@ -576,7 +607,8 @@ export async function POST(request: Request) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const filename = `lunch_bill_combined_${monthName.replace(/\s+/g, '_')}_${Math.floor(Date.now() / 1000)}.html`;
+    const filePrefix = isSingleCell ? `lunch_bill_${cellDisplayName?.replace(/\s+/g, '_')}` : `lunch_bill_combined`;
+    const filename = `${filePrefix}_${monthName.replace(/\s+/g, '_')}_${Math.floor(Date.now() / 1000)}.html`;
     const filePathDisk = path.join(uploadsDir, filename);
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');
 
@@ -600,7 +632,7 @@ export async function POST(request: Request) {
       doc = updated;
     } else {
       const [inserted] = await db.insert(documents).values({
-        name: `সমন্বিত লাঞ্চ বিল: ${monthName}`,
+        name: docRecordName,
         filePath: relativePath,
         fileSize: fileSize
       }).returning();

@@ -623,8 +623,18 @@ export default function LunchBillPage() {
 
   // Build Payload structures for HTML generator
   const getPrintPayload = () => {
-    const allowedRecords = records;
-    const allowedCells = cells;
+    // If not admin, restrict strictly to the user's primary cell records and cell
+    const allowedRecords = isAdmin 
+      ? (filterCell !== 'ALL' && filterCell !== '0' 
+          ? records.filter(r => !r.isExecutive && r.cellId.toString() === filterCell)
+          : filterCell === '0'
+          ? records.filter(r => r.isExecutive)
+          : records) 
+      : records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
+      
+    const allowedCells = isAdmin 
+      ? (filterCell !== 'ALL' && filterCell !== '0' ? cells.filter(c => c.id.toString() === filterCell) : filterCell === '0' ? [] : cells)
+      : cells.filter(c => c.id === primaryCellId);
 
     // 1. Group cell officers
     const cellGroups = allowedCells.map(cell => {
@@ -639,39 +649,49 @@ export default function LunchBillPage() {
       };
     }).filter(g => g.records.length > 0);
 
-    // 2. Gather Executives
-    const execRecsUnsorted = records.filter(r => r.isExecutive);
-    const execRecs = [...execRecsUnsorted].sort((a, b) => {
-      const priority = (desig: string | null | undefined) => {
-        if (!desig) return 3;
-        const d = desig.toLowerCase();
-        if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
-        if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
-        return 3;
-      };
-      const pA = priority(a.designation);
-      const pB = priority(b.designation);
-      if (pA !== pB) return pA - pB;
-      return (a.bankId || '').localeCompare(b.bankId || '', undefined, { numeric: true, sensitivity: 'base' });
-    });
-    const execsData = {
-      records: execRecs,
-      totalDays: execRecs.reduce((sum, o) => sum + o.presentDays, 0),
-      totalClaim: execRecs.reduce((sum, r) => sum + r.totalBill, 0),
-      totalDeduction: execRecs.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
-      grandTotal: execRecs.reduce((sum, r) => sum + r.netPayable, 0)
-    };
+    // 2. Gather Executives ONLY for admin and when not filtered to a specific cell
+    let execsData: any = undefined;
+    if (isAdmin && (filterCell === 'ALL' || filterCell === '0')) {
+      const execRecsUnsorted = allowedRecords.filter(r => r.isExecutive);
+      const execRecs = [...execRecsUnsorted].sort((a, b) => {
+        const priority = (desig: string | null | undefined) => {
+          if (!desig) return 3;
+          const d = desig.toLowerCase();
+          if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
+          if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
+          return 3;
+        };
+        const pA = priority(a.designation);
+        const pB = priority(b.designation);
+        if (pA !== pB) return pA - pB;
+        return (a.bankId || '').localeCompare(b.bankId || '', undefined, { numeric: true, sensitivity: 'base' });
+      });
+      if (execRecs.length > 0) {
+        execsData = {
+          records: execRecs,
+          totalDays: execRecs.reduce((sum, o) => sum + o.presentDays, 0),
+          totalClaim: execRecs.reduce((sum, r) => sum + r.totalBill, 0),
+          totalDeduction: execRecs.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
+          grandTotal: execRecs.reduce((sum, r) => sum + r.netPayable, 0)
+        };
+      }
+    }
+
+    const effectiveRecords = [
+      ...cellGroups.flatMap(g => g.records),
+      ...(execsData?.records || [])
+    ];
 
     return {
       monthName: getBanglaMonthName(selectedMonth),
       groupedData: cellGroups,
       executivesData: execsData,
       workingDays: workingDays,
-      totalDaysAll: allowedRecords.reduce((sum, r) => sum + r.presentDays, 0),
-      totalClaimAll: allowedRecords.reduce((sum, r) => sum + r.totalBill, 0),
-      totalDeductionAll: allowedRecords.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
-      grandTotalAll: allowedRecords.reduce((sum, r) => sum + r.netPayable, 0),
-      grandTotalInWords: getBanglaNumberWords(allowedRecords.reduce((sum, r) => sum + r.netPayable, 0)),
+      totalDaysAll: effectiveRecords.reduce((sum, r) => sum + r.presentDays, 0),
+      totalClaimAll: effectiveRecords.reduce((sum, r) => sum + r.totalBill, 0),
+      totalDeductionAll: effectiveRecords.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
+      grandTotalAll: effectiveRecords.reduce((sum, r) => sum + r.netPayable, 0),
+      grandTotalInWords: getBanglaNumberWords(effectiveRecords.reduce((sum, r) => sum + r.netPayable, 0)),
       reportDate: new Date().toISOString().split('T')[0]
     };
   };
@@ -1104,7 +1124,7 @@ export default function LunchBillPage() {
             </div>
 
             {/* List and Combined view */}
-            <div className="p-6 space-y-8">
+            <div className="p-3 sm:p-4 space-y-6">
               
               {/* Group B: DGM & AGM Executives */}
               {isAdmin && activeRecords.some(r => r.isExecutive) && (() => {
@@ -1137,10 +1157,10 @@ export default function LunchBillPage() {
                 const totalExec = dgmCount + agmCount;
 
                 return (
-                  <div className="border border-rose-150 dark:border-rose-900/40 rounded-xl overflow-hidden shadow-sm" style={{ borderLeft: '3px solid #db2777' }}>
-                    <div className="px-5 py-3 bg-rose-50/40 dark:bg-rose-950/10 border-b border-rose-150 dark:border-rose-900/40 flex items-center justify-between font-sans">
+                  <div className="border border-rose-150 dark:border-rose-900/40 rounded-xl overflow-hidden shadow-xs" style={{ borderLeft: '3px solid #db2777' }}>
+                    <div className="px-4 py-2.5 bg-rose-50/40 dark:bg-rose-950/10 border-b border-rose-150 dark:border-rose-900/40 flex items-center justify-between font-sans">
                       <div className="flex items-center gap-2">
-                        <Lock size={16} className="text-rose-500" />
+                        <Lock size={15} className="text-rose-500" />
                         <span className="font-extrabold text-xs text-rose-800 dark:text-rose-300 uppercase tracking-wide">
                           নির্বাহী প্যানেল (ডিজিএম {toBanglaDigits(dgmCount)} জন + এজিএম {toBanglaDigits(agmCount)} জন = মোট {toBanglaDigits(totalExec)} জন নির্বাহী)
                         </span>
@@ -1150,25 +1170,25 @@ export default function LunchBillPage() {
                       </span>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-center border-collapse">
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-xs text-center border-collapse">
                         <thead>
-                          <tr className="bg-rose-50/30 dark:bg-rose-950/20 text-rose-900 dark:text-rose-300 font-bold text-xs border-b border-rose-150 dark:border-rose-900/40 uppercase tracking-wider whitespace-nowrap">
-                            <th className="py-3 px-3 w-10 text-center">ক্রমিক</th>
-                            <th className="py-3 px-3 text-left">নির্বাহীর নাম</th>
-                            <th className="py-3 px-3 text-center">পদবী</th>
-                            <th className="py-3 px-3 text-center">ব্যাংক আইডি</th>
-                            <th className="py-3 px-3 text-center">মোবাইল নম্বর</th>
-                            <th className="py-3 px-3 text-center">দৈনিক হার</th>
-                            <th className="py-3 px-3 text-center">উপস্থিত দিন</th>
-                            <th className="py-3 px-3 text-center bg-blue-50/60 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300">
-                              অনুপস্থিত দিন (CL) ✍️
+                          <tr className="bg-rose-50/30 dark:bg-rose-950/20 text-rose-900 dark:text-rose-300 font-bold text-[11px] border-b border-rose-150 dark:border-rose-900/40 uppercase tracking-wider">
+                            <th className="py-2.5 px-1 w-7 text-center">ক্রমিক</th>
+                            <th className="py-2.5 px-2 text-left min-w-[120px]">নির্বাহীর নাম</th>
+                            <th className="py-2.5 px-1 text-center">পদবী</th>
+                            <th className="py-2.5 px-1 text-center">ব্যাংক আইডি</th>
+                            <th className="py-2.5 px-1 text-center">মোবাইল</th>
+                            <th className="py-2.5 px-1 text-center">দৈনিক হার</th>
+                            <th className="py-2.5 px-1 text-center">উপস্থিত</th>
+                            <th className="py-2.5 px-1 text-center bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200">
+                              অনুপস্থিত (CL) ✍️
                             </th>
-                            <th className="py-3 px-3 text-center">মোট দাবী</th>
-                            <th className="py-3 px-3 text-center">রেভেনিউ স্ট্যাম্প</th>
-                            <th className="py-3 px-3 text-center">অতিরিক্ত কর্তন</th>
-                            <th className="py-3 px-3 text-center">মোট কর্তন</th>
-                            <th className="py-3 px-3 text-center bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300">
+                            <th className="py-2.5 px-1 text-center">মোট দাবী</th>
+                            <th className="py-2.5 px-1 text-center">স্ট্যাম্প</th>
+                            <th className="py-2.5 px-1 text-center">অতিরিক্ত কর্তন</th>
+                            <th className="py-2.5 px-1 text-center">মোট কর্তন</th>
+                            <th className="py-2.5 px-1.5 text-center bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200">
                               প্রাপ্তব্য
                             </th>
                           </tr>
@@ -1179,22 +1199,22 @@ export default function LunchBillPage() {
                             const totalDed = 15 + additional;
                             return (
                               <tr key={r.employeeId} className="hover:bg-rose-50/20 dark:hover:bg-rose-950/10 transition-colors">
-                                <td className="py-3 px-3 font-bold text-rose-800 dark:text-rose-300">{toBanglaDigits(index + 1)}</td>
-                                <td className="py-3 px-3 text-left font-extrabold text-rose-900 dark:text-rose-100">{r.employeeName}</td>
-                                <td className="py-3 px-3 font-bold text-rose-700 dark:text-rose-300 text-xs">{r.designation}</td>
-                                <td className="py-3 px-3 text-xs font-semibold font-sans">{r.bankId || '-'}</td>
-                                <td className="py-3 px-3 font-semibold font-sans text-xs text-rose-800 dark:text-rose-300">
+                                <td className="py-2 px-1 font-bold text-rose-800 dark:text-rose-300 text-xs">{toBanglaDigits(index + 1)}</td>
+                                <td className="py-2 px-2 text-left font-extrabold text-rose-900 dark:text-rose-100 text-xs">{r.employeeName}</td>
+                                <td className="py-2 px-1 font-bold text-rose-700 dark:text-rose-300 text-[11px]">{r.designation}</td>
+                                <td className="py-2 px-1 text-[11px] font-semibold font-sans">{r.bankId || '-'}</td>
+                                <td className="py-2 px-1 font-semibold font-sans text-[10.5px] text-rose-800 dark:text-rose-300">
                                   {(() => {
                                     const exec = executives.find(e => e.id === r.employeeId);
                                     return exec?.phone ? toBanglaDigits(exec.phone) : 'N/A';
                                   })()}
                                 </td>
-                                <td className="py-3 px-3 font-bold font-sans text-slate-500">৳{toBanglaDigits(400)}</td>
+                                <td className="py-2 px-1 font-bold font-sans text-slate-500 text-xs">৳{toBanglaDigits(400)}</td>
                                 
-                                <td className="py-3 px-3 font-bold font-sans tabular-nums">{toBanglaDigits(r.presentDays)}</td>
+                                <td className="py-2 px-1 font-bold font-sans tabular-nums text-xs">{toBanglaDigits(r.presentDays)}</td>
 
                                 {/* CL absence input with clear editable affordance */}
-                                <td className="py-1 px-3 w-28 bg-blue-50/30 dark:bg-blue-950/10">
+                                <td className="py-1 px-1 bg-blue-50/30 dark:bg-blue-950/10">
                                   <div className="relative inline-flex items-center justify-center">
                                     <input
                                       type="number"
@@ -1203,34 +1223,34 @@ export default function LunchBillPage() {
                                       value={r.absenceDays === 0 ? '' : r.absenceDays}
                                       placeholder="০"
                                       onChange={(e) => handleAbsenceChange(r.employeeId, true, e.target.value)}
-                                      className="w-16 h-8 px-2 text-center bg-blue-50/80 hover:bg-blue-50 dark:bg-blue-950/40 dark:hover:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 hover:border-primary/60 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg font-black font-sans text-xs text-blue-950 dark:text-blue-200 transition-all cursor-text disabled:opacity-75 disabled:cursor-not-allowed"
+                                      className="w-12 h-7 px-1 text-center bg-blue-50/90 hover:bg-blue-50 dark:bg-blue-950/50 dark:hover:bg-blue-950/70 border border-blue-200 dark:border-blue-800 hover:border-primary/70 focus:border-primary focus:ring-1 focus:ring-primary/20 rounded font-black font-sans text-xs text-blue-950 dark:text-blue-200 transition-all cursor-text disabled:opacity-75 disabled:cursor-not-allowed"
                                       title="অনুপস্থিত দিন (CL) লিখুন"
                                     />
                                   </div>
                                 </td>
 
-                                <td className="py-3 px-3 font-semibold font-sans text-slate-700 dark:text-slate-300 tabular-nums">৳{toBanglaDigits(r.totalBill)}</td>
+                                <td className="py-2 px-1 font-semibold font-sans text-slate-700 dark:text-slate-300 tabular-nums text-xs">৳{toBanglaDigits(r.totalBill)}</td>
                                 
                                 {/* রেভেনিউ স্ট্যাম্প */}
-                                <td className="py-3 px-3 font-semibold font-sans text-slate-500 tabular-nums">৳{toBanglaDigits(15)}</td>
+                                <td className="py-2 px-1 font-semibold font-sans text-slate-500 tabular-nums text-xs">৳{toBanglaDigits(15)}</td>
 
                                 {/* অতিরিক্ত কর্তন */}
-                                <td className="py-1 px-3 w-28">
+                                <td className="py-1 px-1">
                                   <input
                                     type="number"
                                     min="0"
                                     value={r.additionalDeduction}
                                     onChange={(e) => handleManualDeductionChange(r.employeeId, true, e.target.value)}
-                                    className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
+                                    className="w-14 h-7 px-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
                                   />
                                 </td>
 
                                 {/* মোট কর্তন */}
-                                <td className="py-3 px-3 font-bold font-sans text-rose-700 dark:text-rose-400 tabular-nums">৳{toBanglaDigits(totalDed)}</td>
+                                <td className="py-2 px-1 font-bold font-sans text-rose-700 dark:text-rose-400 tabular-nums text-xs">৳{toBanglaDigits(totalDed)}</td>
 
                                 {/* Net Payable with Highlighted Prominence */}
-                                <td className="py-3 px-3">
-                                  <span className="font-black text-xs sm:text-sm text-emerald-700 dark:text-emerald-350 font-sans tabular-nums bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200/80 dark:border-emerald-800/50 inline-block shadow-2xs">
+                                <td className="py-2 px-1">
+                                  <span className="font-black text-xs text-emerald-700 dark:text-emerald-350 font-sans tabular-nums bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200/80 dark:border-emerald-800/50 inline-block shadow-2xs">
                                     ৳{toBanglaDigits(r.netPayable)}
                                   </span>
                                 </td>
@@ -1239,24 +1259,24 @@ export default function LunchBillPage() {
                           })}
 
                           {/* ১. সর্বমোট নির্বাহী প্যানেল হিসাব রো */}
-                          <tr className="bg-rose-100/80 dark:bg-rose-900/60 font-bold border-t border-rose-200 dark:border-rose-800 whitespace-nowrap">
-                            <td colSpan={8} className="py-3 px-4 text-right pr-6 text-rose-900 dark:text-rose-200 text-xs">
+                          <tr className="bg-rose-100/80 dark:bg-rose-900/60 font-bold border-t border-rose-200 dark:border-rose-800">
+                            <td colSpan={8} className="py-2.5 px-3 text-right pr-4 text-rose-900 dark:text-rose-200 text-xs">
                               সর্বমোট (নির্বাহী প্যানেল) =
                             </td>
-                            <td className="py-3 px-4 font-sans font-bold text-rose-900 dark:text-rose-200 tabular-nums">
+                            <td className="py-2.5 px-1 font-sans font-bold text-rose-900 dark:text-rose-200 tabular-nums text-xs">
                               ৳{toBanglaDigits(execClaim)}/-
                             </td>
-                            <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums">
+                            <td className="py-2.5 px-1 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums text-xs">
                               ৳{toBanglaDigits(execStamp)}/-
                             </td>
-                            <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums">
+                            <td className="py-2.5 px-1 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums text-xs">
                               ৳{toBanglaDigits(execExtra)}/-
                             </td>
-                            <td className="py-3 px-4 font-sans font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                            <td className="py-2.5 px-1 font-sans font-bold text-rose-600 dark:text-rose-400 tabular-nums text-xs">
                               ৳{toBanglaDigits(execStamp + execExtra)}/-
                             </td>
-                            <td className="py-3 px-4 font-sans">
-                              <span className="font-black text-sm text-emerald-700 dark:text-emerald-350 tabular-nums bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800/80 inline-block shadow-2xs">
+                            <td className="py-2.5 px-1 font-sans">
+                              <span className="font-black text-xs text-emerald-700 dark:text-emerald-350 tabular-nums bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/80 inline-block shadow-2xs">
                                 ৳{toBanglaDigits(execGrand)}/-
                               </span>
                             </td>
@@ -1283,44 +1303,44 @@ export default function LunchBillPage() {
                 const cellGrand = cellRecs.reduce((sum, r) => sum + r.netPayable, 0);
 
                 return (
-                  <div key={cell.id} className="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                  <div key={cell.id} className="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
                     {/* Collapsible header */}
                     <div 
                       onClick={() => toggleCellCollapse(cell.id)}
-                      className="px-5 py-3 bg-slate-100/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-950/30 transition-colors font-sans select-none"
+                      className="px-4 py-2.5 bg-slate-100/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-950/30 transition-colors font-sans select-none"
                     >
                       <div className="flex items-center gap-2">
-                        <Users size={16} className="text-slate-400" />
+                        <Users size={15} className="text-slate-400" />
                         <span className="font-extrabold text-xs text-slate-800 dark:text-slate-50 uppercase tracking-wide">
                           সেল: {cell.name} (মোট কার্যদিবস: {toBanglaDigits(workingDays)} দিন, {cellRecs.length} জন কর্মকর্তা)
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
                         <span>সেলের দাবী সমষ্টি: ৳{toBanglaDigits(cellGrand)}</span>
-                        {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                        {isCollapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
                       </div>
                     </div>
 
                     {!isCollapsed && (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-center border-collapse">
+                      <div className="overflow-x-auto w-full">
+                        <table className="w-full text-xs text-center border-collapse">
                           <thead>
-                            <tr className="bg-slate-50/70 dark:bg-slate-950/20 text-slate-600 dark:text-slate-300 font-bold text-xs border-b border-slate-100 dark:border-slate-800 uppercase tracking-wider whitespace-nowrap">
-                              <th className="py-3 px-3 w-10 text-center">ক্রমিক</th>
-                              <th className="py-3 px-3 text-left">কর্মকর্তার নাম</th>
-                              <th className="py-3 px-3 text-center">পদবী</th>
-                              <th className="py-3 px-3 text-center">ব্যাংক আইডি</th>
-                              <th className="py-3 px-3 text-center">মোবাইল নম্বর</th>
-                              <th className="py-3 px-3 text-center">দৈনিক হার</th>
-                              <th className="py-3 px-3 text-center">উপস্থিত দিন</th>
-                              <th className="py-3 px-3 text-center bg-blue-50/60 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300">
-                                অনুপস্থিত দিন (CL) ✍️
+                            <tr className="bg-slate-50/70 dark:bg-slate-950/20 text-slate-600 dark:text-slate-300 font-bold text-[11px] border-b border-slate-100 dark:border-slate-800 uppercase tracking-wider">
+                              <th className="py-2.5 px-1 w-7 text-center">ক্রমিক</th>
+                              <th className="py-2.5 px-2 text-left min-w-[120px]">কর্মকর্তার নাম</th>
+                              <th className="py-2.5 px-1 text-center">পদবী</th>
+                              <th className="py-2.5 px-1 text-center">ব্যাংক আইডি</th>
+                              <th className="py-2.5 px-1 text-center">মোবাইল</th>
+                              <th className="py-2.5 px-1 text-center">দৈনিক হার</th>
+                              <th className="py-2.5 px-1 text-center">উপস্থিত</th>
+                              <th className="py-2.5 px-1 text-center bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200">
+                                অনুপস্থিত (CL) ✍️
                               </th>
-                              <th className="py-3 px-3 text-center">মোট দাবী</th>
-                              <th className="py-3 px-3 text-center">রেভেনিউ স্ট্যাম্প</th>
-                              <th className="py-3 px-3 text-center">অতিরিক্ত কর্তন</th>
-                              <th className="py-3 px-3 text-center">মোট কর্তন</th>
-                              <th className="py-3 px-3 text-center bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300">
+                              <th className="py-2.5 px-1 text-center">মোট দাবী</th>
+                              <th className="py-2.5 px-1 text-center">স্ট্যাম্প</th>
+                              <th className="py-2.5 px-1 text-center">অতিরিক্ত কর্তন</th>
+                              <th className="py-2.5 px-1 text-center">মোট কর্তন</th>
+                              <th className="py-2.5 px-1.5 text-center bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200">
                                 প্রাপ্তব্য
                               </th>
                             </tr>
@@ -1331,22 +1351,22 @@ export default function LunchBillPage() {
                               const totalDed = 15 + additional;
                               return (
                                 <tr key={r.employeeId} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/10 transition-colors">
-                                  <td className="py-3 px-3 font-bold text-slate-700 dark:text-slate-300">{toBanglaDigits(index + 1)}</td>
-                                  <td className="py-3 px-3 text-left font-extrabold text-slate-800 dark:text-slate-100">{r.employeeName}</td>
-                                  <td className="py-3 px-3 text-xs font-medium text-slate-600 dark:text-slate-300">{r.designation}</td>
-                                  <td className="py-3 px-3 text-xs font-semibold font-sans">{r.bankId || '-'}</td>
-                                  <td className="py-3 px-3 font-semibold font-sans text-xs text-slate-600 dark:text-slate-400">
+                                  <td className="py-2 px-1 font-bold text-slate-700 dark:text-slate-300 text-xs">{toBanglaDigits(index + 1)}</td>
+                                  <td className="py-2 px-2 text-left font-extrabold text-slate-800 dark:text-slate-100 text-xs">{r.employeeName}</td>
+                                  <td className="py-2 px-1 text-[11px] font-medium text-slate-600 dark:text-slate-300">{r.designation}</td>
+                                  <td className="py-2 px-1 text-[11px] font-semibold font-sans">{r.bankId || '-'}</td>
+                                  <td className="py-2 px-1 font-semibold font-sans text-[10.5px] text-slate-600 dark:text-slate-400">
                                     {(() => {
                                       const emp = employees.find(e => e.id === r.employeeId);
                                       return emp?.mobile ? toBanglaDigits(emp.mobile) : 'N/A';
                                     })()}
                                   </td>
-                                  <td className="py-3 px-3 font-bold font-sans text-slate-500">৳{toBanglaDigits(400)}</td>
+                                  <td className="py-2 px-1 font-bold font-sans text-slate-500 text-xs">৳{toBanglaDigits(400)}</td>
                                   
-                                  <td className="py-3 px-3 font-bold font-sans tabular-nums">{toBanglaDigits(r.presentDays)}</td>
+                                  <td className="py-2 px-1 font-bold font-sans tabular-nums text-xs">{toBanglaDigits(r.presentDays)}</td>
 
                                   {/* CL absence input with clear editable affordance */}
-                                  <td className="py-1 px-3 w-28 bg-blue-50/30 dark:bg-blue-950/10">
+                                  <td className="py-1 px-1 bg-blue-50/30 dark:bg-blue-950/10">
                                     <div className="relative inline-flex items-center justify-center">
                                       <input
                                         type="number"
@@ -1355,34 +1375,34 @@ export default function LunchBillPage() {
                                         value={r.absenceDays === 0 ? '' : r.absenceDays}
                                         placeholder="০"
                                         onChange={(e) => handleAbsenceChange(r.employeeId, false, e.target.value)}
-                                        className="w-16 h-8 px-2 text-center bg-blue-50/80 hover:bg-blue-50 dark:bg-blue-950/40 dark:hover:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 hover:border-primary/60 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg font-black font-sans text-xs text-blue-950 dark:text-blue-200 transition-all cursor-text disabled:opacity-75 disabled:cursor-not-allowed"
+                                        className="w-12 h-7 px-1 text-center bg-blue-50/90 hover:bg-blue-50 dark:bg-blue-950/50 dark:hover:bg-blue-950/70 border border-blue-200 dark:border-blue-800 hover:border-primary/70 focus:border-primary focus:ring-1 focus:ring-primary/20 rounded font-black font-sans text-xs text-blue-950 dark:text-blue-200 transition-all cursor-text disabled:opacity-75 disabled:cursor-not-allowed"
                                         title="অনুপস্থিত দিন (CL) লিখুন"
                                       />
                                     </div>
                                   </td>
 
-                                  <td className="py-3 px-3 font-semibold font-sans text-slate-700 dark:text-slate-300 tabular-nums">৳{toBanglaDigits(r.totalBill)}</td>
+                                  <td className="py-2 px-1 font-semibold font-sans text-slate-700 dark:text-slate-300 tabular-nums text-xs">৳{toBanglaDigits(r.totalBill)}</td>
                                   
                                   {/* রেভেনিউ স্ট্যাম্প */}
-                                  <td className="py-3 px-3 font-semibold font-sans text-slate-500 tabular-nums">৳{toBanglaDigits(15)}</td>
+                                  <td className="py-2 px-1 font-semibold font-sans text-slate-500 tabular-nums text-xs">৳{toBanglaDigits(15)}</td>
 
                                   {/* অতিরিক্ত কর্তন */}
-                                  <td className="py-1 px-3 w-28">
+                                  <td className="py-1 px-1">
                                     <input
                                       type="number"
                                       min="0"
                                       value={r.additionalDeduction}
                                       onChange={(e) => handleManualDeductionChange(r.employeeId, false, e.target.value)}
-                                      className="w-full px-2 py-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
+                                      className="w-14 h-7 px-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
                                     />
                                   </td>
 
                                   {/* মোট কর্তন */}
-                                  <td className="py-3 px-3 font-bold font-sans text-rose-700 dark:text-rose-450 tabular-nums">৳{toBanglaDigits(totalDed)}</td>
+                                  <td className="py-2 px-1 font-bold font-sans text-rose-700 dark:text-rose-450 tabular-nums text-xs">৳{toBanglaDigits(totalDed)}</td>
 
                                   {/* Net Payable with Highlighted Prominence */}
-                                  <td className="py-3 px-3">
-                                    <span className="font-black text-xs sm:text-sm text-emerald-700 dark:text-emerald-350 font-sans tabular-nums bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200/80 dark:border-emerald-800/50 inline-block shadow-2xs">
+                                  <td className="py-2 px-1">
+                                    <span className="font-black text-xs text-emerald-700 dark:text-emerald-350 font-sans tabular-nums bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200/80 dark:border-emerald-800/50 inline-block shadow-2xs">
                                       ৳{toBanglaDigits(r.netPayable)}
                                     </span>
                                   </td>
@@ -1391,24 +1411,24 @@ export default function LunchBillPage() {
                             })}
 
                             {/* ১. সর্বমোট দাবী ও কর্তন রো */}
-                            <tr className="bg-slate-100/80 dark:bg-slate-900/60 font-bold border-t border-slate-200 dark:border-slate-800 whitespace-nowrap">
-                              <td colSpan={8} className="py-3 px-4 text-right pr-6 text-slate-800 dark:text-slate-200 text-xs">
+                            <tr className="bg-slate-100/80 dark:bg-slate-900/60 font-bold border-t border-slate-200 dark:border-slate-800">
+                              <td colSpan={8} className="py-2.5 px-3 text-right pr-4 text-slate-800 dark:text-slate-200 text-xs">
                                 সর্বমোট (১ থেকে {toBanglaDigits(cellRecs.length)} নং কর্মকর্তা) =
                               </td>
-                              <td className="py-3 px-4 font-sans font-bold text-slate-800 dark:text-slate-200 tabular-nums">
+                              <td className="py-2.5 px-1 font-sans font-bold text-slate-800 dark:text-slate-200 tabular-nums text-xs">
                                 ৳{toBanglaDigits(cellClaim)}/-
                               </td>
-                              <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums">
+                              <td className="py-2.5 px-1 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums text-xs">
                                 ৳{toBanglaDigits(cellStamp)}/-
                               </td>
-                              <td className="py-3 px-4 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums">
+                              <td className="py-2.5 px-1 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums text-xs">
                                 ৳{toBanglaDigits(cellExtra)}/-
                               </td>
-                              <td className="py-3 px-4 font-sans font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                              <td className="py-2.5 px-1 font-sans font-bold text-rose-600 dark:text-rose-400 tabular-nums text-xs">
                                 ৳{toBanglaDigits(cellStamp + cellExtra)}/-
                               </td>
-                              <td className="py-3 px-4 font-sans">
-                                <span className="font-black text-sm text-emerald-700 dark:text-emerald-350 tabular-nums bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800/80 inline-block shadow-2xs">
+                              <td className="py-2.5 px-1 font-sans">
+                                <span className="font-black text-xs text-emerald-700 dark:text-emerald-350 tabular-nums bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/80 inline-block shadow-2xs">
                                   ৳{toBanglaDigits(cellGrand)}/-
                                 </span>
                               </td>
