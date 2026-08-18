@@ -262,20 +262,20 @@ export default function MyDutySummaryCard() {
       {/* Top Row: Quick Summaries (Current Month stats) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Current Month Duties */}
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl flex flex-col justify-between space-y-3 shadow-xs">
+        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 border-t-3 border-t-indigo-500 rounded-2xl flex flex-col justify-between space-y-3 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-normal ease-premium">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">চলতি মাসের ডিউটি</p>
-              <p className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">চলতি মাসের ডিউটি</p>
+              <p className="app-metric-hero text-indigo-600 dark:text-indigo-400 mt-1">
                 {toBanglaDigits(currentMonthCount)} টি
               </p>
             </div>
-            <span className="p-2 rounded-lg bg-indigo-55 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shrink-0">
+            <span className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shrink-0">
               <Calendar size={18} />
             </span>
           </div>
           
-          <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/60 text-[10px] font-bold">
+          <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/60 text-[11px] font-semibold">
             <span className="px-2 py-0.5 bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 rounded-md border border-indigo-100/40 dark:border-indigo-900/30">
               লেট সিটিং: {toBanglaDigits(staticLateSittingCount)}
             </span>
@@ -289,11 +289,11 @@ export default function MyDutySummaryCard() {
         </div>
 
         {/* Card 2: Pending/Unbilled Bill */}
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl flex flex-col justify-between space-y-3 shadow-xs">
+        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 border-t-3 border-t-amber-500 rounded-2xl flex flex-col justify-between space-y-3 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-normal ease-premium">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">অমীমাংসিত (অ-বিল্ড) ডিউটি</p>
-              <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">অমীমাংসিত (অ-বিল্ড) ডিউটি</p>
+              <p className="app-metric-hero text-amber-600 dark:text-amber-400 mt-1">
                 {toBanglaDigits(pendingCount)} টি
               </p>
             </div>
@@ -302,23 +302,23 @@ export default function MyDutySummaryCard() {
             </span>
           </div>
 
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1">
-              <Banknote size={12} className="text-emerald-500" />
+              <Banknote size={13} className="text-emerald-500" />
               <span>প্রাক্কলিত ভাতা:</span>
             </span>
-            <span className="text-slate-800 dark:text-slate-200 font-sans font-extrabold">
+            <span className="app-amount-text text-slate-800 dark:text-slate-200">
               ৳{toBanglaDigits(pendingTotalAmount.toLocaleString('bn-BD'))}
             </span>
           </div>
         </div>
 
         {/* Card 3: Remaining Casual Leave */}
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl flex flex-col justify-between space-y-3 shadow-xs">
+        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 border-t-3 border-t-rose-500 rounded-2xl flex flex-col justify-between space-y-3 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-normal ease-premium">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">অবশিষ্ট নৈমিত্তিক ছুটি</p>
-              <p className="text-xl font-black text-rose-600 dark:text-rose-455 mt-1">
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">অবশিষ্ট নৈমিত্তিক ছুটি</p>
+              <p className="app-metric-hero text-rose-600 dark:text-rose-455 mt-1">
                 {toBanglaDigits(remainingLeave)} দিন
               </p>
             </div>
@@ -327,7 +327,7 @@ export default function MyDutySummaryCard() {
             </span>
           </div>
 
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-bold leading-normal">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-semibold leading-normal">
             * স্টেশন ত্যাগ ও ঘটনোত্তর আবেদন এই ছুটির হিসাবের অন্তর্ভুক্ত।
           </div>
         </div>
@@ -340,7 +340,7 @@ export default function MyDutySummaryCard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/60 pb-4">
           <div className="flex items-center gap-2">
             <Sparkles className="text-indigo-650 dark:text-indigo-400 shrink-0 animate-pulse" size={18} />
-            <h3 className="font-extrabold text-slate-850 dark:text-slate-150 text-sm">
+            <h3 className="app-card-heading text-slate-850 dark:text-slate-150">
               ব্যক্তিগত ডিউটি ও ভাতার বিবরণী ({employee.name})
             </h3>
           </div>
@@ -377,7 +377,7 @@ export default function MyDutySummaryCard() {
                   className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     filterType === 'latest_bill'
                       ? 'bg-white dark:bg-slate-700 text-indigo-650 dark:text-indigo-400 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                   }`}
                   title={`লেটেস্ট বিলের তারিখ: ${latestBillDate}`}
                 >
@@ -476,66 +476,66 @@ export default function MyDutySummaryCard() {
         )}
 
         {/* Statement Grid */}
-        <div className="grid grid-cols-1 gap-3.5 text-xs">
+        <div className="grid grid-cols-1 gap-3 text-xs">
           
           {/* Row 1: Late Sitting */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-850">
+          <div className="flex items-center justify-between p-3.5 bg-indigo-50/20 dark:bg-indigo-950/15 border-y border-r border-slate-200/60 dark:border-slate-800/60 border-l-4 border-l-indigo-500 rounded-2xl hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs transition-all duration-normal ease-premium">
             <div className="flex items-center gap-3">
-              <span className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shrink-0">
+              <span className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shrink-0 border border-indigo-100/50 dark:border-indigo-900/30">
                 <Clock size={16} />
               </span>
               <div>
-                <p className="font-bold text-slate-800 dark:text-slate-200">লেট সিটিং বিল (Snacks + Travel)</p>
-                <p className="text-[10px] text-slate-405 dark:text-slate-400 mt-0.5">নাস্তা ৳১০০ + যাতায়াত ৳২০০ (৳৩০০/দিন)</p>
+                <p className="app-card-heading text-slate-850 dark:text-slate-150">লেট সিটিং বিল (Snacks + Travel)</p>
+                <p className="app-body-subtext mt-0.5">নাস্তা ৳১০০ + যাতায়াত ৳২০০ (৳৩০০/দিন)</p>
               </div>
             </div>
-            <div className="text-right flex items-center gap-8">
-              <span className="px-2.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 font-bold text-[10px] font-sans">
+            <div className="text-right flex items-center gap-6 sm:gap-8">
+              <span className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-350 font-bold text-xs font-sans tabular-nums border border-indigo-100/50 dark:border-indigo-900/30">
                 {toBanglaDigits(lateSittingCount)} দিন
               </span>
-              <span className="font-black text-slate-800 dark:text-slate-200 text-sm font-sans w-20 text-right">
+              <span className="app-amount-text text-slate-900 dark:text-slate-100 text-sm sm:text-base font-black w-24 text-right">
                 ৳{toBanglaDigits(lateSittingAmount.toLocaleString('en-US'))}/-
               </span>
             </div>
           </div>
 
           {/* Row 2: Holiday Duty */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-850">
+          <div className="flex items-center justify-between p-3.5 bg-sky-50/20 dark:bg-sky-950/15 border-y border-r border-slate-200/60 dark:border-slate-800/60 border-l-4 border-l-sky-500 rounded-2xl hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs transition-all duration-normal ease-premium">
             <div className="flex items-center gap-3">
-              <span className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 shrink-0">
+              <span className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 shrink-0 border border-sky-100/50 dark:border-sky-900/30">
                 <Award size={16} />
               </span>
               <div>
-                <p className="font-bold text-slate-800 dark:text-slate-200">হলিডে ডিউটি বিল (Lunch + Travel)</p>
-                <p className="text-[10px] text-slate-405 dark:text-slate-400 mt-0.5">দুপুরের খাবার ৳২৫০ + যাতায়াত ৳২৫০ (৳৫০০/দিন)</p>
+                <p className="app-card-heading text-slate-850 dark:text-slate-150">হলিডে ডিউটি বিল (Lunch + Travel)</p>
+                <p className="app-body-subtext mt-0.5">দুপুরের খাবার ৳২৫০ + যাতায়াত ৳২৫০ (৳৫০০/দিন)</p>
               </div>
             </div>
-            <div className="text-right flex items-center gap-8">
-              <span className="px-2.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/20 text-sky-600 dark:text-sky-400 font-bold text-[10px] font-sans">
+            <div className="text-right flex items-center gap-6 sm:gap-8">
+              <span className="px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-350 font-bold text-xs font-sans tabular-nums border border-sky-100/50 dark:border-sky-900/30">
                 {toBanglaDigits(holidayCount)} দিন
               </span>
-              <span className="font-black text-slate-800 dark:text-slate-200 text-sm font-sans w-20 text-right">
+              <span className="app-amount-text text-slate-900 dark:text-slate-100 text-sm sm:text-base font-black w-24 text-right">
                 ৳{toBanglaDigits(holidayAmount.toLocaleString('en-US'))}/-
               </span>
             </div>
           </div>
 
           {/* Row 3: Night Shift */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-850">
+          <div className="flex items-center justify-between p-3.5 bg-emerald-50/20 dark:bg-emerald-950/15 border-y border-r border-slate-200/60 dark:border-slate-800/60 border-l-4 border-l-emerald-500 rounded-2xl hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs transition-all duration-normal ease-premium">
             <div className="flex items-center gap-3">
-              <span className="p-2.5 rounded-xl bg-emerald-55/65 dark:bg-emerald-950/40 text-emerald-650 dark:text-emerald-400 shrink-0">
+              <span className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0 border border-emerald-100/50 dark:border-emerald-900/30">
                 <ShieldCheck size={16} />
               </span>
               <div>
-                <p className="font-bold text-slate-800 dark:text-slate-200">নাইট শিফট বিল (Dinner + Travel)</p>
-                <p className="text-[10px] text-slate-405 dark:text-slate-400 mt-0.5">রাতের খাবার ৳৬০০ + যাতায়াত ৳৪০০ (৳১০০০/দিন)</p>
+                <p className="app-card-heading text-slate-850 dark:text-slate-150">নাইট শিফট বিল (Dinner + Travel)</p>
+                <p className="app-body-subtext mt-0.5">রাতের খাবার ৳৬০০ + যাতায়াত ৳৪০০ (৳১০০০/দিন)</p>
               </div>
             </div>
-            <div className="text-right flex items-center gap-8">
-              <span className="px-2.5 py-0.5 rounded bg-emerald-55/65 dark:bg-emerald-950/20 text-emerald-650 dark:text-emerald-400 font-bold text-[10px] font-sans">
+            <div className="text-right flex items-center gap-6 sm:gap-8">
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-350 font-bold text-xs font-sans tabular-nums border border-emerald-100/50 dark:border-emerald-900/30">
                 {toBanglaDigits(nightShiftCount)} দিন
               </span>
-              <span className="font-black text-slate-800 dark:text-slate-200 text-sm font-sans w-20 text-right">
+              <span className="app-amount-text text-slate-900 dark:text-slate-100 text-sm sm:text-base font-black w-24 text-right">
                 ৳{toBanglaDigits(nightShiftAmount.toLocaleString('en-US'))}/-
               </span>
             </div>
@@ -545,7 +545,7 @@ export default function MyDutySummaryCard() {
 
         {/* Grand Total Row */}
         <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4 mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
+          <div className="text-xs sm:text-[13px] font-bold text-slate-600 dark:text-slate-300">
             {filterType === 'all' && 'অর্জিত সর্বমোট ব্যক্তিগত ডিউটি ও প্রদেয় ভাতা:'}
             {filterType === 'month' && (
               selectedMonths.length === 0
@@ -556,11 +556,11 @@ export default function MyDutySummaryCard() {
             )}
             {filterType === 'latest_bill' && 'লেটেস্ট অফিস আদেশের আওতাধীন প্রদেয় ভাতা:'}
           </div>
-          <div className="text-right flex items-center justify-end gap-6 text-xs font-sans">
-            <span className="px-3 py-1 rounded-xl bg-indigo-650 text-white font-extrabold text-xs">
+          <div className="text-right flex items-center justify-end gap-5 text-xs font-sans">
+            <span className="px-3.5 py-1 rounded-xl bg-indigo-650 text-white font-black text-xs tabular-nums shadow-xs">
               {toBanglaDigits(filteredCount)} দিন
             </span>
-            <span className="font-black text-indigo-650 dark:text-indigo-400 text-base">
+            <span className="app-amount-text text-indigo-650 dark:text-indigo-400 text-base sm:text-lg font-black">
               ৳{toBanglaDigits(totalAmountSum.toLocaleString('en-US'))}/- টাকা
             </span>
           </div>

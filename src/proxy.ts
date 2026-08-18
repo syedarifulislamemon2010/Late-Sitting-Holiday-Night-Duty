@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Simple in-memory token bucket rate limiter
+// High-performance token bucket rate limiter for production stability
 const rateLimitMap = new Map<string, { tokens: number; lastRefilled: number }>();
-const BUCKET_CAPACITY = 100;
-const REFILL_RATE_MS = 1000; // Refill 1 token every second
+const BUCKET_CAPACITY = 5000;
+const REFILL_RATE_MS = 10; // Refill 100 tokens per second
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // Clean stale entries every 5 minutes
 
 // Periodic cleanup to prevent memory leak
@@ -58,10 +58,12 @@ export function proxy(request: NextRequest) {
   }
 
   // Rate Limiting for API routes
-  const rateLimitExempt = ['/api/profile', '/api/auth'];
+  const rateLimitExempt = ['/api/profile', '/api/auth', '/api/notifications', '/api/ping'];
   const isExempt = rateLimitExempt.some(p => pathname.startsWith(p));
-  if (pathname.startsWith('/api/') && !isExempt) {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '127.0.0.1';
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '127.0.0.1';
+  const isLoopback = ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
+
+  if (pathname.startsWith('/api/') && !isExempt && !isLoopback) {
     const now = Date.now();
     const limit = rateLimitMap.get(ip) || { tokens: BUCKET_CAPACITY, lastRefilled: now };
 
@@ -81,7 +83,7 @@ export function proxy(request: NextRequest) {
         }),
         {
           status: 429,
-          headers: { 'Content-Type': 'application/json', 'Retry-After': '60' },
+          headers: { 'Content-Type': 'application/json', 'Retry-After': '1' },
         }
       );
     }

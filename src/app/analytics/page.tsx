@@ -378,164 +378,189 @@ export default function AnalyticsDashboardPage() {
         </div>
       )}
 
-      {/* KPI Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
-          {/* Card 1: Total Released Bills */}
-          <div className="bg-gradient-to-br from-white to-blue-50/20 dark:from-slate-900 dark:to-blue-950/20 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">মোট রিলিজ হওয়া বিল</span>
-              <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{toBanglaDigits(summary.totalReleasedBills.toString())} টি</p>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-primary flex items-center justify-center text-xl">
-              📊
-            </div>
-          </div>
-
-          {/* Card 2: Total Duties Completed */}
-          <div className="bg-gradient-to-br from-white to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/20 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">মোট ডিউটি সম্পন্ন</span>
-              <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{toBanglaDigits(summary.totalDutiesCompleted.toString())} টি</p>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl">
-              ✅
-            </div>
-          </div>
-
-          {/* Card 3: Personal Released Bills */}
-          {hasEmployeeProfile && (
-            <div className="bg-gradient-to-br from-white to-emerald-50/20 dark:from-slate-900 dark:to-emerald-950/20 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
+      {/* KPI Summary Cards (Pure Organization & Cell-level Aggregates) */}
+      {summary && (() => {
+        const totalOrgBudget = cellBudget.reduce((acc, c) => acc + (c.totalAllowance || 0), 0);
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 font-sans">
+            {/* Card 1: Total Released Bills */}
+            <div className="bg-gradient-to-br from-white to-blue-50/25 dark:from-slate-900 dark:to-blue-950/20 rounded-2xl p-5 border-y border-r border-blue-100/70 dark:border-blue-900/40 border-l-4 border-l-blue-500 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none hover:shadow-md transition-all duration-normal ease-premium flex items-center justify-between gap-4">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">আমার রিলিজ হওয়া বিল</span>
-                <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{toBanglaDigits((summary.myBillCount || 0).toString())} টি</p>
+                <span className="app-card-heading text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মোট রিলিজ হওয়া বিল</span>
+                <p className="app-metric-hero text-slate-850 dark:text-slate-100">{toBanglaDigits(summary.totalReleasedBills.toString())} টি</p>
+                <p className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold">সকল সেল ভিত্তিক চূড়ান্ত আদেশ</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl">
-                📄
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl shadow-xs border border-blue-100 dark:border-blue-900/50 shrink-0">
+                📊
               </div>
             </div>
-          )}
 
-          {/* Card 4: Personal Total Allowance Earnings */}
-          {hasEmployeeProfile && (
-            <div className="bg-gradient-to-br from-white to-amber-50/20 dark:from-slate-900 dark:to-amber-950/20 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
+            {/* Card 2: Total Duties Completed */}
+            <div className="bg-gradient-to-br from-white to-indigo-50/25 dark:from-slate-900 dark:to-indigo-950/20 rounded-2xl p-5 border-y border-r border-indigo-100/70 dark:border-indigo-900/40 border-l-4 border-l-indigo-500 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none hover:shadow-md transition-all duration-normal ease-premium flex items-center justify-between gap-4">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">আমার মোট প্রাপ্ত ভাতা</span>
-                <p className="text-2xl font-black text-slate-800 dark:text-slate-100">৳ {toBanglaDigits((summary.myTotalEarnings || 0).toLocaleString())}/-</p>
+                <span className="app-card-heading text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মোট ডিউটি সম্পন্ন</span>
+                <p className="app-metric-hero text-slate-850 dark:text-slate-100">{toBanglaDigits(summary.totalDutiesCompleted.toString())} টি</p>
+                <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">লেট, হলিডে ও নাইট ডিউটি</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl font-bold">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl shadow-xs border border-indigo-100 dark:border-indigo-900/50 shrink-0">
+                ✅
+              </div>
+            </div>
+
+            {/* Card 3: Total Org Allowance / Budget */}
+            <div className="bg-gradient-to-br from-white to-emerald-50/25 dark:from-slate-900 dark:to-emerald-950/20 rounded-2xl p-5 border-y border-r border-emerald-100/70 dark:border-emerald-900/40 border-l-4 border-l-emerald-500 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none hover:shadow-md transition-all duration-normal ease-premium flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <span className="app-card-heading text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মোট অনুমোদিত ভাতা খরচ</span>
+                <p className="app-metric-hero text-slate-850 dark:text-slate-100">৳ {toBanglaDigits(totalOrgBudget.toLocaleString())}/-</p>
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">বাজেট ও ভাতা ব্যয় বিভাজন</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl font-bold shadow-xs border border-emerald-100 dark:border-emerald-900/50 shrink-0">
                 ৳
               </div>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
-      {/* 2. Filter Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-20">
-        <div className="flex items-center gap-2 text-slate-700 font-bold text-xs">
-          <Filter size={16} className="text-primary" />
-          <span>ডিউটি ও বিল ফিল্টারিং:</span>
-        </div>
+      {/* 2. Filter Bar with Active State Feedback */}
+      {(() => {
+        const isCellActive = selectedCellId !== 'all';
+        const isDutyTypeActive = selectedDutyTypes.length > 0;
+        const isMonthActive = selectedMonths.length > 0;
+        const isYearActive = selectedYear !== '2026';
+        const isReleaseDateActive = selectedReleaseDate !== '';
+        const hasActiveFilters = isCellActive || isDutyTypeActive || isMonthActive || isYearActive || isReleaseDateActive;
 
-        <div className="flex flex-wrap items-center gap-4">
-          
-          {/* Cell Filter - Only shown for ADMIN role */}
-          {currentUser?.role === 'ADMIN' && (
-            <>
-              <div className="flex items-center gap-2 animate-in fade-in">
-                <label className="text-[10px] text-slate-400 font-bold uppercase font-sans">সেল</label>
+        return (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-20">
+            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs">
+              <Filter size={16} className="text-primary" />
+              <span>ডিউটি ও বিল ফিল্টারিং:</span>
+              {hasActiveFilters && (
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3.5">
+              
+              {/* Cell Filter - Only shown for ADMIN role */}
+              {currentUser?.role === 'ADMIN' && (
+                <>
+                  <div className="flex items-center gap-1.5 animate-in fade-in">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase font-sans">সেল</label>
+                    <div className="relative">
+                      <select
+                        value={selectedCellId}
+                        onChange={(e) => setSelectedCellId(e.target.value)}
+                        className={`px-3 py-1.5 border rounded-xl text-xs font-semibold outline-none font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 cursor-pointer transition-all ${
+                          isCellActive 
+                            ? 'border-primary ring-1 ring-primary/40 bg-blue-50/20 dark:bg-blue-950/20 text-primary font-bold' 
+                            : 'border-slate-200 dark:border-slate-800 focus:border-primary'
+                        }`}
+                      >
+                        <option value="all">ওভারল (সব সেল)</option>
+                        {cellsList.map((cell) => (
+                          <option key={cell.id} value={String(cell.id)}>
+                            {cell.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
+                </>
+              )}
+
+              {/* Duty Type Filter */}
+              <div className="flex items-center gap-1.5 animate-in fade-in">
+                <label className="text-[10px] text-slate-450 font-bold uppercase dark:text-slate-400">ডিউটি ধরন</label>
+                <MultiSelect
+                  options={DUTY_TYPE_OPTIONS}
+                  selectedValues={selectedDutyTypes}
+                  onChange={setSelectedDutyTypes}
+                  placeholder="সিলেক্ট করুন"
+                />
+              </div>
+
+              <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
+
+              {/* Month Filter */}
+              <div className="flex items-center gap-1.5 animate-in fade-in">
+                <label className="text-[10px] text-slate-455 font-bold uppercase dark:text-slate-400">মাস</label>
+                <MultiSelect
+                  options={monthsOptions}
+                  selectedValues={selectedMonths}
+                  onChange={setSelectedMonths}
+                  placeholder="সিলেক্ট করুন"
+                />
+              </div>
+
+              <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
+
+              {/* Year Filter */}
+              <div className="flex items-center gap-1.5">
+                <label className="text-[10px] text-slate-450 font-bold uppercase dark:text-slate-400">বছর</label>
                 <select
-                  value={selectedCellId}
-                  onChange={(e) => setSelectedCellId(e.target.value)}
-                  className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100"
+                  value={selectedYear}
+                  onChange={(e) => {
+                    setSelectedYear(e.target.value);
+                    setSelectedMonths([]); // clear selected months when year changes
+                  }}
+                  className={`px-3 py-1.5 border rounded-xl text-xs font-semibold outline-none font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 cursor-pointer transition-all ${
+                    isYearActive 
+                      ? 'border-primary ring-1 ring-primary/40 bg-blue-50/20 dark:bg-blue-950/20 text-primary font-bold' 
+                      : 'border-slate-200 dark:border-slate-800 focus:border-primary'
+                  }`}
                 >
-                  <option value="all">ওভারল (সব সেল)</option>
-                  {cellsList.map((cell) => (
-                    <option key={cell.id} value={String(cell.id)}>
-                      {cell.name}
-                    </option>
-                  ))}
+                  <option value="2026">২০২৬</option>
+                  <option value="2025">২০২৫</option>
+                  <option value="2024">২০২৪</option>
                 </select>
               </div>
+
               <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
-            </>
-          )}
 
-          {/* Duty Type Filter */}
-          <div className="flex items-center gap-2 animate-in fade-in">
-            <label className="text-[10px] text-slate-450 font-bold uppercase dark:text-slate-400">ডিউটি ধরন</label>
-            <MultiSelect
-              options={DUTY_TYPE_OPTIONS}
-              selectedValues={selectedDutyTypes}
-              onChange={setSelectedDutyTypes}
-              placeholder="সিলেক্ট করুন"
-            />
+              {/* Bill Release Date Filter */}
+              <div className="flex items-center gap-1.5">
+                <label className="text-[10px] text-slate-450 font-bold uppercase font-sans dark:text-slate-400">বিল ছাড়ার তারিখ</label>
+                <select
+                  value={selectedReleaseDate}
+                  onChange={(e) => setSelectedReleaseDate(e.target.value)}
+                  className={`px-3 py-1.5 border rounded-xl text-xs font-semibold outline-none font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 animate-in fade-in cursor-pointer transition-all ${
+                    isReleaseDateActive 
+                      ? 'border-primary ring-1 ring-primary/40 bg-blue-50/20 dark:bg-blue-950/20 text-primary font-bold' 
+                      : 'border-slate-200 dark:border-slate-800 focus:border-primary'
+                  }`}
+                >
+                  <option value="">সর্বশেষ তারিখ {resolvedReleaseDate ? `(${formatBengaliDate(resolvedReleaseDate)})` : ''}</option>
+                  {availableReleaseDates.map((date) => (
+                    <option key={date} value={date}>
+                      {formatBengaliDate(date)}
+                    </option>
+                  ))}
+                  <option value="all">সকল তারিখের বিল (All Bills)</option>
+                </select>
+              </div>
+
+              {/* Reset Button - Prominent when filters active */}
+              {hasActiveFilters ? (
+                <button
+                  onClick={clearFilters}
+                  className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl border border-rose-200 dark:border-rose-900/50 cursor-pointer transition-all shadow-xs flex items-center gap-1 animate-in fade-in"
+                >
+                  <X size={13} />
+                  <span>রিসেট</span>
+                </button>
+              ) : (
+                <span className="text-[11px] text-slate-400 select-none hidden lg:inline font-sans">
+                  ডিফল্ট ফিল্টার
+                </span>
+              )}
+
+            </div>
           </div>
-
-          <span className="text-slate-355 dark:text-slate-700 hidden sm:inline">|</span>
-
-          {/* Month Filter */}
-          <div className="flex items-center gap-2 animate-in fade-in">
-            <label className="text-[10px] text-slate-455 font-bold uppercase dark:text-slate-400">মাস</label>
-            <MultiSelect
-              options={monthsOptions}
-              selectedValues={selectedMonths}
-              onChange={setSelectedMonths}
-              placeholder="সিলেক্ট করুন"
-            />
-          </div>
-
-          <span className="text-slate-355 dark:text-slate-700 hidden sm:inline">|</span>
-
-          {/* Year Filter */}
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] text-slate-450 font-bold uppercase dark:text-slate-400">বছর</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => {
-                setSelectedYear(e.target.value);
-                setSelectedMonths([]); // clear selected months when year changes
-              }}
-              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 cursor-pointer"
-            >
-              <option value="2026">২০২৬</option>
-              <option value="2025">২০২৫</option>
-              <option value="2024">২০২৪</option>
-            </select>
-          </div>
-
-          <span className="text-slate-355 dark:text-slate-700 hidden sm:inline">|</span>
-
-          {/* Bill Release Date Filter */}
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] text-slate-450 font-bold uppercase font-sans dark:text-slate-400">বিল ছাড়ার তারিখ</label>
-            <select
-              value={selectedReleaseDate}
-              onChange={(e) => setSelectedReleaseDate(e.target.value)}
-              className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-primary font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 animate-in fade-in cursor-pointer"
-            >
-              <option value="">সর্বশেষ তারিখ {resolvedReleaseDate ? `(${formatBengaliDate(resolvedReleaseDate)})` : ''}</option>
-              {availableReleaseDates.map((date) => (
-                <option key={date} value={date}>
-                  {formatBengaliDate(date)}
-                </option>
-              ))}
-              <option value="all">সকল তারিখের বিল (All Bills)</option>
-            </select>
-          </div>
-
-          {(selectedMonths.length > 0 || selectedYear !== '2026' || selectedDutyTypes.length > 0 || selectedCellId !== 'all' || selectedReleaseDate !== '') && (
-            <button
-              onClick={clearFilters}
-              className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer transition-all animate-in fade-in"
-            >
-              রিসেট
-            </button>
-          )}
-
-        </div>
-      </div>
+        );
+      })()}
 
       {/* 3. Main Data Content Area */}
       {error ? (

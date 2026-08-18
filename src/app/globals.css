@@ -92,7 +92,10 @@
   --surface-bright: #ffffff;
   --text-muted: #64748b;
   --text-caption: #94a3b8;
-  --border-subtle: #cbd5e1;
+  --font-size-metric-hero: 26px;
+  --font-size-card-title: 16px;
+  --font-size-body: 13px;
+  --font-size-amount: 15px;
 }
 
 .dark {
@@ -109,6 +112,10 @@
   --text-muted: #94a3b8;
   --text-caption: #64748b;
   --border-subtle: #334155;
+  --font-size-metric-hero: 26px;
+  --font-size-card-title: 16px;
+  --font-size-body: 13px;
+  --font-size-amount: 15px;
 }
 
 body {
@@ -120,7 +127,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  letter-spacing: -0.01em;
+  letter-spacing: normal;
 }
 
 /* Centralized Typography Design System Tokens */
@@ -131,15 +138,21 @@ body {
 }
 
 .app-section-title {
-  font-size: 22px !important;
+  font-size: 20px !important;
   font-weight: 700 !important;
   line-height: 1.4 !important;
 }
 
 .app-card-title {
-  font-size: 16px !important;
+  font-size: var(--font-size-card-title, 16px) !important;
   font-weight: 600 !important;
   line-height: 1.4 !important;
+}
+
+.app-card-heading {
+  font-size: var(--font-size-card-title, 16px) !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
 }
 
 .app-sidebar-text {
@@ -154,8 +167,15 @@ body {
   line-height: 1.5 !important;
 }
 
+.app-body-subtext {
+  font-size: var(--font-size-body, 13px) !important;
+  font-weight: 400 !important;
+  line-height: 1.45 !important;
+  color: var(--text-muted);
+}
+
 .app-metadata-text {
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-weight: 400 !important;
   line-height: 1.4 !important;
 }
@@ -164,6 +184,23 @@ body {
   font-size: 32px !important;
   font-weight: 700 !important;
   line-height: 1.2 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-metric-hero {
+  font-size: var(--font-size-metric-hero, 26px) !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.app-amount-text {
+  font-size: var(--font-size-amount, 15px) !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 .app-footer-text {
