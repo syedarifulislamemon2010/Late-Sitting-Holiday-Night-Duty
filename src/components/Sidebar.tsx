@@ -16,20 +16,17 @@ import {
   Trash2,
   CalendarCheck,
   Utensils,
-  Languages,
   ChevronLeft,
   ClipboardList,
   AlertCircle,
   TrendingUp,
   HardDrive,
-  ClipboardPen,
-  LogOut,
+  FileCheck,
   Database,
   HelpCircle
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useLanguage } from '@/context/LanguageContext';
-
 
 interface UserSession {
   id: number;
@@ -38,7 +35,6 @@ interface UserSession {
   role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   cells: { id: number; name: string }[];
 }
-
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -82,24 +78,13 @@ export default function Sidebar() {
     };
   }, []);
 
-
   const toggleCollapse = () => {
     const nextState = !isCollapsed;
     setIsCollapsed(nextState);
     localStorage.setItem('sidebar-collapsed', String(nextState));
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut({ redirect: false });
-      localStorage.removeItem('currentUser');
-      window.location.href = '/';
-    } catch (err) {
-      logger.error('Logout error:', err);
-    }
-  };
-
-  const { lang, t } = useLanguage();
+  const { lang } = useLanguage();
   const isEn = lang === 'en';
 
   const isEmployee = currentUser?.role === 'EMPLOYEE';
@@ -127,7 +112,8 @@ export default function Sidebar() {
       title: isEn ? 'Administration' : 'প্রশাসনিক কার্যক্রম',
       items: [
         { name: isEn ? 'Employees' : 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
-        { name: isEn ? 'Duty Orders & Roster' : 'লেট হলি নাইট অর্ডার', href: '/roster', icon: CalendarRange }
+        { name: isEn ? 'Duty Orders & Roster' : 'লেট হলি নাইট অর্ডার', href: '/roster', icon: CalendarRange },
+        { name: isEn ? 'Documents Archive' : 'নথিপত্র আর্কাইভ', href: '/documents', icon: FileText }
       ]
     },
     {
@@ -143,7 +129,7 @@ export default function Sidebar() {
       items: [
         { name: isEn ? 'Leave Application' : 'ছুটির আবেদন', href: '/leave', icon: CalendarCheck },
         { name: isEn ? 'Hardware Requisition' : 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive },
-        { name: isEn ? 'TAZ Committee Form' : 'TAZ কমিটি ফরম', href: '/taz-committee-form', icon: ClipboardPen }
+        { name: isEn ? 'TAZ Committee Form' : 'TAZ কমিটি ফরম', href: '/taz-committee-form', icon: FileCheck }
       ]
     },
     {
@@ -159,7 +145,6 @@ export default function Sidebar() {
     {
       title: isEn ? 'Other Tools' : 'অন্যান্য',
       items: [
-        { name: isEn ? 'Documents Archive' : 'নথিপত্র আর্কাইভ', href: '/documents', icon: FileText },
         { name: isEn ? 'Recycle Bin' : 'রিসাইকেল বিন', href: '/trash', icon: Trash2 },
         { name: isEn ? 'Help & Guide' : 'সাহায্য ও নির্দেশিকা', href: '/help', icon: HelpCircle }
       ]
@@ -168,11 +153,10 @@ export default function Sidebar() {
 
   const sections = rawSections.filter(section => section.items.length > 0);
 
-
   return (
     <>
       {/* Mobile Top Navigation */}
-      <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm">
+      <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs">
         <Link 
           href={isEmployee ? "/my-portal" : "/dashboard"} 
           onClick={(e) => {
@@ -182,11 +166,12 @@ export default function Sidebar() {
               setShowWarningModal(true);
             }
           }}
-
           className="flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
         >
-          <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={32} height={32} className="shrink-0 object-contain" />
-          <h1 className="font-semibold text-slate-950 dark:text-slate-100 text-xs sm:text-sm leading-tight whitespace-normal">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h1>
+          <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={28} height={28} className="shrink-0 object-contain" />
+          <h1 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-tight">
+            {isEn ? 'LHN Duty Portal' : 'লেট সিটিং, ছুটি ও নাইট ডিউটি পোর্টাল'}
+          </h1>
         </Link>
         <button 
           onClick={() => setIsOpen(!isOpen)}
@@ -213,10 +198,10 @@ export default function Sidebar() {
           isMounted && isCollapsed ? 'lg:w-20' : 'lg:w-64'
         } ${isOpen ? 'w-72 sm:w-80' : ''}`}
       >
-        {/* Collapse toggle button on desktop - Floats on the right middle edge */}
+        {/* Collapse toggle button on desktop - Floats on the right edge */}
         <button 
           onClick={toggleCollapse}
-          className={`hidden lg:flex absolute top-[10%] -right-3.5 items-center justify-center w-7 h-7 rounded-xl bg-white dark:bg-slate-805 border border-slate-200/80 dark:border-slate-700/80 text-slate-500 dark:text-slate-400 hover:text-indigo-650 dark:hover:text-sky-400 shadow-md hover:shadow-lg z-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 hover:scale-105 active:scale-95 ${
+          className={`hidden lg:flex absolute top-6 -right-3.5 items-center justify-center w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-sky-400 shadow-md hover:shadow-lg z-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300 hover:scale-105 active:scale-95 ${
             isCollapsed ? 'rotate-180' : ''
           }`}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -225,9 +210,9 @@ export default function Sidebar() {
           <ChevronLeft size={14} className="shrink-0" />
         </button>
 
-        {/* Sidebar Header Logo */}
-        <div className={`flex items-center py-5 border-b border-slate-200/60 dark:border-slate-800/60 ${
-          isMounted && isCollapsed ? 'lg:px-3 lg:justify-center' : 'px-6 justify-between'
+        {/* Sidebar Header Logo — Compact 2-Line Header */}
+        <div className={`flex items-center py-4 border-b border-slate-200/60 dark:border-slate-800/60 ${
+          isMounted && isCollapsed ? 'lg:px-3 lg:justify-center' : 'px-5 justify-between'
         }`}>
           <Link 
             href={isEmployee ? "/my-portal" : "/"} 
@@ -238,22 +223,26 @@ export default function Sidebar() {
                 setShowWarningModal(true);
               }
             }}
-            className="flex items-center group cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg w-full"
+            className="flex items-center group cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg w-full gap-2.5"
           >
             <Image 
               src="/janata-bank-logo-real.svg" 
               alt="Janata Bank Logo" 
-              width={36}
-              height={36}
+              width={34}
+              height={34}
               className="shrink-0 object-contain transition-transform group-hover:scale-105" 
             />
             <div className={`transition-all duration-200 overflow-hidden ${
               isMounted && isCollapsed 
                 ? 'opacity-0 w-0 ml-0 whitespace-nowrap' 
-                : 'opacity-100 w-full ml-3 whitespace-normal'
+                : 'opacity-100 w-full whitespace-normal'
             }`}>
-              <h1 className="font-extrabold text-slate-950 dark:text-slate-100 text-[13px] sm:text-[14px] leading-tight">লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল</h1>
-              <p className="text-[10px] font-bold text-indigo-650 dark:text-sky-400 uppercase tracking-wider mt-1">জনতা ব্যাংক পিএলসি.</p>
+              <h1 className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-[13px] leading-tight font-sans">
+                {isEn ? 'LHN Duty Portal' : 'লেট সিটিং, ছুটি ও নাইট ডিউটি পোর্টাল'}
+              </h1>
+              <p className="text-[10px] font-extrabold text-primary dark:text-sky-400 uppercase tracking-wider mt-0.5 font-sans">
+                {isEn ? 'Janata Bank PLC.' : 'জনতা ব্যাংক পিএলসি.'}
+              </p>
             </div>
           </Link>
           
@@ -266,34 +255,36 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Sidebar Navigation Links */}
+        {/* Sidebar Navigation Links with Enhanced Group Spacing */}
         <nav 
           role="navigation" 
           aria-label="Main navigation" 
-          className={`flex-1 py-6 overflow-y-auto no-scrollbar space-y-4 ${
-          isMounted && isCollapsed ? 'px-2' : 'px-4'
+          className={`flex-1 py-4 overflow-y-auto no-scrollbar space-y-4 ${
+          isMounted && isCollapsed ? 'px-2' : 'px-3'
         }`}>
           {sections.map((section, secIdx) => (
-            <div key={section.title} className="space-y-1.5">
-              {/* Clean Divider System / Title Transition */}
+            <div key={section.title} className="space-y-1">
+              {/* Group Title / Divider */}
               <div className="transition-all duration-300">
                 {isMounted && isCollapsed ? (
                   secIdx > 0 ? (
-                    <div className="border-t border-slate-205 dark:border-slate-800 my-2 mx-3" />
+                    <div className="border-t border-slate-200/60 dark:border-slate-800 my-2 mx-3" />
                   ) : (
-                    <div className="h-2" />
+                    <div className="h-1" />
                   )
                 ) : (
                   section.items.length > 0 && (
-                    <h3 className="px-4 text-[10px] font-black tracking-widest text-slate-400/80 dark:text-slate-500 uppercase pt-4 pb-1.5 whitespace-nowrap flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
-                      <span>{section.title}</span>
-                    </h3>
+                    <div className={secIdx > 0 ? 'pt-3 pb-1' : 'pt-1 pb-1'}>
+                      <h3 className="px-3 text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase whitespace-nowrap flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
+                        <span>{section.title}</span>
+                      </h3>
+                    </div>
                   )
                 )}
               </div>
               
-              <div className="space-y-1" role="group" aria-expanded={!isCollapsed}>
+              <div className="space-y-0.5" role="group" aria-expanded={!isCollapsed}>
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
@@ -309,40 +300,40 @@ export default function Sidebar() {
                           setShowWarningModal(true);
                         }
                       }}
-                      className={`flex items-center transition-all duration-300 ease-in-out group relative rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 mx-2 ${
+                      className={`flex items-center transition-all duration-200 ease-in-out group relative rounded-xl focus:outline-none focus:ring-2 focus:ring-primary ${
                         isMounted && isCollapsed 
-                          ? 'justify-center py-3 px-0' 
-                          : 'px-3.5 py-3 hover:pl-5'
+                          ? 'justify-center py-2.5 px-0 mx-1' 
+                          : 'px-3 py-2.5 hover:pl-4 mx-1'
                       } ${
                         isActive 
-                          ? 'bg-gradient-to-r from-indigo-50 to-blue-50/20 dark:from-indigo-950/20 dark:to-blue-950/5 text-indigo-650 dark:text-sky-400 font-black' 
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-805/30 hover:text-slate-900 dark:hover:text-slate-100'
+                          ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-sky-300 font-extrabold shadow-2xs' 
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-100 font-medium'
                       }`}
                       aria-current={isActive ? 'page' : undefined}
                     >
-                      {/* Vertical Indicator Line */}
+                      {/* Left Accent Bar for Active Item */}
                       {isActive && !isCollapsed && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-indigo-650 dark:bg-sky-400 rounded-full animate-pulse" />
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary dark:bg-sky-400 rounded-r-full" />
                       )}
                       
                       <Icon 
-                        size={18} 
-                        className={`transition-transform duration-300 group-hover:scale-110 shrink-0 ${
-                          isActive ? 'text-indigo-650 dark:text-sky-400' : 'text-slate-450 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'
+                        size={17} 
+                        className={`transition-transform duration-200 group-hover:scale-105 shrink-0 ${
+                          isActive ? 'text-primary dark:text-sky-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'
                         }`} 
                       />
                       
-                      <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${
+                      <span className={`transition-all duration-200 whitespace-nowrap overflow-hidden ${
                         isMounted && isCollapsed 
                           ? 'opacity-0 w-0 ml-0' 
-                          : 'opacity-100 w-auto ml-3 font-semibold text-xs sm:text-[13px]'
+                          : 'opacity-100 w-auto ml-3 text-xs sm:text-[13px]'
                       }`}>
                         {item.name}
                       </span>
 
-                      {/* Interactive Hover Tooltip when collapsed */}
+                      {/* Hover Tooltip for Collapsed Mode */}
                       {isMounted && isCollapsed && (
-                        <div className="absolute left-16 opacity-0 pointer-events-none invisible group-hover:opacity-100 group-hover:visible group-hover:left-20 transition-all duration-300 whitespace-nowrap z-50 shadow-xl px-3 py-2 bg-slate-950/95 dark:bg-slate-950/95 border border-slate-800 text-white text-[11px] font-bold rounded-xl leading-none">
+                        <div className="absolute left-16 opacity-0 pointer-events-none invisible group-hover:opacity-100 group-hover:visible group-hover:left-18 transition-all duration-200 whitespace-nowrap z-50 shadow-xl px-3 py-1.5 bg-slate-950/95 dark:bg-slate-950/95 border border-slate-800 text-white text-[11px] font-bold rounded-xl leading-none">
                           {item.name}
                         </div>
                       )}
@@ -357,29 +348,29 @@ export default function Sidebar() {
 
       {/* Styled Unsaved Changes Warning Modal */}
       {showWarningModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800 space-y-6 text-center transform scale-100 transition-all font-sans">
-            <div className="mx-auto w-16 h-16 bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center">
-              <AlertCircle size={32} />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800 space-y-5 text-center transform scale-100 transition-all font-sans">
+            <div className="mx-auto w-14 h-14 bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center">
+              <AlertCircle size={28} />
             </div>
             
-            <div className="space-y-2">
-              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
-                আপনি যে পেইজে আছেন, সেখানে থাকতে চান?
+            <div className="space-y-1.5">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                আপনি কি এই পেজে থাকতে চান?
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 আপনার কোনো পরিবর্তন অসংরক্ষিত থাকতে পারে। পেজ পরিবর্তন করলে পরিবর্তনগুলো মুছে যাবে।
               </p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2.5 pt-1">
               <button
                 onClick={() => {
                   setShowWarningModal(false);
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer border border-transparent"
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer"
               >
-                হ্যাঁ
+                হ্যাঁ, পেজে থাকুন
               </button>
               <button
                 onClick={() => {
@@ -389,9 +380,9 @@ export default function Sidebar() {
                   setShowWarningModal(false);
                   window.location.href = targetHref;
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 text-xs font-bold transition-all border border-red-100 dark:border-red-900/40 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-bold transition-all border border-rose-200 dark:border-rose-900/40 cursor-pointer"
               >
-                না
+                পেজ পরিবর্তন করুন
               </button>
             </div>
           </div>
