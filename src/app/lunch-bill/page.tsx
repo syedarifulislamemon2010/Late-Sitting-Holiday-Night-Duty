@@ -1,7 +1,7 @@
 'use client';
 import { LUNCH_BILL_RATE, REVENUE_STAMP } from '@/constants/billing';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { 
   Printer, 
@@ -14,6 +14,9 @@ import {
   Sliders,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
   X,
   Filter,
   Search,
@@ -133,6 +136,37 @@ export default function LunchBillPage() {
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     return `${today.getFullYear()}-${mm}`;
   });
+
+  // Custom Bengali Month Picker State
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [currentPickerYear, setCurrentPickerYear] = useState<number>(() => {
+    const today = new Date();
+    return today.getFullYear();
+  });
+  const monthPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close month picker when clicked outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
+        setIsMonthPickerOpen(false);
+      }
+    };
+    if (isMonthPickerOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMonthPickerOpen]);
+
+  // Keep picker year synchronized with selectedMonth
+  useEffect(() => {
+    if (selectedMonth && selectedMonth.includes('-')) {
+      const yr = parseInt(selectedMonth.split('-')[0], 10);
+      if (!isNaN(yr)) setCurrentPickerYear(yr);
+    }
+  }, [selectedMonth]);
   
   const [workingDays, setWorkingDays] = useState<number>(17);
   const [isAutoWorkingDays, setIsAutoWorkingDays] = useState(true);
@@ -793,16 +827,139 @@ export default function LunchBillPage() {
         <div className="glass-card p-6 rounded-2xl space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
-            {/* Month Selection */}
-            <div className="space-y-2">
-              <label htmlFor="selectedMonth" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">মাস নির্বাচন করুন</label>
-              <input
-                id="selectedMonth"
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold font-sans"
-              />
+            {/* Month Selection — Custom Modern Bengali Month Picker */}
+            <div className="space-y-2 relative" ref={monthPickerRef}>
+              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                মাস নির্বাচন করুন
+              </label>
+              
+              {/* Trigger Button */}
+              <button
+                type="button"
+                onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 hover:border-primary/80 dark:hover:border-primary/80 rounded-xl text-sm font-bold font-sans flex items-center justify-between text-slate-800 dark:text-slate-100 shadow-xs hover:shadow-md transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <Calendar size={15} />
+                  </div>
+                  <span className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">
+                    {getBanglaMonthName(selectedMonth) || 'মাস নির্বাচন করুন'}
+                  </span>
+                </div>
+                
+                <ChevronDown 
+                  size={16} 
+                  className={`text-slate-400 dark:text-slate-500 transition-transform duration-200 ${
+                    isMonthPickerOpen ? 'rotate-180 text-primary' : ''
+                  }`} 
+                />
+              </button>
+
+              {/* Month Picker Dropdown Popover */}
+              {isMonthPickerOpen && (
+                <div className="absolute left-0 mt-2 w-72 sm:w-80 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200 font-sans">
+                  
+                  {/* Popover Header: Year Selector */}
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPickerYear(prev => prev - 1)}
+                      className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+                      title="পূর্ববর্তী বছর"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-black text-slate-900 dark:text-slate-100 font-sans">
+                        {toBanglaDigits(currentPickerYear)} সাল
+                      </span>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPickerYear(prev => prev + 1)}
+                      className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+                      title="পরবর্তী বছর"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+
+                  {/* 12 Months Grid */}
+                  <div className="grid grid-cols-3 gap-2 py-3.5">
+                    {[
+                      { name: 'জানুয়ারি', num: '01' },
+                      { name: 'ফেব্রুয়ারি', num: '02' },
+                      { name: 'মার্চ', num: '03' },
+                      { name: 'এপ্রিল', num: '04' },
+                      { name: 'মে', num: '05' },
+                      { name: 'জুন', num: '06' },
+                      { name: 'জুলাই', num: '07' },
+                      { name: 'আগস্ট', num: '08' },
+                      { name: 'সেপ্টেম্বর', num: '09' },
+                      { name: 'অক্টোবর', num: '10' },
+                      { name: 'নভেম্বর', num: '11' },
+                      { name: 'ডিসেম্বর', num: '12' }
+                    ].map(m => {
+                      const ymStr = `${currentPickerYear}-${m.num}`;
+                      const isSelected = selectedMonth === ymStr;
+                      const today = new Date();
+                      const isCurrentMonth = today.getFullYear() === currentPickerYear && String(today.getMonth() + 1).padStart(2, '0') === m.num;
+
+                      return (
+                        <button
+                          type="button"
+                          key={ymStr}
+                          onClick={() => {
+                            setSelectedMonth(ymStr);
+                            setIsMonthPickerOpen(false);
+                          }}
+                          className={`py-2.5 px-2 text-xs rounded-xl font-bold transition-all relative cursor-pointer text-center ${
+                            isSelected
+                              ? 'bg-primary text-white font-extrabold shadow-md shadow-primary/25 scale-[1.03]'
+                              : isCurrentMonth
+                              ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-sky-300 border border-primary/30 font-extrabold hover:bg-primary/20'
+                              : 'bg-slate-50/80 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800'
+                          }`}
+                        >
+                          {m.name}
+                          {isCurrentMonth && !isSelected && (
+                            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Popover Footer */}
+                  <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const today = new Date();
+                        const mm = String(today.getMonth() + 1).padStart(2, '0');
+                        setSelectedMonth(`${today.getFullYear()}-${mm}`);
+                        setCurrentPickerYear(today.getFullYear());
+                        setIsMonthPickerOpen(false);
+                      }}
+                      className="text-xs font-bold text-primary dark:text-sky-400 hover:underline cursor-pointer"
+                    >
+                      চলতি মাস
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => setIsMonthPickerOpen(false)}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    >
+                      ঠিক আছে
+                    </button>
+                  </div>
+
+                </div>
+              )}
             </div>
 
             {/* Working Days Input */}
