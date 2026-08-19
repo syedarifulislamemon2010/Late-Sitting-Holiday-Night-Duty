@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Holiday, checkIsWorkingDay, isDateDisabledForType } from '../types';
+import { Holiday, getHolidayStatus, isDateDisabledForType } from '../types';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
 interface EmployeeCalendarPickerProps {
@@ -54,8 +54,7 @@ export default function EmployeeCalendarPicker({
     const dayName = dayNamesBn[dayOfWeek];
 
     const isSelected = (selectedDates || []).includes(dateStr);
-    const isWorking = checkIsWorkingDay(dateStr, holidays);
-    const isDbHoliday = holidays.find(h => h.date === dateStr);
+    const holidayStatus = getHolidayStatus(dateStr, holidays);
 
     cells.push({
       day,
@@ -63,8 +62,7 @@ export default function EmployeeCalendarPicker({
       dayName,
       dayOfWeek,
       isSelected,
-      isWorking,
-      isDbHoliday
+      ...holidayStatus
     });
   }
 
@@ -91,7 +89,7 @@ export default function EmployeeCalendarPicker({
       </div>
 
       {/* Month Selector Bar */}
-      <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/60 px-3 py-2 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
+      <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/60 px-4 py-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
         <button
           type="button"
           onClick={() => onPrevMonth(empId)}
@@ -116,7 +114,7 @@ export default function EmployeeCalendarPicker({
       </div>
 
       {/* Weekday headers with Red Friday & Saturday */}
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center font-bold text-xs py-1">
+      <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center font-bold text-xs py-1">
         <div className="text-slate-500 dark:text-slate-400">রবি</div>
         <div className="text-slate-500 dark:text-slate-400">সোম</div>
         <div className="text-slate-500 dark:text-slate-400">মঙ্গল</div>
@@ -127,19 +125,14 @@ export default function EmployeeCalendarPicker({
       </div>
 
       {/* Spacious, modern rounded date boxes grid */}
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 font-sans">
-        {/* Pad grid */}
+      <div className="grid grid-cols-7 gap-1.5 sm:gap-2 font-sans">
+        {/* Pad grid for initial day of month */}
         {Array.from({ length: new Date(year, month - 1, 1).getDay() }).map((_, idx) => (
-          <div key={`pad-${idx}`} className="h-9 sm:h-10" />
+          <div key={`pad-${idx}`} className="h-10 sm:h-11" />
         ))}
 
         {cells.map(c => {
-          const holidayInfo = c.isDbHoliday
-            ? c.isDbHoliday.name
-            : (c.dayOfWeek === 5 || c.dayOfWeek === 6) && !c.isWorking
-              ? 'সাপ্তাহিক ছুটি'
-              : '';
-          const isDisabled = isDateDisabledForType(c.isWorking, dutyType);
+          const isDisabled = isDateDisabledForType(c.isWorkingDay, dutyType);
 
           // Real-time leave conflict warning check
           const leaveConflict = bankId
@@ -157,12 +150,14 @@ export default function EmployeeCalendarPicker({
             ? `\n⚠️ ছুটি সংঘর্ষ: ${leaveTypeBn} (${leaveConflict.startDate.split('-').reverse().join('-')} হতে ${leaveConflict.endDate.split('-').reverse().join('-')})`
             : '';
 
+          const tooltipText = `${c.dateStr} (${c.label})${isDisabled ? ' - এই ক্যাটাগরিতে ডিজেবল' : ''}${leaveTooltip}`;
+
           return (
             <button
               type="button"
               key={c.dateStr}
               disabled={isDisabled}
-              title={`${c.dateStr} (${holidayInfo || 'কর্মদিবস'})${isDisabled ? ' - এই ক্যাটাগরির জন্য ডিজেবল' : ''}${leaveTooltip}`}
+              title={tooltipText}
               onClick={() => {
                 if (c.isSelected) {
                   onRemoveDate(empId, c.dateStr);
@@ -170,21 +165,21 @@ export default function EmployeeCalendarPicker({
                   onAddDate(empId, c.dateStr);
                 }
               }}
-              className={`relative h-9 sm:h-10 rounded-xl transition-all duration-150 flex items-center justify-center text-xs sm:text-sm font-semibold border ${
+              className={`relative h-10 sm:h-11 rounded-xl transition-all duration-150 flex items-center justify-center text-xs sm:text-sm font-semibold border ${
                 c.isSelected
                   ? 'bg-indigo-600 text-white font-extrabold shadow-sm border-indigo-600 ring-2 ring-indigo-400/30 scale-102 cursor-pointer'
                   : isDisabled
-                    ? 'bg-slate-100/40 dark:bg-slate-900/20 border-slate-200/20 dark:border-slate-800/10 text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-30'
+                    ? 'bg-slate-50/60 dark:bg-slate-950/20 border-slate-200/40 dark:border-slate-800/30 text-slate-300 dark:text-slate-650 cursor-not-allowed'
                     : leaveConflict
-                      ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 cursor-pointer'
-                      : !c.isWorking
-                        ? 'bg-slate-50/60 dark:bg-slate-950/30 border-slate-200/50 dark:border-slate-800/50 text-slate-400 dark:text-slate-500 hover:bg-slate-100/80 cursor-pointer'
-                        : 'bg-white dark:bg-slate-900 border-slate-200/70 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/30 shadow-2xs cursor-pointer'
+                      ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 cursor-pointer font-bold'
+                      : !c.isWorkingDay
+                        ? 'bg-slate-50/70 dark:bg-slate-950/30 border-slate-200/60 dark:border-slate-800/60 text-red-500 font-bold hover:bg-red-50/60 dark:hover:bg-red-950/30 cursor-pointer'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/30 shadow-2xs cursor-pointer font-bold'
               }`}
             >
-              <span>{toBanglaDigits(c.day)}</span>
-              {c.isDbHoliday && (
-                <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className={isDisabled ? 'opacity-40 font-normal' : ''}>{c.day}</span>
+              {c.isGovtHoliday && (
+                <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title={`সরকারি ছুটি: ${c.holidayName}`} />
               )}
               {leaveConflict && (
                 <span className="absolute -top-1 -right-1 flex h-2 w-2" title={`ছুটি সংঘর্ষ: ${leaveTypeBn}`}>

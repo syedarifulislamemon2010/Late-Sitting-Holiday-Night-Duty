@@ -145,38 +145,96 @@ export const LATE_SITTING_TEMPLATE = `T24 Online Banking Software Customization 
 export const NIGHT_SHIFT_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>রাত্রিকালীন (Night Shift)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
 export const HOLIDAY_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>ছুটির দিনে (Holiday)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
 
-export const checkIsWorkingDay = (dateStr: string, holidaysList: Holiday[]) => {
-  if (!dateStr) return true;
-  
-  if (dateStr === '2026-05-23') {
-    return true;
+/**
+ * Detailed holiday and weekend classification:
+ * - isGovtHoliday: Official government holiday declared in DB
+ * - isWeekend: Friday or Saturday
+ * - isWorkingDay: True if normal working day or special open working day
+ * - label: "সরকারি ছুটি: [name]", "সাপ্তাহিক ছুটি", or "কর্মদিবস"
+ */
+export const getHolidayStatus = (dateStr: string, holidaysList: Holiday[]) => {
+  if (!dateStr) {
+    return {
+      isGovtHoliday: false,
+      isWeekend: false,
+      isWorkingDay: true,
+      holidayName: '',
+      label: 'কর্মদিবস'
+    };
   }
-  
+
+  // Hardcoded special working day check
+  if (dateStr === '2026-05-23') {
+    return {
+      isGovtHoliday: false,
+      isWeekend: false,
+      isWorkingDay: true,
+      holidayName: '',
+      label: 'কর্মদিবস (বিশেষ কার্যদিবস)'
+    };
+  }
+
   const [y, m, d] = dateStr.split('-').map(Number);
   const dateObj = new Date(y, m - 1, d);
   const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
-  
-  const holiday = holidaysList.find(h => h.date === dateStr);
-  if (holiday) {
-    return holiday.isWorkingDay;
+  const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+
+  const dbHoliday = holidaysList.find(h => h.date === dateStr);
+
+  if (dbHoliday) {
+    if (dbHoliday.isWorkingDay) {
+      return {
+        isGovtHoliday: false,
+        isWeekend: false,
+        isWorkingDay: true,
+        holidayName: dbHoliday.name,
+        label: 'কর্মদিবস'
+      };
+    }
+
+    // Official DB Government Holiday
+    return {
+      isGovtHoliday: true,
+      isWeekend: isWeekend,
+      isWorkingDay: false,
+      holidayName: dbHoliday.name,
+      label: `সরকারি ছুটি: ${dbHoliday.name}`
+    };
   }
-  
-  if (dayOfWeek === 5 || dayOfWeek === 6) {
-    return false;
+
+  if (isWeekend) {
+    return {
+      isGovtHoliday: false,
+      isWeekend: true,
+      isWorkingDay: false,
+      holidayName: 'সাপ্তাহিক ছুটি',
+      label: 'সাপ্তাহিক ছুটি'
+    };
   }
-  
-  return true;
+
+  return {
+    isGovtHoliday: false,
+    isWeekend: false,
+    isWorkingDay: true,
+    holidayName: '',
+    label: 'কর্মদিবস'
+  };
+};
+
+export const checkIsWorkingDay = (dateStr: string, holidaysList: Holiday[]) => {
+  const status = getHolidayStatus(dateStr, holidaysList);
+  return status.isWorkingDay;
 };
 
 export const isDateDisabledForType = (isWorking: boolean, type: string) => {
-  if (!type) return true;
+  if (!type) return false;
   if (type === 'LATE_SITTING') {
-    return !isWorking;
+    return !isWorking; // Disabled on holidays and weekends
   }
   if (type === 'HOLIDAY') {
-    return isWorking;
+    return isWorking; // Disabled on normal working days
   }
-  return false;
+  return false; // Night shift allows any date
 };
 
 export const calculateOrderDate = (earliestDateStr: string, holidaysList: Holiday[], steps: number = 1) => {

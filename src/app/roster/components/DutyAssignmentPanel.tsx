@@ -15,6 +15,7 @@ import {
   Holiday, 
   User, 
   Duty, 
+  getHolidayStatus,
   checkIsWorkingDay 
 } from '../types';
 import EmployeeSelectCard from './EmployeeSelectCard';
@@ -488,19 +489,19 @@ export default function DutyAssignmentPanel({
                       placeholder="ডিউটির তারিখ নির্বাচন..."
                     />
                     {assignmentForm.date && (() => {
-                      const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
+                      const status = getHolidayStatus(assignmentForm.date, holidays);
                       const isLateSitting = assignmentForm.type === 'LATE_SITTING';
                       const isHoliday = assignmentForm.type === 'HOLIDAY';
                       
-                      if (isLateSitting && !isWorking) {
+                      if (isLateSitting && !status.isWorkingDay) {
                         return (
                           <p className="text-[11px] font-bold text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 p-2 rounded-lg border border-red-100/50">
                             <AlertCircle size={12} />
-                            উক্ত তারিখটি ছুটির দিন/সাপ্তাহিক ছুটি হওয়ায় লেট সিটিং ডিউটি এন্ট্রি করা যাবে না!
+                            উক্ত তারিখটি {status.label} হওয়ায় লেট সিটিং ডিউটি এন্ট্রি করা যাবে না!
                           </p>
                         );
                       }
-                      if (isHoliday && isWorking) {
+                      if (isHoliday && status.isWorkingDay) {
                         return (
                           <p className="text-[11px] font-bold text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 p-2 rounded-lg border border-red-100/50">
                             <AlertCircle size={12} />
@@ -509,17 +510,15 @@ export default function DutyAssignmentPanel({
                         );
                       }
                       
-                      const matchedHoliday = holidays.find(h => h.date === assignmentForm.date);
-                      const isWeekend = !isWorking && !matchedHoliday;
-                      if (matchedHoliday) {
+                      if (status.isGovtHoliday) {
                         return (
                           <p className="text-[11px] font-bold text-amber-600 mt-1.5 flex items-center gap-1.5 bg-amber-50 p-2 rounded-lg border border-amber-100/50">
                             <AlertCircle size={12} />
-                            সরকারি ছুটি: {matchedHoliday.name}
+                            সরকারি ছুটি: {status.holidayName}
                           </p>
                         );
                       }
-                      if (isWeekend) {
+                      if (status.isWeekend) {
                         return (
                           <p className="text-[11px] font-bold text-red-550 mt-1.5 flex items-center gap-1.5 bg-red-50/40 p-2 rounded-lg border border-red-100/20">
                             <AlertCircle size={12} />
@@ -618,25 +617,28 @@ export default function DutyAssignmentPanel({
                         return filteredFormEmployees.length > 0 ? (
                           filteredFormEmployees.map(emp => {
                             const isChecked = assignmentForm.selectedEmployeeIds.includes(emp.id);
+                            const formattedName = emp.name.startsWith('জনাব') || emp.name.startsWith('জনাবা') || emp.name.startsWith('ডাঃ') || emp.name.startsWith('ড.')
+                              ? emp.name
+                              : `জনাব ${emp.name}`;
                             return (
                               <div 
                                 key={emp.id} 
                                 onClick={() => handleEmployeeToggle(emp.id)}
-                                className={`border rounded-xl p-3 cursor-pointer transition-all duration-250 hover:shadow-md dark:hover:shadow-blue-950/20 flex items-center justify-between gap-3 ${
+                                className={`border rounded-2xl p-3.5 cursor-pointer transition-all duration-200 flex items-center justify-between gap-3 ${
                                   isChecked 
-                                    ? 'border-blue-500/40 dark:border-blue-400/40 bg-blue-50/10 dark:bg-blue-950/10 shadow-sm' 
-                                    : 'border-slate-200/60 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-slate-350 dark:hover:border-slate-650'
+                                    ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-xs' 
+                                    : 'border-indigo-200/90 dark:border-indigo-900/60 bg-white dark:bg-slate-900/80 hover:border-indigo-400'
                                 }`}
                               >
                                 <div className="flex items-start gap-3 w-full min-w-0">
-                                  <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors mt-0.5 shrink-0 ${isChecked ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
-                                    {isChecked && <Check size={10} strokeWidth={3} />}
+                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors mt-0.5 shrink-0 ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-900'}`}>
+                                    {isChecked && <Check size={12} strokeWidth={3} />}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight">{emp.name}</p>
-                                    <p className="text-xs text-slate-400 font-medium mt-0.5">{emp.designation}</p>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug break-words">{formattedName}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{emp.designation}</p>
                                     {emp.cell?.name && (
-                                      <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-1.5 font-sans">{emp.cell.name}</p>
+                                      <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-1 font-sans">{emp.cell.name}</p>
                                     )}
                                   </div>
                                 </div>

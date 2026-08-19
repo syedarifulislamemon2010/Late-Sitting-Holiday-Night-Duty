@@ -104,9 +104,9 @@ export default function CalendarDatePicker({
           isSelected 
             ? 'bg-indigo-600 text-white font-extrabold shadow-sm border-indigo-600 ring-2 ring-indigo-400/30 scale-102 cursor-pointer' 
             : isWeekendOrHoliday 
-              ? 'text-slate-400 dark:text-slate-500 bg-slate-50/70 dark:bg-slate-950/40 border-slate-200/50 dark:border-slate-800/50 cursor-pointer font-bold hover:bg-slate-100/80' 
+              ? 'text-red-500 bg-slate-50/70 dark:bg-slate-950/40 border-slate-200/50 dark:border-slate-800/50 cursor-pointer font-bold hover:bg-red-50/50' 
               : isOutOfRange
-                ? 'text-slate-300 dark:text-slate-700 bg-slate-100/40 dark:bg-slate-900/20 border-slate-200/20 cursor-not-allowed opacity-30 font-medium'
+                ? 'text-slate-300 dark:text-slate-650 bg-slate-50/50 dark:bg-slate-900/20 border-slate-200/30 cursor-not-allowed font-medium'
                 : 'text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border-slate-200/70 dark:border-slate-800 hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/30 shadow-2xs cursor-pointer'
         }`}
         title={isWeekendOrHoliday ? 'ছুটির দিন' : undefined}
