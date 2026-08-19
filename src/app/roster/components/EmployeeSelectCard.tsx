@@ -75,7 +75,7 @@ export default function EmployeeSelectCard({
      Image 2: Checked Full-Width Card with Spacious Inline Month Calendar
      ========================================================================= */
   return (
-    <div className="col-span-1 sm:col-span-2 lg:col-span-3 w-full border border-indigo-200 dark:border-indigo-900/60 bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 shadow-sm transition-all animate-in fade-in duration-200">
+    <div className="col-span-1 sm:col-span-2 lg:col-span-3 w-full border border-indigo-200 dark:border-indigo-900/60 bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-4 shadow-sm transition-all animate-in fade-in duration-200">
       {/* Top Header Row (Matching Image 2) */}
       <div className="flex items-start justify-between gap-3 select-none pb-1">
         <div className="flex items-start gap-3 min-w-0 flex-1">
