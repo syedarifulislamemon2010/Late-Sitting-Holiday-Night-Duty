@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { cells, employees } from '@/db/schema';
 import { and, eq, ne, inArray, sql } from 'drizzle-orm';
+import { cellCreateSchema } from '@/validations/cell.schema';
+import { handleApiError } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 300; // 5 minutes
@@ -62,7 +64,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, description } = body;
+    const validated = cellCreateSchema.parse(body);
+    const { name, description } = validated;
 
     const currentUser = await getCurrentUser();
 
@@ -70,15 +73,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'forbidden', message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন নতুন সেল যোগ করতে পারবেন।' }, { status: 403 });
     }
     
-    if (!name || name.trim() === '') {
-      return NextResponse.json({ error: 'name_required' }, { status: 400 });
-    }
-    
     const existingList = await db.select().from(cells).where(eq(cells.name, name.trim()));
     const existing = existingList[0];
     
     if (existing) {
-      return NextResponse.json({ error: 'cell_exists' }, { status: 400 });
+      return NextResponse.json({ error: 'cell_exists', message: 'এই নামের একটি সেল ইতিমধ্যেই বিদ্যমান।' }, { status: 400 });
     }
     
     const newCellList = await db.insert(cells).values({
@@ -89,7 +88,6 @@ export async function POST(request: Request) {
     
     return NextResponse.json(cell, { status: 201 });
   } catch (error) {
-    logger.error('Error creating cell:', error);
-    return NextResponse.json({ error: 'failed_to_create_cell' }, { status: 500 });
+    return handleApiError(error);
   }
 }

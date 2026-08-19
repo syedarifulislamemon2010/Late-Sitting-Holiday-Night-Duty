@@ -6,6 +6,7 @@ import { eq, desc, and } from 'drizzle-orm';
 import { handleApiError, AppError } from '@/lib/errors';
 import { isNonWorkingDay } from '@/lib/leave-calculator';
 import { logActivity } from '@/lib/audit';
+import { tazCommitteeFormCreateSchema } from '@/validations/tazCommittee.schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    const validated = tazCommitteeFormCreateSchema.parse(body);
     const {
       formDate,
       ref,
@@ -84,12 +86,7 @@ export async function POST(request: Request) {
       requesterDesignation,
       requesterOrganization,
       implementersJson,
-    } = body;
-
-    // 1. Basic validation
-    if (!formDate || !implementersJson) {
-      throw new AppError('missing_required_fields', 400, 'প্রয়োজনীয় তথ্য প্রদান করা হয়নি।');
-    }
+    } = validated;
 
     // 2. Validate form date is not a holiday/weekend
     const dbHolidays = await db.select().from(holidaysTable);

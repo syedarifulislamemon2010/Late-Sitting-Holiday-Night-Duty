@@ -5,19 +5,30 @@ import { useState, useEffect } from 'react';
 import { Database, Download, Upload, History, Shield, AlertTriangle, CheckCircle, Clock, Copy, Info } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 import { useLanguage } from '@/context/LanguageContext';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function BackupPage() {
-  const { lang, t } = useLanguage();
+  const { lang } = useLanguage();
   const isEn = lang === 'en';
   
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [file, setFile] = useState<File | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   
-  const [previewData, setPreviewData] = useState<any>(null);
+  const [previewData, setPreviewData] = useState<{
+    isManifest?: boolean;
+    checksum?: string;
+    recordCounts?: Record<string, number>;
+    tablesCount?: number;
+    timestamp?: string;
+    message?: string;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<Array<{ id: string; date: string; size: number; tablesCount: number }>>([]);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
 
   useEffect(() => {
     const userStr = localStorage.getItem('currentUser');
@@ -27,8 +38,9 @@ export default function BackupPage() {
         setIsAdmin(true);
         fetch('/api/backup?action=history')
           .then(res => res.json())
-          .then(data => setHistory(data))
-          .catch(err => logger.error('Failed to fetch backup history', err));
+          .then(data => setHistory(Array.isArray(data) ? data : []))
+          .catch(err => logger.error('Failed to fetch backup history', err))
+          .finally(() => setHistoryLoading(false));
       } else {
         window.location.href = '/dashboard';
       }
@@ -94,12 +106,9 @@ export default function BackupPage() {
     }
   };
 
-  const handleRestore = async () => {
+  const handleRestoreConfirmed = async () => {
     if (!file) return;
-    
-    if (!window.confirm(isEn ? 'Warning: This will overwrite current database. Proceed?' : 'সতর্কতা: এটি বর্তমান ডাটাবেস প্রতিস্থাপন করবে। আপনি কি নিশ্চিত?')) {
-      return;
-    }
+    setIsRestoreModalOpen(false);
     
     try {
       setLoading(true);
@@ -121,7 +130,7 @@ export default function BackupPage() {
       
       let successMsg = isEn ? 'Database restored successfully!' : 'ডাটাবেস সফলভাবে পুনরুদ্ধার করা হয়েছে!';
       if (result.restoredRecords) {
-        const total = Object.values(result.restoredRecords).reduce((a: any, b: any) => a + b, 0);
+        const total = Object.values(result.restoredRecords as Record<string, number>).reduce((a, b) => a + b, 0);
         successMsg += isEn ? ` Restored ~${total} records across tables.` : ` মোট ~${total} টি রেকর্ড পুনরুদ্ধার করা হয়েছে।`;
       }
       
@@ -131,9 +140,10 @@ export default function BackupPage() {
       if (document.getElementById('file-upload')) {
         (document.getElementById('file-upload') as HTMLInputElement).value = '';
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error(error);
-      setMessage({ text: error.message || (isEn ? 'Failed to restore database' : 'ডাটাবেস পুনরুদ্ধার ব্যর্থ হয়েছে'), type: 'error' });
+      const err = error instanceof Error ? error.message : String(error);
+      setMessage({ text: err || (isEn ? 'Failed to restore database' : 'ডাটাবেস পুনরুদ্ধার ব্যর্থ হয়েছে'), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -214,6 +224,7 @@ export default function BackupPage() {
             <button
               onClick={handleBackup}
               disabled={loading}
+              aria-label="সম্পূর্ণ ব্যাকআপ ডাউনলোড করুন"
               className="mt-auto flex items-center justify-center gap-2 w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all shadow-md shadow-indigo-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
@@ -255,7 +266,7 @@ export default function BackupPage() {
                       <p className="text-xs text-slate-500 dark:text-slate-400 truncate" title={previewData.checksum}><strong>SHA-256:</strong> {previewData.checksum}</p>
                       <p className="text-xs text-slate-600 dark:text-slate-300">
                         <strong>{isEn ? 'Tables:' : 'টেবিল:'}</strong> {previewData.tablesCount} | 
-                        <strong> {isEn ? 'Generated:' : 'তৈরি:'}</strong> {new Date(previewData.timestamp).toLocaleString()}
+                        <strong> {isEn ? 'Generated:' : 'তৈরি:'}</strong> {previewData.timestamp ? new Date(previewData.timestamp).toLocaleString() : 'N/A'}
                       </p>
                       <div className="mt-2 text-xs text-slate-500 max-h-20 overflow-y-auto">
                         {Object.entries(previewData.recordCounts || {}).map(([table, count]) => (
@@ -274,8 +285,9 @@ export default function BackupPage() {
               )}
 
               <button
-                onClick={handleRestore}
+                onClick={() => setIsRestoreModalOpen(true)}
                 disabled={loading || !file}
+                aria-label="ডাটাবেস পুনরুদ্ধার করুন"
                 className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-semibold transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -307,7 +319,8 @@ export default function BackupPage() {
             </div>
             <button 
               onClick={copyCronCommand}
-              className="absolute top-3 right-3 p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-md transition-colors"
+              aria-label="কমান্ড কপি করুন"
+              className="absolute top-3 right-3 p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-md transition-colors cursor-pointer"
               title="Copy command"
             >
               {copied ? <CheckCircle size={16} className="text-emerald-400" /> : <Copy size={16} />}
@@ -329,7 +342,12 @@ export default function BackupPage() {
             <History className="text-indigo-500" size={24} />
             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{isEn ? 'Backup History' : 'ব্যাকআপ ইতিহাস'}</h3>
           </div>
-          {history.length === 0 ? (
+          {historyLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+            </div>
+          ) : history.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">{isEn ? 'No backup snapshots found.' : 'কোনো ব্যাকআপ স্ন্যাপশট পাওয়া যায়নি।'}</p>
           ) : (
             <div className="space-y-4">
@@ -348,6 +366,18 @@ export default function BackupPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isRestoreModalOpen}
+        title={isEn ? 'Confirm Database Restore' : 'ডাটাবেস রিস্টোর নিশ্চিতকরণ'}
+        description={isEn ? 'Warning: This action will completely overwrite the existing database with the selected backup file. All current modifications will be replaced.' : 'সতর্কতা: এই পদক্ষেপটি বর্তমান ডাটাবেসকে নির্বাচিত ব্যাকআপ ফাইল দ্বারা সম্পূর্ণ প্রতিস্থাপন করবে। আপনি কি নিশ্চিত?'}
+        confirmText={isEn ? 'Yes, Overwrite & Restore' : 'হ্যাঁ, প্রতিস্থাপন ও পুনরুদ্ধার করুন'}
+        cancelText={isEn ? 'Cancel' : 'বাতিল'}
+        variant="danger"
+        isLoading={loading}
+        onConfirm={handleRestoreConfirmed}
+        onCancel={() => setIsRestoreModalOpen(false)}
+      />
     </AuthGuard>
   );
 }

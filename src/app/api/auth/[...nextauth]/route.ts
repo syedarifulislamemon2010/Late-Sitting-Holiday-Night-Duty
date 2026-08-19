@@ -11,8 +11,12 @@ import { toEnglishDigits } from '@/lib/bengali-converter';
 import { verifyPassword, hashPassword } from '@/lib/password';
 
 // Validate NEXTAUTH_SECRET on startup
-if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === 'production') {
-  logger.warn('⚠️ [Security Warning]: NEXTAUTH_SECRET is not set in environment variables. Please configure NEXTAUTH_SECRET in your production .env file.');
+if (!process.env.NEXTAUTH_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('🚨 [Critical Security Error]: NEXTAUTH_SECRET is required in production. Please set NEXTAUTH_SECRET in your environment.');
+  } else {
+    logger.warn('⚠️ [Security Warning]: NEXTAUTH_SECRET is not set in environment variables. Please set NEXTAUTH_SECRET in your .env file.');
+  }
 }
 
 export const authOptions: NextAuthOptions = {
@@ -177,7 +181,7 @@ export const authOptions: NextAuthOptions = {
     signIn: '/',
     error: '/',
   },
-  secret: process.env.NEXTAUTH_SECRET || 'NextAuthSecretSecretKey2026',
+  secret: process.env.NEXTAUTH_SECRET,
   logger: {
     error(code, ...metadata) {
       if (code === 'JWT_SESSION_ERROR' && metadata.some(m => String(m).includes('decryption operation failed'))) {

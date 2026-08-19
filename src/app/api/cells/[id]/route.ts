@@ -1,9 +1,10 @@
-import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { cells, employees, trash } from '@/db/schema';
 import { and, eq, ne, sql } from 'drizzle-orm';
+import { cellUpdateSchema } from '@/validations/cell.schema';
+import { handleApiError } from '@/lib/errors';
 
 export async function PUT(
   request: Request,
@@ -18,7 +19,8 @@ export async function PUT(
     }
     
     const body = await request.json();
-    const { name, description } = body;
+    const validated = cellUpdateSchema.parse(body);
+    const { name, description } = validated;
 
     const currentUser = await getCurrentUser();
 
@@ -26,35 +28,33 @@ export async function PUT(
       return NextResponse.json({ error: 'forbidden', message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন সেল সংশোধন করতে পারবেন।' }, { status: 403 });
     }
     
-    if (!name || name.trim() === '') {
-      return NextResponse.json({ error: 'name_required' }, { status: 400 });
+    if (name) {
+      const existingList = await db.select().from(cells).where(
+        and(
+          eq(cells.name, name.trim()),
+          ne(cells.id, cellId)
+        )
+      );
+      const existing = existingList[0];
+      
+      if (existing) {
+        return NextResponse.json({ error: 'cell_exists', message: 'এই নামের একটি সেল ইতিমধ্যেই বিদ্যমান।' }, { status: 400 });
+      }
     }
     
-    const existingList = await db.select().from(cells).where(
-      and(
-        eq(cells.name, name.trim()),
-        ne(cells.id, cellId)
-      )
-    );
-    const existing = existingList[0];
-    
-    if (existing) {
-      return NextResponse.json({ error: 'cell_exists' }, { status: 400 });
-    }
-    
+    const updateData: { name?: string; description?: string | null } = {};
+    if (name !== undefined) updateData.name = name.trim();
+    if (description !== undefined) updateData.description = description?.trim() || null;
+
     const updatedCellList = await db.update(cells)
-      .set({
-        name: name.trim(),
-        description: description?.trim() || null
-      })
+      .set(updateData)
       .where(eq(cells.id, cellId))
       .returning();
     const cell = updatedCellList[0];
     
     return NextResponse.json(cell);
   } catch (error) {
-    logger.error('Error updating cell:', error);
-    return NextResponse.json({ error: 'failed_to_update_cell' }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -74,7 +74,7 @@ export async function DELETE(
     const cell = cellList[0];
     
     if (!cell) {
-      return NextResponse.json({ error: 'cell_not_found' }, { status: 404 });
+      return NextResponse.json({ error: 'cell_not_found', message: 'সেলটি পাওয়া যায়নি।' }, { status: 404 });
     }
     
     const empCountResult = await db.select({
@@ -83,7 +83,7 @@ export async function DELETE(
     const employeeCount = empCountResult[0]?.count || 0;
     
     if (employeeCount > 0) {
-      return NextResponse.json({ error: 'cell_has_employees' }, { status: 400 });
+      return NextResponse.json({ error: 'cell_has_employees', message: 'এই সেলে কর্মকর্তা বিদ্যমান থাকায় সেলটি মুছে ফেলা সম্ভব নয়।' }, { status: 400 });
     }
     
     const currentUser = await getCurrentUser();
@@ -106,7 +106,6 @@ export async function DELETE(
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Error deleting cell:', error);
-    return NextResponse.json({ error: 'failed_to_delete_cell' }, { status: 500 });
+    return handleApiError(error);
   }
 }

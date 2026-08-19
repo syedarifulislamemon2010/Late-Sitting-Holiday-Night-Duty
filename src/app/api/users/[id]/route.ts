@@ -7,6 +7,9 @@ import { eq, sql } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { hashPassword } from '@/lib/password';
 
+import { userUpdateSchema } from '@/validations/user.schema';
+import { handleApiError } from '@/lib/errors';
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -30,7 +33,9 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, password, role, cellIds, cellDuties, mobile } = body;
+    const validated = userUpdateSchema.parse(body);
+    const { name, password, role, cellIds } = validated;
+    const { cellDuties, mobile } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'name_required', message: 'নাম পূরণ করা আবশ্যক।' }, { status: 400 });
@@ -132,8 +137,7 @@ export async function PUT(
 
     return NextResponse.json(result);
   } catch (error) {
-    logger.error('Error updating user:', error);
-    return NextResponse.json({ error: 'failed_to_update_user', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -188,7 +192,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
-    logger.error('Error deleting user:', error);
-    return NextResponse.json({ error: 'failed_to_delete_user', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return handleApiError(error);
   }
 }

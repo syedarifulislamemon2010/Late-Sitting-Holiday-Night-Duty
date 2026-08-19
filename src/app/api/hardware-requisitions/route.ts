@@ -6,6 +6,7 @@ import { eq, desc, and } from 'drizzle-orm';
 import { handleApiError, AppError } from '@/lib/errors';
 import { isNonWorkingDay } from '@/lib/leave-calculator';
 import { logActivity } from '@/lib/audit';
+import { hardwareRequisitionCreateSchema } from '@/validations/hardwareRequisition.schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    const validated = hardwareRequisitionCreateSchema.parse(body);
     const {
       requisitionDate,
       hardwareType,
@@ -69,12 +71,7 @@ export async function POST(request: Request) {
       cellName,
       subjectLine,
       items, // array of { officerUserId, officerNameSnapshot, officerDesignationSnapshot, hardwareLabel }
-    } = body;
-
-    // 1. Basic validation
-    if (!requisitionDate || !hardwareType || !cellName || !subjectLine || !items || !Array.isArray(items) || items.length === 0) {
-      throw new AppError('missing_required_fields', 400, 'প্রয়োজনীয় তথ্য প্রদান করা হয়নি।');
-    }
+    } = validated;
 
     // 2. Validate requisition date is not a holiday
     const dbHolidays = await db.select().from(holidaysTable);

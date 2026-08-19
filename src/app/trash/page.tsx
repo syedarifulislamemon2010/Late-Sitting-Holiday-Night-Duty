@@ -5,7 +5,9 @@ import { useState, useEffect } from 'react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import AuthGuard from '@/components/AuthGuard';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { 
   Trash2, 
   RefreshCw, 
@@ -38,6 +40,18 @@ export default function TrashPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [nowTime, setNowTime] = useState<number>(0);
 
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {}
+  });
+
   const fetchTrash = async () => {
     try {
       setLoading(true);
@@ -61,7 +75,6 @@ export default function TrashPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Clear selections on tab or search queries change for safety
   useEffect(() => {
     const timer = setTimeout(() => {
       setSelectedIds([]);
@@ -83,65 +96,61 @@ export default function TrashPage() {
     }
   };
 
-  const handleRestore = async (item: TrashItem) => {
-    if (!confirm(`আপনি কি নিশ্চিতভাবে "${item.name}" পুনরুদ্ধার করতে চান?`)) return;
+  const handleRestore = (item: TrashItem) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'রেকর্ড পুনরুদ্ধার',
+      description: `আপনি কি নিশ্চিতভাবে "${item.name}" রেকর্ডটি পুনরুদ্ধার করতে চান?`,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        try {
+          setActionLoading(item.id);
+          const res = await fetch('/api/trash', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'restore', trashId: item.id })
+          });
 
-    try {
-      setActionLoading(item.id);
-      const res = await fetch('/api/trash', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'restore', trashId: item.id })
-      });
-
-      const result = await res.json();
-
-      if (res.ok) {
-        alert('রেকর্ডটি সফলভাবে পুনরুদ্ধার করা হয়েছে!');
-        fetchTrash();
-      } else {
-        alert(result.message || 'রেকর্ড পুনরুদ্ধার করতে ব্যর্থ হয়েছে।');
+          if (res.ok) {
+            fetchTrash();
+          }
+        } catch (err) {
+          logger.error('Error restoring:', err);
+        } finally {
+          setActionLoading(null);
+        }
       }
-    } catch (err) {
-      logger.error('Error restoring:', err);
-      alert('পুনরুদ্ধার প্রক্রিয়া ব্যর্থ হয়েছে।');
-    } finally {
-      setActionLoading(null);
-    }
+    });
   };
 
-
-  const handleBulkRestore = async () => {
+  const handleBulkRestore = () => {
     if (selectedIds.length === 0) return;
-    if (!confirm(`আপনি কি নিশ্চিতভাবে নির্বাচিত ${toBanglaDigits(selectedIds.length)}টি রেকর্ড পুনরুদ্ধার করতে চান?`)) return;
+    setConfirmModal({
+      isOpen: true,
+      title: 'নির্বাচিত রেকর্ড পুনরুদ্ধার',
+      description: `আপনি কি নিশ্চিতভাবে নির্বাচিত ${toBanglaDigits(selectedIds.length)}টি রেকর্ড পুনরুদ্ধার করতে চান?`,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        try {
+          setActionLoading(-1);
+          const res = await fetch('/api/trash', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'restore', trashIds: selectedIds })
+          });
 
-    try {
-      setActionLoading(-1); // bulk indicator
-      const res = await fetch('/api/trash', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'restore', trashIds: selectedIds })
-      });
-
-      const result = await res.json();
-
-      if (res.ok) {
-        alert(result.message || 'রেকর্ডগুলো সফলভাবে পুনরুদ্ধার করা হয়েছে!');
-        setSelectedIds([]);
-        fetchTrash();
-      } else {
-        alert(result.message || 'রেকর্ড পুনরুদ্ধার করতে ব্যর্থ হয়েছে।');
+          if (res.ok) {
+            setSelectedIds([]);
+            fetchTrash();
+          }
+        } catch (err) {
+          logger.error('Error bulk restoring:', err);
+        } finally {
+          setActionLoading(null);
+        }
       }
-    } catch (err) {
-      logger.error('Error bulk restoring:', err);
-      alert('পুনরুদ্ধার প্রক্রিয়া ব্যর্থ হয়েছে।');
-    } finally {
-      setActionLoading(null);
-    }
+    });
   };
-
-
-
 
   const getRemainingDays = (deletedAtStr: string) => {
     if (nowTime === 0) return 30;
@@ -197,7 +206,7 @@ export default function TrashPage() {
 
   return (
     <AuthGuard>
-      <div className="space-y-6">
+      <div className="space-y-6 font-sans">
         {/* Top Header Banner */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -208,7 +217,8 @@ export default function TrashPage() {
           <button
             onClick={fetchTrash}
             disabled={loading}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm font-semibold transition-all shadow-sm"
+            aria-label="রিলোড করুন"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm font-semibold transition-all shadow-sm cursor-pointer"
           >
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             রিলোড করুন
@@ -227,7 +237,9 @@ export default function TrashPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    aria-label={tab.label}
+                    aria-pressed={isSelected}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       isSelected 
                         ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold' 
                         : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -250,6 +262,7 @@ export default function TrashPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="রেকর্ড খুঁজুন..."
+                aria-label="মুছে ফেলা রেকর্ড খুঁজুন"
                 className="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-sans"
               />
             </div>
@@ -265,7 +278,7 @@ export default function TrashPage() {
 
           {/* Bulk Action Header bar */}
           {selectedIds.length > 0 && (
-            <div className="flex items-center justify-between p-3.5 bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-xl animate-fade-in">
+            <div className="flex items-center justify-between p-3.5 bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-xl animate-in fade-in">
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -277,18 +290,11 @@ export default function TrashPage() {
                 <button
                   onClick={handleBulkRestore}
                   disabled={actionLoading !== null}
+                  aria-label="সব নির্বাচিত রেকর্ড রিস্টোর করুন"
                   className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   <RotateCcw size={12} />
                   সব রিস্টোর করুন
-                </button>
-                <button
-                  disabled={true}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-not-allowed"
-                  title="স্থায়ীভাবে মুছে ফেলা নিষ্ক্রিয় করা হয়েছে।"
-                >
-                  <Trash2 size={12} />
-                  চিরতরে মুছা নিষিদ্ধ
                 </button>
               </div>
             </div>
@@ -296,15 +302,17 @@ export default function TrashPage() {
 
           {/* Trash List Table */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 space-y-3">
-              <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">রিসাইকেল বিন লোড হচ্ছে...</p>
+            <div className="space-y-3 py-4">
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="text-center py-16 bg-slate-50/30 dark:bg-slate-950/10 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-xl space-y-3">
-              <Trash2 className="mx-auto text-slate-300 dark:text-slate-700" size={40} />
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">এই বিভাগে কোনো মুছে ফেলা রেকর্ড নেই</p>
-            </div>
+            <EmptyState
+              title="এই বিভাগে কোনো মুছে ফেলা রেকর্ড নেই"
+              description="রিসাইকেল বিনে বর্তমানে কোনো রেকর্ড জমা নেই।"
+              icon={Trash2}
+            />
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
               <table className="w-full text-left border-collapse">
@@ -313,6 +321,7 @@ export default function TrashPage() {
                     <th className="px-5 py-3.5 w-12 text-center">
                       <input 
                         type="checkbox" 
+                        aria-label="সব রেকর্ড নির্বাচন করুন"
                         checked={filteredItems.length > 0 && selectedIds.length === filteredItems.length}
                         onChange={toggleSelectAll}
                         className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer h-4 w-4"
@@ -344,36 +353,32 @@ export default function TrashPage() {
 
                     return (
                       <tr key={item.id} className={`hover:bg-slate-50/40 dark:hover:bg-slate-950/10 transition-colors ${isSelected ? 'bg-indigo-50/20 dark:bg-indigo-950/10' : ''}`}>
-                        {/* Checkbox Column */}
                         <td className="px-5 py-4 w-12 text-center">
                           <input 
                             type="checkbox" 
+                            aria-label={`নির্বাচন করুন ${item.name}`}
                             checked={isSelected}
                             onChange={() => toggleSelect(item.id)}
                             className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer h-4 w-4"
                           />
                         </td>
 
-                        {/* Name Column */}
                         <td className="px-5 py-4">
                           <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{item.name}</p>
                           <p className="text-[10px] text-slate-400 font-sans mt-0.5">ID: {item.entityId}</p>
                         </td>
 
-                        {/* Category Badge Column */}
                         <td className="px-5 py-4">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${getCategoryBadgeColor(item.entityType)}`}>
                             {getCategoryName(item.entityType)}
                           </span>
                         </td>
 
-                        {/* Deletion Date Column */}
                         <td className="px-5 py-4 text-xs font-semibold text-slate-600 dark:text-slate-350">
                           <div>{delDate}</div>
                           <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium font-sans mt-0.5">{delTime}</div>
                         </td>
 
-                        {/* Remaining Retention Days Column */}
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-500 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-950/30 px-2 py-1 rounded-lg w-fit">
                             <Clock size={12} />
@@ -381,14 +386,14 @@ export default function TrashPage() {
                           </div>
                         </td>
 
-                        {/* Action Buttons Column */}
                         <td className="px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => handleRestore(item)}
                               disabled={isBtnLoading}
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-emerald-200 hover:bg-emerald-50 text-emerald-600 dark:border-emerald-950 dark:hover:bg-emerald-950/30 dark:text-emerald-400 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                              aria-label={`রিস্টোর করুন ${item.name}`}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-emerald-200 hover:bg-emerald-50 text-emerald-600 dark:border-emerald-950 dark:hover:bg-emerald-950/30 dark:text-emerald-400 rounded-xl transition-all shadow-sm disabled:opacity-50 cursor-pointer"
                             >
                               <RotateCcw size={12} />
                               রিস্টোর
@@ -408,6 +413,18 @@ export default function TrashPage() {
           )}
         </Card>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        description={confirmModal.description}
+        confirmText="হ্যাঁ, পুনরুদ্ধার করুন"
+        cancelText="বাতিল"
+        variant="primary"
+        isLoading={actionLoading !== null}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </AuthGuard>
   );
 }

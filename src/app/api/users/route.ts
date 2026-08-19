@@ -6,6 +6,8 @@ import { users, employees, userCells, cells } from '@/db/schema';
 import { eq, isNotNull, sql } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { hashPassword } from '@/lib/password';
+import { userCreateSchema } from '@/validations/user.schema';
+import { handleApiError } from '@/lib/errors';
 
 export async function GET() {
   try {
@@ -95,11 +97,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { username, password, name, role, cellIds, cellDuties, mobile } = body;
-
-    if (!username || !password || !name) {
-      return NextResponse.json({ error: 'fields_required', message: 'সবগুলো আবশ্যক ফিল্ড পূরণ করুন।' }, { status: 400 });
-    }
+    const validated = userCreateSchema.parse(body);
+    const { username, password, name, role, cellIds } = validated;
+    const { cellDuties, mobile } = body;
 
     const existingList = await db.select().from(users).where(eq(users.username, username.trim()));
     const existing = existingList[0];
@@ -171,7 +171,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(userWithCells, { status: 201 });
   } catch (error) {
-    logger.error('Error creating user:', error);
-    return NextResponse.json({ error: 'failed_to_create_user', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return handleApiError(error);
   }
 }
