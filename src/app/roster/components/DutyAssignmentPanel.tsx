@@ -441,11 +441,11 @@ export default function DutyAssignmentPanel({
                       />
                     </div>
                     
-                    {/* Masonry Columns Layout Container for In-Card Inline Calendars */}
-                    <div className={`w-full ${
+                    {/* 3-Column Standard Grid Layout (Left-to-Right Row-by-Row, Matching Image 1 & Image 2) */}
+                    <div className={`w-full grid gap-3.5 ${
                       isAssignmentPrimary 
-                        ? 'columns-1 sm:columns-2 lg:columns-3 gap-3.5' 
-                        : 'columns-1 gap-3.5'
+                        ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
+                        : 'grid-cols-1'
                     }`}>
                       {filteredOpt1Employees.length > 0 ? (
                         filteredOpt1Employees.map(emp => (
