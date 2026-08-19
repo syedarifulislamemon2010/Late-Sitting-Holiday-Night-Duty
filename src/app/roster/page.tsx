@@ -1,407 +1,42 @@
 'use client';
-import logger from '@/lib/logger';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import logger from '@/lib/logger';
 import { useProfile } from '@/context/ProfileContext';
 import { useLayout, LayoutPriority } from '@/context/LayoutContext';
 import { TableSkeleton } from "@/components/SkeletonLoader";
 import { sortEmployeesBySeniority } from '@/lib/seniority';
-import dynamic from 'next/dynamic';
-import { cleanBracketName, renderDatesInPairs } from '@/lib/print-helpers';
 import { toBanglaDigits, getBanglaNumberWords } from '@/lib/bengali-converter';
-const RosterOCRImport = dynamic(() => import('./components/RosterOCRImport'), { ssr: false });
-
 import { 
-  Trash2, 
-  Edit2,
-  Calendar, 
-  Printer, 
-  ChevronLeft, 
-  ChevronRight,
+  AlertCircle, 
   Check, 
-  AlertCircle,
-  FileText,
-  Eye,
-  Receipt,
-  FileSignature,
-  CheckCircle,
-  X,
-  Lock,
-  Download,
-  MoreVertical,
-  Search
+  CheckCircle, 
+  Eye, 
+  Printer, 
+  Trash2, 
+  X, 
+  ChevronRight 
 } from 'lucide-react';
-import { generateOfficeOrderDocx } from '@/lib/docx-generator';
-
-interface Cell {
-  id: number;
-  name: string;
-  description: string | null;
-}
-
-interface Employee {
-  id: number;
-  name: string;
-  designation: string;
-  bankId: string | null;
-  fileNo: string | null;
-  mobile: string | null;
-  cellId: number;
-  cell: Cell;
-}
-
-interface Executive {
-  id: number;
-  name: string;
-  designation: string;
-  fileNo?: string | null;
-}
-
-interface Holiday {
-  id: number;
-  date: string;
-  name: string;
-  isWorkingDay: boolean;
-}
-
-interface User {
-  id: number;
-  name: string;
-  username: string;
-  role: 'ADMIN' | 'USER';
-  cells?: Cell[];
-}
-
-interface OrderDuty {
-  employeeId?: string | null;
-  employeeName: string;
-  designation: string;
-  days: number;
-  apyaonRate: number;
-  totalApyaon: number;
-  totalTransport: number;
-  grandTotal: number;
-  datesFormatted: string;
-  dates?: string[];
-  description?: string;
-}
-
-interface OfficeOrder {
-  id: number;
-  orderRef: string;
-  originalOrderRef?: string;
-  orderDate: string;
-  category: string;
-  employeeName: string;
-  cellName: string | null;
-  status: string;
-  dutiesJson?: string | null;
-  duties?: OrderDuty[];
-  content?: {
-    subjectText?: string;
-    openingParagraph?: string;
-    signingOfficer?: string;
-    signingDesignation?: string;
-    representativeDesignation?: string;
-    totalDays?: number;
-    totalApyaon?: number;
-    totalTransport?: number;
-    grandTotal?: number;
-    grandTotalInWords?: string;
-    backingOrderId?: number | null;
-    backingOrderRef?: string | null;
-    backingOrderDate?: string | null;
-    orderText?: string;
-    copies?: string[];
-  } | null;
-}
-
-interface Duty {
-  id: number;
-  employeeId: number;
-  employee: Employee;
-  type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
-  date: string;
-  description: string | null;
-  allowance1: number;
-  allowance2: number;
-  totalBill: number;
-  orderRef?: string | null;
-}
-
-const getNormalizedRef = (ref: string | null | undefined): string => {
-  if (!ref) return '';
-  let clean = ref.replace(/\/বিল$/, '').trim();
-  const parts = clean.split('/');
-  if (parts.length >= 3) {
-    parts.splice(2, 1); // remove payee name component
-  }
-  return parts.join('/').toLowerCase();
-};
-
-const isNameMatchingRef = (empName: string, ref: string): boolean => {
-  if (!empName || !ref) return false;
-  let cleanEmp = empName
-    .replace(/জনাব/g, '')
-    .replace(/জনাবা/g, '')
-    .replace(/মোঃ/g, '')
-    .replace(/মো:/g, '')
-    .replace(/মো‌ঃ/g, '')
-    .replace(/মোহাম্মদ/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-  
-  const cleanRef = ref.replace(/\s+/g, ' ').toLowerCase();
-  const firstWord = cleanEmp.split(' ')[0];
-  return firstWord ? cleanRef.includes(firstWord) : false;
-};
-
-const getBanglaMonthYearLabel = (ym: string) => {
-  if (!ym || !ym.includes('-')) return '';
-  const [yearStr, monthStr] = ym.split('-');
-  const month = parseInt(monthStr, 10);
-  const banglaMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
-  return `${banglaMonths[month - 1]} ${toBanglaDigits(yearStr)}`;
-};
-
-const getDefaultDescription = (empName: string | null | undefined, category: string, cellName?: string | null) => {
-  const name = empName || '';
-  const cleanName = name.replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim();
-  const matchesName = cleanName.includes('মোঃ বাহার উদ্দিন') || cleanName.includes('দেবাশীষ কুমার দে');
-  const matchesCategory = category === 'HOLIDAY' || category === 'NIGHT_SHIFT';
-  
-  if (matchesName && matchesCategory) {
-    return 'Customization এবং Development (রিপোর্ট পোর্টালের জন্য ডাটা এক্সট্রাকশন) সংক্রান্ত কাজ (R09 Development & Customization Cell)';
-  }
-  return cellName 
-    ? `Customization এবং Development সংক্রান্ত কাজ (${cellName})` 
-    : 'Customization এবং Development সংক্রান্ত কাজ';
-};
-
-
-
-
-const LATE_SITTING_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>ছুটির পর (Late Sitting)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
-const NIGHT_SHIFT_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>রাত্রিকালীন (Night Shift)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
-const HOLIDAY_TEMPLATE = `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে  অত্র ডিপার্টমেন্টের নিম্ন বর্ণিত কর্মকর্তাগণকে তাদের নামের পাশে বর্ণিত তারিখে অফিস <strong>ছুটির দিনে (Holiday)</strong> কর্মস্থলে উপস্থিত থেকে কর্ম সম্পাদনের নির্দেশ প্রদান করা হলঃ`;
-
-const checkIsWorkingDay = (dateStr: string, holidaysList: Holiday[]) => {
-  if (!dateStr) return true;
-  
-  // Hardcoded override for May 23, 2026 (Saturday) to be a working day (just like in dashboard calendar)
-  if (dateStr === '2026-05-23') {
-    return true;
-  }
-  
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dateObj = new Date(y, m - 1, d);
-  const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
-  
-  // Find database holiday entry
-  const holiday = holidaysList.find(h => h.date === dateStr);
-  
-  if (holiday) {
-    return holiday.isWorkingDay; // If isWorkingDay is false, it's a holiday (non-working day)
-  }
-  
-  // Default weekends in Bangladesh (Friday and Saturday)
-  if (dayOfWeek === 5 || dayOfWeek === 6) {
-    return false;
-  }
-  
-  return true;
-};
-
-interface CalendarDatePickerProps {
-  value: string;
-  onChange: (date: string) => void;
-  isNonWorkingDay: (dateStr: string) => boolean;
-  toBanglaDigits: (num: number | string) => string;
-  minDate?: string;
-  maxDate?: string;
-  placeholder?: string;
-  disabled?: boolean;
-}
-
-function CalendarDatePicker({
-  value,
-  onChange,
-  isNonWorkingDay,
-  toBanglaDigits,
-  minDate,
-  maxDate,
-  placeholder = 'তারিখ নির্বাচন করুন',
-  disabled = false
-}: CalendarDatePickerProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [currentDate, setCurrentDate] = useState(() => {
-    const val = value ? new Date(value) : new Date();
-    return isNaN(val.getTime()) ? new Date() : val;
-  });
-
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.calendar-picker-container')) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('click', handleOutsideClick);
-    }
-    return () => {
-      document.removeEventListener('click', handleOutsideClick);
-    };
-  }, [isOpen]);
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayIndex = new Date(year, month, 1).getDay();
-
-  const prevMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
-  };
-
-  const handleSelectDay = (day: number) => {
-    const selectedDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    onChange(selectedDateStr);
-    setIsOpen(false);
-  };
-
-  const monthNamesBN = [
-    'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
-    'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
-  ];
-
-  const getDisplayDate = () => {
-    if (!value) return placeholder;
-    const parts = value.split('-');
-    if (parts.length !== 3) return value;
-    const [y, m, d] = parts;
-    return `${toBanglaDigits(parseInt(d, 10).toString())}ই ${monthNamesBN[parseInt(m, 10) - 1]} ${toBanglaDigits(y)}`;
-  };
-
-  const days = [];
-  for (let i = 0; i < firstDayIndex; i++) {
-    days.push(<div key={`empty-${i}`} className="w-8 h-8" />);
-  }
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const isWeekendOrHoliday = isNonWorkingDay(dateStr);
-    
-    let isOutOfRange = false;
-    if (minDate && dateStr < minDate) isOutOfRange = true;
-    if (maxDate && dateStr > maxDate) isOutOfRange = true;
-
-    // Enable weekends/holidays so they are clickable, but keep red styling
-    const isDisabled = isOutOfRange;
-    const isSelected = value === dateStr;
-
-    days.push(
-      <button
-        key={`day-${d}`}
-        type="button"
-        disabled={isDisabled}
-        onClick={() => handleSelectDay(d)}
-        className={`w-8 h-8 flex items-center justify-center text-xs rounded-xl transition-all ${
-          isSelected 
-            ? 'bg-indigo-650 text-white font-bold shadow-sm shadow-indigo-500/30' 
-            : isWeekendOrHoliday 
-              ? 'text-rose-500 bg-rose-50/10 dark:bg-rose-950/5 cursor-pointer font-bold hover:bg-rose-100/50' 
-              : isOutOfRange
-                ? 'text-slate-405 dark:text-slate-600 bg-slate-50/5 dark:bg-slate-900/5 cursor-not-allowed font-medium'
-                : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/30 cursor-pointer font-black'
-        }`}
-        title={isWeekendOrHoliday ? 'ছুটির দিন' : undefined}
-      >
-        {toBanglaDigits(d)}
-      </button>
-    );
-  }
-
-  return (
-    <div className="relative calendar-picker-container font-sans w-full">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-905 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-550 font-semibold text-left cursor-pointer transition-all disabled:bg-slate-100 disabled:dark:bg-slate-950 disabled:cursor-not-allowed flex items-center justify-between shadow-sm"
-      >
-        <span>{getDisplayDate()}</span>
-        <span className="text-xs text-slate-450 dark:text-slate-400">📅</span>
-      </button>
-
-      {isOpen && (
-        <div className="absolute left-0 mt-1.5 w-72 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-35 p-3 animate-in fade-in slide-in-from-top-1 duration-150 select-none">
-          <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-900 pb-2">
-            <button
-              type="button"
-              onClick={prevMonth}
-              className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer text-xs font-extrabold"
-            >
-              ◀
-            </button>
-            <span className="text-xs font-bold text-slate-805 dark:text-slate-200">
-              {monthNamesBN[month]} {toBanglaDigits(year)}
-            </span>
-            <button
-              type="button"
-              onClick={nextMonth}
-              className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer text-xs font-extrabold"
-            >
-              ▶
-            </button>
-          </div>
-          <div className="grid grid-cols-7 gap-1 text-center font-bold text-slate-500 dark:text-slate-400 text-[10px] mb-1.5">
-            <div>রবি</div>
-            <div>সোম</div>
-            <div>মঙ্গল</div>
-            <div>বুধ</div>
-            <div>বৃহ</div>
-            <div className="text-rose-500">শুক্র</div>
-            <div className="text-rose-500">শনি</div>
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {days}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const calculateOrderDate = (earliestDateStr: string, holidaysList: Holiday[], steps: number = 1) => {
-  if (!earliestDateStr) return new Date().toISOString().split('T')[0];
-  
-  const [y, m, d] = earliestDateStr.split('-').map(Number);
-  const currentDate = new Date(y, m - 1, d);
-  
-  let workingDaysFound = 0;
-  while (true) {
-    // Subtract 1 day
-    currentDate.setDate(currentDate.getDate() - 1);
-    
-    const cy = currentDate.getFullYear();
-    const cm = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const cd = String(currentDate.getDate()).padStart(2, '0');
-    const cDateStr = `${cy}-${cm}-${cd}`;
-    
-    if (checkIsWorkingDay(cDateStr, holidaysList)) {
-      workingDaysFound++;
-      if (workingDaysFound === steps) {
-        return cDateStr;
-      }
-    }
-  }
-};
+import { 
+  Cell, 
+  Employee, 
+  Executive, 
+  Holiday, 
+  OfficeOrder, 
+  OrderDuty, 
+  Duty, 
+  getNormalizedRef, 
+  isNameMatchingRef, 
+  getDefaultDescription, 
+  LATE_SITTING_TEMPLATE, 
+  NIGHT_SHIFT_TEMPLATE, 
+  HOLIDAY_TEMPLATE, 
+  checkIsWorkingDay, 
+  calculateOrderDate 
+} from './types';
+import DutyAssignmentPanel from './components/DutyAssignmentPanel';
+import RosterListPanel from './components/RosterListPanel';
+import OfficeOrderPrintPreview from './components/OfficeOrderPrintPreview';
 
 export default function RosterPage() {
   const { currentUser } = useProfile();
@@ -418,7 +53,6 @@ export default function RosterPage() {
   });
   const [officeOrders, setOfficeOrders] = useState<OfficeOrder[]>([]);
   const isInitializingArchiveRef = useRef(false);
-  const hasLoadedEditRef = useRef(false);
   const [initialRosterValues, setInitialRosterValues] = useState<{
     printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
     payeeEmployeeId: string;
@@ -448,8 +82,8 @@ export default function RosterPage() {
   
   const [suggestedRef, setSuggestedRef] = useState('');
   const [refDuplicate, setRefDuplicate] = useState(false);
-  const [preConflicts, setPreConflicts] = useState<Array<{date: string, type: string, message: string}>>([]);
-  const [billSuggestion, setBillSuggestion] = useState<{ref: string, category: string} | null>(null);
+  const [preConflicts, setPreConflicts] = useState<Array<{ date: string; type: string; message: string }>>([]);
+  const [billSuggestion, setBillSuggestion] = useState<{ ref: string; category: string } | null>(null);
   
   // Edit/Update Duty states
   const [editingDuty, setEditingDuty] = useState<Duty | null>(null);
@@ -463,24 +97,8 @@ export default function RosterPage() {
     return [`${today.getFullYear()}-${mm}`];
   });
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [activeRosterTab, setActiveRosterTab] = useState<'pending' | 'archived'>('pending');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
-  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
-  const [currentPickerYear, setCurrentPickerYear] = useState(() => new Date().getFullYear());
-  const monthPickerRef = useRef<HTMLDivElement>(null);
   const isUserCellInitializedRef = useRef(false);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
-        setIsMonthPickerOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   // Duty assignment form state
   const [assignmentForm, setAssignmentForm] = useState({
@@ -502,15 +120,6 @@ export default function RosterPage() {
   const [formSearchQuery, setFormSearchQuery] = useState('');
   const [formCellFilter, setFormCellFilter] = useState('all');
 
-  const filteredFormEmployees = useMemo(() => {
-    return employees.filter(emp => {
-      const matchesSearch = emp.name.toLowerCase().includes(formSearchQuery.toLowerCase()) || 
-                            emp.designation.toLowerCase().includes(formSearchQuery.toLowerCase());
-      const matchesCell = formCellFilter === 'all' || emp.cellId.toString() === formCellFilter;
-      return matchesSearch && matchesCell;
-    });
-  }, [employees, formSearchQuery, formCellFilter]);
-
   // Entry mode: EMPLOYEE_WISE or DATE_WISE
   const [entryMode, setEntryMode] = useState<'EMPLOYEE_WISE' | 'DATE_WISE'>('EMPLOYEE_WISE');
   
@@ -518,40 +127,7 @@ export default function RosterPage() {
   const [opt1CellId, setOpt1CellId] = useState<string>('all');
   const [opt1SearchQuery, setOpt1SearchQuery] = useState<string>('');
   const [opt1Assignments, setOpt1Assignments] = useState<Record<number, string[]>>({});
-  const [openActionOrderId, setOpenActionOrderId] = useState<number | null>(null);
-  const actionMenuRef = useRef<HTMLDivElement>(null);
-
-  // Close action dropdown menu on outside click
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target as Node)) {
-        setOpenActionOrderId(null);
-      }
-    };
-    if (openActionOrderId !== null) {
-      document.addEventListener('mousedown', handleOutsideClick);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-    };
-  }, [openActionOrderId]);
-
-  // Mass select/deselect for Option 1
-  const selectAllOpt1Employees = (empList: Employee[]) => {
-    setOpt1Assignments(prev => {
-      const next = { ...prev };
-      empList.forEach(emp => {
-        if (!(emp.id in next)) {
-          next[emp.id] = [];
-        }
-      });
-      return next;
-    });
-  };
-
-  const deselectAllOpt1Employees = () => {
-    setOpt1Assignments({});
-  };
+  const [opt1ViewedMonths, setOpt1ViewedMonths] = useState<Record<number, string>>({});
 
   // Unsaved Changes Tracking for Sidebar Warning
   useEffect(() => {
@@ -565,95 +141,9 @@ export default function RosterPage() {
       }
     };
   }, [isEditingArchive, editingDuty, opt1Assignments, assignmentForm.selectedEmployeeIds, assignmentForm.date, entryMode]);
-  const [opt1ViewedMonths, setOpt1ViewedMonths] = useState<Record<number, string>>({});
-
-  const getEmployeeViewedMonth = (empId: number) => {
-    if (opt1ViewedMonths[empId]) {
-      return opt1ViewedMonths[empId];
-    }
-    if (selectedMonths && selectedMonths.length > 0) {
-      return selectedMonths[0];
-    }
-    const today = new Date();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    return `${today.getFullYear()}-${mm}`;
-  };
-
-  const handlePrevMonth = (empId: number) => {
-    const ym = getEmployeeViewedMonth(empId);
-    const [yearStr, monthStr] = ym.split('-');
-    let year = parseInt(yearStr, 10);
-    let month = parseInt(monthStr, 10);
-    
-    month--;
-    if (month < 1) {
-      month = 12;
-      year--;
-    }
-    const prevYm = `${year}-${String(month).padStart(2, '0')}`;
-    setOpt1ViewedMonths(prev => ({ ...prev, [empId]: prevYm }));
-  };
-
-  const handleNextMonth = (empId: number) => {
-    const ym = getEmployeeViewedMonth(empId);
-    const [yearStr, monthStr] = ym.split('-');
-    let year = parseInt(yearStr, 10);
-    let month = parseInt(monthStr, 10);
-    
-    month++;
-    if (month > 12) {
-      month = 1;
-      year++;
-    }
-    const nextYm = `${year}-${String(month).padStart(2, '0')}`;
-    setOpt1ViewedMonths(prev => ({ ...prev, [empId]: nextYm }));
-  };
-
-  // Removed automatic setOpt1CellId useEffect to resolve setState in effect warning.
-  // Cell pre-selection is now done inside data load functions.
-
-  const handleOpt1EmployeeToggle = (empId: number) => {
-    setOpt1Assignments(prev => {
-      const next = { ...prev };
-      if (editingDuty) {
-        Object.keys(next).forEach(k => delete next[Number(k)]);
-        next[empId] = [];
-      } else {
-        if (empId in next) {
-          delete next[empId];
-        } else {
-          next[empId] = [];
-        }
-      }
-      return next;
-    });
-  };
-
-  const handleOpt1AddDate = (empId: number, dateStr: string) => {
-    if (!dateStr) return;
-    setOpt1Assignments(prev => {
-      const currentDates = prev[empId] || [];
-      if (currentDates.includes(dateStr)) return prev;
-      return {
-        ...prev,
-        [empId]: [...currentDates, dateStr].sort()
-      };
-    });
-  };
-
-  const handleOpt1RemoveDate = (empId: number, dateStr: string) => {
-    setOpt1Assignments(prev => {
-      const currentDates = prev[empId] || [];
-      return {
-        ...prev,
-        [empId]: currentDates.filter(d => d !== dateStr)
-      };
-    });
-  };
 
   // Office Order (জিও) custom edit fields
   const [isPrintMode, setIsPrintMode] = useState(false);
-
   const [originalOrderRef, setOriginalOrderRef] = useState('');
   const [activePartIdx, setActivePartIdx] = useState(0);
 
@@ -686,227 +176,11 @@ export default function RosterPage() {
   const [selectedExecutiveId, setSelectedExecutiveId] = useState<string>('');
   const [holidays, setHolidays] = useState<Holiday[]>([]);
 
-  // Check if a date should be disabled based on selected duty category
-  const isDateDisabledForType = (isWorking: boolean, type: string) => {
-    if (!type) return true; // Disable all dates if no type is selected
-    if (type === 'LATE_SITTING') {
-      return !isWorking; // Disable holidays/weekends for Late Sitting
-    }
-    if (type === 'HOLIDAY') {
-      return isWorking; // Disable normal working days for Holiday Duty
-    }
-    return false; // Night Shift allows any date
-  };
-
-  // Render stunning month calendar for multi-date selection
-  const renderMonthCalendar = (empId: number, ym: string) => {
-    const [yearStr, monthStr] = ym.split('-');
-    const year = parseInt(yearStr, 10);
-    const month = parseInt(monthStr, 10); // 1-indexed
-    
-    const lastDay = new Date(year, month, 0).getDate();
-    const cells = [];
-    
-    for (let day = 1; day <= lastDay; day++) {
-      const dayStr = String(day).padStart(2, '0');
-      const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
-      
-      const dateObj = new Date(year, month - 1, day);
-      const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
-      const dayNamesBn = ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি'];
-      const dayName = dayNamesBn[dayOfWeek];
-      
-      const isSelected = (opt1Assignments[empId] || []).includes(dateStr);
-      const isWorking = checkIsWorkingDay(dateStr, holidays);
-      const isDbHoliday = holidays.find(h => h.date === dateStr);
-      
-      cells.push({
-        day,
-        dateStr,
-        dayName,
-        dayOfWeek,
-        isSelected,
-        isWorking,
-        isDbHoliday
-      });
-    }
-
-    const banglaMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
-    const banglaMonthLabel = `${banglaMonths[month - 1]} ${toBanglaDigits(yearStr)}`;
-    
-    return (
-      <div key={ym} className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 no-print flex-1 w-full min-w-0">
-        <div className="flex items-center justify-between gap-1">
-          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">ডিউটি তারিখসমূহ:</span>
-          {opt1Assignments[empId] && opt1Assignments[empId].some(d => d.startsWith(ym)) && (
-            <button
-              type="button"
-              onClick={() => setOpt1Assignments(prev => {
-                const currentDates = prev[empId] || [];
-                return {
-                  ...prev,
-                  [empId]: currentDates.filter(d => !d.startsWith(ym))
-                };
-              })}
-              className="text-[9px] font-bold text-red-500 hover:text-red-650 transition-colors"
-            >
-              এই মাসের সব মুছুন
-            </button>
-          )}
-        </div>
-        
-        {/* Month Selector Bar */}
-        <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/40 p-1.5 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
-          <button
-            type="button"
-            onClick={() => handlePrevMonth(empId)}
-            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-850 rounded transition-colors text-slate-650 dark:text-slate-350"
-            title="পূর্ববর্তী মাস"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          
-          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-            {banglaMonthLabel}
-          </span>
-          
-          <button
-            type="button"
-            onClick={() => handleNextMonth(empId)}
-            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-850 rounded transition-colors text-slate-650 dark:text-slate-350"
-            title="পরবর্তী মাস"
-          >
-            <ChevronRight size={14} />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 font-sans text-center">
-          {['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহ', 'শুক্র', 'শনি'].map((dName, idx) => (
-            <div key={idx} className={`text-[8px] xs:text-[9px] sm:text-[10px] font-bold py-0.5 ${idx === 5 || idx === 6 ? 'text-red-500 font-extrabold' : 'text-slate-400 dark:text-slate-500'}`}>
-              {dName}
-            </div>
-          ))}
-          
-          {/* Pad grid */}
-          {Array.from({ length: new Date(year, month - 1, 1).getDay() }).map((_, idx) => (
-            <div key={`pad-${idx}`} className="min-h-[32px]" />
-          ))}
-          
-          {cells.map(c => {
-            const holidayInfo = c.isDbHoliday ? c.isDbHoliday.name : ((c.dayOfWeek === 5 || c.dayOfWeek === 6) && !c.isWorking ? 'সাপ্তাহিক ছুটি' : '');
-            const isDisabled = isDateDisabledForType(c.isWorking, assignmentForm.type);
-            
-            // Real-time leave conflict warning check
-            const emp = employees.find(e => e.id === empId);
-            const leaveConflict = emp?.bankId ? leaves.find(l => 
-              l.bankId === emp.bankId && 
-              l.startDate <= c.dateStr && 
-              l.endDate >= c.dateStr
-            ) : null;
-            
-            const leaveTypeBn = leaveConflict ? (
-              leaveConflict.leaveType === 'CASUAL' ? 'নৈমিত্তিক ছুটি' : 
-              leaveConflict.leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : 
-              'কর্মস্থল ত্যাগসহ নৈমিত্তিক'
-            ) : '';
-            const leaveTooltip = leaveConflict ? `\n⚠️ ছুটি সংঘর্ষ: ${leaveTypeBn} (${leaveConflict.startDate.split('-').reverse().join('-')} হতে ${leaveConflict.endDate.split('-').reverse().join('-')})` : '';
-
-            return (
-              <button
-                type="button"
-                key={c.dateStr}
-                disabled={isDisabled}
-                title={`${c.dateStr} (${holidayInfo || 'কর্মদিবস'})${isDisabled ? ' - এই ক্যাটাগরির জন্য ডিজেবল' : ''}${leaveTooltip}`}
-                onClick={() => {
-                  if (c.isSelected) {
-                    handleOpt1RemoveDate(empId, c.dateStr);
-                  } else {
-                    handleOpt1AddDate(empId, c.dateStr);
-                  }
-                }}
-                className={`relative p-0.5 text-[9px] sm:text-[10px] font-bold rounded-md transition-all flex flex-col items-center justify-center min-h-[28px] sm:min-h-[32px] border ${
-                  c.isSelected
-                    ? 'bg-indigo-650 border-indigo-650 text-white shadow-sm font-extrabold scale-105'
-                    : isDisabled
-                      ? 'bg-slate-100/50 dark:bg-slate-900/10 border-slate-200/20 dark:border-slate-800/10 text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-40'
-                      : leaveConflict
-                        ? 'bg-amber-50/70 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
-                        : !c.isWorking
-                          ? 'bg-red-50/50 dark:bg-red-950/20 border-red-100/50 dark:border-red-900/10 text-red-500 hover:bg-red-100/60 dark:hover:bg-red-900/30'
-                          : 'bg-slate-50 dark:bg-slate-950/20 border-slate-200/40 dark:border-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <span>{c.day}</span>
-                {c.isDbHoliday && (
-                  <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-amber-550 animate-pulse" />
-                )}
-                {leaveConflict && (
-                  <span className="absolute -top-1 -right-1 flex h-2 w-2" title={`ছুটি সংঘর্ষ: ${leaveTypeBn}`}>
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Selected dates summary across all months */}
-        {opt1Assignments[empId] && opt1Assignments[empId].length > 0 && (
-          <div className="pt-2.5 border-t border-dashed border-slate-200/80 dark:border-slate-800/80">
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                মোট নির্বাচিত তারিখ: <span className="text-indigo-600 dark:text-indigo-400 font-extrabold font-sans">{toBanglaDigits(opt1Assignments[empId].length)}টি</span>
-              </p>
-              <button
-                type="button"
-                onClick={() => setOpt1Assignments(prev => {
-                  const next = { ...prev };
-                  delete next[empId];
-                  return next;
-                })}
-                className="text-[9px] font-bold text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors cursor-pointer"
-              >
-                সব বাদ দিন
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
-              {opt1Assignments[empId].map(dateStr => {
-                const [, m, d] = dateStr.split('-');
-                const monthName = banglaMonths[parseInt(m, 10) - 1];
-                const fullLabel = `${toBanglaDigits(parseInt(d, 10))} ${monthName}`;
-                return (
-                  <span
-                    key={dateStr}
-                    className="w-fit inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60 whitespace-nowrap shadow-2xs transition-all hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40"
-                  >
-                    <span>{fullLabel}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleOpt1RemoveDate(empId, dateStr)}
-                      className="text-indigo-400 hover:text-red-600 dark:hover:text-red-400 transition-colors ml-0.5 font-bold cursor-pointer text-xs"
-                      title="তারিখটি বাদ দিন"
-                    >
-                      ×
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // New customizable parameters for Janata Bank Office Order
   const [userSelectedPrintCategory, setUserSelectedPrintCategory] = useState<'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | null>(null);
 
   const printCategory = useMemo(() => {
     if (userSelectedPrintCategory !== null) return userSelectedPrintCategory;
-    if (isEditingArchive || isPrintMode || isArchived) {
-      // return default fallback
-    }
     if (duties && duties.length > 0) {
       let latestDuty = duties[0];
       for (let i = 1; i < duties.length; i++) {
@@ -919,7 +193,7 @@ export default function RosterPage() {
       }
     }
     return 'LATE_SITTING';
-  }, [userSelectedPrintCategory, duties, isEditingArchive, isPrintMode, isArchived]);
+  }, [userSelectedPrintCategory, duties]);
 
   const changePrintCategory = (category: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT') => {
     setUserSelectedPrintCategory(category);
@@ -952,12 +226,9 @@ export default function RosterPage() {
   };
 
   const [userSelectedPayeeId, setUserSelectedPayeeId] = useState<string | null>(null);
-  
   const [userCustomOrderDate, setUserCustomOrderDate] = useState<string | null>(null);
   const [userCustomOrderText, setUserCustomOrderText] = useState<string | null>(null);
   const [userCustomOrderRef, setUserCustomOrderRef] = useState<string | null>(null);
-
-
 
   const getGroupedDuties = useCallback(() => {
     const filtered = duties.filter(d => {
@@ -1255,15 +526,174 @@ export default function RosterPage() {
 
   const [headerMode, setHeaderMode] = useState<'with_header' | 'without_header'>('with_header');
 
+  const getShortDesignation = (desig: string | undefined | null) => {
+    if (!desig) return '';
+    const match = desig.match(/\(([^)]+)\)/);
+    return match ? match[1] : desig;
+  };
+
+  const getFormattedDateList = (dates: string[]) => {
+    return dates
+      .sort()
+      .map(d => {
+        const [year, month, day] = d.split('-');
+        return toBanglaDigits(`${day}-${month}-${year}`);
+      })
+      .join(', ');
+  };
+
+  const updateAssociatedBill = async (baseOrderRef: string, oldOrderRef?: string) => {
+    try {
+      const billRef = baseOrderRef + '/বিল';
+      const oldBillRef = oldOrderRef ? (oldOrderRef + '/বিল') : billRef;
+      const ordersRes = await fetch('/api/office-orders');
+      if (!ordersRes.ok) return;
+      const orders = await ordersRes.json();
+      const existingBill = orders.find((o: OfficeOrder) => o.orderRef === billRef || (oldBillRef && o.orderRef === oldBillRef));
+      if (!existingBill) {
+        logger.info("No existing bill found for this office order. Skipping bill update.");
+        return;
+      }
+      
+      const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
+      const transportRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 400 : 200;
+      
+      const summaries: Record<number, { name: string; designation: string; bankId: string; days: number; dates: string[] }> = {};
+      const activeDuties = duties.filter(d => d.type === printCategory);
+      activeDuties.forEach(d => {
+        const empId = d.employeeId;
+        if (!summaries[empId]) {
+          summaries[empId] = {
+            name: d.employee.name,
+            designation: d.employee.designation,
+            bankId: d.employee.bankId || '',
+            days: 0,
+            dates: []
+          };
+        }
+        summaries[empId].days += 1;
+        if (!summaries[empId].dates.includes(d.date)) {
+          summaries[empId].dates.push(d.date);
+        }
+      });
+      
+      const summariesPayload = Object.values(summaries).map(s => {
+        const totalTransport = s.days * transportRate;
+        const totalApyaon = s.days * apyaonRate;
+        const empTotal = totalTransport + totalApyaon;
+        return {
+          name: s.name,
+          designation: s.designation,
+          bankId: s.bankId,
+          days: s.days,
+          apyaonRate: apyaonRate,
+          totalApyaon: totalApyaon,
+          totalTransport: totalTransport,
+          grandTotal: empTotal,
+          datesFormatted: s.dates.sort().map(d => toBanglaDigits(d.split('-').reverse().join('-'))).join(', ')
+        };
+      });
+      
+      const totalDaysAll = summariesPayload.reduce((sum, s) => sum + s.days, 0);
+      const totalApyaonAll = summariesPayload.reduce((sum, s) => sum + s.totalApyaon, 0);
+      const totalTransportAll = summariesPayload.reduce((sum, s) => sum + s.totalTransport, 0);
+      const grandTotalPrintAll = totalApyaonAll + totalTransportAll;
+      
+      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
+      const payeeName = emp ? emp.name : 'Unknown';
+      
+      const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
+      const cellName = matchedCellObj ? matchedCellObj.name : (selectedCell === 'all' ? 'All Cells' : 'IT Department');
+      
+      const billPayload = {
+        orderRef: billRef,
+        originalOrderRef: oldBillRef !== billRef ? oldBillRef : undefined,
+        orderDate: orderDate,
+        category: "BILL_" + printCategory,
+        employeeName: payeeName,
+        cellName: cellName,
+        duties: summariesPayload.map(s => ({
+          employeeId: s.bankId,
+          employeeName: s.name,
+          designation: s.designation,
+          days: s.days,
+          apyaonRate: s.apyaonRate,
+          totalApyaon: s.totalApyaon,
+          totalTransport: s.totalTransport,
+          grandTotal: s.grandTotal
+        })),
+        dutyIds: activeDuties.map(d => d.id).filter(Number.isInteger),
+        content: {
+          openingParagraph: `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে অত্র ডিপার্টমেন্টের কর্মকর্তাদের নামের পাশে বর্ণিত তারিখে অতিরিক্ত কাজ সম্পন্ন করায় বিধি মোতাবেক আপ্যায়ন ও যাতায়াত ভাতা প্রদানের বিল মঞ্জুর করা হলো।`,
+          totalDays: totalDaysAll,
+          totalApyaon: totalApyaonAll,
+          totalTransport: totalTransportAll,
+          grandTotal: grandTotalPrintAll,
+          grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
+          signingOfficer: signingOfficer,
+          signingDesignation: signingDesignation,
+          subjectText: `অতিরিক্ত কাজের আপ্যায়ন ও যাতায়াত ভাতার মঞ্জুরীপত্র ও বিল প্রস্তুত প্রসঙ্গে।`
+        }
+      };
+      
+      await fetch('/api/office-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(billPayload)
+      });
+      
+      const formatMonthName = (monthStr: string) => {
+        const [year, month] = monthStr.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const monthName = date.toLocaleString('en-US', { month: 'long' });
+        return `${monthName}-${year}`;
+      };
+      
+      const billingMonthString = selectedMonths.length > 0 
+        ? selectedMonths.map(formatMonthName).join(', ')
+        : formatMonthName(new Date().toISOString().substring(0, 7));
+      
+      const pdfPayload = {
+        billingMonth: billingMonthString,
+        openingParagraph: billPayload.content.openingParagraph,
+        summaries: summariesPayload,
+        totalDays: totalDaysAll,
+        totalApyaon: totalApyaonAll,
+        totalTransport: totalTransportAll,
+        grandTotal: grandTotalPrintAll,
+        grandTotalInWords: billPayload.content.grandTotalInWords,
+        signingOfficer: signingOfficer,
+        signingDesignation: signingDesignation,
+        representativeName: payeeName,
+        representativeDesignation: emp ? emp.designation : 'Unknown',
+        subjectText: billPayload.content.subjectText,
+        billDate: orderDate,
+        transportRate: transportRate,
+        apyaonRate: apyaonRate,
+        totalTransportInWords: getBanglaNumberWords(totalTransportAll),
+        totalApyaonInWords: getBanglaNumberWords(totalApyaonAll),
+        billRef: billRef
+      };
+      
+      await fetch('/api/documents/generate-bill-memo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pdfPayload)
+      });
+      
+      logger.info("Associated bill and PDF updated successfully!");
+    } catch (err) {
+      logger.error("Failed to update associated bill:", err);
+    }
+  };
+
   const archiveOrder = async (action: 'generate' | 'print' | 'download') => {
     if (!payeeEmployeeId || !orderRef) return;
     
     try {
-      
       const printTableDuties = getGroupedDuties();
 
       if (action === 'generate') {
-        // Pre-generate order file/preview in backend, do not save in DB
         const pdfPayload = {
           orderRef: orderRef,
           orderDate: orderDate,
@@ -1292,7 +722,7 @@ export default function RosterPage() {
 
         if (res.ok) {
           setOrderGenerated(true);
-          setIsArchived(false); // Not archived yet
+          setIsArchived(false);
           alert('অফিস আদেশ প্রস্তুত করা হয়েছে! এখন আপনি প্রিভিউ দেখতে পারেন। অনুগ্রহ করে এটি ডাটাবেইজে সংরক্ষণ করতে "আর্কাইভ করুন" বাটনে ক্লিক করুন।');
         } else {
           alert('অফিস আদেশ প্রস্তুত করতে ব্যর্থ হয়েছে।');
@@ -1467,7 +897,6 @@ export default function RosterPage() {
   };
 
   const handlePreviewOfficeOrder = async (order: OfficeOrder) => {
-    // Find representative employee ID
     const localEmps = employees;
     const cleanName = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
     const matchedRep = localEmps.find((e: Employee) => 
@@ -1479,7 +908,6 @@ export default function RosterPage() {
       setUserSelectedPayeeId(matchedRep.id.toString());
     }
     
-    // Find Cell ID
     if (order.cellName) {
       const matchedCell = cells.find((c: Cell) => c.name === order.cellName);
       if (matchedCell) {
@@ -1506,7 +934,6 @@ export default function RosterPage() {
       }
     }
     
-    // Load duties from DB for this order
     let list: any[] = [];
     try {
       const res = await fetch(`/api/duties?orderRef=${encodeURIComponent(order.orderRef)}&includeArchived=true`);
@@ -1564,7 +991,6 @@ export default function RosterPage() {
 
     setDuties(list);
     
-    // Pre-populate opt1Assignments
     const assignments: Record<number, string[]> = {};
     list.forEach(d => {
       if (!assignments[d.employeeId]) {
@@ -1605,182 +1031,6 @@ export default function RosterPage() {
     }
   };
 
-  // Commented out to ensure that archive is only saved upon explicit download/print click action
-  // as per instructions: "যতক্ষণ না ডাউনলোড বা প্রিন্ট প্রিভিউ অ্যাকশন নেওয়া হচ্ছে, ততক্ষণ এই সূত্র আর্কাইভে জমা হবে না"
-  /*
-  useEffect(() => {
-    if (isPrintMode) {
-      archiveOrder(true);
-    }
-  }, [isPrintMode]);
-  */
-
-
-  const getShortDesignation = (desig: string) => {
-    const match = desig.match(/\(([^)]+)\)/);
-    return match ? match[1] : desig;
-  };
-
-  const getFormattedDateList = (dates: string[]) => {
-    return dates
-      .sort()
-      .map(d => {
-        const [year, month, day] = d.split('-');
-        return toBanglaDigits(`${day}-${month}-${year}`);
-      })
-      .join(', ');
-  };
-
-  const updateAssociatedBill = async (baseOrderRef: string, oldOrderRef?: string) => {
-    try {
-      const billRef = baseOrderRef + '/বিল';
-      const oldBillRef = oldOrderRef ? (oldOrderRef + '/বিল') : billRef;
-      const ordersRes = await fetch('/api/office-orders');
-      if (!ordersRes.ok) return;
-      const orders = await ordersRes.json();
-      const existingBill = orders.find((o: OfficeOrder) => o.orderRef === billRef || (oldBillRef && o.orderRef === oldBillRef));
-      if (!existingBill) {
-        logger.info("No existing bill found for this office order. Skipping bill update.");
-        return;
-      }
-      
-      const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
-      const transportRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 400 : 200;
-      
-      // Group the duties by employee matching the print category
-      const summaries: Record<number, { name: string; designation: string; bankId: string; days: number; dates: string[] }> = {};
-      const activeDuties = duties.filter(d => d.type === printCategory);
-      activeDuties.forEach(d => {
-        const empId = d.employeeId;
-        if (!summaries[empId]) {
-          summaries[empId] = {
-            name: d.employee.name,
-            designation: d.employee.designation,
-            bankId: d.employee.bankId || '',
-            days: 0,
-            dates: []
-          };
-        }
-        summaries[empId].days += 1;
-        if (!summaries[empId].dates.includes(d.date)) {
-          summaries[empId].dates.push(d.date);
-        }
-      });
-      
-      const summariesPayload = Object.values(summaries).map(s => {
-        const totalTransport = s.days * transportRate;
-        const totalApyaon = s.days * apyaonRate;
-        const empTotal = totalTransport + totalApyaon;
-        return {
-          name: s.name,
-          designation: s.designation,
-          bankId: s.bankId,
-          days: s.days,
-          apyaonRate: apyaonRate,
-          totalApyaon: totalApyaon,
-          totalTransport: totalTransport,
-          grandTotal: empTotal,
-          datesFormatted: s.dates.sort().map(d => toBanglaDigits(d.split('-').reverse().join('-'))).join(', ')
-        };
-      });
-      
-      const totalDaysAll = summariesPayload.reduce((sum, s) => sum + s.days, 0);
-      const totalApyaonAll = summariesPayload.reduce((sum, s) => sum + s.totalApyaon, 0);
-      const totalTransportAll = summariesPayload.reduce((sum, s) => sum + s.totalTransport, 0);
-      const grandTotalPrintAll = totalApyaonAll + totalTransportAll;
-      
-      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
-      const payeeName = emp ? emp.name : 'Unknown';
-      
-      const matchedCellObj = cells.find(c => c.id.toString() === selectedCell);
-      const cellName = matchedCellObj ? matchedCellObj.name : (selectedCell === 'all' ? 'All Cells' : 'IT Department');
-      
-      const billPayload = {
-        orderRef: billRef,
-        originalOrderRef: oldBillRef !== billRef ? oldBillRef : undefined,
-        orderDate: orderDate,
-        category: "BILL_" + printCategory,
-        employeeName: payeeName,
-        cellName: cellName,
-        duties: summariesPayload.map(s => ({
-          employeeId: s.bankId,
-          employeeName: s.name,
-          designation: s.designation,
-          days: s.days,
-          apyaonRate: s.apyaonRate,
-          totalApyaon: s.totalApyaon,
-          totalTransport: s.totalTransport,
-          grandTotal: s.grandTotal
-        })),
-        dutyIds: activeDuties.map(d => d.id).filter(Number.isInteger), // Pass actual dutyIds!
-        content: {
-          openingParagraph: `T24 Online Banking Software Customization এবং Development সংক্রান্ত কার্যাদি সুচারুরূপে সম্পাদনের নিমিত্তে অত্র ডিপার্টমেন্টের কর্মকর্তাদের নামের পাশে বর্ণিত তারিখে অতিরিক্ত কাজ সম্পন্ন করায় বিধি মোতাবেক আপ্যায়ন ও যাতায়াত ভাতা প্রদানের বিল মঞ্জুর করা হলো।`,
-          totalDays: totalDaysAll,
-          totalApyaon: totalApyaonAll,
-          totalTransport: totalTransportAll,
-          grandTotal: grandTotalPrintAll,
-          grandTotalInWords: getBanglaNumberWords(grandTotalPrintAll),
-          signingOfficer: signingOfficer,
-          signingDesignation: signingDesignation,
-          subjectText: `অতিরিক্ত কাজের আপ্যায়ন ও যাতায়াত ভাতার মঞ্জুরীপত্র ও বিল প্রস্তুত প্রসঙ্গে।`
-        }
-      };
-      
-      // Update bill record in database
-      await fetch('/api/office-orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(billPayload)
-      });
-      
-      // Automatically regenerate bill PDF in the background
-      const formatMonthName = (monthStr: string) => {
-        const [year, month] = monthStr.split('-');
-        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-        const monthName = date.toLocaleString('en-US', { month: 'long' });
-        return `${monthName}-${year}`;
-      };
-      
-      const billingMonthString = selectedMonths.length > 0 
-        ? selectedMonths.map(formatMonthName).join(', ')
-        : formatMonthName(new Date().toISOString().substring(0, 7));
-      
-      const pdfPayload = {
-        billingMonth: billingMonthString,
-        openingParagraph: billPayload.content.openingParagraph,
-        summaries: summariesPayload,
-        totalDays: totalDaysAll,
-        totalApyaon: totalApyaonAll,
-        totalTransport: totalTransportAll,
-        grandTotal: grandTotalPrintAll,
-        grandTotalInWords: billPayload.content.grandTotalInWords,
-        signingOfficer: signingOfficer,
-        signingDesignation: signingDesignation,
-        representativeName: payeeName,
-        representativeDesignation: emp ? emp.designation : 'Unknown',
-        subjectText: billPayload.content.subjectText,
-        billDate: orderDate,
-        transportRate: transportRate,
-        apyaonRate: apyaonRate,
-        totalTransportInWords: getBanglaNumberWords(totalTransportAll),
-        totalApyaonInWords: getBanglaNumberWords(totalApyaonAll),
-        billRef: billRef
-      };
-      
-      await fetch('/api/documents/generate-bill-memo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pdfPayload)
-      });
-      
-      logger.info("Associated bill and PDF updated successfully!");
-    } catch (err) {
-      logger.error("Failed to update associated bill:", err);
-    }
-  };
-
-
-
   async function loadData() {
     setIsLoading(true);
     try {
@@ -1812,7 +1062,6 @@ export default function RosterPage() {
       setLeaves(Array.isArray(leavesData) ? leavesData : []);
       
       if (Array.isArray(execData)) {
-        // Filter to only DGMs based on designation query
         const dgmExecs = execData.filter((ex: Executive) => {
           const d = ex.designation.trim().toLowerCase();
           return d.includes('dgm') || d.includes('ডিজিএম') || d.includes('উপ-মহাব্যবস্থাপক');
@@ -1845,14 +1094,8 @@ export default function RosterPage() {
   }
 
   const loadDuties = useCallback(async () => {
-    if (isEditingArchive) {
-      // In edit mode, duties state is fully driven by opt1Assignments sync useEffect.
-      return;
-    }
-    if (isArchived && isPrintMode) {
-      // In print preview mode for an archived order, do not reload/overwrite duties state.
-      return;
-    }
+    if (isEditingArchive) return;
+    if (isArchived && isPrintMode) return;
     try {
       let queryUrl = `/api/duties?`;
       if (isArchived && orderRef) {
@@ -1882,11 +1125,10 @@ export default function RosterPage() {
       const data = await res.json();
       const activeList = Array.isArray(data) ? data : [];
 
-      // Filter list to keep only duties matching selectedMonths OR pending duties
       let filteredList = activeList;
       if (selectedMonths.length > 0 && !isEditingArchive && !isPrintMode && !isArchived) {
         filteredList = activeList.filter(d => {
-          if (!d.orderRef) return true; // Keep all pending duties across all months!
+          if (!d.orderRef) return true;
           if (!d.date) return false;
           const ym = d.date.substring(0, 7);
           return selectedMonths.includes(ym);
@@ -1950,7 +1192,6 @@ export default function RosterPage() {
         
         const loadArchivedDuties = async () => {
           try {
-            // First load employees, cells, office-orders, and the actual duties for this order
             const [empRes, cellRes, orderRes, dutiesRes] = await Promise.all([
               fetch('/api/employees'),
               fetch('/api/cells'),
@@ -1979,7 +1220,6 @@ export default function RosterPage() {
               
               const cleanName = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
               
-              // Find payee representative id
               const matchedRep = localEmps.find((e: Employee) => 
                 cleanName(e.name) === cleanName(matchingOrder.employeeName) || 
                 (e.bankId && matchingOrder.employeeName.includes(e.bankId))
@@ -1988,7 +1228,6 @@ export default function RosterPage() {
                 setUserSelectedPayeeId(matchedRep.id.toString());
               }
               
-              // Find cell id
               let matchedCell: Cell | undefined = undefined;
               if (matchingOrder.cellName) {
                 matchedCell = localCells.find((c: Cell) => c.name === matchingOrder.cellName);
@@ -1997,7 +1236,6 @@ export default function RosterPage() {
                 }
               }
               
-              // Extract all unique months from orderDuties and set selectedMonths
               const orderMonthsSet = new Set<string>();
               orderDuties.forEach((group: OrderDuty) => {
                 if (Array.isArray(group.dates)) {
@@ -2014,13 +1252,11 @@ export default function RosterPage() {
                 setSelectedMonths(Array.from(orderMonthsSet).sort());
               }
               
-              // Set orderRef and date
               const nameMatches = matchedRep ? isNameMatchingRef(matchedRep.name, editRef) : false;
               setUserCustomOrderRef(nameMatches ? editRef : null);
               setOriginalOrderRef(editRef);
               setUserCustomOrderDate(matchingOrder.orderDate);
               
-              // Populate content
               if (matchingOrder.content) {
                 setUserCustomOrderText(matchingOrder.content.orderText || '');
                 setSigningOfficer(matchingOrder.content.signingOfficer || '');
@@ -2030,7 +1266,6 @@ export default function RosterPage() {
                 }
               }
               
-              // Pre-populate opt1Assignments (left-side checked boxes)
               const assignments: Record<number, string[]> = {};
               orderDuties.forEach((group: OrderDuty) => {
                 const matchedEmp = localEmps.find((e: Employee) => 
@@ -2044,7 +1279,6 @@ export default function RosterPage() {
               });
               setOpt1Assignments(assignments);
               
-              // Reconstruct duties state
               const reconstructedDuties: Duty[] = [];
               orderDuties.forEach((group: OrderDuty) => {
                 const matchedEmp = localEmps.find((e: Employee) => 
@@ -2127,7 +1361,6 @@ export default function RosterPage() {
         loadArchivedDuties();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -2157,7 +1390,6 @@ export default function RosterPage() {
     }
   };
 
-  // Dynamic sync duties state from opt1Assignments when in edit mode
   useEffect(() => {
     if (isEditingArchive && employees.length > 0) {
       const newDuties: Duty[] = [];
@@ -2185,7 +1417,7 @@ export default function RosterPage() {
 
         dates.forEach(date => {
           newDuties.push({
-            id: Math.random(), // unique key for UI mapping
+            id: Math.random(),
             employeeId: empId,
             date: date,
             type: printCategory,
@@ -2202,8 +1434,6 @@ export default function RosterPage() {
       });
     }
   }, [opt1Assignments, isEditingArchive, printCategory, employees]);
-
-
 
   const handleBulkDutyImport = async (entries: { bankId: string; employeeName: string; dates: string[] }[]) => {
     const assignmentsToImport: any[] = [];
@@ -2369,7 +1599,6 @@ export default function RosterPage() {
 
       const preservedOrderRef = editingDuties.find(d => d.orderRef)?.orderRef || null;
 
-      // Client-side Leave Conflict Validator
       for (const assign of assignments) {
         const emp = employees.find(e => e.id === assign.employeeId);
         if (emp && emp.bankId) {
@@ -2426,7 +1655,6 @@ export default function RosterPage() {
           return;
         }
 
-        // Automatically expand month filter to include the months of all updated/assigned dates
         const submittedMonths = Array.from(new Set(assignments.map(a => a.date.substring(0, 7))));
         setSelectedMonths(prev => {
           const next = [...prev];
@@ -2476,7 +1704,6 @@ export default function RosterPage() {
           return;
         }
 
-        // Check if any checked employee actually has selected dates
         let hasDates = false;
         for (const empId of activeEmployeeIds) {
           if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
@@ -2499,7 +1726,6 @@ export default function RosterPage() {
           return;
         }
       } else {
-        // DATE_WISE
         if (assignmentForm.selectedEmployeeIds.length === 0) {
           setErrorMessage('ডিউটি বরাদ্দ করার জন্য অন্তত একজন কর্মকর্তা নির্বাচন করুন।');
           return;
@@ -2523,7 +1749,6 @@ export default function RosterPage() {
       }
     }
 
-    // Client-side Leave Conflict Validator
     for (const assign of assignments) {
       const emp = employees.find(e => e.id === assign.employeeId);
       if (emp && emp.bankId) {
@@ -2582,7 +1807,6 @@ export default function RosterPage() {
       }
 
       if (isEditingArchive) {
-        // Now update the office order and the associated bill!
         const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
         const payeeName = emp ? emp.name : 'Unknown';
         
@@ -2604,7 +1828,7 @@ export default function RosterPage() {
             dates: group.dates,
             description: group.description
           })),
-          dutyIds: [], // backend handles linking because we set it on creation
+          dutyIds: [],
           content: {
             orderText: orderText,
             signingOfficer: signingOfficer,
@@ -2614,7 +1838,6 @@ export default function RosterPage() {
           }
         };
 
-        // 1. Update the office order in DB
         const ooRes = await fetch('/api/office-orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2622,7 +1845,6 @@ export default function RosterPage() {
         });
 
         if (ooRes.ok) {
-          // 2. Generate updated office order PDF in backend
           const pdfPayload = {
             orderRef: orderRef,
             orderDate: orderDate,
@@ -2649,10 +1871,8 @@ export default function RosterPage() {
           });
         }
 
-        // 3. Update the associated bill!
         await updateAssociatedBill(orderRef, originalOrderRef);
 
-        // Exit edit mode and redirect to documents archive page!
         setIsEditingArchive(false);
         const params = new URLSearchParams(window.location.search);
         const from = params.get('from') || '/documents';
@@ -2661,7 +1881,6 @@ export default function RosterPage() {
         return;
       }
 
-      // Automatically expand month filter to include the months of all updated/assigned dates
       const submittedMonths = Array.from(new Set(assignments.map(a => a.date.substring(0, 7))));
       setSelectedMonths(prev => {
         const next = [...prev];
@@ -2673,7 +1892,6 @@ export default function RosterPage() {
         return next;
       });
 
-      // Normal mode reset logic
       if (entryMode === 'EMPLOYEE_WISE') {
         setOpt1Assignments({});
         setOpt1ViewedMonths({});
@@ -2686,8 +1904,6 @@ export default function RosterPage() {
       }
       
       loadDuties();
-      
-      // Show success toast/alert
       alert('ডিউটি রোস্টার সফলভাবে সংরক্ষণ করা হয়েছে!');
     } catch (err) {
       logger.error('Error assigning roster:', err);
@@ -2738,7 +1954,6 @@ export default function RosterPage() {
       const dutiesToUse = pendingDutiesOfEmp.length > 0 ? pendingDutiesOfEmp : dutiesList;
       setEditingDuties(dutiesToUse);
       
-      // Set common form values
       setAssignmentForm(prev => ({
         ...prev,
         type: representative.type,
@@ -2747,16 +1962,12 @@ export default function RosterPage() {
         description: representative.description || ''
       }));
 
-      // Switch entry mode to Option 1: Cell & Employee Wise
       setEntryMode('EMPLOYEE_WISE');
-
-      // Option 1 (Employee Wise) states
       setOpt1CellId(representative.employee.cellId.toString());
       const allDates = dutiesToUse.map(d => d.date);
       setOpt1Assignments({
         [representative.employeeId]: allDates
       });
-      // Align calendar month with the first duty's date
       const ym = representative.date.substring(0, 7);
       setOpt1ViewedMonths({
         [representative.employeeId]: ym
@@ -2765,7 +1976,6 @@ export default function RosterPage() {
       logger.error('Error loading edit duties:', err);
       setEditingDuties(dutiesList);
       
-      // Set common form values
       setAssignmentForm(prev => ({
         ...prev,
         type: representative.type,
@@ -2774,29 +1984,21 @@ export default function RosterPage() {
         description: representative.description || ''
       }));
 
-      // Switch entry mode to Option 1: Cell & Employee Wise
       setEntryMode('EMPLOYEE_WISE');
-
-      // Option 1 (Employee Wise) states
       setOpt1CellId(representative.employee.cellId.toString());
       const allDates = dutiesList.map(d => d.date);
       setOpt1Assignments({
         [representative.employeeId]: allDates
       });
-      // Align calendar month with the first duty's date
       const ym = representative.date.substring(0, 7);
       setOpt1ViewedMonths({
         [representative.employeeId]: ym
       });
     }
 
-    // Option 2 (Date Wise) states to ensure the employee shows up
     setFormCellFilter(representative.employee.cellId.toString());
     setFormSearchQuery('');
-
     setErrorMessage('');
-
-    // Smoothly scroll to the top of the page (Duty Assignment Panel)
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -2805,7 +2007,6 @@ export default function RosterPage() {
     setEditingDuties([]);
     setErrorMessage('');
     
-    // Reset form states to default
     setAssignmentForm({
       selectedEmployeeIds: [],
       type: 'LATE_SITTING',
@@ -2826,67 +2027,6 @@ export default function RosterPage() {
     const redirectUrl = from.includes('?') ? `${from}&msg=cancel` : `${from}?msg=cancel`;
     window.location.assign(redirectUrl);
   };
-
-
-  // Checkbox group handlers for Officer multi-selection
-  const handleEmployeeToggle = (empId: number) => {
-    setAssignmentForm(prev => {
-      const selected = [...prev.selectedEmployeeIds];
-      const index = selected.indexOf(empId);
-      if (index > -1) {
-        selected.splice(index, 1);
-      } else {
-        selected.push(empId);
-      }
-      return { ...prev, selectedEmployeeIds: selected };
-    });
-  };
-
-  const selectAllFilteredEmployees = (filteredEmps: Employee[]) => {
-    const allIds = filteredEmps.map(e => e.id);
-    setAssignmentForm(prev => ({
-      ...prev,
-      selectedEmployeeIds: allIds
-    }));
-  };
-
-  const deselectAllFilteredEmployees = () => {
-    setAssignmentForm(prev => ({
-      ...prev,
-      selectedEmployeeIds: []
-    }));
-  };
-
-  // Helper translations and colors
-  const getDutyBadgeStyles = (type: string) => {
-    switch (type) {
-      case 'LATE_SITTING':
-        return 'bg-indigo-50/70 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border-indigo-100/50 dark:border-indigo-950/20';
-      case 'HOLIDAY':
-        return 'bg-red-50/70 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-100/50 dark:border-red-950/20 font-bold';
-      case 'NIGHT_SHIFT':
-        return 'bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-100 border-slate-950 dark:border-slate-800 font-bold';
-      default:
-        return 'bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-100';
-    }
-  };
-
-  // Format dynamic dates to formal Bengali
-  const getBanglaDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    const months = [
-      'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
-      'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
-    ];
-    const [year, month, day] = dateStr.split('-');
-    const bnDay = parseInt(day, 10).toLocaleString('bn-BD');
-    const bnYear = parseInt(year, 10).toLocaleString('bn-BD', { useGrouping: false });
-    const bnMonth = months[parseInt(month, 10) - 1];
-    
-    return `${bnDay} ${bnMonth} ${bnYear}`;
-  };
-
-
 
   const isSubmitDisabled = () => {
     if (!assignmentForm.type) return true;
@@ -2915,7 +2055,6 @@ export default function RosterPage() {
         if (!assignmentForm.date) return true;
         if (assignmentForm.selectedEmployeeIds.length === 0) return true;
         
-        // Also validate date eligibility for the type
         const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
         const isLateSitting = assignmentForm.type === 'LATE_SITTING';
         const isHoliday = assignmentForm.type === 'HOLIDAY';
@@ -2926,7 +2065,6 @@ export default function RosterPage() {
       return false;
     }
 
-    // Normal mode check
     if (entryMode === 'EMPLOYEE_WISE') {
       const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
       if (activeEmployeeIds.length === 0) return true;
@@ -2949,382 +2087,13 @@ export default function RosterPage() {
       if (assignmentForm.selectedEmployeeIds.length === 0) {
         return true;
       }
-    }
-    return false;
-  };
-
-  const renderOfficeOrdersList = (ordersList: OfficeOrder[], isAssignmentPrimary: boolean) => {
-    return (
-      <div className="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-xl">
-        <table className="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800">
-              <th className="p-2.5 text-[10px] uppercase font-bold tracking-wider text-center w-10">ক্রমিক</th>
-              <th className="p-2.5 text-[10px] uppercase font-bold tracking-wider max-w-[160px]">স্মারক সূত্র নং</th>
-              <th className="p-2.5 text-[10px] uppercase font-bold tracking-wider">তারিখ</th>
-              <th className={`p-2.5 text-[10px] uppercase font-bold tracking-wider ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>ক্যাটাগরি</th>
-              <th className={`p-2.5 text-[10px] uppercase font-bold tracking-wider text-center font-bold ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>মোট ডিউটি</th>
-              <th className={`p-2.5 text-[10px] uppercase font-bold tracking-wider text-right font-bold ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>মোট বিল</th>
-              <th className={`p-2.5 text-[10px] uppercase font-bold tracking-wider text-right ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>অ্যাকশন</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-950/20 font-medium">
-            {ordersList.map((order, index) => {
-              let catName = 'লেট সিটিং';
-              if (order.category === 'HOLIDAY') catName = 'ছুটির দিনে';
-              if (order.category === 'NIGHT_SHIFT') catName = 'রাত্রিকালীন';
-              
-              const bnDate = order.orderDate ? toBanglaDigits(order.orderDate.split('-').reverse().join('-')) : '';
-              
-              const recordCount = (order.duties || []).reduce((sum: number, g: OrderDuty) => sum + (g.dates ? g.dates.length : 0), 0);
-              const ratePerDay = order.category === 'HOLIDAY' ? 500 : order.category === 'NIGHT_SHIFT' ? 1000 : 300;
-              const totalAmount = recordCount * ratePerDay;
-
-              const getNormalizedRef = (ref: string | null | undefined) => {
-                if (!ref) return '';
-                return ref.replace(/\/বিল$/, '').trim().toLowerCase();
-              };
-              const norm = getNormalizedRef(order.orderRef);
-              const existingBill = officeOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
-
-              return (
-                <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors font-medium">
-                  <td className="p-2.5 text-center text-slate-500 font-sans font-semibold text-xs w-10">
-                    {toBanglaDigits(index + 1)}
-                  </td>
-                  <td className="p-2.5 font-mono font-bold text-slate-700 dark:text-slate-300 text-xs max-w-[150px] sm:max-w-[180px] truncate select-all" title={order.orderRef}>
-                    {order.orderRef}
-                  </td>
-                  <td className="p-2.5 text-slate-600 dark:text-slate-400 font-sans text-xs whitespace-nowrap">
-                    {bnDate}
-                  </td>
-                  <td className={`p-2.5 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap ${
-                      order.category === 'HOLIDAY' 
-                        ? 'bg-red-50 text-red-655 border border-red-100 dark:bg-red-955/20 dark:text-red-400 dark:border-red-900/30' 
-                        : order.category === 'NIGHT_SHIFT'
-                          ? 'bg-slate-900 text-white border border-slate-950 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700 font-extrabold'
-                          : 'bg-indigo-50 text-indigo-600 border border-indigo-100 dark:bg-indigo-955/20 dark:text-indigo-400 dark:border-indigo-900/30'
-                    }`}>
-                      {catName}
-                    </span>
-                  </td>
-                  <td className={`p-2.5 text-center text-slate-600 dark:text-slate-400 font-sans font-bold text-xs whitespace-nowrap ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
-                    {toBanglaDigits(recordCount)} টি
-                  </td>
-                  <td className={`p-2.5 text-right text-indigo-600 dark:text-indigo-400 font-sans font-bold text-xs whitespace-nowrap ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
-                    ৳{toBanglaDigits(totalAmount.toLocaleString('en-US'))}
-                  </td>
-                  <td className={`p-2.5 text-right whitespace-nowrap ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
-                    <div className="inline-flex items-center gap-1.5 justify-end">
-                      {/* Primary View Button */}
-                      <button
-                        onClick={() => handlePreviewOfficeOrder(order)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-650 dark:text-indigo-300 rounded-lg text-xs font-bold transition-all cursor-pointer font-sans"
-                        title="অফিস আদেশ দেখুন ও প্রিন্ট করুন"
-                      >
-                        <Eye size={12} />
-                        <span>ভিউ</span>
-                      </button>
-
-                      {/* Dropdown Action Menu (⋮) */}
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenActionOrderId(openActionOrderId === order.id ? null : order.id);
-                          }}
-                          className={`p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                            openActionOrderId === order.id ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100' : ''
-                          }`}
-                          title="অতিরিক্ত অ্যাকশন মেনু"
-                        >
-                          <MoreVertical size={14} />
-                        </button>
-
-                        {openActionOrderId === order.id && (
-                          <div 
-                            ref={actionMenuRef}
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-1 z-50 animate-in fade-in slide-in-from-top-1 text-left font-sans"
-                          >
-                            {/* Bill Generate / Edit Option */}
-                            {existingBill ? (
-                              <button
-                                onClick={() => {
-                                  setOpenActionOrderId(null);
-                                  window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}`;
-                                }}
-                                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-955/30 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Receipt size={13} />
-                                <span>বিল সম্পাদন</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setOpenActionOrderId(null);
-                                  window.location.href = `/billing?orderRef=${encodeURIComponent(order.orderRef)}`;
-                                }}
-                                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Receipt size={13} />
-                                <span>বিল প্রস্তুত করুন</span>
-                              </button>
-                            )}
-
-                            {/* Edit Roster */}
-                            <button
-                              onClick={() => {
-                                setOpenActionOrderId(null);
-                                window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`;
-                              }}
-                              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                            >
-                              <FileSignature size={13} />
-                              <span>রোস্টার সম্পাদন</span>
-                            </button>
-
-                            {/* Delete Order */}
-                            <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
-                            <button
-                              onClick={() => {
-                                setOpenActionOrderId(null);
-                                handleDeleteOfficeOrder(order.id, order.orderRef);
-                              }}
-                              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer"
-                            >
-                              <Trash2 size={13} />
-                              <span>মুছে ফেলুন</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  const handleDownloadOfficeOrderDocx = async () => {
-    try {
-      const grouped = getGroupedDuties();
-      const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
-      const mappedDuties = grouped.map((g, idx) => ({
-        slNo: idx + 1,
-        name: g.employee.name,
-        designation: getShortDesignation(g.employee.designation),
-        cellName: g.employee.cell?.name || '',
-        daysCount: g.dates.length,
-        datesListStr: g.dates.map(d => d.split('-').reverse().join('-')).join(', '),
-        totalBill: g.dates.length * apyaonRate
-      }));
-      const grandTotal = mappedDuties.reduce((sum, d) => sum + d.totalBill, 0);
-
-      const blob = await generateOfficeOrderDocx({
-        orderRef: orderRef,
-        orderDateStr: toBanglaDigits(new Date(orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')),
-        orderText: orderText,
-        duties: mappedDuties,
-        grandTotal: grandTotal,
-        signingOfficer: signingOfficer,
-        signingDesignation: signingDesignation,
-        copies: copies
-      });
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Office_Order_${orderRef.replace(/\//g, '_')}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      logger.error(err);
-      alert('ওয়ার্ড ফাইল জেনারেট করতে সমস্যা হয়েছে।');
+      return false;
     }
   };
 
-  const renderDutiesTable = (dutiesList: Duty[], isAssignmentPrimary: boolean) => {
-    const groupedDuties = Object.entries(
-      dutiesList.reduce((acc, duty) => {
-        const key = `${duty.employeeId}-${duty.type}`;
-        if (!acc[key]) {
-          acc[key] = {
-            employee: duty.employee,
-            type: duty.type,
-            duties: [],
-            totalBill: 0
-          };
-        }
-        acc[key].duties.push(duty);
-        acc[key].totalBill += duty.totalBill;
-        return acc;
-      }, {} as Record<string, { employee: Employee; type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'; duties: Duty[]; totalBill: number }>)
-    ).map(([, val]) => val);
-
-    const allGroupDutyIds = groupedDuties.flatMap(g => g.duties.map(d => d.id));
-    const isAllSelected = allGroupDutyIds.length > 0 && allGroupDutyIds.every(id => selectedDutyIds.includes(id));
-
-    const toggleSelectAll = () => {
-      if (isAllSelected) {
-        setSelectedDutyIds(prev => prev.filter(id => !allGroupDutyIds.includes(id)));
-      } else {
-        setSelectedDutyIds(prev => Array.from(new Set([...prev, ...allGroupDutyIds])));
-      }
-    };
-
-    return (
-      <div id="duties-table-container" className="space-y-2">
-        {selectedDutyIds.length > 0 && (
-          <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl flex items-center justify-between no-print animate-in fade-in duration-200">
-            <span className="text-xs font-bold text-rose-800 dark:text-rose-200 flex items-center gap-2">
-              <Trash2 size={15} />
-              {toBanglaDigits(selectedDutyIds.length)} টি ডিউটি রেকর্ড নির্বাচিত করা হয়েছে
-            </span>
-            <button
-              type="button"
-              onClick={handleBulkDeleteDuties}
-              className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-            >
-              <Trash2 size={13} />
-              নির্বাচিত টেস্ট ডাটা মুছে ফেলুন (Bulk Delete)
-            </button>
-          </div>
-        )}
-
-        <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/30">
-          <table className="w-full text-left text-xs leading-normal">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-                <th className="px-3 py-3 w-8 text-center no-print">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    onChange={toggleSelectAll}
-                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                    title="সব সিলেক্ট করুন"
-                  />
-                </th>
-                <th className="px-5 py-3">তারিখ</th>
-                <th className={`px-5 py-3 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>সেল</th>
-                <th className="px-5 py-3">কর্মকর্তা</th>
-                <th className={`px-5 py-3 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>পদবী</th>
-                <th className={`px-5 py-3 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>ডিউটির ক্যাটাগরি</th>
-                <th className="px-5 py-3">মোট বিল</th>
-                <th className={`px-5 py-3 no-print ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>অ্যাকশন</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium">
-              {groupedDuties.map((group) => {
-                const datesSorted = group.duties.sort((a, b) => a.date.localeCompare(b.date));
-                const datesJoined = datesSorted.map(d => d.date).join(', ');
-                const bnDatesJoined = datesSorted.map(d => getBanglaDate(d.date)).join(', ');
-                const groupDutyIds = group.duties.map(d => d.id);
-                const isGroupSelected = groupDutyIds.every(id => selectedDutyIds.includes(id));
-
-                const toggleGroupSelect = () => {
-                  if (isGroupSelected) {
-                    setSelectedDutyIds(prev => prev.filter(id => !groupDutyIds.includes(id)));
-                  } else {
-                    setSelectedDutyIds(prev => Array.from(new Set([...prev, ...groupDutyIds])));
-                  }
-                };
-
-                return (
-                  <tr key={`${group.employee.id}-${group.type}`} className={`hover:bg-slate-50/40 dark:hover:bg-slate-955/20 text-slate-600 dark:text-slate-300 ${isGroupSelected ? 'bg-indigo-50/30 dark:bg-indigo-950/20' : ''}`}>
-                    <td className="px-3 py-3.5 text-center no-print">
-                      <input
-                        type="checkbox"
-                        checked={isGroupSelected}
-                        onChange={toggleGroupSelect}
-                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                      />
-                    </td>
-                  <td className="px-5 py-3.5 font-sans font-semibold text-slate-800 dark:text-slate-200 leading-snug">
-                    {datesJoined}
-                    <p className="text-[10px] text-slate-400 mt-0.5 font-normal leading-normal">{bnDatesJoined}</p>
-                  </td>
-                  <td className={`px-5 py-3.5 text-slate-500 dark:text-slate-400 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
-                    {group.employee.cell?.name || 'N/A'}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <p className="font-bold text-slate-800 dark:text-slate-200">{group.employee.name}</p>
-                    {group.duties[0]?.description && <p className="text-[10px] text-slate-400 font-normal italic mt-0.5">মন্তব্য: {group.duties[0].description}</p>}
-                  </td>
-                  <td className={`px-5 py-3.5 font-sans text-[11px] ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
-                    {group.employee.designation}
-                  </td>
-                  <td className={`px-5 py-3.5 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
-                    <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold ${getDutyBadgeStyles(group.type)}`}>
-                      {group.type === 'LATE_SITTING' ? 'Late Sitting (লেট সিটিং)' : group.type === 'HOLIDAY' ? 'Holiday Duty (ছুটির দিনে)' : 'Night Shift (রাত্রিকালীন ডিউটি)'}
-                    </span>
-                    {group.duties.some(d => d.orderRef) && (
-                      <div className="mt-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold font-mono flex items-center gap-1">
-                        <span>স্মারকঃ {group.duties.find(d => d.orderRef)?.orderRef}</span>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5 font-bold text-indigo-600 dark:text-indigo-400 font-sans">
-                    ৳{group.totalBill.toLocaleString('bn-BD')}
-                  </td>
-                  <td className={`px-5 py-3.5 no-print flex items-center gap-1.5 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
-                    <button
-                      onClick={() => handleStartEdit(group.duties)}
-                      className="p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-955/20 text-slate-400 hover:text-indigo-500 transition-colors"
-                      title="সম্পাদনা (Edit)"
-                    >
-                      <Edit2 size={13} />
-                    </button>
-                    <button
-                      onClick={() => deleteGroupedDuties(group.duties)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-955/20 text-slate-400 hover:text-red-500 transition-colors"
-                      title="মুছে ফেলুন"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-  };
-
-  const pendingDuties = useMemo(() => {
-    return duties
-      .filter(d => !d.orderRef)
-      .filter(d => selectedCategory === 'all' || d.type === selectedCategory)
-      .filter(d => selectedCell === 'all' || d.employee.cellId.toString() === selectedCell)
-      .filter(d => selectedEmployee === 'all' || d.employee.id.toString() === selectedEmployee);
-  }, [duties, selectedCategory, selectedCell, selectedEmployee]);
-
-  const activeCellObj = useMemo(() => {
-    return cells.find(c => c.id.toString() === selectedCell);
-  }, [cells, selectedCell]);
-  
-  const activeCellName = activeCellObj ? activeCellObj.name : null;
-
-  const filteredOfficeOrders = useMemo(() => {
-    return officeOrders
-      .filter(o => o.status !== 'Deleted' && !o.category?.startsWith('BILL_'))
-      .filter(o => {
-        const cellMatches = selectedCell === 'all' || o.cellName === activeCellName || o.cellName === 'All Cells' || o.cellName === 'সকল সেল';
-        const categoryMatches = selectedCategory === 'all' || o.category === selectedCategory;
-        return cellMatches && categoryMatches;
-      })
-      .sort((a, b) => b.id - a.id);
-  }, [officeOrders, selectedCell, activeCellName, selectedCategory]);
+  const pendingDutiesCount = useMemo(() => {
+    return duties.filter(d => !d.orderRef).length;
+  }, [duties]);
 
   if (isLoading) return (
     <div className="p-6">
@@ -3356,9 +2125,8 @@ export default function RosterPage() {
           </button>
         </div>
       )}
-      {/* ----------------------------------------------------
-          NORMAL VIEW MODE
-      ---------------------------------------------------- */}
+
+      {/* NORMAL VIEW MODE */}
       {!isPrintMode ? (
         <>
           {/* Header Dashboard Banner */}
@@ -3370,9 +2138,9 @@ export default function RosterPage() {
             
             <button
               onClick={() => setIsPrintMode(true)}
-              disabled={pendingDuties.length === 0}
+              disabled={pendingDutiesCount === 0}
               className={`flex items-center justify-center gap-2 text-sm transition-all cursor-pointer ${
-                pendingDuties.length > 0 
+                pendingDutiesCount > 0 
                   ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-semibold px-4 py-2 rounded-xl' 
                   : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed px-4 py-2 rounded-xl'
               }`}
@@ -3403,7 +2171,7 @@ export default function RosterPage() {
                   window.history.pushState({}, '', '/roster');
                   loadDuties();
                 }}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-[10px] font-bold rounded-lg transition-all"
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer"
               >
                 সম্পাদন মোড থেকে বের হন (নতুন অর্ডার শুরু করুন)
               </button>
@@ -3411,1301 +2179,116 @@ export default function RosterPage() {
           )}
 
           <div className="flex flex-col xl:flex-row gap-6 items-start no-print">
-            {/* LEFT COLUMN: Assign New Duty Form */}
-            <div 
-              tabIndex={0}
-              onClick={() => {
-                if (!isAssignmentPrimary) {
-                  setLayoutPriority(LayoutPriority.ASSIGNMENT);
-                }
-              }}
-              onFocusCapture={() => {
-                if (!isAssignmentPrimary) {
-                  setLayoutPriority(LayoutPriority.ASSIGNMENT);
-                }
-              }}
-              className={`bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 transition-all duration-500 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40 select-none ${
-                isAssignmentPrimary 
-                  ? 'w-full xl:w-[70%] space-y-6 opacity-100' 
-                  : 'w-full xl:w-[30%] space-y-3 xl:hover:border-blue-300 opacity-50 blur-[0.5px] scale-[0.99]'
-              }`}
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-lg">
-                    <Calendar size={18} />
-                  </div>
-                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">ডিউটি অ্যাসাইনমেন্ট প্যানেল</h3>
-                </div>
-                {!isAssignmentPrimary && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setLayoutPriority(LayoutPriority.ASSIGNMENT);
-                    }}
-                    className="hidden xl:flex items-center gap-1.5 px-3 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-                  >
-                    <ChevronRight size={14} className="animate-pulse" />
-                    প্যানেল বড় করুন
-                  </button>
-                )}
-              </div>
+            {/* LEFT COLUMN: Duty Assignment Panel */}
+            <DutyAssignmentPanel
+              currentUser={currentUser}
+              cells={cells}
+              employees={employees}
+              holidays={holidays}
+              leaves={leaves}
+              entryMode={entryMode}
+              setEntryMode={setEntryMode}
+              assignmentForm={assignmentForm}
+              setAssignmentForm={setAssignmentForm}
+              opt1CellId={opt1CellId}
+              setOpt1CellId={setOpt1CellId}
+              opt1SearchQuery={opt1SearchQuery}
+              setOpt1SearchQuery={setOpt1SearchQuery}
+              opt1Assignments={opt1Assignments}
+              setOpt1Assignments={setOpt1Assignments}
+              opt1ViewedMonths={opt1ViewedMonths}
+              setOpt1ViewedMonths={setOpt1ViewedMonths}
+              formSearchQuery={formSearchQuery}
+              setFormSearchQuery={setFormSearchQuery}
+              formCellFilter={formCellFilter}
+              setFormCellFilter={setFormCellFilter}
+              submitting={submitting}
+              errorMessage={errorMessage}
+              preConflicts={preConflicts}
+              editingDuty={editingDuty}
+              editingDuties={editingDuties}
+              isEditingArchive={isEditingArchive}
+              isRosterDirty={isRosterDirty}
+              isAssignmentPrimary={isAssignmentPrimary}
+              onFocusPanel={() => setLayoutPriority(LayoutPriority.ASSIGNMENT)}
+              handleSubmit={handleAssignmentSubmit}
+              handleCancelEdit={handleCancelEdit}
+              handleCancelRosterEdit={handleCancelRosterEdit}
+              handleBulkDutyImport={handleBulkDutyImport}
+              isSubmitDisabled={isSubmitDisabled}
+            />
 
-              {/* Form Body Wrapper (always mounted, pointer-events disabled when shrunk) */}
-              <div className={`space-y-6 transition-all duration-500 ${!isAssignmentPrimary ? 'pointer-events-none select-none' : ''}`}>
-
-              {/* Entry Option Toggle */}
-              <div className="w-full">
-                <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-inner w-full">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEntryMode('EMPLOYEE_WISE');
-                      setErrorMessage('');
-                    }}
-                    className={`flex-1 py-2.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
-                      entryMode === 'EMPLOYEE_WISE' 
-                        ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/50 dark:border-slate-700/50' 
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50/50 dark:hover:bg-slate-800/50'
-                    }`}
-                  >
-                    অপশন ১: সেল ও এমপ্লয়ী ভিত্তিক (মাল্টিপল ডেট)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEntryMode('DATE_WISE');
-                      setErrorMessage('');
-                    }}
-                    className={`flex-1 py-2.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
-                      entryMode === 'DATE_WISE' 
-                        ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/50 dark:border-slate-700/50' 
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50/50 dark:hover:bg-slate-800/50'
-                    }`}
-                  >
-                    অপশন ২: তারিখ ভিত্তিক (এমপ্লয়ী সিলেক্ট)
-                  </button>
-                </div>
-              </div>
-
-              <form onSubmit={handleAssignmentSubmit} className="space-y-4">
-                {errorMessage && (
-                  <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-xl text-xs flex items-center gap-2 animate-pulse">
-                    <AlertCircle size={14} />
-                    {errorMessage}
-                  </div>
-                )}
-
-                {/* Common Field 1: Duty Type Selection */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
-                  <select
-                    value={assignmentForm.type}
-                    onChange={(e) => setAssignmentForm({ ...assignmentForm, type: e.target.value as any })}
-                    className="w-full h-11 px-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
-                  >
-                    <option value="">সিলেক্ট করুন</option>
-                    <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
-                    <option value="HOLIDAY">Holiday Duty (ছুটির দিনে)</option>
-                    <option value="NIGHT_SHIFT">Night Shift (রাত্রীকালীন ডিউটি)</option>
-                  </select>
-                </div>
-
-                {preConflicts.length > 0 && entryMode === 'EMPLOYEE_WISE' && (
-                  <div className="space-y-1.5 animate-in slide-in-from-top-1">
-                    {preConflicts.map((conf, i) => (
-                      <div key={i} className="flex items-start gap-2 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-2.5 text-xs text-amber-800 dark:text-amber-200">
-                        <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-500" />
-                        <span className="font-semibold">{conf.message}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {!assignmentForm.type ? (
-                  <div className="p-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/10 text-center space-y-2 mt-4">
-                    <Lock className="mx-auto text-slate-400 dark:text-slate-500 animate-bounce" size={20} />
-                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">কর্মকর্তা ও তারিখ নির্বাচন লকড</p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      কর্মকর্তা ও তারিখ সমূহ নির্বাচন করতে অনুগ্রহ করে প্রথমে উপরে ডিউটির ক্যাটাগরি সিলেক্ট করুন।
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    {/* Mode Specific Layouts */}
-                {entryMode === 'EMPLOYEE_WISE' ? (
-                  /* ========================================================
-                     OPTION 1: Cell & Employee wise (Multi-date picker)
-                     ======================================================== */
-                  <div className="space-y-3 border-t border-slate-100 dark:border-slate-800 pt-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">৩. সেল সিলেক্ট করুন</label>
-                      <select
-                        value={opt1CellId}
-                        onChange={(e) => {
-                          setOpt1CellId(e.target.value);
-                        }}
-                        className="w-full h-11 px-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
-                      >
-                        {(currentUser?.role === 'ADMIN' || (currentUser?.cells && currentUser.cells.length > 1)) && (
-                          <option value="all">সকল সেল (All Cells)</option>
-                        )}
-                        {cells
-                          .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc) => uc.id === c.id))
-                          .map(c => (
-                            <option key={c.id} value={c.id.toString()}>{c.name}</option>
-                          ))
-                        }
-                      </select>
-                    </div>
-
-                    {/* 4. Uniform Compact Employee Checkbox Grid */}
-                    {(() => {
-                      const allowedCellIds = currentUser?.role === 'ADMIN'
-                        ? cells.map(c => c.id)
-                        : currentUser?.cells?.map((c) => c.id) || [];
-                      
-                      const cellFilteredEmployees = employees.filter(emp => 
-                        opt1CellId === 'all' 
-                          ? allowedCellIds.includes(emp.cellId) 
-                          : emp.cellId.toString() === opt1CellId
-                      );
-
-                      const filteredOpt1Employees = cellFilteredEmployees.filter(emp => {
-                        if (!opt1SearchQuery.trim()) return true;
-                        const q = opt1SearchQuery.toLowerCase();
-                        return (
-                          emp.name.toLowerCase().includes(q) ||
-                          (emp.designation && emp.designation.toLowerCase().includes(q)) ||
-                          (emp.bankId && emp.bankId.toLowerCase().includes(q))
-                        );
-                      });
-
-                      const selectedEmployeeIds = Object.keys(opt1Assignments).map(Number);
-                      const selectedEmployees = employees.filter(emp => selectedEmployeeIds.includes(emp.id));
-
-                      return (
-                        <>
-                          <div className="space-y-2.5 pt-2">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                                ৪. কর্মকর্তা নির্বাচন করুন ({toBanglaDigits(selectedEmployees.length)} জন নির্বাচিত)
-                              </label>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => selectAllOpt1Employees(filteredOpt1Employees)}
-                                  className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-650 dark:text-indigo-400 transition-colors cursor-pointer"
-                                >
-                                  সব সিলেক্ট করুন
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={deselectAllOpt1Employees}
-                                  className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-                                >
-                                  সব বাদ দিন
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Option 1 Internal Employee Search */}
-                            <div className="relative">
-                              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                              <input
-                                type="text"
-                                placeholder="কর্মকর্তার নাম দিয়ে খুঁজুন..."
-                                value={opt1SearchQuery}
-                                onChange={(e) => setOpt1SearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100"
-                              />
-                            </div>
-                            
-                            {/* Uniform Fixed-Height Checkbox Cards Grid */}
-                            <div className={`border border-slate-200/70 dark:border-slate-800/80 rounded-2xl p-3 bg-slate-50/50 dark:bg-slate-900/20 grid gap-2.5 max-h-72 overflow-y-auto ${
-                              isAssignmentPrimary ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
-                            }`}>
-                              {filteredOpt1Employees.length > 0 ? (
-                                filteredOpt1Employees.map(emp => {
-                                  const isChecked = emp.id in opt1Assignments;
-                                  const datesCount = opt1Assignments[emp.id]?.length || 0;
-                                  return (
-                                    <div 
-                                      key={emp.id} 
-                                      onClick={() => handleOpt1EmployeeToggle(emp.id)}
-                                      className={`border rounded-xl p-2.5 cursor-pointer transition-all duration-200 flex items-center justify-between gap-2.5 select-none ${
-                                        isChecked 
-                                          ? 'border-indigo-500/60 dark:border-indigo-400/60 bg-indigo-50/40 dark:bg-indigo-950/30 shadow-xs ring-1 ring-indigo-500/20' 
-                                          : 'border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-900/60 hover:border-slate-350 dark:hover:border-slate-700 hover:shadow-xs'
-                                      }`}
-                                    >
-                                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                        <div className={`w-4 h-4 border rounded flex items-center justify-center shrink-0 transition-colors ${
-                                          isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'
-                                        }`}>
-                                          {isChecked && <Check size={10} strokeWidth={3} />}
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate leading-snug">{emp.name}</p>
-                                          <p className="text-[10px] text-slate-400 truncate">{emp.designation}</p>
-                                        </div>
-                                      </div>
-                                      {isChecked && datesCount > 0 && (
-                                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-indigo-600 text-white shrink-0">
-                                          {toBanglaDigits(datesCount)}
-                                        </span>
-                                      )}
-                                    </div>
-                                  );
-                                })
-                              ) : (
-                                <p className="text-xs text-slate-400 text-center py-6 col-span-full">এই সেলের অধীনে কোনো কর্মকর্তা পাওয়া যায়নি।</p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* 5. Dedicated Stacked Section: Selected Officers Calendar & Date Assignments */}
-                          {selectedEmployees.length > 0 && (
-                            <div className="space-y-4 pt-4 border-t border-slate-200/80 dark:border-slate-800/80 animate-in fade-in slide-in-from-top-2 duration-200">
-                              <div className="flex items-center justify-between">
-                                <label className="text-xs font-black text-indigo-900 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-2">
-                                  <Calendar size={15} className="text-indigo-600 dark:text-indigo-400" />
-                                  ৫. নির্বাচিত কর্মকর্তাদের ডিউটির তারিখ নির্ধারণ করুন ({toBanglaDigits(selectedEmployees.length)} জন)
-                                </label>
-                              </div>
-
-                              <div className="space-y-4">
-                                {selectedEmployees.map(emp => {
-                                  const datesCount = opt1Assignments[emp.id]?.length || 0;
-                                  return (
-                                    <div
-                                      key={emp.id}
-                                      className="border border-indigo-100 dark:border-indigo-950/60 rounded-2xl p-4 bg-white dark:bg-slate-900/90 shadow-sm space-y-3 relative transition-all"
-                                    >
-                                      {/* Selected Employee Card Header */}
-                                      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
-                                        <div className="flex items-center gap-2.5">
-                                          <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-650 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
-                                            {emp.name.charAt(0)}
-                                          </div>
-                                          <div>
-                                            <div className="flex items-center gap-2">
-                                              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">{emp.name}</h4>
-                                              {emp.cell?.name && (
-                                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                                                  {emp.cell.name}
-                                                </span>
-                                              )}
-                                            </div>
-                                            <p className="text-[10px] text-slate-400">{emp.designation}</p>
-                                          </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 border border-indigo-100/60 dark:border-indigo-900/40">
-                                            {toBanglaDigits(datesCount)} দিন নির্বাচিত
-                                          </span>
-                                          <button
-                                            type="button"
-                                            onClick={() => handleOpt1EmployeeToggle(emp.id)}
-                                            className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
-                                            title="তালিকা থেকে বাদ দিন"
-                                          >
-                                            <X size={14} />
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      {/* Calendar Component */}
-                                      <div className="pt-1">
-                                        {renderMonthCalendar(emp.id, getEmployeeViewedMonth(emp.id))}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  /* ========================================================
-                     OPTION 2: Date wise (Multi-employee checkboxes)
-                     ======================================================== */
-                  <div className="space-y-3 border-t border-slate-100 dark:border-slate-800 pt-4">
-                    {/* Duty Date Selection */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">৩. ডিউটির তারিখ</label>
-                      <CalendarDatePicker 
-                        value={assignmentForm.date}
-                        onChange={(d) => setAssignmentForm({ ...assignmentForm, date: d })}
-                        isNonWorkingDay={(d) => !checkIsWorkingDay(d, holidays)}
-                        toBanglaDigits={toBanglaDigits}
-                        placeholder="ডিউটির তারিখ নির্বাচন..."
-                      />
-                      {assignmentForm.date && (() => {
-                        const isWorking = checkIsWorkingDay(assignmentForm.date, holidays);
-                        const isLateSitting = assignmentForm.type === 'LATE_SITTING';
-                        const isHoliday = assignmentForm.type === 'HOLIDAY';
-                        
-                        if (isLateSitting && !isWorking) {
-                          return (
-                            <p className="text-[11px] font-bold text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 p-2 rounded-lg border border-red-100/50">
-                              <AlertCircle size={12} />
-                              উক্ত তারিখটি ছুটির দিন/সাপ্তাহিক ছুটি হওয়ায় লেট সিটিং ডিউটি এন্ট্রি করা যাবে না!
-                            </p>
-                          );
-                        }
-                        if (isHoliday && isWorking) {
-                          return (
-                            <p className="text-[11px] font-bold text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 p-2 rounded-lg border border-red-100/50">
-                              <AlertCircle size={12} />
-                              উক্ত তারিখটি কর্মদিবস হওয়ায় সরকারি ছুটির ডিউটি এন্ট্রি করা যাবে না!
-                            </p>
-                          );
-                        }
-                        
-                        const matchedHoliday = holidays.find(h => h.date === assignmentForm.date);
-                        const isWeekend = !isWorking && !matchedHoliday;
-                        if (matchedHoliday) {
-                          return (
-                            <p className="text-[11px] font-bold text-amber-600 mt-1.5 flex items-center gap-1.5 bg-amber-50 p-2 rounded-lg border border-amber-100/50">
-                              <AlertCircle size={12} />
-                              সরকারি ছুটি: {matchedHoliday.name}
-                            </p>
-                          );
-                        }
-                        if (isWeekend) {
-                          return (
-                            <p className="text-[11px] font-bold text-red-550 mt-1.5 flex items-center gap-1.5 bg-red-50/40 p-2 rounded-lg border border-red-100/20">
-                              <AlertCircle size={12} />
-                              সাপ্তাহিক ছুটি
-                            </p>
-                          );
-                        }
-                        return null;
-                      })()}
-                      
-                      {preConflicts.length > 0 && entryMode === 'DATE_WISE' && (
-                        <div className="mt-2 space-y-1.5 animate-in slide-in-from-top-1">
-                          {preConflicts.map((conf, i) => (
-                            <div key={i} className="flex items-start gap-2 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-2.5 text-xs text-amber-800 dark:text-amber-200">
-                              <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-500" />
-                              <span className="font-semibold">{conf.message}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Officer Selector Multi-select checkboxes */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                          ৪. কর্মকর্তা নির্বাচন করুন ({assignmentForm.selectedEmployeeIds.length} জন সিলেক্টেড)
-                        </label>
-                      </div>
-                      
-                      {/* Internal search inside form */}
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="খুঁজুন..."
-                          value={formSearchQuery}
-                          onChange={(e) => setFormSearchQuery(e.target.value)}
-                          className="flex-1 h-9 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
-                        />
-                        <select
-                          value={formCellFilter}
-                          onChange={(e) => setFormCellFilter(e.target.value)}
-                          className="h-9 px-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer text-slate-800 dark:text-slate-100"
-                        >
-                          <option value="all">সকল সেল</option>
-                          {cells.map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)}
-                        </select>
-                      </div>
-
-                      {/* Mass actions for quick selection */}
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => selectAllFilteredEmployees(filteredFormEmployees)}
-                          className="flex-1 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-1.5 rounded-lg transition-colors cursor-pointer"
-                        >
-                          সব সিলেক্ট করুন
-                        </button>
-                        <button
-                          type="button"
-                          onClick={deselectAllFilteredEmployees}
-                          className="flex-1 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-1.5 rounded-lg transition-colors cursor-pointer"
-                        >
-                          সব বাদ দিন
-                        </button>
-                      </div>
-
-                      {/* Officers Checkboxes scrollbox */}
-                      <div className={`border border-slate-100 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/10 grid gap-3 ${
-                        isAssignmentPrimary 
-                          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
-                          : 'grid-cols-1'
-                      }`}>
-                        {(() => {
-                          const isWorking = assignmentForm.date ? checkIsWorkingDay(assignmentForm.date, holidays) : true;
-                          const isLateSitting = assignmentForm.type === 'LATE_SITTING';
-                          const isHoliday = assignmentForm.type === 'HOLIDAY';
-                          const isBlocked = (isLateSitting && !isWorking) || (isHoliday && isWorking);
-                          
-                          if (isBlocked) {
-                            return (
-                              <div className="p-8 text-center text-red-500/80 font-bold italic text-xs col-span-full">
-                                নির্বাচিত তারিখটি এই ডিউটি ক্যাটাগরির জন্য উপযুক্ত নয়। উপযুক্ত তারিখ বেছে নিন।
-                              </div>
-                            );
-                          }
-                          
-                          if (!assignmentForm.date) {
-                            return (
-                              <div className="p-8 text-center text-slate-400 italic text-xs col-span-full">
-                                অনুগ্রহ করে প্রথমে উপরে তারিখ সিলেক্ট করুন।
-                              </div>
-                            );
-                          }
-
-                          return filteredFormEmployees.length > 0 ? (
-                            filteredFormEmployees.map(emp => {
-                              const isChecked = assignmentForm.selectedEmployeeIds.includes(emp.id);
-                              return (
-                                 <div 
-                                  key={emp.id}
-                                  onClick={() => handleEmployeeToggle(emp.id)}
-                                  className={`border rounded-xl p-3 cursor-pointer transition-all duration-250 hover:shadow-md dark:hover:shadow-blue-950/20 flex items-center justify-between gap-3 ${
-                                    isChecked 
-                                      ? 'border-blue-500/40 dark:border-blue-400/40 bg-blue-50/10 dark:bg-blue-950/10 shadow-sm' 
-                                      : 'border-slate-200/60 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-slate-350 dark:hover:border-slate-650'
-                                  }`}
-                                >
-                                  <div className="flex items-start gap-3 w-full min-w-0">
-                                    <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors mt-0.5 shrink-0 ${isChecked ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
-                                      {isChecked && <Check size={10} strokeWidth={3} />}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight">{emp.name}</p>
-                                      <p className="text-xs text-slate-400 font-medium mt-0.5">{emp.designation}</p>
-                                      {emp.cell?.name && (
-                                        <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-1.5 font-sans">{emp.cell.name}</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <p className="text-[11px] text-center text-slate-400 py-4 col-span-full">কর্মকর্তা পাওয়া যায়নি</p>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {editingDuty ? (
-                  <div className="flex gap-3 mt-4">
-                    <button
-                      type="button"
-                      onClick={handleCancelEdit}
-                      className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-all shadow-sm cursor-pointer"
-                    >
-                      বাতিল
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting || isSubmitDisabled()}
-                      className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-semibold transition-all shadow-md cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      {submitting ? 'আপডেট হচ্ছে...' : 'ডিউটি আপডেট করুন'}
-                    </button>
-                  </div>
-                ) : (
-                  isEditingArchive ? (
-                    <div className="flex gap-3 mt-4 font-sans">
-                      <button
-                        type="button"
-                        onClick={handleCancelRosterEdit}
-                        className="flex-1 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-750 text-sm font-bold transition-all shadow-sm border border-slate-250 cursor-pointer"
-                      >
-                        বাতিল করুন
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={submitting || isSubmitDisabled() || !isRosterDirty}
-                        className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-bold transition-all shadow-md cursor-pointer disabled:cursor-not-allowed"
-                      >
-                        {submitting ? 'সংরক্ষণ হচ্ছে...' : 'সেভ করুন'}
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={submitting || isSubmitDisabled()}
-                      className={`w-full flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold transition-all mt-4 select-none ${
-                        submitting || isSubmitDisabled()
-                          ? 'bg-slate-200 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300/40 dark:border-slate-700/40 shadow-none'
-                          : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg cursor-pointer font-extrabold'
-                      }`}
-                    >
-                      {submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন'}
-                    </button>
-                  )
-                )}
-                  </>
-                )}
-              </form>
-              {!editingDuty && !isEditingArchive && (
-                <div className="mt-6 border-t border-slate-105 pt-6">
-                  <RosterOCRImport
-                    cellId={parseInt(opt1CellId) || (cells && cells[0] ? cells[0].id : 7)}
-                    dutyType={(assignmentForm.type || 'LATE_SITTING') as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'}
-                    onImportConfirmed={handleBulkDutyImport}
-                    disabled={!assignmentForm.type}
-                  />
-                </div>
-              )}
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN: Roster Monthly List Grid */}
-            <div 
-              tabIndex={0}
-              onClick={() => {
-                if (isAssignmentPrimary) {
-                  setLayoutPriority(LayoutPriority.ROSTER);
-                }
-              }}
-              onFocusCapture={() => {
-                if (isAssignmentPrimary) {
-                  setLayoutPriority(LayoutPriority.ROSTER);
-                }
-              }}
-              className={`bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 transition-all duration-500 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40 select-none ${
-                !isAssignmentPrimary 
-                  ? 'w-full xl:w-[70%] space-y-6 opacity-100' 
-                  : 'w-full xl:w-[30%] space-y-3 xl:hover:border-blue-300 opacity-50 blur-[0.5px] scale-[0.99]'
-              }`}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex flex-col">
-                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">ডিউটি রোস্টার তালিকা</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">মাসিক ভিউ ফিল্টার এবং বরাদ্দ তালিকা।</p>
-                </div>
-                {isAssignmentPrimary && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setLayoutPriority(LayoutPriority.ROSTER);
-                    }}
-                    className="hidden xl:flex items-center gap-1.5 px-3 py-1 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-                  >
-                    <ChevronRight size={14} className="animate-pulse" />
-                    প্যানেল বড় করুন
-                  </button>
-                )}
-              </div>
-
-              {/* Roster List Body Wrapper (pointer-events disabled when shrunk) */}
-              <div className={`space-y-6 transition-all duration-500 ${isAssignmentPrimary ? 'pointer-events-none select-none' : ''}`}>
-                {/* Controls Menu */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-                  <div>
-                    <p className="text-xs text-slate-400 mt-0.5">মাসিক ভিউ ফিল্টার এবং বরাদ্দ তালিকা।</p>
-                  </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  {/* Select Cell Filter */}
-                  <select
-                    value={selectedCell}
-                    onChange={(e) => changeSelectedCell(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"
-                  >
-                    {(currentUser?.role === 'ADMIN' || (currentUser?.cells && currentUser.cells.length > 1)) && (
-                      <option value="all">সকল সেল (All Cells)</option>
-                    )}
-                    {cells
-                      .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc) => uc.id === c.id))
-                      .map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)
-                    }
-                  </select>
-
-                  {/* Select Category Filter */}
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"
-                  >
-                    <option value="all">সকল ক্যাটাগরি (All Categories)</option>
-                    <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
-                    <option value="HOLIDAY">Holiday Duty (ছুটির দিনে)</option>
-                    <option value="NIGHT_SHIFT">Night Shift (রাত্রিকালীন)</option>
-                  </select>
-
-                  {/* Select Employee Filter */}
-                  <select
-                    value={selectedEmployee}
-                    onChange={(e) => setSelectedEmployee(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"
-                  >
-                    <option value="all">সকল কর্মকর্তা (All Staff)</option>
-                    {employees
-                      .filter(emp => selectedCell === 'all' || emp.cellId.toString() === selectedCell)
-                      .map(emp => <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>)
-                    }
-                  </select>
-
-                  {/* Custom Modern Multi-Month Picker */}
-                  <div className="relative" ref={monthPickerRef}>
-                    <button
-                      type="button"
-                      onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none transition-all shadow-sm cursor-pointer"
-                    >
-                      <Calendar size={13} className="text-indigo-500 shrink-0" />
-                      <span>{(() => {
-                        if (selectedMonths.length === 0) return 'মাস নির্বাচন করুন';
-                        if (selectedMonths.length === 1) return getBanglaMonthYearLabel(selectedMonths[0]);
-                        const sorted = [...selectedMonths].sort();
-                        return `${getBanglaMonthYearLabel(sorted[0])} (+${toBanglaDigits(selectedMonths.length - 1)}টি)`;
-                      })()}</span>
-                      <svg
-                        className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${isMonthPickerOpen ? 'rotate-180' : ''}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-
-                    {isMonthPickerOpen && (
-                      <div className="absolute right-0 mt-2 w-72 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                        {/* Popover Header */}
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                          <button
-                            type="button"
-                            onClick={() => setCurrentPickerYear(prev => prev - 1)}
-                            className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-500 dark:text-slate-400 transition-colors"
-                          >
-                            <ChevronLeft size={16} />
-                          </button>
-                          
-                          <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider font-sans">
-                            {toBanglaDigits(currentPickerYear)} সাল
-                          </span>
-                          
-                          <button
-                            type="button"
-                            onClick={() => setCurrentPickerYear(prev => prev + 1)}
-                            className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-500 dark:text-slate-400 transition-colors"
-                          >
-                            <ChevronRight size={16} />
-                          </button>
-                        </div>
-
-                        {/* Month Selection Grid */}
-                        <div className="grid grid-cols-3 gap-2 py-4">
-                          {['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'].map((mName, idx) => {
-                            const ymStr = `${currentPickerYear}-${String(idx + 1).padStart(2, '0')}`;
-                            const isSelected = selectedMonths.includes(ymStr);
-                            
-                            return (
-                              <button
-                                type="button"
-                                key={ymStr}
-                                onClick={() => {
-                                  changeSelectedMonths(prev => {
-                                    if (prev.includes(ymStr)) {
-                                      if (prev.length === 1) return prev; // Don't allow empty selection
-                                      return prev.filter(m => m !== ymStr);
-                                    } else {
-                                      return [...prev, ymStr].sort();
-                                    }
-                                  });
-                                }}
-                                className={`py-2 px-1 text-[10px] font-bold rounded-lg border text-center transition-all cursor-pointer ${
-                                  isSelected
-                                    ? 'bg-indigo-600 border-indigo-600 text-white font-extrabold shadow-md scale-102 hover:bg-indigo-700'
-                                    : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200/50 dark:border-slate-800/50 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                                }`}
-                              >
-                                {mName}
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {/* Popover Footer */}
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const today = new Date();
-                              const mm = String(today.getMonth() + 1).padStart(2, '0');
-                              changeSelectedMonths([`${today.getFullYear()}-${mm}`]);
-                            }}
-                            className="text-[9px] font-bold text-indigo-500 hover:text-indigo-650 dark:hover:text-indigo-400 transition-colors"
-                          >
-                            চলতি মাস রিসেট
-                          </button>
-                          
-                          <button
-                            type="button"
-                            onClick={() => setIsMonthPickerOpen(false)}
-                            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold rounded-md transition-colors cursor-pointer"
-                          >
-                            ঠিক আছে
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Roster Table Grid */}
-              {(() => {
-                if (pendingDuties.length === 0 && filteredOfficeOrders.length === 0) {
-                  return (
-                    <div className="py-16 text-center flex flex-col items-center justify-center max-w-md mx-auto">
-                      <div className="p-4 bg-slate-50 text-slate-400 rounded-full mb-4 border border-slate-100">
-                        <Calendar size={32} />
-                      </div>
-                      <h4 className="text-base font-semibold text-slate-800 mb-1">কোনো রেকর্ড পাওয়া যায়নি</h4>
-                      <p className="text-sm text-slate-400">এই সেল, মাস বা ক্যাটাগরির অধীনে কোনো অপেক্ষমাণ ডিউটি বা জেনারেটেড অফিস আদেশ নেই।</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="space-y-6">
-                    {/* Tab Navigation */}
-                    <div className="flex border-b border-slate-200 dark:border-slate-800">
-                      <button
-                        type="button"
-                        onClick={() => setActiveRosterTab('pending')}
-                        className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-                          activeRosterTab === 'pending'
-                            ? 'border-indigo-650 text-indigo-650 dark:text-indigo-400 font-extrabold border-indigo-650'
-                            : 'border-transparent text-slate-400 hover:text-slate-650 dark:hover:text-slate-350'
-                        }`}
-                      >
-                        অপেক্ষমান অর্ডার জেনারেট করুন
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                          activeRosterTab === 'pending'
-                            ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400'
-                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400'
-                        }`}>
-                          {toBanglaDigits(pendingDuties.length)}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setActiveRosterTab('archived')}
-                        className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-                          activeRosterTab === 'archived'
-                            ? 'border-indigo-650 text-indigo-650 dark:text-indigo-400 font-extrabold border-indigo-650'
-                            : 'border-transparent text-slate-400 hover:text-slate-650 dark:hover:text-slate-350'
-                        }`}
-                      >
-                        জেনারেটেড এবং প্রিন্টেড সেকশন
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                          activeRosterTab === 'archived'
-                            ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400'
-                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400'
-                        }`}>
-                          {toBanglaDigits(filteredOfficeOrders.length)}
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* Tab Contents */}
-                    {activeRosterTab === 'pending' ? (
-                      <div className="space-y-3">
-                        <h4 className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                          অপেক্ষমান অর্ডার জেনারেট করুন - {toBanglaDigits(pendingDuties.length)} টি
-                        </h4>
-                        {pendingDuties.length > 0 ? (
-                          renderDutiesTable(pendingDuties, isAssignmentPrimary)
-                        ) : (
-                          <div className="p-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 italic text-xs bg-slate-50/30 dark:bg-slate-900/10">
-                            কোনো অপেক্ষমাণ ডিউটি পাওয়া যায়নি।
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <h4 className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                          জেনারেটেড এবং প্রিন্টেড সেকশন - {toBanglaDigits(filteredOfficeOrders.length)} টি
-                        </h4>
-                        {filteredOfficeOrders.length > 0 ? (
-                          renderOfficeOrdersList(filteredOfficeOrders, isAssignmentPrimary)
-                        ) : (
-                          <div className="p-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 italic text-xs bg-slate-50/30 dark:bg-slate-900/10">
-                            কোনো জেনারেটেড অফিস আদেশ পাওয়া যায়নি।
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-              </div>
-            </div>
+            {/* RIGHT COLUMN: Roster Monthly List Panel */}
+            <RosterListPanel
+              currentUser={currentUser}
+              cells={cells}
+              employees={employees}
+              duties={duties}
+              officeOrders={officeOrders}
+              selectedCell={selectedCell}
+              changeSelectedCell={changeSelectedCell}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedEmployee={selectedEmployee}
+              setSelectedEmployee={setSelectedEmployee}
+              selectedMonths={selectedMonths}
+              changeSelectedMonths={changeSelectedMonths}
+              isAssignmentPrimary={isAssignmentPrimary}
+              onFocusPanel={() => setLayoutPriority(LayoutPriority.ROSTER)}
+              selectedDutyIds={selectedDutyIds}
+              setSelectedDutyIds={setSelectedDutyIds}
+              handleBulkDeleteDuties={handleBulkDeleteDuties}
+              handleStartEdit={handleStartEdit}
+              deleteGroupedDuties={deleteGroupedDuties}
+              handlePreviewOfficeOrder={handlePreviewOfficeOrder}
+              handleDeleteOfficeOrder={handleDeleteOfficeOrder}
+            />
           </div>
         </>
       ) : (
-        // ----------------------------------------------------
-        // GOVERNMENT PRINT MODE (অফিস আদেশ / জিও)
-        // ----------------------------------------------------
-        <div className="space-y-6">
-          {/* Dynamic Media Print Style Overrides to ensure A4 fits on exactly 1 single page with zero double margins */}
-          <style dangerouslySetInnerHTML={{ __html: `
-            @media print {
-              @page {
-                size: A4 !important;
-                margin: 0 !important;
-              }
-              .no-print { display: none !important; }
-              body { 
-                margin: 0 !important; 
-                padding: 0 !important; 
-                background: #fff !important; 
-                font-family: "SolaimanLipi", "Noto Sans Bengali", sans-serif !important; 
-                font-size: 14px !important;
-                line-height: 1.6 !important;
-                letter-spacing: normal !important;
-                word-spacing: normal !important;
-              }
-              /* Force resetting Next.js page margins & layout wrapper padding */
-              main, .flex-1, .p-4, .lg\\:p-8, .p-6, .space-y-6, .py-6, .my-6 {
-                padding: 0 !important;
-                margin: 0 !important;
-                border: none !important;
-                box-shadow: none !important;
-              }
-              .print-a4-layout {
-                width: 210mm !important;
-                height: 297mm !important;
-                padding: 1.0in !important;
-                border: none !important;
-                box-shadow: none !important;
-                font-family: "SolaimanLipi", "Noto Sans Bengali", sans-serif !important;
-                font-size: 14px !important;
-                line-height: 1.6 !important;
-                box-sizing: border-box !important;
-                page-break-after: avoid !important;
-                page-break-inside: avoid !important;
-                page-break-before: avoid !important;
-                overflow: hidden !important;
-                letter-spacing: normal !important;
-                word-spacing: normal !important;
-              }
-            }
-          `}} />
-
-          {/* Back Controls (No-print) */}
-          <div className="no-print flex items-center justify-between glass-card p-4 rounded-2xl">
-            <button
-              onClick={handleBackToRoster}
-              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              <ChevronLeft size={16} />
-              ফিরে যান (রোস্টার ভিউ)
-            </button>
-
-            <div className="flex items-center gap-3">
-              {!orderGenerated ? (
-                <button
-                  onClick={() => archiveOrder('generate')}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
-                >
-                  <FileText size={14} />
-                  অফিস আদেশ তৈরি করুন (Generate Order)
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={() => archiveOrder('print')}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
-                  >
-                    <Printer size={14} />
-                    প্রিন্ট প্রিভিউ (Print)
-                  </button>
-                  <button
-                    onClick={() => archiveOrder('download')}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
-                  >
-                    <Printer size={14} />
-                    ডাউনলোড পিডিএফ (Download)
-                  </button>
-                  {isEditingArchive ? (
-                    <div className="flex gap-3 font-sans">
-                      <button
-                        onClick={saveOrderToArchive}
-                        disabled={submitting || !isRosterDirty}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:dark:bg-slate-800 disabled:text-slate-400 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
-                      >
-                        <FileText size={14} />
-                        {submitting ? 'সংরক্ষণ হচ্ছে...' : 'সেভ করুন'}
-                      </button>
-                      <button
-                        onClick={handleCancelRosterEdit}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-750 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-250 dark:border-slate-700 cursor-pointer whitespace-nowrap"
-                      >
-                        বাতিল করুন
-                      </button>
-                    </div>
-                  ) : !isArchived ? (
-                    <button
-                      onClick={saveOrderToArchive}
-                      disabled={submitting}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer disabled:opacity-50"
-                    >
-                      <FileText size={14} />
-                      {submitting ? 'আর্কাইভ হচ্ছে...' : 'আর্কাইভ করুন (Archive)'}
-                    </button>
-                  ) : (
-                    <span className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-xs font-bold border border-emerald-200 dark:border-emerald-900/30 whitespace-nowrap">
-                      <Check size={14} />
-                      আর্কাইভ সম্পন্ন
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Configurator Panel (No-print) */}
-          <div className="no-print grid grid-cols-1 lg:grid-cols-3 gap-6 glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
-            <div className="space-y-4 lg:col-span-2">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">অফিস আদেশ কাস্টমাইজেশন ও প্রফেশনাল কন্ট্রোল প্যানেল</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">১. ডিউটির ক্যাটাগরি (Category)</label>
-                  <select
-                    value={printCategory}
-                    onChange={(e) => changePrintCategory(e.target.value as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT')}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="LATE_SITTING">Late Sitting (লেট সিটিং)</option>
-                    <option value="HOLIDAY">Holiday Duty (ছুটির দিনে)</option>
-                    <option value="NIGHT_SHIFT">Night Shift (রাত্রীকালীন ডিউটি)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">২. বিল যার অনুকূলে হবে (Bill Favoring To)</label>
-                  <select
-                    value={payeeEmployeeId}
-                    onChange={(e) => {
-                      setUserSelectedPayeeId(e.target.value);
-                      setUserCustomOrderRef(null);
-                    }}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="">Select Employee (কর্মকর্তা নির্বাচন)</option>
-                    {getGroupedDuties().map(group => (
-                      <option key={group.employee.id} value={group.employee.id.toString()}>
-                        {group.employee.name} ({getShortDesignation(group.employee.designation)})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৩. আদেশ অনুমোদনকারী জিএম/ডিজিএম</label>
-                  <select
-                    value={selectedExecutiveId}
-                    onChange={(e) => {
-                      const execId = e.target.value;
-                      setSelectedExecutiveId(execId);
-                      const exec = executives.find(ex => ex.id.toString() === execId);
-                      if (exec) {
-                        setSigningOfficer(exec.name);
-                        setSigningDesignation(exec.designation);
-                      }
-                    }}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="">Select GM/DGM (জিএম/ডিজিএম নির্বাচন)</option>
-                    {executives.map(ex => (
-                      <option key={ex.id} value={ex.id.toString()}>
-                        {ex.name} ({ex.designation})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৪. স্মারক/সূত্র নম্বর (Order Ref)</label>
-                  <input
-                    type="text"
-                    value={orderRef}
-                    onChange={(e) => setUserCustomOrderRef(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-bold focus:outline-none focus:border-indigo-500"
-                  />
-                  {suggestedRef && (
-                    <div 
-                      onClick={() => setUserCustomOrderRef(suggestedRef)}
-                      className="inline-block mt-1.5 bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 border rounded-lg px-2.5 py-1 text-[10px] text-emerald-700 dark:text-emerald-300 font-bold cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all"
-                    >
-                      💡 সাজেস্টেড: {suggestedRef}
-                    </div>
-                  )}
-                  {refDuplicate && (
-                    <div className="inline-block mt-1.5 ml-2 bg-rose-50/80 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 border rounded-lg px-2.5 py-1 text-[10px] text-rose-700 dark:text-rose-300 font-bold">
-                      ⚠️ এই সূত্র নং ইতোমধ্যে ব্যবহৃত
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৫. আদেশের তারিখ (Order Date)</label>
-                  <CalendarDatePicker 
-                    value={orderDate}
-                    onChange={(d) => setUserCustomOrderDate(d)}
-                    isNonWorkingDay={(d) => !checkIsWorkingDay(d, holidays)}
-                    toBanglaDigits={toBanglaDigits}
-                    placeholder="আদেশের তারিখ নির্বাচন..."
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৬. আদেশের মূল বক্তব্য (Order Text)</label>
-                  <textarea
-                    rows={4}
-                    value={orderText}
-                    onChange={(e) => setUserCustomOrderText(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-xs font-semibold leading-relaxed focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৭. হেডার প্রিন্ট অপশন (Header Option)</label>
-                  <select
-                    value={headerMode}
-                    onChange={(e) => setHeaderMode(e.target.value as 'with_header' | 'without_header')}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="with_header">হেডার সহ (With Header - সাধারণ প্রিন্ট)</option>
-                    <option value="without_header">হেডার ছাড়া (Without Header - প্যাড পেপার প্রিন্ট)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Scale reference instructions */}
-            <div className="space-y-3 lg:col-span-1">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">প্রিন্ট প্রাক-প্রস্তুতি নির্দেশাবলী</h3>
-              <div className="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-950/30 text-xs text-indigo-700 dark:text-indigo-400 space-y-2.5">
-                <p className="font-bold">💡 অফিস আদেশ তৈরিতে লক্ষণীয়:</p>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>পেজে একই কর্মকর্তার একাধিক তারিখের ডিউটি থাকলে তা কমা দিয়ে একই রোতে বসানো হবে।</li>
-                  <li>ডিজিএম এবং বিল প্রাপক (Bill Favoring To) ড্রপডাউন থেকে সিলেক্ট করলে সূত্র ও বিল স্বয়ংক্রিয় রি-রুট হবে।</li>
-                  <li>প্রিন্ট করার সময় ব্রাউজার সেটিংস থেকে <strong>Headers and Footers</strong> টিকমার্ক উঠিয়ে দিন এবং মার্জিন <strong>None/Default</strong> রাখুন।</li>
-                  <li>আদেশপত্রটি ছবির মত নিখুঁতভাবে **A4 Size** কাগজে প্রিন্টযোগ্য।</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* DGM 7500 Tk Apyaon split alert and tabs switchers */}
-          {(() => {
-            const filtered = duties.filter(d => {
-              const matchesCategory = d.type === printCategory;
-              if (isArchived && !isEditingArchive) {
-                return matchesCategory && getNormalizedRef(d.orderRef) === getNormalizedRef(originalOrderRef);
-              }
-              const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
-              return matchesCell && matchesCategory && !d.orderRef;
-            });
-            const apyaonRate = printCategory === 'HOLIDAY' ? 250 : printCategory === 'NIGHT_SHIFT' ? 600 : 100;
-            const totalApyaon = filtered.length * apyaonRate;
-            
-            if (totalApyaon <= 7500) return null;
-            
-            const numParts = Math.ceil(totalApyaon / 7500);
-            const parts = getSplitParts(filtered, numParts);
-            
-            return (
-              <div className="no-print w-full max-w-[210mm] mx-auto space-y-4 mb-4 mt-6">
-                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-amber-800 dark:text-amber-300">
-                  <h4 className="font-extrabold text-sm flex items-center gap-2 mb-1">
-                    <AlertCircle size={16} />
-                    উপ-মহাব্যবস্থাপক (ডিজিএম) এর আপ্যায়ন বিলের সীমা ৭৫০০/- টাকা অতিক্রম করেছে!
-                  </h4>
-                  <p className="text-xs leading-relaxed">
-                    মোট আপ্যায়ন খরচ <strong>{toBanglaDigits(totalApyaon)}/- টাকা</strong> (মোট {toBanglaDigits(filtered.length)}টি ডিউটি)। 
-                    তাই নীতিগত সিদ্ধান্ত অনুযায়ী আদেশটি সমান <strong>{toBanglaDigits(numParts)}টি আলাদা অফিস আদেশে</strong> বিভক্ত করা হয়েছে। 
-                    অনুগ্রহ করে প্রতিটি অংশ আলাদাভাবে প্রিভিউ করে প্রিন্ট/ডাউনলোড করুন (প্রতিটি অংশের জন্য আলাদা ধারাবাহিক স্মারক সূত্র তৈরি হবে):
-                  </p>
-                  <div className="mt-3.5 space-y-2 text-xs font-bold font-sans">
-                    {parts.map((p, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-amber-900 dark:text-amber-250">
-                        <span>অংশ {toBanglaDigits(idx + 1)}:</span>
-                        <span className="font-normal">{toBanglaDigits(p.length * apyaonRate)}/- টাকা ({toBanglaDigits(p.length)}টি ডিউটি)</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Part Switcher Tabs */}
-                <div className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
-                  {Array.from({ length: numParts }).map((_, idx) => {
-                    const isActive = activePartIdx === idx;
-                    return (
-                      <button
-                        type="button"
-                        key={idx}
-                        onClick={() => setActivePartIdx(idx)}
-                        className={`px-4 py-2 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
-                          isActive
-                            ? 'bg-indigo-600 text-white shadow'
-                            : 'bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-850'
-                        }`}
-                      >
-                        অংশ {toBanglaDigits(idx + 1)} (স্মারক সূত্র: {toBanglaDigits(stableNumber + idx)})
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Interactive Print Mock Sheet */}
-          <div className="flex justify-center p-4 bg-slate-100/50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-3xl overflow-x-auto shadow-inner font-serif">
-            {/* Renders exactly like A4 Page in Print Preview with standard 1.0 inch margins all around */}
-            <div className="print-a4-layout w-[210mm] h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', padding: '1.0in', boxSizing: 'border-box' }}>
-              
-              {/* Janata Bank PLC Redesigned Header to match mockup logo exactly */}
-              {headerMode === 'with_header' ? (
-                <div className="w-full flex justify-between items-start border-b-2 border-[#0b5e9e] pb-2">
-                  {/* Left side: Logo & Tagline */}
-                  <div className="flex items-start gap-2 text-left">
-                    <svg viewBox="0 0 512 512" style={{ width: '64px', height: '64px' }} className="text-[#0b5e9e] shrink-0" fill="none">
-                      <g>
-                        <path fill="currentColor" d="M175.7,351.4c-53.1,0-96.4-43.3-96.4-96.4c0-24.9,9.5-48.6,26.6-66.5l8.2,7.9c-15.1,15.8-23.5,36.7-23.5,58.7c0,46.9,38.1,85.1,85,85.1c46.9,0,85.1-38.2,85.1-85.1v-97.7h11.4v97.7C272.1,308.1,228.9,351.4,175.7,351.4z"/>
-                        <path fill="currentColor" d="M175.7,329.1c-41.3,0-74.9-33.6-74.9-74.9c0-19.4,7.3-37.7,20.7-51.7l8.2,7.9c-11.3,11.8-17.5,27.4-17.5,43.9c0,35.1,28.5,63.6,63.5,63.6c35.1,0,63.6-28.5,63.6-63.6v-96.9h11.4v96.9C250.7,295.4,217,329.1,175.7,329.1z"/>
-                        <path fill="currentColor" d="M175.7,306.8c-29.5,0-53.4-24-53.4-53.5c0-13.8,5.2-26.9,14.8-36.9l8.2,7.9c-7.5,7.8-11.6,18.2-11.6,29c0,23.2,18.9,42.1,42.1,42.1c23.2,0,42.1-18.9,42.1-42.1v-96.1h11.4v96.1C229.2,282.8,205.2,306.8,175.7,306.8z"/>
-                        <path fill="currentColor" d="M175.7,284.4c-17.6,0-32-14.3-32-32c0-8.3,3.1-16.1,8.8-22.1l8.2,7.9c-3.7,3.8-5.7,8.9-5.7,14.2c0,11.4,9.2,20.6,20.6,20.6c11.4,0,20.6-9.2,20.6-20.6v-95.2h11.4v95.2C207.7,270.1,193.3,284.4,175.7,284.4z"/>
-                        <path fill="currentColor" d="M400.1,255.1c9.9-7.8,15.9-19.8,15.9-32.7c0-23-18.7-41.6-41.6-41.6h-85.1v11.7h85.1c16.5,0,29.9,13.4,29.9,29.9c0,11.8-7,22.5-17.8,27.3l-12.1,5.4l12.1,5.4c10.8,4.8,17.8,15.5,17.8,27.3c0,16.5-13.4,30-29.9,30H270.2c-2.7,4.1-5.8,8-9,11.7h113.1c23,0,41.6-18.7,41.6-41.7C416,274.8,410,262.8,400.1,255.1z"/>
-                        <path fill="currentColor" d="M442.1,218.5c0-33.9-27.6-61.5-61.5-61.5h-91.4v11.4h91.4c27.7,0,50.2,22.5,50.2,50.2c0,12.1-4.4,23.8-12.3,32.8l-3.3,3.7l3.3,3.7c7.9,9.1,12.3,20.8,12.3,32.9c0,27.7-22.5,50.2-50.2,50.2h-132c-5,4.2-10.5,8-16.2,11.4h148.2c33.9,0,61.5-27.6,61.5-61.5c0-13.2-4.3-26-12.1-36.6C437.9,244.6,442.1,231.8,442.1,218.5z"/>
-                        <path fill="currentColor" d="M362.7,204.7h-73.5v11.4h73.5c5.4,0,9.7,4.3,9.7,9.7c0,2.6-1,5-2.9,6.9c-1.8,1.8-4.2,2.8-6.8,2.8h-73.5v11.4h73.5c5.7,0,11-2.2,14.9-6.2c4-4,6.2-9.3,6.2-14.9C383.8,214.2,374.3,204.7,362.7,204.7z"/>
-                        <path fill="currentColor" d="M362.7,263.3h-73.8c-0.3,3.8-0.8,7.6-1.4,11.4h75.2c5.4,0,9.7,4.4,9.7,9.7c0,2.6-1,5.1-2.9,6.9c-1.8,1.8-4.3,2.8-6.8,2.8h-80.4c-1.4,3.9-3.1,7.7-4.9,11.4h85.4c5.6,0,10.9-2.2,14.8-6.1c4-3.9,6.3-9.3,6.3-15C383.8,272.7,374.3,263.3,362.7,263.3z"/>
-                        <path fill="currentColor" d="M255.8,420.3c-64.5,0-129-12.9-192.9-38.6l-2.7-1.1l-0.7-2.8c-24.7-97.3-24.7-177.2,0.2-244.3l0.9-2.4l2.3-0.9c128.4-51.4,258.3-51.4,386.2,0l2.7,1.1l0.7,2.8c24.7,97.3,24.7,177.2-0.2,244.3l-0.9,2.4l-2.3,0.9C384.9,407.4,320.3,420.3,255.8,420.3z M69.8,372.2c123.4,48.9,248.8,48.9,372.7-0.1c22.9-63.7,22.8-139.8-0.3-232.3c-123.4-48.9-248.8-48.9-372.7,0.1C46.6,203.6,46.7,279.7,69.8,372.2z"/>
-                      </g>
-                    </svg>
-                    <div className="font-serif leading-none mt-0.5">
-                      <h2 style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '24px', fontWeight: 'bold', color: '#0b5e9e', lineHeight: '1.0' }}>জনতা ব্যাংক পিএলসি.</h2>
-                      <p style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10px', fontWeight: 'bold', color: '#555555', marginTop: '4px', lineHeight: '1.0' }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
-                    </div>
-                  </div>
-
-                  {/* Right side: Department */}
-                  <div className="text-right mt-1">
-                    <h3 style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '8px' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
-                  </div>
-                </div>
-              ) : (
-                <div className="w-full h-[85px] border-b-2 border-transparent pb-2" />
-              )}
-
-              {/* Sub-header line: Reference and Date (With exactly 1 inch space below it) */}
-              <div className="w-full flex justify-between items-center text-[12px] pt-1 pb-1 border-b border-black/10 mt-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', marginBottom: '0.4in' }}>
-                <span className="font-bold">সূত্রঃ {orderRef}</span>
-                <span className="font-bold">
-                  তারিখঃ {toBanglaDigits(new Date(orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং
-                </span>
-              </div>
-
-              {/* Title and Main Body */}
-              <div className="flex-1 flex flex-col justify-start pt-2 text-[12px]" contentEditable={true} suppressContentEditableWarning={true} style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}>
-                <div className="space-y-2.5">
-                  <h2 className="text-center text-[14.5px] font-extrabold underline decoration-black underline-offset-2" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14.5px', lineHeight: '1.4' }}>
-                    অফিস নির্দেশ
-                  </h2>
-                  
-                  <p 
-                    className="text-justify leading-normal mt-2 text-[12px] text-slate-950 text-indent-8"
-                    style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}
-                    dangerouslySetInnerHTML={{ __html: orderText }}
-                  />
-
-                  {/* Redesigned Printed Duty Table Grouped by Employee */}
-                  {getGroupedDuties().length > 0 ? (
-                    <table className="w-full border-collapse border border-black text-center mt-2.5 text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
-                      <thead>
-                        <tr className="bg-slate-50 font-bold border-b border-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                          <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle', fontSize: '11px' }}>ক্রমিক নং</th>
-                          <th className="border border-black p-1 text-left pl-2 w-[25%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle' }}>নির্বাহী/ কর্মকর্তার নাম</th>
-                          <th className="border border-black p-1 text-center w-[10%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle' }}>পদবী</th>
-                          <th className="border border-black p-1 text-left pl-2 w-[35%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle' }}>কাজের বিবরণ</th>
-                          <th className="border border-black p-1 text-center w-[22%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle' }}>তারিখ</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {getGroupedDuties().map((group, index) => (
-                          <tr key={group.employee.id} className="text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                            <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle', fontSize: '11px' }}>
-                              {toBanglaDigits(index + 1)}
-                            </td>
-                            <td className="border border-black p-1 text-left pl-2 leading-tight font-normal text-[11px] whitespace-nowrap" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap', fontSize: '11px' }}>
-                              {group.employee.name.startsWith(' জনাব') || group.employee.name.startsWith('জনাব') ? group.employee.name : `জনাব ${group.employee.name}`}
-                            </td>
-                            <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle', fontSize: '11px' }}>
-                              {getShortDesignation(group.employee.designation)}
-                            </td>
-                            <td className="border border-black p-1 text-left pl-2 leading-normal font-normal text-black" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle', lineHeight: '1.25', fontSize: '11px' }}>
-                              {group.description}
-                            </td>
-                            <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle', lineHeight: '1.25' }}>
-                              {renderDatesInPairs(group.dates).map((pair, pIdx) => (
-                                <span key={pIdx} className="block" style={{ display: 'block', whiteSpace: 'nowrap' }}>
-                                  {pair}
-                                </span>
-                              ))}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="p-8 border border-dashed border-slate-300 text-center text-slate-400 italic">
-                      নির্বাচিত ক্যাটাগরি ও সেলের আন্ডারে কোনো ডিউটি রেকর্ড খুঁজে পাওয়া যায়নি।
-                    </div>
-                  )}
-                </div>
-
-                {/* Redesigned bottom-left signature aligned exactly like mockup with exactly 1 inch of space above it */}
-                <div className="flex justify-between items-start text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', marginTop: '1.0in' }}>
-                  <div className="w-[50%] text-left space-y-0.5 pl-2 leading-none">
-                    <p className="font-extrabold text-[12px] text-black">({cleanBracketName(signingOfficer) || 'ডিজিএম নাম সিলেক্ট করুন'})</p>
-                    <p className="font-semibold text-slate-800 text-[12px]">{signingDesignation}</p>
-                  </div>
-                  <div className="w-[50%]" />
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
+        /* GOVERNMENT PRINT MODE (অফিস আদেশ / জিও) */
+        <OfficeOrderPrintPreview
+          orderGenerated={orderGenerated}
+          isEditingArchive={isEditingArchive}
+          isArchived={isArchived}
+          submitting={submitting}
+          isRosterDirty={isRosterDirty}
+          orderRef={orderRef}
+          originalOrderRef={originalOrderRef}
+          orderDate={orderDate}
+          orderText={orderText}
+          printCategory={printCategory}
+          payeeEmployeeId={payeeEmployeeId}
+          selectedExecutiveId={selectedExecutiveId}
+          executives={executives}
+          signingOfficer={signingOfficer}
+          signingDesignation={signingDesignation}
+          headerMode={headerMode}
+          suggestedRef={suggestedRef}
+          refDuplicate={refDuplicate}
+          holidays={holidays}
+          duties={duties}
+          selectedCell={selectedCell}
+          activePartIdx={activePartIdx}
+          stableNumber={stableNumber}
+          setUserCustomOrderRef={setUserCustomOrderRef}
+          setUserCustomOrderDate={setUserCustomOrderDate}
+          setUserCustomOrderText={setUserCustomOrderText}
+          setUserSelectedPayeeId={setUserSelectedPayeeId}
+          setSelectedExecutiveId={setSelectedExecutiveId}
+          setSigningOfficer={setSigningOfficer}
+          setSigningDesignation={setSigningDesignation}
+          setHeaderMode={setHeaderMode}
+          changePrintCategory={changePrintCategory}
+          setActivePartIdx={setActivePartIdx}
+          handleBackToRoster={handleBackToRoster}
+          archiveOrder={archiveOrder}
+          saveOrderToArchive={saveOrderToArchive}
+          handleCancelRosterEdit={handleCancelRosterEdit}
+          getGroupedDuties={getGroupedDuties}
+          getSplitParts={getSplitParts}
+          getShortDesignation={getShortDesignation}
+        />
       )}
 
       {/* Conflict Resolution & Auto-Redirect Modal */}
