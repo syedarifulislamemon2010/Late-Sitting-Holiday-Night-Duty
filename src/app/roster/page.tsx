@@ -27,7 +27,9 @@ import {
   CheckCircle,
   X,
   Lock,
-  Download
+  Download,
+  MoreVertical,
+  Search
 } from 'lucide-react';
 import { generateOfficeOrderDocx } from '@/lib/docx-generator';
 
@@ -514,7 +516,42 @@ export default function RosterPage() {
   
   // Option 1 states
   const [opt1CellId, setOpt1CellId] = useState<string>('all');
+  const [opt1SearchQuery, setOpt1SearchQuery] = useState<string>('');
   const [opt1Assignments, setOpt1Assignments] = useState<Record<number, string[]>>({});
+  const [openActionOrderId, setOpenActionOrderId] = useState<number | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close action dropdown menu on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target as Node)) {
+        setOpenActionOrderId(null);
+      }
+    };
+    if (openActionOrderId !== null) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [openActionOrderId]);
+
+  // Mass select/deselect for Option 1
+  const selectAllOpt1Employees = (empList: Employee[]) => {
+    setOpt1Assignments(prev => {
+      const next = { ...prev };
+      empList.forEach(emp => {
+        if (!(emp.id in next)) {
+          next[emp.id] = [];
+        }
+      });
+      return next;
+    });
+  };
+
+  const deselectAllOpt1Employees = () => {
+    setOpt1Assignments({});
+  };
 
   // Unsaved Changes Tracking for Sidebar Warning
   useEffect(() => {
@@ -816,24 +853,39 @@ export default function RosterPage() {
 
         {/* Selected dates summary across all months */}
         {opt1Assignments[empId] && opt1Assignments[empId].length > 0 && (
-          <div className="pt-2 border-t border-dashed border-slate-100 dark:border-slate-800/60">
-            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">
-              মোট নির্বাচিত তারিখ ({toBanglaDigits(opt1Assignments[empId].length)}টি):
-            </p>
-            <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
+          <div className="pt-2.5 border-t border-dashed border-slate-200/80 dark:border-slate-800/80">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                মোট নির্বাচিত তারিখ: <span className="text-indigo-600 dark:text-indigo-400 font-extrabold font-sans">{toBanglaDigits(opt1Assignments[empId].length)}টি</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => setOpt1Assignments(prev => {
+                  const next = { ...prev };
+                  delete next[empId];
+                  return next;
+                })}
+                className="text-[9px] font-bold text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors cursor-pointer"
+              >
+                সব বাদ দিন
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
               {opt1Assignments[empId].map(dateStr => {
                 const [, m, d] = dateStr.split('-');
-                const shortLabel = `${toBanglaDigits(parseInt(d, 10))} ${banglaMonths[parseInt(m, 10) - 1].substring(0, 3)}`;
+                const monthName = banglaMonths[parseInt(m, 10) - 1];
+                const fullLabel = `${toBanglaDigits(parseInt(d, 10))} ${monthName}`;
                 return (
                   <span
                     key={dateStr}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 border border-indigo-100/50 dark:border-indigo-900/30"
+                    className="w-fit inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60 whitespace-nowrap shadow-2xs transition-all hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40"
                   >
-                    {shortLabel}
+                    <span>{fullLabel}</span>
                     <button
                       type="button"
                       onClick={() => handleOpt1RemoveDate(empId, dateStr)}
-                      className="text-indigo-400 hover:text-red-500 transition-colors ml-0.5 font-sans"
+                      className="text-indigo-400 hover:text-red-600 dark:hover:text-red-400 transition-colors ml-0.5 font-bold cursor-pointer text-xs"
+                      title="তারিখটি বাদ দিন"
                     >
                       ×
                     </button>
@@ -2907,13 +2959,13 @@ export default function RosterPage() {
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800">
-              <th className="p-3 text-[10px] uppercase font-bold tracking-wider text-center">ক্রমিক</th>
-              <th className="p-3 text-[10px] uppercase font-bold tracking-wider min-w-[200px]">স্মারক সূত্র নং</th>
-              <th className="p-3 text-[10px] uppercase font-bold tracking-wider">তারিখ</th>
-              <th className={`p-3 text-[10px] uppercase font-bold tracking-wider ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>ডিউটি ক্যাটাগরি</th>
-              <th className={`p-3 text-[10px] uppercase font-bold tracking-wider text-center font-bold ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>মোট ডিউটি সংখ্যা</th>
-              <th className={`p-3 text-[10px] uppercase font-bold tracking-wider text-right font-bold ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>মোট বিল (টাকা)</th>
-              <th className={`p-3 text-[10px] uppercase font-bold tracking-wider text-right ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>অ্যাকশন</th>
+              <th className="p-2.5 text-[10px] uppercase font-bold tracking-wider text-center w-10">ক্রমিক</th>
+              <th className="p-2.5 text-[10px] uppercase font-bold tracking-wider max-w-[160px]">স্মারক সূত্র নং</th>
+              <th className="p-2.5 text-[10px] uppercase font-bold tracking-wider">তারিখ</th>
+              <th className={`p-2.5 text-[10px] uppercase font-bold tracking-wider ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>ক্যাটাগরি</th>
+              <th className={`p-2.5 text-[10px] uppercase font-bold tracking-wider text-center font-bold ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>মোট ডিউটি</th>
+              <th className={`p-2.5 text-[10px] uppercase font-bold tracking-wider text-right font-bold ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>মোট বিল</th>
+              <th className={`p-2.5 text-[10px] uppercase font-bold tracking-wider text-right ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>অ্যাকশন</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-950/20 font-medium">
@@ -2928,19 +2980,26 @@ export default function RosterPage() {
               const ratePerDay = order.category === 'HOLIDAY' ? 500 : order.category === 'NIGHT_SHIFT' ? 1000 : 300;
               const totalAmount = recordCount * ratePerDay;
 
+              const getNormalizedRef = (ref: string | null | undefined) => {
+                if (!ref) return '';
+                return ref.replace(/\/বিল$/, '').trim().toLowerCase();
+              };
+              const norm = getNormalizedRef(order.orderRef);
+              const existingBill = officeOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
+
               return (
                 <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors font-medium">
-                  <td className="p-3 text-center text-slate-500 font-sans font-semibold">
+                  <td className="p-2.5 text-center text-slate-500 font-sans font-semibold text-xs w-10">
                     {toBanglaDigits(index + 1)}
                   </td>
-                  <td className="p-3 font-mono font-bold text-slate-700 dark:text-slate-300 break-words select-all min-w-[200px]">
+                  <td className="p-2.5 font-mono font-bold text-slate-700 dark:text-slate-300 text-xs max-w-[150px] sm:max-w-[180px] truncate select-all" title={order.orderRef}>
                     {order.orderRef}
                   </td>
-                  <td className="p-3 text-slate-550 dark:text-slate-400 font-sans whitespace-nowrap">
+                  <td className="p-2.5 text-slate-600 dark:text-slate-400 font-sans text-xs whitespace-nowrap">
                     {bnDate}
                   </td>
-                  <td className={`p-3 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                  <td className={`p-2.5 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap ${
                       order.category === 'HOLIDAY' 
                         ? 'bg-red-50 text-red-655 border border-red-100 dark:bg-red-955/20 dark:text-red-400 dark:border-red-900/30' 
                         : order.category === 'NIGHT_SHIFT'
@@ -2950,78 +3009,99 @@ export default function RosterPage() {
                       {catName}
                     </span>
                   </td>
-                  <td className={`p-3 text-center text-slate-600 dark:text-slate-400 font-sans font-bold ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
+                  <td className={`p-2.5 text-center text-slate-600 dark:text-slate-400 font-sans font-bold text-xs whitespace-nowrap ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
                     {toBanglaDigits(recordCount)} টি
                   </td>
-                  <td className={`p-3 text-right text-indigo-600 dark:text-indigo-400 font-sans font-bold ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
+                  <td className={`p-2.5 text-right text-indigo-600 dark:text-indigo-400 font-sans font-bold text-xs whitespace-nowrap ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
                     ৳{toBanglaDigits(totalAmount.toLocaleString('en-US'))}
                   </td>
-                  <td className={`p-3 text-right whitespace-nowrap space-x-1.5 ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
-                    {/* View Button */}
-                    <button
-                      onClick={() => handlePreviewOfficeOrder(order)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer font-sans"
-                      title="অফিস আদেশ দেখুন ও প্রিন্ট করুন"
-                    >
-                      <Eye size={12} />
-                      <span>ভিউ</span>
-                    </button>
+                  <td className={`p-2.5 text-right whitespace-nowrap ${isAssignmentPrimary ? 'hidden xl:hidden' : ''}`}>
+                    <div className="inline-flex items-center gap-1.5 justify-end">
+                      {/* Primary View Button */}
+                      <button
+                        onClick={() => handlePreviewOfficeOrder(order)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-650 dark:text-indigo-300 rounded-lg text-xs font-bold transition-all cursor-pointer font-sans"
+                        title="অফিস আদেশ দেখুন ও প্রিন্ট করুন"
+                      >
+                        <Eye size={12} />
+                        <span>ভিউ</span>
+                      </button>
 
-                    {/* Bill Generate / Edit Button */}
-                    {(() => {
-                      const getNormalizedRef = (ref: string | null | undefined) => {
-                        if (!ref) return '';
-                        return ref.replace(/\/বিল$/, '').trim().toLowerCase();
-                      };
-                      const norm = getNormalizedRef(order.orderRef);
-                      const existingBill = officeOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
-                      
-                      return existingBill ? (
+                      {/* Dropdown Action Menu (⋮) */}
+                      <div className="relative">
                         <button
-                          onClick={() => {
-                            window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}`;
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenActionOrderId(openActionOrderId === order.id ? null : order.id);
                           }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-955/20 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-lg text-[10px] font-extrabold transition-all border border-teal-100 dark:border-teal-950/30 cursor-pointer font-sans"
-                          title="বিল বিবরণী সম্পাদন করুন"
+                          className={`p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                            openActionOrderId === order.id ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100' : ''
+                          }`}
+                          title="অতিরিক্ত অ্যাকশন মেনু"
                         >
-                          <Receipt size={12} />
-                          <span>বিল সম্পাদন</span>
+                          <MoreVertical size={14} />
                         </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            window.location.href = `/billing?orderRef=${encodeURIComponent(order.orderRef)}`;
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-extrabold transition-all border border-amber-100 dark:border-amber-950/30 cursor-pointer font-sans"
-                          title="বিল জেনারেট করুন"
-                        >
-                          <Receipt size={12} />
-                          <span>বিল জেনারেট</span>
-                        </button>
-                      );
-                    })()}
 
-                    {/* Edit Roster Button */}
-                    <button
-                      onClick={() => {
-                        window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`;
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-350 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer font-sans"
-                      title="অফিস আদেশ রোস্টারে সম্পাদন করুন"
-                    >
-                      <FileSignature size={12} />
-                      <span>সম্পাদনা (রোস্টার)</span>
-                    </button>
+                        {openActionOrderId === order.id && (
+                          <div 
+                            ref={actionMenuRef}
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-1 z-50 animate-in fade-in slide-in-from-top-1 text-left font-sans"
+                          >
+                            {/* Bill Generate / Edit Option */}
+                            {existingBill ? (
+                              <button
+                                onClick={() => {
+                                  setOpenActionOrderId(null);
+                                  window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}`;
+                                }}
+                                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-955/30 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Receipt size={13} />
+                                <span>বিল সম্পাদন</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setOpenActionOrderId(null);
+                                  window.location.href = `/billing?orderRef=${encodeURIComponent(order.orderRef)}`;
+                                }}
+                                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Receipt size={13} />
+                                <span>বিল প্রস্তুত করুন</span>
+                              </button>
+                            )}
 
-                    {/* Delete Button */}
-                    <button
-                      onClick={() => handleDeleteOfficeOrder(order.id, order.orderRef)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg text-[10px] font-bold transition-all cursor-pointer font-sans"
-                      title="অফিস আদেশ মুছে ফেলুন"
-                    >
-                      <Trash2 size={12} />
-                      <span>মুছুন</span>
-                    </button>
+                            {/* Edit Roster */}
+                            <button
+                              onClick={() => {
+                                setOpenActionOrderId(null);
+                                window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`;
+                              }}
+                              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <FileSignature size={13} />
+                              <span>রোস্টার সম্পাদন</span>
+                            </button>
+
+                            {/* Delete Order */}
+                            <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+                            <button
+                              onClick={() => {
+                                setOpenActionOrderId(null);
+                                handleDeleteOfficeOrder(order.id, order.orderRef);
+                              }}
+                              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Trash2 size={13} />
+                              <span>মুছে ফেলুন</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </td>
                 </tr>
               );
@@ -3480,69 +3560,176 @@ export default function RosterPage() {
                       </select>
                     </div>
 
-                    <div className="space-y-2 pt-2">
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        ৪. কর্মকর্তা ও তারিখসমূহ নির্বাচন করুন
-                      </label>
+                    {/* 4. Uniform Compact Employee Checkbox Grid */}
+                    {(() => {
+                      const allowedCellIds = currentUser?.role === 'ADMIN'
+                        ? cells.map(c => c.id)
+                        : currentUser?.cells?.map((c) => c.id) || [];
                       
-                      <div className={`border border-slate-100 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/10 grid gap-3 ${
-                        isAssignmentPrimary 
-                          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
-                          : 'grid-cols-1'
-                      }`}>
-                        {(() => {
-                          const allowedCellIds = currentUser?.role === 'ADMIN'
-                            ? cells.map(c => c.id)
-                            : currentUser?.cells?.map((c) => c.id) || [];
-                          
-                          const listEmployees = employees.filter(emp => 
-                            opt1CellId === 'all' 
-                              ? allowedCellIds.includes(emp.cellId) 
-                              : emp.cellId.toString() === opt1CellId
-                          );
-                          
-                          if (listEmployees.length > 0) {
-                            return listEmployees.map(emp => {
-                              const isChecked = emp.id in opt1Assignments;
-                              return (
-                                <div 
-                                  key={emp.id} 
-                                  className={`border rounded-xl p-3 transition-all duration-250 hover:shadow-md dark:hover:shadow-indigo-950/20 ${
-                                    isChecked 
-                                      ? 'border-indigo-500/40 dark:border-indigo-400/40 bg-indigo-50/10 dark:bg-indigo-950/10 shadow-sm' 
-                                      : 'border-slate-200/60 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-slate-350 dark:hover:border-slate-650'
-                                  } space-y-3`}
+                      const cellFilteredEmployees = employees.filter(emp => 
+                        opt1CellId === 'all' 
+                          ? allowedCellIds.includes(emp.cellId) 
+                          : emp.cellId.toString() === opt1CellId
+                      );
+
+                      const filteredOpt1Employees = cellFilteredEmployees.filter(emp => {
+                        if (!opt1SearchQuery.trim()) return true;
+                        const q = opt1SearchQuery.toLowerCase();
+                        return (
+                          emp.name.toLowerCase().includes(q) ||
+                          (emp.designation && emp.designation.toLowerCase().includes(q)) ||
+                          (emp.bankId && emp.bankId.toLowerCase().includes(q))
+                        );
+                      });
+
+                      const selectedEmployeeIds = Object.keys(opt1Assignments).map(Number);
+                      const selectedEmployees = employees.filter(emp => selectedEmployeeIds.includes(emp.id));
+
+                      return (
+                        <>
+                          <div className="space-y-2.5 pt-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                                ৪. কর্মকর্তা নির্বাচন করুন ({toBanglaDigits(selectedEmployees.length)} জন নির্বাচিত)
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => selectAllOpt1Employees(filteredOpt1Employees)}
+                                  className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-650 dark:text-indigo-400 transition-colors cursor-pointer"
                                 >
-                                  <div className="flex items-center justify-between">
+                                  সব সিলেক্ট করুন
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={deselectAllOpt1Employees}
+                                  className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                                >
+                                  সব বাদ দিন
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Option 1 Internal Employee Search */}
+                            <div className="relative">
+                              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                              <input
+                                type="text"
+                                placeholder="কর্মকর্তার নাম দিয়ে খুঁজুন..."
+                                value={opt1SearchQuery}
+                                onChange={(e) => setOpt1SearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100"
+                              />
+                            </div>
+                            
+                            {/* Uniform Fixed-Height Checkbox Cards Grid */}
+                            <div className={`border border-slate-200/70 dark:border-slate-800/80 rounded-2xl p-3 bg-slate-50/50 dark:bg-slate-900/20 grid gap-2.5 max-h-72 overflow-y-auto ${
+                              isAssignmentPrimary ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
+                            }`}>
+                              {filteredOpt1Employees.length > 0 ? (
+                                filteredOpt1Employees.map(emp => {
+                                  const isChecked = emp.id in opt1Assignments;
+                                  const datesCount = opt1Assignments[emp.id]?.length || 0;
+                                  return (
                                     <div 
+                                      key={emp.id} 
                                       onClick={() => handleOpt1EmployeeToggle(emp.id)}
-                                      className="flex items-center gap-2.5 cursor-pointer select-none"
+                                      className={`border rounded-xl p-2.5 cursor-pointer transition-all duration-200 flex items-center justify-between gap-2.5 select-none ${
+                                        isChecked 
+                                          ? 'border-indigo-500/60 dark:border-indigo-400/60 bg-indigo-50/40 dark:bg-indigo-950/30 shadow-xs ring-1 ring-indigo-500/20' 
+                                          : 'border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-900/60 hover:border-slate-350 dark:hover:border-slate-700 hover:shadow-xs'
+                                      }`}
                                     >
-                                      <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
-                                        {isChecked && <Check size={10} strokeWidth={3} />}
+                                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                        <div className={`w-4 h-4 border rounded flex items-center justify-center shrink-0 transition-colors ${
+                                          isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'
+                                        }`}>
+                                          {isChecked && <Check size={10} strokeWidth={3} />}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate leading-snug">{emp.name}</p>
+                                          <p className="text-[10px] text-slate-400 truncate">{emp.designation}</p>
+                                        </div>
                                       </div>
-                                      <div>
-                                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">{emp.name}</p>
-                                        <p className="text-[10px] text-slate-400 mt-0.5">{emp.designation}</p>
+                                      {isChecked && datesCount > 0 && (
+                                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-indigo-600 text-white shrink-0">
+                                          {toBanglaDigits(datesCount)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <p className="text-xs text-slate-400 text-center py-6 col-span-full">এই সেলের অধীনে কোনো কর্মকর্তা পাওয়া যায়নি।</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 5. Dedicated Stacked Section: Selected Officers Calendar & Date Assignments */}
+                          {selectedEmployees.length > 0 && (
+                            <div className="space-y-4 pt-4 border-t border-slate-200/80 dark:border-slate-800/80 animate-in fade-in slide-in-from-top-2 duration-200">
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-black text-indigo-900 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-2">
+                                  <Calendar size={15} className="text-indigo-600 dark:text-indigo-400" />
+                                  ৫. নির্বাচিত কর্মকর্তাদের ডিউটির তারিখ নির্ধারণ করুন ({toBanglaDigits(selectedEmployees.length)} জন)
+                                </label>
+                              </div>
+
+                              <div className="space-y-4">
+                                {selectedEmployees.map(emp => {
+                                  const datesCount = opt1Assignments[emp.id]?.length || 0;
+                                  return (
+                                    <div
+                                      key={emp.id}
+                                      className="border border-indigo-100 dark:border-indigo-950/60 rounded-2xl p-4 bg-white dark:bg-slate-900/90 shadow-sm space-y-3 relative transition-all"
+                                    >
+                                      {/* Selected Employee Card Header */}
+                                      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                                        <div className="flex items-center gap-2.5">
+                                          <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-650 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
+                                            {emp.name.charAt(0)}
+                                          </div>
+                                          <div>
+                                            <div className="flex items-center gap-2">
+                                              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">{emp.name}</h4>
+                                              {emp.cell?.name && (
+                                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                                  {emp.cell.name}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <p className="text-[10px] text-slate-400">{emp.designation}</p>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 border border-indigo-100/60 dark:border-indigo-900/40">
+                                            {toBanglaDigits(datesCount)} দিন নির্বাচিত
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleOpt1EmployeeToggle(emp.id)}
+                                            className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                                            title="তালিকা থেকে বাদ দিন"
+                                          >
+                                            <X size={14} />
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* Calendar Component */}
+                                      <div className="pt-1">
+                                        {renderMonthCalendar(emp.id, getEmployeeViewedMonth(emp.id))}
                                       </div>
                                     </div>
-                                  </div>
-                                  
-                                  {isChecked && (
-                                    <div className="flex flex-col gap-4 mt-2">
-                                      {renderMonthCalendar(emp.id, getEmployeeViewedMonth(emp.id))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            });
-                          }
-                          return (
-                            <p className="text-xs text-slate-400 text-center py-4 col-span-full">এই সেলের অধীনে কোনো কর্মকর্তা পাওয়া যায়নি।</p>
-                          );
-                        })()}
-                      </div>
-                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 ) : (
                   /* ========================================================
@@ -3763,7 +3950,11 @@ export default function RosterPage() {
                     <button
                       type="submit"
                       disabled={submitting || isSubmitDisabled()}
-                      className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 text-white text-sm font-semibold transition-all shadow-md mt-4 cursor-pointer disabled:cursor-not-allowed"
+                      className={`w-full flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold transition-all mt-4 select-none ${
+                        submitting || isSubmitDisabled()
+                          ? 'bg-slate-200 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300/40 dark:border-slate-700/40 shadow-none'
+                          : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg cursor-pointer font-extrabold'
+                      }`}
                     >
                       {submitting ? 'সংরক্ষণ হচ্ছে...' : 'ডিউটি অ্যাসাইন করুন'}
                     </button>
