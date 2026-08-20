@@ -471,10 +471,16 @@ pm2 startup systemd
 ```
 
 ### 3. Live Server Single-Line Safe Update Command
-When pulling updates to a live RHEL production server:
+When pulling updates to a live RHEL production server (ensuring local tree strictly matches `origin/main` without git merge conflict prompts):
 ```bash
-git pull origin main && npm install && npm run build && pm2 restart 2
+git fetch origin && git reset --hard origin/main && npm run build && pm2 restart 2
 ```
+* **Explanation:**
+  - `git fetch origin`: Downloads latest commits and refs from GitHub without touching local working tree.
+  - `git reset --hard origin/main`: Resets local branches and working tree to match `origin/main` completely, discarding any accidental local changes.
+  - `npm run build`: Compiles optimized production Next.js bundle with Turbopack/App Router.
+  - `pm2 restart 2`: Gracefully restarts PM2 process ID 2 with zero downtime.
+
 
 ### 3. Nginx Reverse Proxy
 ```nginx

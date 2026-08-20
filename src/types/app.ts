@@ -7,7 +7,7 @@ export interface DutyConflictDetails {
   employeeName?: string;
   existingLeaveStart?: string | Date;
   existingLeaveEnd?: string | Date;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface BillingFilterOptions {
@@ -39,13 +39,27 @@ export interface DutyRecord {
   [key: string]: unknown;
 }
 
+export interface OrderDuty {
+  employeeId?: number;
+  employeeName: string;
+  designation: string;
+  description?: string;
+  dates?: string | string[];
+  datesFormatted?: string;
+  days?: number;
+  totalTransport?: number;
+  totalApyaon?: number;
+  grandTotal?: number;
+  [key: string]: unknown;
+}
+
 export interface OfficeOrderPayload {
   orderRef: string;
   date: string;
   category: string;
   cellName?: string;
   dutiesJson?: string;
-  duties?: DutyRecord[];
+  duties?: OrderDuty[];
   [key: string]: unknown;
 }
 
@@ -53,8 +67,32 @@ export interface EmployeeRecord {
   id: number;
   bankId: string | null;
   name: string;
-  designation?: string;
-  cellId?: number;
+  nameEn?: string | null;
+  designation: string;
+  designationEn?: string | null;
+  cellId: number;
   cellName?: string | null;
+  mobile?: string | null;
+  fileNo?: string | null;
   [key: string]: unknown;
+}
+
+export interface PayeeSummary {
+  payeeName: string;
+  designation: string;
+  billCount: number;
+  transportAllowance?: number;
+  apyaonAllowance?: number;
+  grandTotal: number;
+}
+
+export interface EmployeeBreakdownRecord {
+  name: string;
+  designation: string;
+  cellName?: string;
+  dutyDays: number;
+  amount: number;
+  deduction?: number;
+  deductions?: number;
+  netPayable: number;
 }

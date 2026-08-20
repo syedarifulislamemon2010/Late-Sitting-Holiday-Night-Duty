@@ -4,6 +4,8 @@ import { eq } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { AuthError, AppError } from '@/lib/errors';
 
+import { executiveCreateSchema, executiveUpdateSchema } from '@/validations/executive.schema';
+
 interface UserSession {
   id: number;
   name: string;
@@ -36,18 +38,15 @@ export class ExecutiveService {
       throw new AuthError('অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন নির্বাহী যোগ করতে পারবেন।', 403, 'forbidden');
     }
 
-    const { name, designation, phone, email, bankId, fileNo } = body;
-    if (!name || !designation) {
-      throw new AppError('নাম এবং পদবী আবশ্যক।', 400, 'name_and_designation_required');
-    }
+    const validated = executiveCreateSchema.parse(body);
 
     const createdList = await db.insert(executives).values({
-      name: name.trim(),
-      designation: designation.trim(),
-      phone: phone?.trim() || null,
-      email: email?.trim() || null,
-      bankId: bankId?.trim() || null,
-      fileNo: fileNo?.trim() || null
+      name: validated.name.trim(),
+      designation: validated.designation.trim(),
+      phone: validated.phone?.trim() || null,
+      email: validated.email?.trim() || null,
+      bankId: validated.bankId?.trim() || null,
+      fileNo: validated.fileNo?.trim() || null
     }).returning();
     const created = createdList[0];
 
@@ -72,19 +71,16 @@ export class ExecutiveService {
       throw new AuthError('অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন নির্বাহী সংশোধন করতে পারবেন।', 403, 'forbidden');
     }
 
-    const { name, designation, phone, email, bankId, fileNo } = body;
-    if (!name || !designation) {
-      throw new AppError('নাম এবং পদবী আবশ্যক।', 400, 'name_and_designation_required');
-    }
+    const validated = executiveUpdateSchema.parse(body);
 
     const updatedList = await db.update(executives)
       .set({
-        name: name.trim(),
-        designation: designation.trim(),
-        phone: phone?.trim() || null,
-        email: email?.trim() || null,
-        bankId: bankId?.trim() || null,
-        fileNo: fileNo?.trim() || null
+        ...(validated.name && { name: validated.name.trim() }),
+        ...(validated.designation && { designation: validated.designation.trim() }),
+        ...(validated.phone !== undefined && { phone: validated.phone?.trim() || null }),
+        ...(validated.email !== undefined && { email: validated.email?.trim() || null }),
+        ...(validated.bankId !== undefined && { bankId: validated.bankId?.trim() || null }),
+        ...(validated.fileNo !== undefined && { fileNo: validated.fileNo?.trim() || null })
       })
       .where(eq(executives.id, id))
       .returning();

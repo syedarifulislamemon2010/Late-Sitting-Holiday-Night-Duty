@@ -2,8 +2,53 @@ import React from 'react';
 import { Printer, ChevronLeft } from 'lucide-react';
 import { getBanglaDate, getBanglaNumberWords, toBanglaDigits } from '@/lib/bengali-converter';
 
+interface PayeeSummaryItem {
+  payeeName: string;
+  designation?: string;
+  billCount: number;
+  transportAllowance?: number;
+  apyaonAllowance?: number;
+  grandTotal: number;
+}
+
+interface EmployeeBreakdownItem {
+  employeeName: string;
+  designation: string;
+  lateSittingDays: number;
+  lateSittingAmount: number;
+  holidayDays: number;
+  holidayAmount: number;
+  nightShiftDays: number;
+  nightShiftAmount: number;
+  totalDays: number;
+  grandTotal: number;
+  deduction?: number;
+  deductions?: number;
+}
+
+interface ReportDataStructure {
+  totalBillsCount: number;
+  totalDays: number;
+  totalTransport: number;
+  totalApyaon: number;
+  grandTotal: number;
+  lateSittingAmount: number;
+  holidayAmount: number;
+  nightShiftAmount: number;
+  employeesBreakdown: EmployeeBreakdownItem[];
+  payeesSummary: PayeeSummaryItem[];
+  totalLateDays: number;
+  totalLateAmount: number;
+  totalHolidayDays: number;
+  totalHolidayAmount: number;
+  totalNightDays: number;
+  totalNightAmount: number;
+  totalDaysSum: number;
+  grandTotalSum: number;
+}
+
 interface PrintableReportLayoutProps {
-  reportData: any;
+  reportData: ReportDataStructure;
   reportDate: string;
   setIsReportPrintMode: (val: boolean) => void;
 }
@@ -22,8 +67,8 @@ export default function PrintableReportLayout({
     lateSittingAmount, 
     holidayAmount, 
     nightShiftAmount, 
-    employeesBreakdown,
-    payeesSummary,
+    employeesBreakdown = [],
+    payeesSummary = [],
     totalLateDays,
     totalLateAmount,
     totalHolidayDays,
@@ -58,54 +103,65 @@ export default function PrintableReportLayout({
       `}} />
 
       {/* Back Controls (No-print) */}
-      <div className="no-print flex items-center justify-between mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+      <div className="no-print flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
         <button
           onClick={() => setIsReportPrintMode(false)}
-          className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
         >
           <ChevronLeft size={16} />
-          প্রতিবেদন ভিউতে ফিরে যান
+          <span>রিপোর্ট ভিউয়ে ফিরে যান</span>
         </button>
         <button
           onClick={() => window.print()}
-          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all"
         >
-          <Printer size={14} />
-          প্রিন্ট করুন (Print)
+          <Printer size={16} />
+          <span>প্রিন্ট করুন (Print Report)</span>
         </button>
       </div>
 
-      {/* Report Header */}
+      {/* Header Statement */}
       <div className="text-center space-y-1 mb-6">
-        <h1 className="text-2xl font-bold tracking-wide">জনতা ব্যাংক পিএলসি.</h1>
-        <p className="text-base font-semibold">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
-        <p className="text-sm text-slate-500 font-bold uppercase mt-1">লেট সিটিং হলিডে নাইট বিল স্টেটমেন্ট</p>
-        <div className="w-full border-t border-double border-black my-2"></div>
-        <div className="flex justify-between items-center text-sm font-bold px-2 pt-1">
-          <span>প্রতিবেদনের তারিখ: {getBanglaDate(reportDate)}</span>
-          <span>প্রস্তুতকাল: {new Date().toLocaleDateString('bn-BD')}</span>
+        <h2 className="text-xl font-bold">জনতা ব্যাংক পিএলসি.</h2>
+        <h3 className="text-base font-semibold">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
+        <p className="text-xs text-slate-700">প্রধান কার্যালয়, ঢাকা</p>
+        <div className="pt-2">
+          <h4 className="text-sm font-bold underline inline-block">
+            ডিউটি বিল সারসংক্ষেপ ও প্রাপক বিবরণী
+          </h4>
+        </div>
+        <p className="text-xs text-slate-600 mt-1">
+          তারিখ: {getBanglaDate(reportDate)}
+        </p>
+      </div>
+
+      {/* Summary Box */}
+      <div className="mb-6 p-4 border border-black rounded-lg bg-slate-50/50">
+        <h5 className="font-bold text-xs mb-2 border-b border-black/20 pb-1">সারসংক্ষেপ তথ্য (Overview):</h5>
+        <div className="grid grid-cols-2 gap-4 text-xs">
+          <div>
+            <p><strong>মোট প্রস্তুতকৃত বিল:</strong> {toBanglaDigits(totalBillsCount)} টি</p>
+            <p><strong>মোট কার্যকর দিন:</strong> {toBanglaDigits(totalDays)} দিন</p>
+            <p><strong>মোট যাতায়াত ভাতা:</strong> {toBanglaDigits(totalTransport)}/- টাকা</p>
+            <p><strong>মোট আপ্যায়ন ভাতা:</strong> {toBanglaDigits(totalApyaon)}/- টাকা</p>
+          </div>
+          <div>
+            <p><strong>লেট-সিটিং ভাতা:</strong> {toBanglaDigits(lateSittingAmount)}/- টাকা</p>
+            <p><strong>ছুটির দিন ভাতা:</strong> {toBanglaDigits(holidayAmount)}/- টাকা</p>
+            <p><strong>নাইট শিফট ভাতা:</strong> {toBanglaDigits(nightShiftAmount)}/- টাকা</p>
+            <p className="text-sm font-extrabold text-indigo-900 mt-1">
+              <strong>সর্বমোট দাবীকৃত অর্থ:</strong> {toBanglaDigits(grandTotal)}/- টাকা
+            </p>
+          </div>
+        </div>
+        <div className="mt-2 pt-2 border-t border-black/20 text-xs font-bold">
+          কথায়: {getBanglaNumberWords(grandTotal)} মাত্র।
         </div>
       </div>
 
-      {/* KPI Summary Block for Print */}
-      <div className="mb-6 p-4 border border-black rounded-lg">
-        <h3 className="text-sm font-bold border-b border-black pb-1 mb-2">সংক্ষিপ্ত সারসংক্ষেপ (KPI Summary):</h3>
-        <div className="grid grid-cols-2 gap-y-2 text-sm">
-          <div><strong>মোট জেনারেটকৃত বিলের সংখ্যা:</strong> {toBanglaDigits(totalBillsCount)} টি</div>
-          <div><strong>সর্বমোট প্রদেয় বিলের পরিমাণ:</strong> {toBanglaDigits(grandTotal)}/- টাকা</div>
-          <div><strong>মোট ডিউটি কার্যদিবস:</strong> {toBanglaDigits(totalDays)} দিন</div>
-          <div><strong>সর্বমোট প্রদেয় (কথায়):</strong> {getBanglaNumberWords(grandTotal)}</div>
-          <div><strong>মোট যাতায়াত ভাতা:</strong> {toBanglaDigits(totalTransport)}/- টাকা</div>
-          <div><strong>লেট-সিটিং বিল বাবদ:</strong> {toBanglaDigits(lateSittingAmount)}/- টাকা</div>
-          <div><strong>মোট আপ্যায়ন ভাতা:</strong> {toBanglaDigits(totalApyaon)}/- টাকা</div>
-          <div><strong>ছুটির দিনের বিল বাবদ:</strong> {toBanglaDigits(holidayAmount)}/- টাকা</div>
-          <div><strong>রাত্রিকালীন শিফট বিল বাবদ:</strong> {toBanglaDigits(nightShiftAmount)}/- টাকা</div>
-        </div>
-      </div>
-
-      {/* Table: Payee Bill Summary for Print */}
+      {/* Table: Payee Wise Summary for Accounts */}
       <div className="mb-6">
-        <h3 className="text-sm font-bold mb-2">১. কর্মকর্তা ভিত্তিক বিলের সারসংক্ষেপ (Payee Bill Summary):</h3>
+        <h3 className="text-sm font-bold mb-2">১. প্রাপক অনুযায়ী বিল বিবরণী (Payee-wise Summary for Accounts):</h3>
         <table className="w-full text-xs border-collapse" style={{ border: '1px solid #000' }}>
           <thead>
             <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
@@ -118,7 +174,7 @@ export default function PrintableReportLayout({
             </tr>
           </thead>
           <tbody>
-            {payeesSummary.map((payee: any, idx: number) => {
+            {payeesSummary.map((payee: PayeeSummaryItem, idx: number) => {
               return (
                 <tr key={idx} style={{ borderTop: '1px solid #000' }}>
                   <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(idx + 1)}</td>
@@ -136,16 +192,16 @@ export default function PrintableReportLayout({
               <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}></td>
               <td className="p-1.5 border-r border-black text-left pl-2 font-bold" style={{ borderRight: '1px solid #000' }}>সর্বমোট</td>
               <td className="p-1.5 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
-                {toBanglaDigits(payeesSummary.reduce((sum: number, p: any) => sum + p.billCount, 0))} টি
+                {toBanglaDigits(payeesSummary.reduce((sum: number, p: PayeeSummaryItem) => sum + p.billCount, 0))} টি
               </td>
               <td className="p-1.5 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>
-                {toBanglaDigits(payeesSummary.reduce((sum: number, p: any) => sum + (p.transportAllowance || 0), 0))}/-
+                {toBanglaDigits(payeesSummary.reduce((sum: number, p: PayeeSummaryItem) => sum + (p.transportAllowance || 0), 0))}/-
               </td>
               <td className="p-1.5 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>
-                {toBanglaDigits(payeesSummary.reduce((sum: number, p: any) => sum + (p.apyaonAllowance || 0), 0))}/-
+                {toBanglaDigits(payeesSummary.reduce((sum: number, p: PayeeSummaryItem) => sum + (p.apyaonAllowance || 0), 0))}/-
               </td>
               <td className="p-1.5 text-right pr-4 font-bold">
-                {toBanglaDigits(payeesSummary.reduce((sum: number, p: any) => sum + p.grandTotal, 0))}/-
+                {toBanglaDigits(payeesSummary.reduce((sum: number, p: PayeeSummaryItem) => sum + p.grandTotal, 0))}/-
               </td>
             </tr>
           </tbody>
@@ -170,7 +226,7 @@ export default function PrintableReportLayout({
             </tr>
           </thead>
           <tbody>
-            {employeesBreakdown.map((record: any, idx: number) => (
+            {employeesBreakdown.map((record: EmployeeBreakdownItem, idx: number) => (
               <tr key={idx} style={{ borderTop: '1px solid #000' }}>
                 <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(idx + 1)}</td>
                 <td className="p-1 border-r border-black font-bold" style={{ borderRight: '1px solid #000', textAlign: 'left', paddingLeft: '4px' }}>{record.employeeName}</td>
@@ -184,29 +240,57 @@ export default function PrintableReportLayout({
                 <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>
                   {record.nightShiftDays > 0 ? `${toBanglaDigits(record.nightShiftDays)} (${toBanglaDigits(record.nightShiftAmount)}/-)` : '-'}
                 </td>
-                <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(record.totalDays)}</td>
-                <td className="p-1 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(record.grandTotal)}/-</td>
-                <td className="p-1 text-center font-bold"></td>
+                <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
+                  {toBanglaDigits(record.totalDays)}
+                </td>
+                <td className="p-1 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>
+                  {toBanglaDigits(record.grandTotal)}/-
+                </td>
+                <td className="p-1 text-center font-medium">
+                  {record.deduction || record.deductions ? `${toBanglaDigits(record.deduction || record.deductions || 0)}/-` : '-'}
+                </td>
               </tr>
             ))}
             <tr style={{ borderTop: '2px solid #000', fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
-              <td className="p-1 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}></td>
-              <td className="p-1 border-r border-black text-left font-bold" style={{ borderRight: '1px solid #000', paddingLeft: '4px' }} colSpan={2}>সর্বমোট</td>
-              <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
-                {totalLateDays > 0 ? `${toBanglaDigits(totalLateDays)} (${toBanglaDigits(totalLateAmount)}/-)` : '-'}
+              <td colSpan={3} className="p-1.5 border-r border-black text-right pr-2" style={{ borderRight: '1px solid #000' }}>মোট যোগফল:</td>
+              <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>
+                {toBanglaDigits(totalLateDays)} ({toBanglaDigits(totalLateAmount)}/-)
               </td>
-              <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
-                {totalHolidayDays > 0 ? `${toBanglaDigits(totalHolidayDays)} (${toBanglaDigits(totalHolidayAmount)}/-)` : '-'}
+              <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>
+                {toBanglaDigits(totalHolidayDays)} ({toBanglaDigits(totalHolidayAmount)}/-)
               </td>
-              <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
-                {totalNightDays > 0 ? `${toBanglaDigits(totalNightDays)} (${toBanglaDigits(totalNightAmount)}/-)` : '-'}
+              <td className="p-1.5 border-r border-black text-center" style={{ borderRight: '1px solid #000' }}>
+                {toBanglaDigits(totalNightDays)} ({toBanglaDigits(totalNightAmount)}/-)
               </td>
-              <td className="p-1 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(totalDaysSum)}</td>
-              <td className="p-1 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>{toBanglaDigits(grandTotalSum)}/-</td>
-              <td className="p-1 text-center font-bold"></td>
+              <td className="p-1.5 border-r border-black text-center font-bold" style={{ borderRight: '1px solid #000' }}>
+                {toBanglaDigits(totalDaysSum)} দিন
+              </td>
+              <td className="p-1.5 border-r border-black text-right pr-2 font-bold" style={{ borderRight: '1px solid #000' }}>
+                {toBanglaDigits(grandTotalSum)}/-
+              </td>
+              <td className="p-1.5 text-center">-</td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      {/* Signature Section */}
+      <div className="mt-16 flex justify-between items-end text-xs font-semibold">
+        <div className="text-center space-y-1">
+          <div className="w-40 border-t border-black mb-1"></div>
+          <p>প্রস্তুতকারী</p>
+          <p className="text-[10px] text-slate-500">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+        </div>
+        <div className="text-center space-y-1">
+          <div className="w-40 border-t border-black mb-1"></div>
+          <p>যাচাইকারী কর্মকর্তা</p>
+          <p className="text-[10px] text-slate-500">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+        </div>
+        <div className="text-center space-y-1">
+          <div className="w-40 border-t border-black mb-1"></div>
+          <p>অনুমোদনকারী কর্মকর্তা</p>
+          <p className="text-[10px] text-slate-500">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+        </div>
       </div>
     </div>
   );

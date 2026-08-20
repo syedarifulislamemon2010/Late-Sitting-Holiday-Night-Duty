@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// High-performance token bucket rate limiter for production stability
+// High-performance token bucket rate limiter for single-instance deployment.
+// NOTE FOR FUTURE MULTI-INSTANCE SCALING:
+// In a multi-instance/clustered environment behind a load balancer, this in-memory Map
+// will be isolated per instance. When scaling beyond 1 node, migrate this state to a
+// shared distributed store such as Redis (e.g., Upstash Redis / ioredis token bucket).
 const rateLimitMap = new Map<string, { tokens: number; lastRefilled: number }>();
 const BUCKET_CAPACITY = 5000;
 const REFILL_RATE_MS = 10; // Refill 100 tokens per second
@@ -94,12 +98,31 @@ export function proxy(request: NextRequest) {
 
   const response = NextResponse.next();
 
-  // Security Headers
+  // Comprehensive Enterprise Security Headers
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  
+  // Content Security Policy (allows Next.js inline styles, blob: for PDF/DOCX generation, SVG data: images)
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:;
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: blob: https:;
+    font-src 'self' data:;
+    connect-src 'self' https: ws: wss:;
+    frame-ancestors 'self';
+    object-src 'none';
+    base-uri 'self';
+  `.replace(/\s{2,}/g, ' ').trim();
+  response.headers.set('Content-Security-Policy', cspHeader);
+
+  // Strict-Transport-Security (enforced in production)
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  }
 
   return response;
 }
