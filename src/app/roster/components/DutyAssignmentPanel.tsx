@@ -334,8 +334,10 @@ export default function DutyAssignmentPanel({
 
           {/* 1. Duty Type Selection */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
+            <label htmlFor="dutyCategorySelect" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">১. ডিউটির ক্যাটাগরি</label>
             <select
+              id="dutyCategorySelect"
+              name="dutyCategorySelect"
               value={assignmentForm.type}
               onChange={(e) => setAssignmentForm({ ...assignmentForm, type: e.target.value as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | '' })}
               className="w-full h-11 px-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
@@ -375,8 +377,10 @@ export default function DutyAssignmentPanel({
                    ======================================================== */
                 <div className="space-y-3 border-t border-slate-100 dark:border-slate-800 pt-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">৩. সেল সিলেক্ট করুন</label>
+                    <label htmlFor="opt1CellIdSelect" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">৩. সেল সিলেক্ট করুন</label>
                     <select
+                      id="opt1CellIdSelect"
+                      name="opt1CellIdSelect"
                       value={opt1CellId}
                       onChange={(e) => setOpt1CellId(e.target.value)}
                       className="w-full h-11 px-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
@@ -433,6 +437,9 @@ export default function DutyAssignmentPanel({
                     <div className="relative">
                       <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
+                        id="opt1SearchInput"
+                        name="opt1SearchInput"
+                        aria-label="কর্মকর্তার নাম দিয়ে খুঁজুন"
                         type="text"
                         placeholder="কর্মকর্তার নাম দিয়ে খুঁজুন..."
                         value={opt1SearchQuery}
@@ -552,6 +559,9 @@ export default function DutyAssignmentPanel({
                     {/* Internal search inside form */}
                     <div className="flex gap-2">
                       <input
+                        id="formSearchQueryInput"
+                        name="formSearchQueryInput"
+                        aria-label="কর্মকর্তা খুঁজুন"
                         type="text"
                         placeholder="খুঁজুন..."
                         value={formSearchQuery}
@@ -559,6 +569,9 @@ export default function DutyAssignmentPanel({
                         className="flex-1 h-9 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100"
                       />
                       <select
+                        id="formCellFilterSelect"
+                        name="formCellFilterSelect"
+                        aria-label="সেল অনুযায়ী ফিল্টার করুন"
                         value={formCellFilter}
                         onChange={(e) => setFormCellFilter(e.target.value)}
                         className="h-9 px-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer text-slate-800 dark:text-slate-100"

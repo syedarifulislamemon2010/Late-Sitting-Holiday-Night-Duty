@@ -356,6 +356,9 @@ export default function RosterListPanel({
               <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
                 <th className="px-3 py-3 w-8 text-center no-print">
                   <input
+                    id="selectAllRosterCheckbox"
+                    name="selectAllRosterCheckbox"
+                    aria-label="সব রোস্টার সিলেক্ট করুন"
                     type="checkbox"
                     checked={isAllSelected}
                     onChange={toggleSelectAll}
@@ -392,6 +395,9 @@ export default function RosterListPanel({
                   <tr key={`${group.employee.id}-${group.type}`} className={`hover:bg-slate-50/40 dark:hover:bg-slate-955/20 text-slate-600 dark:text-slate-300 ${isGroupSelected ? 'bg-indigo-50/30 dark:bg-indigo-950/20' : ''}`}>
                     <td className="px-3 py-3.5 text-center no-print">
                       <input
+                        id={`selectRosterGroup-${group.employee.id}-${group.type}`}
+                        name={`selectRosterGroup-${group.employee.id}-${group.type}`}
+                        aria-label={`${group.employee.name}-এর রোস্টার সিলেক্ট করুন`}
                         type="checkbox"
                         checked={isGroupSelected}
                         onChange={toggleGroupSelect}
@@ -502,6 +508,9 @@ export default function RosterListPanel({
           <div className="flex flex-wrap gap-2">
             {/* Select Cell Filter */}
             <select
+              id="rosterFilterCellSelect"
+              name="rosterFilterCellSelect"
+              aria-label="সেল অনুযায়ী ফিল্টার করুন"
               value={selectedCell}
               onChange={(e) => changeSelectedCell(e.target.value)}
               className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"
@@ -517,6 +526,9 @@ export default function RosterListPanel({
 
             {/* Select Category Filter */}
             <select
+              id="rosterFilterCategorySelect"
+              name="rosterFilterCategorySelect"
+              aria-label="ক্যাটাগরি অনুযায়ী ফিল্টার করুন"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"
@@ -529,6 +541,9 @@ export default function RosterListPanel({
 
             {/* Select Employee Filter */}
             <select
+              id="rosterFilterEmployeeSelect"
+              name="rosterFilterEmployeeSelect"
+              aria-label="কর্মকর্তা অনুযায়ী ফিল্টার করুন"
               value={selectedEmployee}
               onChange={(e) => setSelectedEmployee(e.target.value)}
               className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:outline-none"

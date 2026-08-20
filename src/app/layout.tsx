@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="bn" className="h-full" suppressHydrationWarning={true}>
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#0b5e9e" />
         <script
           suppressHydrationWarning={true}

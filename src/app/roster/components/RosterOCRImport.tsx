@@ -90,6 +90,9 @@ export default function RosterOCRImport({
       </div>
 
       <input
+        id="rosterOcrFileInput"
+        name="rosterOcrFileInput"
+        aria-label="কাগজের রোস্টারের ছবি আপলোড করুন"
         ref={fileInputRef}
         type="file"
         accept="image/*"

@@ -230,8 +230,10 @@ export default function OfficeOrderPrintPreview({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400">১. ডিউটির ক্যাটাগরি (Category)</label>
+              <label htmlFor="printCategorySelect" className="text-xs font-bold text-slate-500 dark:text-slate-400">১. ডিউটির ক্যাটাগরি (Category)</label>
               <select
+                id="printCategorySelect"
+                name="printCategorySelect"
                 value={printCategory}
                 onChange={(e) => changePrintCategory(e.target.value as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT')}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
@@ -243,8 +245,10 @@ export default function OfficeOrderPrintPreview({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400">২. বিল যার অনুকূলে হবে (Bill Favoring To)</label>
+              <label htmlFor="payeeEmployeeIdSelect" className="text-xs font-bold text-slate-500 dark:text-slate-400">২. বিল যার অনুকূলে হবে (Bill Favoring To)</label>
               <select
+                id="payeeEmployeeIdSelect"
+                name="payeeEmployeeIdSelect"
                 value={payeeEmployeeId}
                 onChange={(e) => {
                   setUserSelectedPayeeId(e.target.value);
@@ -262,8 +266,10 @@ export default function OfficeOrderPrintPreview({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৩. আদেশ অনুমোদনকারী জিএম/ডিজিএম</label>
+              <label htmlFor="selectedExecutiveIdSelect" className="text-xs font-bold text-slate-500 dark:text-slate-400">৩. আদেশ অনুমোদনকারী জিএম/ডিজিএম</label>
               <select
+                id="selectedExecutiveIdSelect"
+                name="selectedExecutiveIdSelect"
                 value={selectedExecutiveId}
                 onChange={(e) => {
                   const execId = e.target.value;
@@ -286,8 +292,10 @@ export default function OfficeOrderPrintPreview({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৪. স্মারক/সূত্র নম্বর (Order Ref)</label>
+              <label htmlFor="orderRefInput" className="text-xs font-bold text-slate-500 dark:text-slate-400">৪. স্মারক/সূত্র নম্বর (Order Ref)</label>
               <input
+                id="orderRefInput"
+                name="orderRefInput"
                 type="text"
                 value={orderRef}
                 onChange={(e) => setUserCustomOrderRef(e.target.value)}
@@ -320,8 +328,10 @@ export default function OfficeOrderPrintPreview({
             </div>
 
             <div className="space-y-1.5 md:col-span-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৬. আদেশের মূল বক্তব্য (Order Text)</label>
+              <label htmlFor="orderTextInput" className="text-xs font-bold text-slate-500 dark:text-slate-400">৬. আদেশের মূল বক্তব্য (Order Text)</label>
               <textarea
+                id="orderTextInput"
+                name="orderTextInput"
                 rows={4}
                 value={orderText}
                 onChange={(e) => setUserCustomOrderText(e.target.value)}
@@ -330,8 +340,10 @@ export default function OfficeOrderPrintPreview({
             </div>
 
             <div className="space-y-1.5 md:col-span-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400">৭. হেডার প্রিন্ট অপশন (Header Option)</label>
+              <label htmlFor="headerModeSelect" className="text-xs font-bold text-slate-500 dark:text-slate-400">৭. হেডার প্রিন্ট অপশন (Header Option)</label>
               <select
+                id="headerModeSelect"
+                name="headerModeSelect"
                 value={headerMode}
                 onChange={(e) => setHeaderMode(e.target.value as 'with_header' | 'without_header')}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
