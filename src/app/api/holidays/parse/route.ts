@@ -1,6 +1,7 @@
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { holidayParseSchema } from '@/validations/holiday.schema';
 
 const MONTHS_MAP: { [key: string]: number } = {
   january: 0, jan: 0,
@@ -32,7 +33,6 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): Parsed
     line = line.trim();
     if (!line || line.startsWith('#') || line.startsWith('//')) continue;
 
-    // Split on colon if present (e.g. "Shab-e-Barat: 04 February...")
     let name = 'সরকারি ছুটি';
     let datePart = line;
     
@@ -42,7 +42,6 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): Parsed
       datePart = line.substring(idx + 1).trim();
     }
 
-    // Try to extract year from line if present, otherwise use defaultYear
     let year = defaultYear;
     const yearMatch = line.match(/\b(202\d|203\d)\b/);
     if (yearMatch) {
@@ -51,7 +50,6 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): Parsed
 
     const parsedDates: string[] = [];
 
-    // 1. Date Range: e.g. "19 March to 23 March" or "25 May to 31 May"
     const rangeMatch = datePart.match(/(\d+)\s+([A-Za-z]+)\s+to\s+(\d+)\s+([A-Za-z]+)/i);
     const rangeMatchSimple = datePart.match(/(\d+)\s+to\s+(\d+)\s+([A-Za-z]+)/i);
 
@@ -67,7 +65,6 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): Parsed
       const startDateObj = new Date(year, startMonth, startDay);
       const endDateObj = new Date(year, endMonth, endDay);
 
-      // Loop dates
       const curr = new Date(startDateObj);
       while (curr <= endDateObj) {
         const y = curr.getFullYear();
@@ -87,9 +84,7 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): Parsed
         const d = String(dVal).padStart(2, '0');
         parsedDates.push(`${year}-${m}-${d}`);
       }
-    }
-    // 2. Multiple separate dates: e.g. "20 & 21 October"
-    else {
+    } else {
       const multiMatch = datePart.match(/(\d+)\s*(?:&|and|,)\s*(\d+)\s+([A-Za-z]+)/i);
       if (multiMatch) {
         const day1 = parseInt(multiMatch[1], 10);
@@ -100,9 +95,7 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): Parsed
         const m = String(month + 1).padStart(2, '0');
         parsedDates.push(`${year}-${m}-${String(day1).padStart(2, '0')}`);
         parsedDates.push(`${year}-${m}-${String(day2).padStart(2, '0')}`);
-      }
-      // 3. Single Date: e.g. "04 February (Wednesday)"
-      else {
+      } else {
         const singleMatch = datePart.match(/(\d+)\s+([A-Za-z]+)/i);
         if (singleMatch) {
           const day = parseInt(singleMatch[1], 10);
@@ -117,9 +110,7 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): Parsed
       }
     }
 
-    // Add all parsed dates to final results
     for (const d of parsedDates) {
-      // Avoid duplicate dates in the parsed results
       if (!results.some(r => r.date === d)) {
         results.push({
           date: d,
@@ -135,15 +126,15 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): Parsed
 
 export async function POST(request: Request) {
   try {
-    const { text, fileData, fileType, year } = await request.json();
-    const defaultYear = year ? parseInt(year, 10) : 2026;
+    const rawBody = await request.json();
+    holidayParseSchema.parse(rawBody);
+    const { text, fileData, fileType, year } = rawBody;
+    const defaultYear = year ? parseInt(String(year), 10) : 2026;
     
     let parsedHolidays: ParsedHoliday[] = [];
-    
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (apiKey && (fileData || (text && text.length > 500))) {
-      // Use Generative AI for parsing large text or documents/images
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ 
@@ -164,7 +155,6 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
 
         let result;
         if (fileData) {
-          // File upload parsing (PDF or image)
           const base64Data = fileData.split(',')[1] || fileData;
           result = await model.generateContent([
             prompt,
@@ -176,14 +166,12 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
             }
           ]);
         } else {
-          // Text parsing via AI
           result = await model.generateContent([prompt, "\n\nHoliday Text Data:\n", text]);
         }
 
         const responseText = result.response.text().trim();
         parsedHolidays = JSON.parse(responseText);
         
-        // Ensure proper format and sorting
         if (Array.isArray(parsedHolidays)) {
           parsedHolidays = parsedHolidays.map(item => ({
             date: item.date,
@@ -198,7 +186,6 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
         parsedHolidays = fallbackParseHolidays(text || '', defaultYear);
       }
     } else {
-      // Fallback regex parser for normal copy-paste text
       parsedHolidays = fallbackParseHolidays(text || '', defaultYear);
     }
 

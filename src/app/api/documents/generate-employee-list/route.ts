@@ -6,6 +6,7 @@ import { eq, and, ne, inArray, asc, SQL } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import fs from 'fs';
 import path from 'path';
+import { employeeListGenerateSchema } from '@/validations/documentGeneration.schema';
 
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
     const isAdmin = currentUser.role === 'ADMIN';
 
     const payload = await request.json();
+    employeeListGenerateSchema.parse(payload);
     const { cellFilter } = payload; 
 
     if (cellFilter === 'select') {

@@ -26,3 +26,9 @@ export const tazCommitteeFormCreateSchema = z.object({
   requesterOrganization: z.string().optional().default(''),
   implementersJson: z.string().min(1, { message: 'বাস্তবায়নকারী সদস্যদের তথ্য আবশ্যক।' })
 });
+
+export const tazCommitteeFormSchema = tazCommitteeFormCreateSchema;
+export const tazCommitteeFormUpdateSchema = tazCommitteeFormCreateSchema.partial();
+
+export type TazCommitteeFormCreateInput = z.infer<typeof tazCommitteeFormCreateSchema>;
+export type TazCommitteeFormUpdateInput = z.infer<typeof tazCommitteeFormUpdateSchema>;

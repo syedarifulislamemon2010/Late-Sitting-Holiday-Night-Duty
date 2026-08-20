@@ -1,6 +1,7 @@
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { imageParseSchema } from '@/validations/imageParse.schema';
 
 // Helper function to handle API calls with exponential backoff retries
 async function generateContentWithRetry(model: any, content: any, retries = 2, delayMs = 1000): Promise<any> {
@@ -18,7 +19,21 @@ async function generateContentWithRetry(model: any, content: any, retries = 2, d
 
 export async function POST(request: Request) {
   try {
-    const { fileData, fileType } = await request.json();
+    const rawBody = await request.json();
+    const validation = imageParseSchema.safeParse({
+      image: rawBody.fileData || rawBody.image,
+      mimeType: rawBody.fileType || rawBody.mimeType
+    });
+
+    if (!validation.success) {
+      return NextResponse.json({
+        error: 'validation_error',
+        message: validation.error.issues[0]?.message || 'অনুগ্রহ করে ইমেজ ফাইল ডেটা প্রদান করুন।',
+        details: validation.error.format()
+      }, { status: 400 });
+    }
+
+    const { image: fileData, mimeType: fileType } = validation.data;
     
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -26,10 +41,6 @@ export async function POST(request: Request) {
         error: 'api_key_missing', 
         message: 'ছবি থেকে কর্মকর্তা ইম্পোর্ট করার জন্য সার্ভারে GEMINI_API_KEY সেট থাকা আবশ্যক। অনুগ্রহ করে আপনার সার্ভার এনভায়রনমেন্ট চেক করুন।' 
       }, { status: 400 });
-    }
-
-    if (!fileData) {
-      return NextResponse.json({ error: 'file_required', message: 'অনুগ্রহ করে ইমেজ ফাইল ডেটা প্রদান করুন।' }, { status: 400 });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);

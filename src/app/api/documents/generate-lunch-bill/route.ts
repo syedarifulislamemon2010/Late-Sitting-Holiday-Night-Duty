@@ -5,6 +5,7 @@ import { documents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
+import { lunchBillGenerateSchema } from '@/validations/documentGeneration.schema';
 
 interface LunchBillRecord {
   employeeName: string;
@@ -89,7 +90,9 @@ function abbreviateDesignation(desig: string | null | undefined): string {
 
 export async function POST(request: Request) {
   try {
-    const payload = (await request.url.includes('generate-lunch-bill') ? await request.json() : {}) as LunchBillPayload;
+    const rawPayload = await request.json();
+    lunchBillGenerateSchema.parse(rawPayload);
+    const payload = rawPayload as LunchBillPayload;
     const {
       monthName,
       groupedData,

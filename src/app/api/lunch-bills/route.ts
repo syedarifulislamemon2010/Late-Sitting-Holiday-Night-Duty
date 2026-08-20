@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { lunchBills, cells } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
+import { lunchBillSaveFormSchema } from '@/validations/lunchBill.schema';
 
 interface LunchBillRecord {
   employeeId: number;
@@ -111,17 +112,19 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { month, workingDays, records } = body;
+    const rawBody = await request.json();
+    const validation = lunchBillSaveFormSchema.safeParse(rawBody);
 
-    if (!month || !workingDays || !records) {
-      return NextResponse.json({ error: 'missing_fields', message: 'সকল প্রয়োজনীয় ফিল্ড প্রদান করুন।' }, { status: 400 });
+    if (!validation.success) {
+      return NextResponse.json({
+        error: 'validation_error',
+        message: validation.error.issues[0]?.message || 'সকল প্রয়োজনীয় ফিল্ড প্রদান করুন।',
+        details: validation.error.format()
+      }, { status: 400 });
     }
 
-    const parsedWorkingDays = parseInt(workingDays, 10);
-    if (isNaN(parsedWorkingDays)) {
-      return NextResponse.json({ error: 'invalid_values', message: 'অবৈধ কার্যদিবস।' }, { status: 400 });
-    }
+    const { month, workingDays, records } = validation.data;
+    const parsedWorkingDays = typeof workingDays === 'number' ? workingDays : parseInt(workingDays, 10);
 
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -206,8 +209,6 @@ export async function POST(request: Request) {
       userAgent,
       details: `${currentUser.name} (@${currentUser.username}) সকল সেলের জন্য ${month} মাসের সমন্বিত লাঞ্চ বিলের হিসাব সংরক্ষণ করেছেন (মোট কার্যদিবস: ${workingDays})।`
     });
-
-    
 
     return NextResponse.json({ success: true, lunchBill });
 

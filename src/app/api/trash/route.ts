@@ -7,6 +7,7 @@ import { and, eq, lt, ne, desc, or } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { logActivity } from '@/lib/audit';
+import { trashActionSchema } from '@/validations/trash.schema';
 
 export async function GET() {
   try {
@@ -76,11 +77,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { action, trashId, trashIds } = body;
-
-    if (!action) {
-      return NextResponse.json({ error: 'missing_parameters' }, { status: 400 });
+    const validation = trashActionSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({
+        error: 'validation_error',
+        message: validation.error.issues[0]?.message || 'অবৈধ প্যারামিটার প্রদান করা হয়েছে।',
+        details: validation.error.format()
+      }, { status: 400 });
     }
+
+    const { action, trashId, trashIds } = body;
 
     const idsToProcess: number[] = [];
     if (trashIds && Array.isArray(trashIds)) {

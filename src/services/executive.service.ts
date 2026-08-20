@@ -63,7 +63,7 @@ export class ExecutiveService {
     return created;
   }
 
-  static async updateExecutive(currentUser: UserSession | null, id: number, body: ExecutiveInput, headersInfo: { ipAddress: string, userAgent: string }) {
+  static async updateExecutive(currentUser: UserSession | null, id: number, body: Partial<ExecutiveInput>, headersInfo: { ipAddress: string, userAgent: string }) {
     if (!currentUser) {
       throw new AuthError('অনুমতি নেই।', 401, 'unauthorized');
     }

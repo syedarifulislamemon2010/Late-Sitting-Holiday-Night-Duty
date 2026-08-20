@@ -2,12 +2,20 @@ import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
+import { leaveLogResolveSchema } from '@/validations/leave.schema';
 
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+
+    try {
+      const body = await request.json();
+      leaveLogResolveSchema.safeParse(body);
+    } catch {
+      // Body is optional
     }
 
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { holidays as holidaysTable } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { holidayBulkCreateSchema } from '@/validations/holiday.schema';
 
 export const revalidate = 3600; // 1 hour
 
@@ -18,18 +19,18 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    interface HolidayInput {
-      date: string;
-      name: string;
-      isWorkingDay?: boolean;
-    }
     const body = await request.json();
-    const { holidays } = body as { holidays: HolidayInput[] };
+    const validation = holidayBulkCreateSchema.safeParse(body);
 
-    if (!holidays || !Array.isArray(holidays)) {
-      return NextResponse.json({ error: 'holidays_array_required' }, { status: 400 });
+    if (!validation.success) {
+      return NextResponse.json({
+        error: 'validation_error',
+        message: validation.error.issues[0]?.message || 'অবৈধ হলিডে ডাটা ফরম্যাট',
+        details: validation.error.format()
+      }, { status: 400 });
     }
 
+    const { holidays } = validation.data;
     const savedHolidays: (typeof holidaysTable.$inferSelect)[] = [];
 
     for (const h of holidays) {

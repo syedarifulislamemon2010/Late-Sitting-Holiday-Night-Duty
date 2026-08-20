@@ -27,7 +27,7 @@ interface LeaveInput {
   leaveLocation: string;
   mobileNo: string;
   selectedDistrict?: string | null;
-  delegateId?: number | null;
+  delegateId?: string | number | null;
   casualTotal?: number | null;
   casualUsed?: number | null;
   ordinaryTotal?: number | null;

@@ -7,6 +7,7 @@ import { eq, desc, or, and } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import fs from 'fs';
 import path from 'path';
+import { manualDocumentUpdateSchema } from '@/validations/manualDocument.schema';
 
 // GET: Fetch all manual documents
 export async function GET() {
@@ -128,6 +129,15 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
+    const validation = manualDocumentUpdateSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({
+        error: 'validation_error',
+        message: validation.error.issues[0]?.message || 'অবৈধ ইনপুট ডাটা',
+        details: validation.error.format()
+      }, { status: 400 });
+    }
+
     const { id, name, isVisibleToUsers } = body;
 
     if (!id) {

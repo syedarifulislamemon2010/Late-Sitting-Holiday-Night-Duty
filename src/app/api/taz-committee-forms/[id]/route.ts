@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { handleApiError, AppError } from '@/lib/errors';
 import { isNonWorkingDay } from '@/lib/leave-calculator';
 import { logActivity } from '@/lib/audit';
+import { tazCommitteeFormSchema } from '@/validations/tazCommittee.schema';
 
 export async function GET(
   request: Request,
@@ -80,7 +81,16 @@ export async function PUT(
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
-    const body = await request.json();
+    const rawBody = await request.json();
+    const validation = tazCommitteeFormSchema.safeParse(rawBody);
+    if (!validation.success) {
+      return NextResponse.json({
+        error: 'validation_error',
+        message: validation.error.issues[0]?.message || 'অবৈধ TAZ ফরম ডাটা',
+        details: validation.error.format()
+      }, { status: 400 });
+    }
+    const body = rawBody;
     const {
       formDate,
       ref,

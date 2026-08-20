@@ -8,6 +8,7 @@ import { sql } from 'drizzle-orm';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { backupRestoreSchema } from '@/validations/backup.schema';
 
 const BACKUP_DIR = path.join(process.cwd(), 'backups');
 const HISTORY_FILE = path.join(BACKUP_DIR, 'history.json');
@@ -157,6 +158,7 @@ export async function POST(req: NextRequest) {
 
     const text = await file.text();
     let parsedInput = JSON.parse(text);
+    backupRestoreSchema.safeParse(parsedInput);
     
     let backupData = parsedInput;
     let isManifest = false;

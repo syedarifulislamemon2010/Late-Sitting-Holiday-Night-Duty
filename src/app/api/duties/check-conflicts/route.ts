@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { duties, leaveApplications, employees } from '@/db/schema';
 import { and, inArray, eq } from 'drizzle-orm';
 import { DutyService } from '@/services/duty.service';
+import { dutyConflictCheckSchema } from '@/validations/duty.schema';
 
 export async function POST(request: Request) {
   try {
@@ -11,11 +12,17 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await request.json();
-    const { employeeId, dates, type } = body as { employeeId: number, dates: string[], type: string };
+    const validation = dutyConflictCheckSchema.safeParse(body);
 
-    if (!employeeId || !dates || dates.length === 0 || !type) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!validation.success) {
+      return NextResponse.json({
+        error: 'validation_error',
+        message: validation.error.issues[0]?.message || 'অবৈধ ইনপুট ডাটা',
+        details: validation.error.format()
+      }, { status: 400 });
     }
+
+    const { employeeId, dates, type } = validation.data;
 
     const employee = await db.select().from(employees).where(eq(employees.id, employeeId)).then(r => r[0]);
     if (!employee) {
@@ -31,7 +38,7 @@ export async function POST(request: Request) {
       )
     );
 
-    let leaves: any[] = [];
+    let leaves: Array<typeof leaveApplications.$inferSelect> = [];
     if (employee.bankId) {
       leaves = await db.select().from(leaveApplications).where(
         eq(leaveApplications.bankId, employee.bankId)
@@ -46,7 +53,7 @@ export async function POST(request: Request) {
       }
 
       if (type === 'HOLIDAY' && !isHoliday) {
-        conflicts.push({ date, type: 'TYPE_MISMATCH', message: 'সাধারণ কার্যদিবসে হলিডে ডিউটি এন্ট্রি করা যাবে জাগে না।' });
+        conflicts.push({ date, type: 'TYPE_MISMATCH', message: 'সাধারণ কার্যদিবসে হলিডে ডিউটি এন্ট্রি করা যাবে না।' });
       }
 
       const duplicate = existingDuties.find(d => d.date === date && d.type === type);

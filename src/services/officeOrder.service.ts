@@ -29,7 +29,7 @@ interface OrderDutyInput {
 
 interface OfficeOrderInput {
   orderRef: string;
-  originalOrderRef?: string;
+  originalOrderRef?: string | null;
   orderDate: string;
   category: string;
   employeeName: string;

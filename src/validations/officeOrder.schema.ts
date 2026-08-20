@@ -9,7 +9,7 @@ export const officeOrderCreateSchema = z.object({
   cellName: z.string().nullable().optional(),
   status: z.string().optional(),
   duties: z.array(z.any()).optional(),
-  dutyIds: z.array(z.union([z.number(), z.string()])).optional(),
+  dutyIds: z.array(z.number()).optional(),
   content: z.record(z.string(), z.any()).nullable().optional()
 });
 
@@ -20,3 +20,6 @@ export const officeOrderUpdateSchema = z.object({
   cellName: z.string().nullable().optional(),
   status: z.string().nullable().optional()
 });
+
+export type OfficeOrderCreateInput = z.infer<typeof officeOrderCreateSchema>;
+export type OfficeOrderUpdateInput = z.infer<typeof officeOrderUpdateSchema>;

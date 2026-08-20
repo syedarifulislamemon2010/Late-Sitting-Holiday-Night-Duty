@@ -8,6 +8,7 @@ import path from 'path';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
+import { billMemoGenerateSchema } from '@/validations/documentGeneration.schema';
 
 interface BillSummaryItem {
   name: string;
@@ -38,7 +39,9 @@ function getBnDate(dateStr: string | null | undefined): string {
 
 export async function POST(request: Request) {
   try {
-    const payload = await request.json();
+    const rawPayload = await request.json();
+    billMemoGenerateSchema.parse(rawPayload);
+    const payload = rawPayload;
     const {
       openingParagraph,
       summaries,

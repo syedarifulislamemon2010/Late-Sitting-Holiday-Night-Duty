@@ -6,6 +6,7 @@ import { explainConflictInBengali } from '@/lib/ai-explainer';
 import { db } from '@/lib/db';
 import { employees, users } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { leaveCreateSchema } from '@/validations/leave.schema';
 
 export async function GET(request: Request) {
   try {
@@ -26,10 +27,21 @@ export async function POST(request: Request) {
     const user = await getCurrentUser();
     const body = await request.json();
 
+    const validation = leaveCreateSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({
+        error: 'validation_error',
+        message: validation.error.issues[0]?.message || 'অবৈধ ছুটির আবেদন ডাটা',
+        details: validation.error.format()
+      }, { status: 400 });
+    }
+
+    const validatedData = validation.data;
+
     // Dynamically save or update the applicant's mobile number in the database if inputted
-    if (body.bankId && body.mobileNo) {
-      const trimmedBankId = body.bankId.trim().toLowerCase();
-      const trimmedMobile = body.mobileNo.trim();
+    if (validatedData.bankId && validatedData.mobileNo) {
+      const trimmedBankId = validatedData.bankId.trim().toLowerCase();
+      const trimmedMobile = validatedData.mobileNo.trim();
       if (trimmedBankId && trimmedMobile) {
         const empList = await db.select().from(employees).where(eq(sql`LOWER(TRIM(${employees.bankId}))`, trimmedBankId));
         const emp = empList[0];
@@ -50,7 +62,7 @@ export async function POST(request: Request) {
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || 'Unknown';
 
-    const result = await LeaveService.createLeave(user, body, { ipAddress, userAgent });
+    const result = await LeaveService.createLeave(user, validatedData, { ipAddress, userAgent });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof ConflictError) {

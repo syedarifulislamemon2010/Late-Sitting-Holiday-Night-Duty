@@ -6,6 +6,7 @@ import { documents } from '@/db/schema';
 import fs from 'fs';
 import path from 'path';
 import { logActivity } from '@/lib/audit';
+import { fileUploadMetadataSchema } from '@/validations/manualDocument.schema';
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +17,9 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const name = formData.get('name') as string | null;
+    const rawName = formData.get('name') as string | null;
+    const validation = fileUploadMetadataSchema.safeParse({ name: rawName || undefined });
+    const name = validation.success && validation.data.name ? validation.data.name : rawName;
 
     if (!file) {
       return NextResponse.json({ error: 'file_required', message: 'অনুগ্রহ করে ফাইল নির্বাচন করুন।' }, { status: 400 });

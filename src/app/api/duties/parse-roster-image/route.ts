@@ -2,8 +2,8 @@ import logger from '@/lib/logger';
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getCurrentUser } from "@/lib/auth-wrapper";
-import { db } from "@/lib/db";
 import { logActivity } from "@/lib/audit";
+import { rosterImageParseFormSchema } from "@/validations/imageParse.schema";
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,13 +22,18 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const imageFile = formData.get("image") as File;
-    const dutyType = formData.get("dutyType") as string; // LATE_SITTING | HOLIDAY | NIGHT_SHIFT
-    const cellId = parseInt(formData.get("cellId") as string);
+    const dutyType = formData.get("dutyType") as string;
+    const cellIdStr = formData.get("cellId") as string;
 
-    if (!imageFile || !dutyType || isNaN(cellId)) {
+    const validation = rosterImageParseFormSchema.safeParse({
+      dutyType,
+      cellId: parseInt(cellIdStr, 10)
+    });
+
+    if (!imageFile || !validation.success) {
       return NextResponse.json({ 
         error: "validation_error", 
-        message: "image, dutyType এবং cellId আবশ্যক।" 
+        message: "সঠিক image, dutyType এবং cellId প্রদান করুন।" 
       }, { status: 400 });
     }
 
