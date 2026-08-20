@@ -78,6 +78,8 @@ describe('LeaveService', () => {
     cellName: 'IT Cell',
     leaveLocation: 'Dhaka',
     mobileNo: '01700000000',
+    selectedDistrict: null,
+    delegateId: null,
     casualTotal: 20,
     casualUsed: 5,
     ordinaryTotal: 0,

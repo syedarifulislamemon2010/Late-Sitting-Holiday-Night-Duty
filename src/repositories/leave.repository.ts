@@ -3,10 +3,10 @@ import { leaveApplications } from '@/db/schema';
 import { eq, desc, SQL } from 'drizzle-orm';
 
 export class LeaveRepository {
-  static async findById(id: number, tx?: DbExecutor) {
+  static async findById(id: number, tx?: DbExecutor): Promise<typeof leaveApplications.$inferSelect | null> {
     const client = tx || db;
     const list = await client.select().from(leaveApplications).where(eq(leaveApplications.id, id));
-    return list[0] || null;
+    return list[0] ?? null;
   }
 
   static async listAll(conditions?: SQL | undefined, tx?: DbExecutor) {
@@ -14,13 +14,13 @@ export class LeaveRepository {
     return client.select().from(leaveApplications).where(conditions).orderBy(desc(leaveApplications.createdAt));
   }
 
-  static async findLatestLeave(conditions?: SQL | undefined, tx?: DbExecutor) {
+  static async findLatestLeave(conditions?: SQL | undefined, tx?: DbExecutor): Promise<typeof leaveApplications.$inferSelect | null> {
     const client = tx || db;
     const list = await client.select().from(leaveApplications)
       .where(conditions)
       .orderBy(desc(leaveApplications.createdAt))
       .limit(1);
-    return list[0] || null;
+    return list[0] ?? null;
   }
 
   static async create(data: typeof leaveApplications.$inferInsert, tx?: DbExecutor) {

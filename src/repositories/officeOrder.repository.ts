@@ -3,16 +3,16 @@ import { officeOrders, duties as dutiesTable } from '@/db/schema';
 import { eq, inArray, desc, SQL } from 'drizzle-orm';
 
 export class OfficeOrderRepository {
-  static async findById(id: number, tx?: DbExecutor) {
+  static async findById(id: number, tx?: DbExecutor): Promise<typeof officeOrders.$inferSelect | null> {
     const client = tx || db;
     const list = await client.select().from(officeOrders).where(eq(officeOrders.id, id));
-    return list[0] || null;
+    return list[0] ?? null;
   }
 
-  static async findByOrderRef(orderRef: string, tx?: DbExecutor) {
+  static async findByOrderRef(orderRef: string, tx?: DbExecutor): Promise<typeof officeOrders.$inferSelect | null> {
     const client = tx || db;
     const list = await client.select().from(officeOrders).where(eq(officeOrders.orderRef, orderRef));
-    return list[0] || null;
+    return list[0] ?? null;
   }
 
   static async listAll(conditions?: SQL | undefined, tx?: DbExecutor) {
