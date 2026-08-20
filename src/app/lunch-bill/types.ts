@@ -1,0 +1,93 @@
+export interface Cell {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
+export interface Employee {
+  id: number;
+  name: string;
+  designation: string;
+  bankId: string | null;
+  fileNo: string | null;
+  cellId: number;
+  mobile?: string | null;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  cells?: { id: number; name: string }[];
+}
+
+export interface LunchBill {
+  id: number;
+  month: string;
+  workingDays: number;
+  recordsJson: string;
+  cellId: number;
+}
+
+export interface Executive {
+  id: number;
+  name: string;
+  designation: string;
+  bankId: string | null;
+  fileNo: string | null;
+  phone?: string | null;
+}
+
+export interface Holiday {
+  id: number;
+  date: string;
+  name: string;
+  isWorkingDay: boolean;
+}
+
+export interface LunchRecord {
+  employeeId: number;
+  employeeName: string;
+  designation: string;
+  bankId: string | null;
+  rate: number;
+  presentDays: number;
+  absenceDays: number;
+  totalBill: number;
+  stampDeduction: number;
+  additionalDeduction: number;
+  netPayable: number;
+  cellId: number;
+  isExecutive: boolean;
+  remarks?: string;
+}
+
+export const DEFAULT_2026_HOLIDAYS = [
+  { date: '2026-02-04', name: 'পবিত্র শবে বরাত' },
+  { date: '2026-02-21', name: 'শহীদ দিবস ও আন্তর্জাতিক মাতৃভাষা দিবস' },
+  { date: '2026-03-17', name: 'পবিত্র শবে কদর' },
+  { date: '2026-03-19', name: 'পবিত্র ঈদ-উল-ফিতর' },
+  { date: '2026-03-20', name: 'পবিত্র ঈদ-উল-ফিতর' },
+  { date: '2026-03-21', name: 'পবিত্র ঈদ-উল-ফিতর' },
+  { date: '2026-03-22', name: 'পবিত্র ঈদ-উল-ফিতর' },
+  { date: '2026-03-23', name: 'পবিত্র ঈদ-উল-ফিতর' },
+  { date: '2026-03-26', name: 'স্বাধীনতা ও জাতীয় দিবস' },
+  { date: '2026-04-14', name: 'বাংলা নববর্ষ (পহেলা বৈশাখ)' },
+  { date: '2026-05-01', name: 'মে দিবস ও বুদ্ধ পূর্ণিমা' },
+  { date: '2026-05-25', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-26', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-27', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-28', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-29', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-30', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-05-31', name: 'পবিত্র ঈদ-উল-আযহা' },
+  { date: '2026-06-26', name: 'পবিত্র আশুরা' },
+  { date: '2026-08-05', name: 'জুলাই গণঅভ্যুত্থান দিবস' },
+  { date: '2026-08-26', name: 'পবিত্র ঈদে মিলাদুন্নবী (সা.)' },
+  { date: '2026-09-04', name: 'শুভ জন্মাষ্টমী' },
+  { date: '2026-10-20', name: 'দূর্গাপূজা (মহা নবমী)' },
+  { date: '2026-10-21', name: 'দূর্গাপূজা (বিজয়া দশমী)' },
+  { date: '2026-12-16', name: 'বিজয় দিবস' },
+  { date: '2026-12-25', name: 'যীশু খ্রীষ্টের জন্মদিন (বড় দিন)' },
+];

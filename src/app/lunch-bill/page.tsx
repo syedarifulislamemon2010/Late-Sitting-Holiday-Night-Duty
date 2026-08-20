@@ -1,143 +1,23 @@
 'use client';
-import { LUNCH_BILL_RATE, REVENUE_STAMP } from '@/constants/billing';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
-import { 
-  Printer, 
-  Loader2, 
-  CheckCircle, 
-  AlertTriangle, 
-  Lock, 
-  Users, 
-  Eye,
-  Sliders,
-  ChevronDown,
-  ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  X,
-  Filter,
-  Search,
-  Save,
-  Edit3
-} from 'lucide-react';
+import { TableSkeleton } from '@/components/SkeletonLoader';
+import { AlertTriangle, CheckCircle, X } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 
-// Default 2026 Bangladesh public holidays
-const DEFAULT_2026_HOLIDAYS = [
-  { date: '2026-02-04', name: 'পবিত্র শবে বরাত' },
-  { date: '2026-02-21', name: 'শহীদ দিবস ও আন্তর্জাতিক মাতৃভাষা দিবস' },
-  { date: '2026-03-17', name: 'পবিত্র শবে কদর' },
-  { date: '2026-03-19', name: 'পবিত্র ঈদ-উল-ফিতর' },
-  { date: '2026-03-20', name: 'পবিত্র ঈদ-উল-ফিতর' },
-  { date: '2026-03-21', name: 'পবিত্র ঈদ-উল-ফিতর' },
-  { date: '2026-03-22', name: 'পবিত্র ঈদ-উল-ফিতর' },
-  { date: '2026-03-23', name: 'পবিত্র ঈদ-উল-ফিতর' },
-  { date: '2026-03-26', name: 'স্বাধীনতা ও জাতীয় দিবস' },
-  { date: '2026-04-14', name: 'বাংলা নববর্ষ (পহেলা বৈশাখ)' },
-  { date: '2026-05-01', name: 'মে দিবস ও বুদ্ধ পূর্ণিমা' },
-  { date: '2026-05-25', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-26', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-27', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-28', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-29', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-30', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-05-31', name: 'পবিত্র ঈদ-উল-আযহা' },
-  { date: '2026-06-26', name: 'পবিত্র আশুরা' },
-  { date: '2026-08-05', name: 'জুলাই গণঅভ্যুত্থান দিবস' },
-  { date: '2026-08-26', name: 'পবিত্র ঈদে মিলাদুন্নবী (সা.)' },
-  { date: '2026-09-04', name: 'শুভ জন্মাষ্টমী' },
-  { date: '2026-10-20', name: 'দূর্গাপূজা (মহা নবমী)' },
-  { date: '2026-10-21', name: 'দূর্গাপূজা (বিজয়া দশমী)' },
-  { date: '2026-12-16', name: 'বিজয় দিবস' },
-  { date: '2026-12-25', name: 'যীশু খ্রীষ্টের জন্মদিন (বড় দিন)' },
-];
-
-interface Cell {
-  id: number;
-  name: string;
-  description: string | null;
-}
-
-interface Employee {
-  id: number;
-  name: string;
-  designation: string;
-  bankId: string | null;
-  fileNo: string | null;
-  cellId: number;
-  mobile?: string | null;
-}
-
-interface User {
-  id: number;
-  name: string;
-  username: string;
-  role: 'ADMIN' | 'USER';
-  cells?: { id: number; name: string }[];
-}
-
-interface LunchBill {
-  id: number;
-  month: string;
-  workingDays: number;
-  recordsJson: string;
-  cellId: number;
-}
-
-interface Executive {
-  id: number;
-  name: string;
-  designation: string;
-  bankId: string | null;
-  fileNo: string | null;
-  phone?: string | null;
-}
-
-interface Holiday {
-  id: number;
-  date: string;
-  name: string;
-  isWorkingDay: boolean;
-}
-
-interface LunchRecord {
-  employeeId: number;
-  employeeName: string;
-  designation: string;
-  bankId: string | null;
-  rate: number;
-  presentDays: number;
-  absenceDays: number;
-  totalBill: number;
-  stampDeduction: number;
-  additionalDeduction: number;
-  netPayable: number;
-  cellId: number;       // For cell officers
-  isExecutive: boolean; // True for DGM/AGM
-  remarks?: string;      // Remarks/মন্তব্য
-}
+import { useLunchBillData } from './hooks/useLunchBillData';
+import LunchBillHeader from './components/LunchBillHeader';
+import LunchBillFilters from './components/LunchBillFilters';
+import LunchBillTable from './components/LunchBillTable';
 
 export default function LunchBillPage() {
   const { currentUser } = useProfile();
-  const [activeCellId, setActiveCellId] = useState<number | null>(null);
-  const [cells, setCells] = useState<Cell[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [executives, setExecutives] = useState<Executive[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  
-  // Gregorian Month (defaults to current year/month)
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const today = new Date();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    return `${today.getFullYear()}-${mm}`;
-  });
+  const isAdmin = currentUser?.role === 'ADMIN';
 
-  // Custom Bengali Month Picker State
+  const data = useLunchBillData(currentUser);
+
+  // Month Picker dropdown state
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [currentPickerYear, setCurrentPickerYear] = useState<number>(() => {
     const today = new Date();
@@ -145,7 +25,6 @@ export default function LunchBillPage() {
   });
   const monthPickerRef = useRef<HTMLDivElement>(null);
 
-  // Close month picker when clicked outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
@@ -160,1595 +39,159 @@ export default function LunchBillPage() {
     };
   }, [isMonthPickerOpen]);
 
-  // Keep picker year synchronized with selectedMonth
-  useEffect(() => {
-    if (selectedMonth && selectedMonth.includes('-')) {
-      const yr = parseInt(selectedMonth.split('-')[0], 10);
-      if (!isNaN(yr)) setCurrentPickerYear(yr);
-    }
-  }, [selectedMonth]);
-  
-  const [workingDays, setWorkingDays] = useState<number>(17);
-  const [isAutoWorkingDays, setIsAutoWorkingDays] = useState(true);
-  const [workingDaysLoading, setWorkingDaysLoading] = useState(false);
-  const [holidays, setHolidays] = useState<Holiday[]>([]);
-
-  // Active records sheet state
-  const [records, setRecords] = useState<LunchRecord[]>([]);
-  const [savedLunchBill, setSavedLunchBill] = useState<LunchBill | null>(null);
-
+  // Filter & Search states
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterCell, setFilterCell] = useState('ALL');
   const [filterType, setFilterType] = useState('ALL');
-  const [filterAttendance, setFilterAttendance] = useState('ALL');
-  const [filterDeduction, setFilterDeduction] = useState('ALL');
-
-  // Additional Deduction Mode & Configuration
-  const [deductionMode, setDeductionMode] = useState<'manual' | 'flat' | 'designation'>('manual');
-  const [flatDeductionRate, setFlatDeductionRate] = useState<number>(0);
-  const [designationRates, setDesignationRates] = useState({
-    SPO: 0,
-    PO: 0,
-    SO_IT: 0,
-    O_IT: 0,
-    EXEC: 0
-  });
-
-  // Warning, print, and modal state
-  const [isWarningOpen, setIsWarningOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [iframeUrl, setIframeUrl] = useState<string>('');
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Collapsible Cell sections on the form list
   const [collapsedCells, setCollapsedCells] = useState<Record<string, boolean>>({});
-
-  // Sync active cell ID from currentUser profile
-  useEffect(() => {
-    if (currentUser && currentUser.cells && currentUser.cells.length > 0) {
-      setActiveCellId(currentUser.cells[0].id);
-    }
-  }, [currentUser]);
-
-  // Fetch cells, employees, executives, and holidays lists
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [cellRes, empRes, execRes, holidayRes] = await Promise.all([
-          fetch('/api/cells'),
-          fetch('/api/employees'),
-          fetch('/api/executives'),
-          fetch('/api/holidays')
-        ]);
-        const cellData = await cellRes.json();
-        const empData = await empRes.json();
-        const execData = await execRes.json();
-        const holidayData = await holidayRes.json();
-        
-        setCells(Array.isArray(cellData) ? cellData : []);
-        setEmployees(Array.isArray(empData) ? empData : []);
-        setHolidays(Array.isArray(holidayData) ? holidayData : []);
-        
-        // Filter out GMs strictly, leaving only DGMs and AGMs
-        const filteredExecs = (Array.isArray(execData) ? execData : []).filter(e => {
-          const d = e.designation.trim();
-          return (
-            d.includes('উপ-মহাব্যবস্থাপক') || 
-            d.includes('সহকারী মহাব্যবস্থাপক') || 
-            d.includes('ডিজিএম') || 
-            d.includes('এজিএম') || 
-            d.toLowerCase().includes('dgm') || 
-            d.toLowerCase().includes('agm')
-          ) && !(
-            d.includes('মহাব্যবস্থাপক') && 
-            !d.includes('উপ-') && 
-            !d.includes('সহকারী')
-          );
-        });
-        setExecutives(filteredExecs);
-      } catch (err) {
-        console.error('Error loading lunch structural lists:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
-
-  const isAdmin = currentUser?.role === 'ADMIN';
-  const matchedEmp = employees.find(e => e.bankId && e.bankId.trim().toLowerCase() === currentUser?.username?.trim().toLowerCase());
-  const resolvedPrimaryCellId = matchedEmp ? matchedEmp.cellId : (currentUser?.cells?.[0]?.id || null);
-
-  // Load saved combined sheet (cellId = 0 maps to system combined cell internally)
-  useEffect(() => {
-    if (!selectedMonth || loading) return;
-
-    async function fetchCombinedLunchBill() {
-      try {
-        // Query the combined sheet
-        const res = await fetch(`/api/lunch-bills?month=${selectedMonth}&cellId=0`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data) {
-            setSavedLunchBill(data);
-            setWorkingDays(data.workingDays);
-            const parsed = JSON.parse(data.recordsJson).map((r: LunchRecord) => {
-              let bId = r.bankId;
-              if (!bId) {
-                if (r.isExecutive) {
-                  const matched = executives.find(e => e.id === r.employeeId);
-                  bId = matched?.bankId || null;
-                } else {
-                  const matched = employees.find(e => e.id === r.employeeId);
-                  bId = matched?.bankId || null;
-                }
-              }
-              return {
-                ...r,
-                bankId: bId,
-                additionalDeduction: r.additionalDeduction ?? 0,
-                remarks: r.remarks ?? ''
-              };
-            });
-            setRecords(parsed);
-            return;
-          }
-        }
-
-        // Fallback: Build default combined list (cell officers + DGM/AGM executives)
-        setSavedLunchBill(null);
-        
-        // Dynamically compute the default working days for the selected month
-        let computedDays = 17; // standard fallback
-        if (selectedMonth && selectedMonth.includes('-')) {
-          const [yearStr, monthStr] = selectedMonth.split('-');
-          const year = parseInt(yearStr, 10);
-          const month = parseInt(monthStr, 10);
-          const daysInMonth = new Date(year, month, 0).getDate();
-          
-          let count = 0;
-          for (let day = 1; day <= daysInMonth; day++) {
-            const dayStr = String(day).padStart(2, '0');
-            const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
-            
-            const dateObj = new Date(year, month - 1, day);
-            const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
-            
-            const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
-            const isHoliday = DEFAULT_2026_HOLIDAYS.some(h => h.date === dateStr);
-            
-            const dbHol = holidays.find(h => h.date === dateStr);
-            let isWorking = true;
-            if (dbHol) {
-              isWorking = dbHol.isWorkingDay;
-            } else {
-              if (dateStr === '2026-05-23') {
-                isWorking = true;
-              } else if (isWeekend || isHoliday) {
-                isWorking = false;
-              }
-            }
-            if (isWorking) {
-              count++;
-            }
-          }
-          computedDays = count;
-        }
-
-        setWorkingDays(computedDays);
-        
-        const defaultRecords: LunchRecord[] = [];
-
-        // 1. Add Cell Officers
-        employees.forEach(emp => {
-          defaultRecords.push({
-            employeeId: emp.id,
-            employeeName: emp.name,
-            designation: emp.designation,
-            bankId: emp.bankId,
-            rate: 400,
-            presentDays: computedDays,
-            absenceDays: 0,
-            totalBill: computedDays * 400,
-            stampDeduction: 15,
-            additionalDeduction: 0,
-            netPayable: (computedDays * 400) - 15,
-            cellId: emp.cellId,
-            isExecutive: false,
-            remarks: ''
-          });
-        });
-
-        // 2. Add Executives (DGMs & AGMs)
-        executives.forEach(exec => {
-          defaultRecords.push({
-            employeeId: exec.id,
-            employeeName: exec.name,
-            designation: exec.designation,
-            bankId: exec.bankId,
-            rate: 400,
-            presentDays: computedDays,
-            absenceDays: 0,
-            totalBill: computedDays * 400,
-            stampDeduction: 15,
-            additionalDeduction: 0,
-            netPayable: (computedDays * 400) - 15,
-            cellId: 0, // No cell for executives
-            isExecutive: true,
-            remarks: ''
-          });
-        });
-
-        setRecords(defaultRecords);
-      } catch (err) {
-        console.error('Error loading combined sheet:', err);
-      }
-    }
-
-    fetchCombinedLunchBill();
-  }, [selectedMonth, employees, executives, holidays, loading]);
-
-  // Recalculations hook for deduction configs (flat or designation based)
-  const applyDeductionRates = (mode: 'manual' | 'flat' | 'designation', flatRate: number, rates: typeof designationRates, currentWorkingDays: number, currentRecords: LunchRecord[]) => {
-    const updated = currentRecords.map(r => {
-      let addDed = r.additionalDeduction ?? 0;
-
-      if (mode === 'flat') {
-        addDed = flatRate;
-      } else if (mode === 'designation') {
-        if (r.isExecutive) {
-          addDed = rates.EXEC;
-        } else {
-          const des = r.designation.toUpperCase();
-          if (
-            des.includes('SPO') || 
-            des.includes('SSPO') || 
-            des.includes('এসপিও') || 
-            des.includes('এসএসপিও')
-          ) {
-            addDed = rates.SPO;
-          } else if (
-            des.includes('PO') || 
-            des.includes('SNPO') || 
-            des.includes('পিও') || 
-            des.includes('এসএনপিও')
-          ) {
-            addDed = rates.PO;
-          } else if (
-            des.includes('SO-IT') || 
-            des.includes('SO_IT') || 
-            des.includes('SO') || 
-            des.includes('এসও-আইটি') || 
-            des.includes('এসও')
-          ) {
-            addDed = rates.SO_IT;
-          } else if (
-            des.includes('O-IT') || 
-            des.includes('O_IT') || 
-            des.includes('ও-আইটি') || 
-            des.includes('অফিসার') || 
-            des.includes('OFFICER')
-          ) {
-            addDed = rates.O_IT;
-          } else {
-            addDed = rates.PO; // Default fallback
-          }
-        }
-      }
-
-      const present = Math.max(0, currentWorkingDays - r.absenceDays);
-      const totalBill = present * 400;
-      const net = totalBill - (15 + addDed);
-
-      return {
-        ...r,
-        presentDays: present,
-        totalBill,
-        additionalDeduction: addDed,
-        netPayable: net
-      };
-    });
-    setRecords(updated);
-  };
-
-  useEffect(() => {
-    if (!isAutoWorkingDays) return;
-    const fetchWorkingDays = async () => {
-      setWorkingDaysLoading(true);
-      try {
-        const monthParam = selectedMonth && selectedMonth !== 'all' ? selectedMonth : undefined;
-        const url = monthParam ? `/api/holidays/working-days?month=${monthParam}` : '/api/holidays/working-days';
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.workingDays && typeof data.workingDays === 'number') {
-            setWorkingDays(data.workingDays);
-            // Trigger recalculation with new working days
-            applyDeductionRates(deductionMode, flatDeductionRate, designationRates, data.workingDays, records);
-          }
-        }
-      } catch (err) { /* silent fail, manual override available */ }
-      setWorkingDaysLoading(false);
-    };
-    fetchWorkingDays();
-  }, [selectedMonth]); // only depend on selectedMonth, isAutoWorkingDays checked inside
-
-
-  const handleAbsenceChange = (empId: number, isExec: boolean, valStr: string) => {
-    const val = parseInt(valStr, 10) || 0;
-    const updated = records.map(r => 
-      (r.employeeId === empId && r.isExecutive === isExec) ? { ...r, absenceDays: val } : r
-    );
-    applyDeductionRates(deductionMode, flatDeductionRate, designationRates, workingDays, updated);
-  };
-
-  const handleManualDeductionChange = (empId: number, isExec: boolean, valStr: string) => {
-    const val = parseInt(valStr, 10) || 0;
-    const updated = records.map(r => 
-      (r.employeeId === empId && r.isExecutive === isExec) ? { ...r, additionalDeduction: val } : r
-    );
-    applyDeductionRates('manual', flatDeductionRate, designationRates, workingDays, updated);
-    setDeductionMode('manual');
-  };
-
-
 
   const handleWorkingDaysChange = (daysStr: string) => {
     const val = parseInt(daysStr, 10) || 0;
-    setWorkingDays(val);
-    applyDeductionRates(deductionMode, flatDeductionRate, designationRates, val, records);
-    setIsAutoWorkingDays(false);
+    data.setWorkingDays(val);
+    data.setIsAutoWorkingDays(false);
+  };
+
+  const handleAbsenceChange = (empId: number, isExec: boolean, valStr: string) => {
+    const idx = data.records.findIndex(r => r.employeeId === empId && r.isExecutive === isExec);
+    if (idx !== -1) {
+      const val = parseInt(valStr, 10) || 0;
+      data.handleAbsenceDaysChange(idx, val);
+    }
+  };
+
+  const handleManualDeductionChange = (empId: number, isExec: boolean, valStr: string) => {
+    const idx = data.records.findIndex(r => r.employeeId === empId && r.isExecutive === isExec);
+    if (idx !== -1) {
+      const val = parseInt(valStr, 10) || 0;
+      data.handleAdditionalDeductionChange(idx, val);
+    }
   };
 
   const applyFlatRate = (rateVal: number) => {
-    setFlatDeductionRate(rateVal);
-    applyDeductionRates('flat', rateVal, designationRates, workingDays, records);
+    data.setFlatDeductionRate(rateVal);
+    data.applyBulkDeduction();
   };
 
-  const applyDesignationRates = (field: keyof typeof designationRates, val: number) => {
-    const updatedRates = { ...designationRates, [field]: val };
-    setDesignationRates(updatedRates);
-    applyDeductionRates('designation', flatDeductionRate, updatedRates, workingDays, records);
+  const applyDesignationRates = (field: keyof typeof data.designationRates, val: number) => {
+    data.setDesignationRates(prev => ({ ...prev, [field]: val }));
+    data.applyBulkDeduction();
   };
 
-  // Safe Bengali digit translation
-  const toBanglaDigits = (num: number | string | undefined | null): string => {
-    if (num === undefined || num === null) return '';
-    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    return num.toString().replace(/[0-9]/g, (w) => bnDigits[parseInt(w, 10)]);
-  };
+  // Filter records by search and role
+  const userBaseRecords = data.records.filter(r => {
+    if (isAdmin) return true;
+    const userCellId = currentUser?.cells?.[0]?.id;
+    return !r.isExecutive && r.cellId === userCellId;
+  });
 
-  const getBanglaMonthName = (monthStr: string): string => {
-    if (!monthStr || !monthStr.includes('-')) return '';
-    const [year, month] = monthStr.split('-');
-    const monthNames = [
-      'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
-      'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
-    ];
-    const idx = parseInt(month, 10) - 1;
-    return `${monthNames[idx]} ${toBanglaDigits(year)}`;
-  };
-
-  const getBanglaNumberWords = (num: number) => {
-    if (num === 0) return 'অনুল্লেখ্য';
-    const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
-    const teenWords = ['দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ'];
-    const doubleWords = ['', '', 'বিশ', 'ত্রিশ', 'চল্লিশ', 'পঞ্চাশ', 'ষাট', 'সত্তর', 'আশি', 'নব্বই'];
-
-    const convertTens = (n: number): string => {
-      if (n < 10) return singleWords[n];
-      if (n >= 10 && n < 20) return teenWords[n - 10];
-      const ten = Math.floor(n / 10);
-      const unit = n % 10;
-      return doubleWords[ten] + (unit > 0 ? ' ' + singleWords[unit] : '');
-    };
-
-    let wordStr = '';
-    
-    if (num >= 100000) {
-      const lac = Math.floor(num / 100000);
-      wordStr += convertTens(lac) + ' লক্ষ ';
-      num %= 100000;
-    }
-
-    if (num >= 1000) {
-      const thousand = Math.floor(num / 1000);
-      wordStr += convertTens(thousand) + ' হাজার ';
-      num %= 1000;
-    }
-    
-    if (num >= 100) {
-      const hundred = Math.floor(num / 100);
-      wordStr += singleWords[hundred] + ' শত ';
-      num %= 100;
-    }
-    
-    if (num > 0) {
-      wordStr += convertTens(num);
-    }
-    
-    return wordStr.trim() + ' টাকা মাত্র';
-  };
-
-  // Filter records by cell/executive for standard users
-  const getFilteredRecordsForUser = (primaryCellId: number | null | undefined) => {
-    if (isAdmin) return records;
-    // Standard user gets only officers belonging to their specific cell (primary cell only)
-    return records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
-  };
-
-  const primaryCellId = isAdmin ? (activeCellId || resolvedPrimaryCellId) : resolvedPrimaryCellId;
-  const userBaseRecords = getFilteredRecordsForUser(primaryCellId);
-
-  // Apply Search Query & Advanced Filters to activeRecords
   const activeRecords = userBaseRecords.filter(r => {
-    // 1. Search Query Match
     const matchesSearch = searchQuery === '' || 
       r.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (r.bankId || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-    // 2. Cell Filter Match
     const matchesCell = filterCell === 'ALL' || r.cellId.toString() === filterCell || (filterCell === '0' && r.isExecutive);
 
-    // 3. Type Filter Match
     const matchesType = filterType === 'ALL' || 
       (filterType === 'officer' && !r.isExecutive) || 
       (filterType === 'executive' && r.isExecutive);
 
-    // 4. Attendance Filter Match
-    const matchesAttendance = filterAttendance === 'ALL' || 
-      (filterAttendance === 'full_present' && r.absenceDays === 0) ||
-      (filterAttendance === 'has_absences' && r.absenceDays > 0);
-
-    // 5. Deduction Filter Match
-    const matchesDeduction = filterDeduction === 'ALL' || 
-      (filterDeduction === 'has_deduction' && r.additionalDeduction > 0) ||
-      (filterDeduction === 'no_deduction' && r.additionalDeduction === 0);
-
-    return matchesSearch && matchesCell && matchesType && matchesAttendance && matchesDeduction;
+    return matchesSearch && matchesCell && matchesType;
   });
 
-  // Combined sums
-  const totalEmployeesCount = activeRecords.length;
-  const totalClaimAll = activeRecords.reduce((sum, r) => sum + r.totalBill, 0);
-  
-  const totalStampAll = totalEmployeesCount * 15;
-  const totalExtraAll = activeRecords.reduce((sum, r) => sum + (r.additionalDeduction || 0), 0);
-  const totalDeductionAll = totalStampAll + totalExtraAll;
-  
-  const grandTotalAll = activeRecords.reduce((sum, r) => sum + r.netPayable, 0);
-
-  // Save entire combined record
-  const saveLunchBill = async (): Promise<LunchBill | null> => {
-    setSaving(true);
-    setSuccessMessage(null);
-    setErrorMessage(null);
-    try {
-      const res = await fetch('/api/lunch-bills', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          month: selectedMonth,
-          workingDays: workingDays,
-          records: records
-        })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setSavedLunchBill(data.lunchBill);
-        setSuccessMessage('লাঞ্চ ভাতার বিল সফলভাবে সংরক্ষণ করা হয়েছে!');
-        setTimeout(() => setSuccessMessage(null), 5000);
-        return data.lunchBill;
-      } else {
-        setErrorMessage(data.message || 'লাঞ্চ বিল সংরক্ষণ করতে ব্যর্থ হয়েছে।');
-        return null;
-      }
-    } catch (err) {
-      console.error('Error saving lunch bill:', err);
-      setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
-      return null;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Build Payload structures for HTML generator
-  const getPrintPayload = () => {
-    // If not admin, restrict strictly to the user's primary cell records and cell
-    const allowedRecords = isAdmin 
-      ? (filterCell !== 'ALL' && filterCell !== '0' 
-          ? records.filter(r => !r.isExecutive && r.cellId.toString() === filterCell)
-          : filterCell === '0'
-          ? records.filter(r => r.isExecutive)
-          : records) 
-      : records.filter(r => !r.isExecutive && r.cellId === primaryCellId);
-      
-    const allowedCells = isAdmin 
-      ? (filterCell !== 'ALL' && filterCell !== '0' ? cells.filter(c => c.id.toString() === filterCell) : filterCell === '0' ? [] : cells)
-      : cells.filter(c => c.id === primaryCellId);
-
-    // 1. Group cell officers
-    const cellGroups = allowedCells.map(cell => {
-      const cellRecs = allowedRecords.filter(r => !r.isExecutive && r.cellId === cell.id);
-      return {
-        cellName: cell.name,
-        records: cellRecs,
-        totalDays: cellRecs.reduce((sum, r) => sum + r.presentDays, 0),
-        totalClaim: cellRecs.reduce((sum, r) => sum + r.totalBill, 0),
-        totalDeduction: cellRecs.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
-        grandTotal: cellRecs.reduce((sum, r) => sum + r.netPayable, 0)
-      };
-    }).filter(g => g.records.length > 0);
-
-    // 2. Gather Executives ONLY for admin and when not filtered to a specific cell
-    let execsData: any = undefined;
-    if (isAdmin && (filterCell === 'ALL' || filterCell === '0')) {
-      const execRecsUnsorted = allowedRecords.filter(r => r.isExecutive);
-      const execRecs = [...execRecsUnsorted].sort((a, b) => {
-        const priority = (desig: string | null | undefined) => {
-          if (!desig) return 3;
-          const d = desig.toLowerCase();
-          if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
-          if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
-          return 3;
-        };
-        const pA = priority(a.designation);
-        const pB = priority(b.designation);
-        if (pA !== pB) return pA - pB;
-        return (a.bankId || '').localeCompare(b.bankId || '', undefined, { numeric: true, sensitivity: 'base' });
-      });
-      if (execRecs.length > 0) {
-        execsData = {
-          records: execRecs,
-          totalDays: execRecs.reduce((sum, o) => sum + o.presentDays, 0),
-          totalClaim: execRecs.reduce((sum, r) => sum + r.totalBill, 0),
-          totalDeduction: execRecs.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
-          grandTotal: execRecs.reduce((sum, r) => sum + r.netPayable, 0)
-        };
-      }
-    }
-
-    const effectiveRecords = [
-      ...cellGroups.flatMap(g => g.records),
-      ...(execsData?.records || [])
-    ];
-
-    return {
-      monthName: getBanglaMonthName(selectedMonth),
-      groupedData: cellGroups,
-      executivesData: execsData,
-      workingDays: workingDays,
-      totalDaysAll: effectiveRecords.reduce((sum, r) => sum + r.presentDays, 0),
-      totalClaimAll: effectiveRecords.reduce((sum, r) => sum + r.totalBill, 0),
-      totalDeductionAll: effectiveRecords.reduce((sum, r) => sum + (r.stampDeduction + r.additionalDeduction), 0),
-      grandTotalAll: effectiveRecords.reduce((sum, r) => sum + r.netPayable, 0),
-      grandTotalInWords: getBanglaNumberWords(effectiveRecords.reduce((sum, r) => sum + r.netPayable, 0)),
-      reportDate: new Date().toISOString().split('T')[0]
-    };
-  };
-
-  // Generate printable HTML document
-  const generateBillReport = async (): Promise<string | null> => {
-    setGenerating(true);
-    setErrorMessage(null);
-    try {
-      // 1. Auto-save latest admin states first and immediately update frontend saved state!
-      if (isAdmin) {
-        const savedRecord = await saveLunchBill();
-        if (!savedRecord) {
-          throw new Error('বিল জেনারেট করার আগে ডাটাবেজ আপডেট সংরক্ষণ ব্যর্থ হয়েছে।');
-        }
-      }
-
-      // 2. Call combined report generator
-      const res = await fetch('/api/documents/generate-lunch-bill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(getPrintPayload())
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success && data.filePath) {
-        return data.filePath;
-      } else {
-        setErrorMessage(data.message || 'প্রিন্ট মেমো প্রস্তুত করতে ব্যর্থ হয়েছে।');
-        return null;
-      }
-    } catch (err) {
-      console.error('Error generating lunch bill:', err);
-      const msg = err instanceof Error ? err.message : 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।';
-      setErrorMessage(msg);
-      return null;
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  // In-Page Iframe Printing without opening new tabs
-  const handleDirectPrint = async () => {
-    const path = await generateBillReport();
-    if (path) {
-      const iframe = document.getElementById('silent-print-iframe') as HTMLIFrameElement;
-      if (iframe) {
-        iframe.src = path;
-        iframe.onload = () => {
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-        };
-      }
-    }
-  };
-
-  // In-Page Iframe Print Preview Modal
-  const handlePrintPreview = async () => {
-    const path = await generateBillReport();
-    if (path) {
-      setIframeUrl(path);
-      setIsPreviewOpen(true);
-    }
-  };
-
-  const handlePrintWarningCheck = () => {
-    const hasAddDeds = records.some(r => r.additionalDeduction > 0);
-    if (!hasAddDeds) {
-      setIsWarningOpen(true);
-    } else {
-      handleDirectPrint();
-    }
-  };
-
-  const toggleCellCollapse = (cellId: number) => {
-    setCollapsedCells(prev => ({
-      ...prev,
-      [cellId]: !prev[cellId]
-    }));
-  };
+  if (data.loading) {
+    return (
+      <div className="p-6">
+        <TableSkeleton rows={8} columns={6} />
+      </div>
+    );
+  }
 
   return (
     <AuthGuard>
-      <div className="space-y-6 pb-10">
-        
-        {/* Header Action Banner */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="app-page-title text-slate-800 dark:text-slate-100 font-sans tracking-wide">লাঞ্চ বিল জেনারেটর</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {isAdmin 
-                ? 'সকল সেল এবং ডিজিএম ও এজিএম নির্বাহীদের সমন্বিত লাঞ্চ বিলের হিসাব ও পেমেন্ট রেকর্ড শিট প্রস্তুতকারক প্যানেল।'
-                : 'আপনার সেলের চূড়ান্তকৃত লাঞ্চ বিল ও প্রিন্ট প্রিভিউ বিবরণী।'}
-            </p>
-          </div>
-        </div>
-
-        {/* Configurations Filter Panel */}
-        <div className="glass-card p-6 rounded-2xl space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-            {/* Month Selection — Custom Modern Bengali Month Picker */}
-            <div className="space-y-2 relative" ref={monthPickerRef}>
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                মাস নির্বাচন করুন
-              </label>
-              
-              {/* Trigger Button */}
-              <button
-                type="button"
-                onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 hover:border-primary/80 dark:hover:border-primary/80 rounded-xl text-sm font-bold font-sans flex items-center justify-between text-slate-800 dark:text-slate-100 shadow-xs hover:shadow-md transition-all cursor-pointer group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Calendar size={15} />
-                  </div>
-                  <span className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">
-                    {getBanglaMonthName(selectedMonth) || 'মাস নির্বাচন করুন'}
-                  </span>
-                </div>
-                
-                <ChevronDown 
-                  size={16} 
-                  className={`text-slate-400 dark:text-slate-500 transition-transform duration-200 ${
-                    isMonthPickerOpen ? 'rotate-180 text-primary' : ''
-                  }`} 
-                />
-              </button>
-
-              {/* Month Picker Dropdown Popover */}
-              {isMonthPickerOpen && (
-                <div className="absolute left-0 mt-2 w-72 sm:w-80 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200 font-sans">
-                  
-                  {/* Popover Header: Year Selector */}
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPickerYear(prev => prev - 1)}
-                      className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
-                      title="পূর্ববর্তী বছর"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-black text-slate-900 dark:text-slate-100 font-sans">
-                        {toBanglaDigits(currentPickerYear)} সাল
-                      </span>
-                    </div>
-                    
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPickerYear(prev => prev + 1)}
-                      className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
-                      title="পরবর্তী বছর"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-
-                  {/* 12 Months Grid */}
-                  <div className="grid grid-cols-3 gap-2 py-3.5">
-                    {[
-                      { name: 'জানুয়ারি', num: '01' },
-                      { name: 'ফেব্রুয়ারি', num: '02' },
-                      { name: 'মার্চ', num: '03' },
-                      { name: 'এপ্রিল', num: '04' },
-                      { name: 'মে', num: '05' },
-                      { name: 'জুন', num: '06' },
-                      { name: 'জুলাই', num: '07' },
-                      { name: 'আগস্ট', num: '08' },
-                      { name: 'সেপ্টেম্বর', num: '09' },
-                      { name: 'অক্টোবর', num: '10' },
-                      { name: 'নভেম্বর', num: '11' },
-                      { name: 'ডিসেম্বর', num: '12' }
-                    ].map(m => {
-                      const ymStr = `${currentPickerYear}-${m.num}`;
-                      const isSelected = selectedMonth === ymStr;
-                      const today = new Date();
-                      const isCurrentMonth = today.getFullYear() === currentPickerYear && String(today.getMonth() + 1).padStart(2, '0') === m.num;
-
-                      return (
-                        <button
-                          type="button"
-                          key={ymStr}
-                          onClick={() => {
-                            setSelectedMonth(ymStr);
-                            setIsMonthPickerOpen(false);
-                          }}
-                          className={`py-2.5 px-2 text-xs rounded-xl font-bold transition-all relative cursor-pointer text-center ${
-                            isSelected
-                              ? 'bg-primary text-white font-extrabold shadow-md shadow-primary/25 scale-[1.03]'
-                              : isCurrentMonth
-                              ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-sky-300 border border-primary/30 font-extrabold hover:bg-primary/20'
-                              : 'bg-slate-50/80 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800'
-                          }`}
-                        >
-                          {m.name}
-                          {isCurrentMonth && !isSelected && (
-                            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Popover Footer */}
-                  <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const today = new Date();
-                        const mm = String(today.getMonth() + 1).padStart(2, '0');
-                        setSelectedMonth(`${today.getFullYear()}-${mm}`);
-                        setCurrentPickerYear(today.getFullYear());
-                        setIsMonthPickerOpen(false);
-                      }}
-                      className="text-xs font-bold text-primary dark:text-sky-400 hover:underline cursor-pointer"
-                    >
-                      চলতি মাস
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={() => setIsMonthPickerOpen(false)}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                    >
-                      ঠিক আছে
-                    </button>
-                  </div>
-
-                </div>
-              )}
+      <div className="space-y-6 min-h-screen bg-slate-50/50 dark:bg-transparent -m-4 lg:-m-8 p-4 lg:p-8">
+        {/* Success / Error Banners */}
+        {data.successMessage && (
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-400 rounded-2xl flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle size={18} className="text-emerald-600" />
+              <span className="text-sm font-semibold">{data.successMessage}</span>
             </div>
-
-            {/* Working Days Input */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="workingDays" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  মোট কার্যদিবস
-                  {!isAdmin && <span className="text-[10px] text-slate-400 normal-case ml-1.5">(লকড)</span>}
-                </label>
-                {isAdmin && (
-                  <button 
-                    type="button"
-                    onClick={() => setIsAutoWorkingDays(!isAutoWorkingDays)}
-                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
-                      isAutoWorkingDays 
-                        ? 'bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300' 
-                        : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
-                    }`}
-                  >
-                    {isAutoWorkingDays ? 'Auto On' : 'Manual'}
-                  </button>
-                )}
-              </div>
-              <input
-                id="workingDays"
-                type="number"
-                min="1"
-                max="31"
-                disabled={!isAdmin}
-                value={workingDays}
-                onChange={(e) => handleWorkingDaysChange(e.target.value)}
-                className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold font-sans transition-all ${
-                  workingDaysLoading ? 'animate-pulse opacity-70 ring-2 ring-emerald-500/20' : ''
-                }`}
-              />
-              {isAutoWorkingDays && (
-                <div 
-                  className="flex items-center gap-2 mt-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-[11px] font-extrabold inline-flex w-fit shadow-xs cursor-help select-none"
-                  title="মাসের মোট দিন থেকে সরকারি ও সাপ্তাহিক ছুটির দিন বাদ দিয়ে স্বয়ংক্রিয়ভাবে মোট কার্যদিবস হিসাব করা হয়েছে"
-                >
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                  <span>✨ স্বয়ংক্রিয়-ক্যালকুলেটেড</span>
-                </div>
-              )}
-            </div>
-
-
-
-            {/* Deduction Settings Mode Trigger */}
-            {isAdmin && (
-              <div className="space-y-2">
-                <label htmlFor="deductionMode" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Sliders size={12} /> অতিরিক্ত কর্তন কনফিগারেশন
-                </label>
-                <select
-                  id="deductionMode"
-                  value={deductionMode}
-                  onChange={(e) => {
-                    const mode = e.target.value as 'manual' | 'flat' | 'designation';
-                    setDeductionMode(mode);
-                    applyDeductionRates(mode, flatDeductionRate, designationRates, workingDays, records);
-                  }}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-bold"
-                >
-                  <option value="manual">ম্যানুয়াল ইনপুট (আলাদা আলাদা)</option>
-                  <option value="flat">সবার জন্য সমান অতিরিক্ত কর্তন (ফ্ল্যাট)</option>
-                  <option value="designation">পদবী ভিত্তিক অতিরিক্ত কর্তন</option>
-                </select>
-              </div>
-            )}
-
-          </div>
-
-          {/* Dynamic configs dependent panel */}
-          {isAdmin && deductionMode === 'flat' && (
-            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/80 rounded-xl flex items-center gap-4 animate-fade-in">
-              <span className="text-xs font-bold text-slate-500 uppercase">ফ্ল্যাট অতিরিক্ত কর্তনের হার:</span>
-              <input
-                type="number"
-                min="0"
-                value={flatDeductionRate}
-                onChange={(e) => applyFlatRate(parseInt(e.target.value, 10) || 0)}
-                className="w-24 px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs"
-              />
-              <span className="text-[10px] text-slate-400 font-bold">এটি সেল কর্মকর্তা ও ডিজিএম/এজিএম নির্বাহীদের ওপর অভিন্নভাবে প্রয়োগ হবে।</span>
-            </div>
-          )}
-
-          {isAdmin && deductionMode === 'designation' && (
-            <div className="p-4 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/80 rounded-xl grid grid-cols-2 sm:grid-cols-5 gap-4 animate-fade-in animate-scale-up">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">SPO / SSPO:</span>
-                <input
-                  type="number"
-                  value={designationRates.SPO}
-                  onChange={(e) => applyDesignationRates('SPO', parseInt(e.target.value, 10) || 0)}
-                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs border-indigo-200 focus:border-indigo-550"
-                />
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">PO / SNPO:</span>
-                <input
-                  type="number"
-                  value={designationRates.PO}
-                  onChange={(e) => applyDesignationRates('PO', parseInt(e.target.value, 10) || 0)}
-                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">SO-IT:</span>
-                <input
-                  type="number"
-                  value={designationRates.SO_IT}
-                  onChange={(e) => applyDesignationRates('SO_IT', parseInt(e.target.value, 10) || 0)}
-                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">O-IT / Officers:</span>
-                <input
-                  type="number"
-                  value={designationRates.O_IT}
-                  onChange={(e) => applyDesignationRates('O_IT', parseInt(e.target.value, 10) || 0)}
-                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase" style={{ color: '#db2777' }}>ডিজিএম ও এজিএম:</span>
-                <input
-                  type="number"
-                  value={designationRates.EXEC}
-                  onChange={(e) => applyDesignationRates('EXEC', parseInt(e.target.value, 10) || 0)}
-                  className="w-full px-3 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg font-bold font-sans text-xs"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Search & Filters */}
-        <div className="glass-card p-6 rounded-2xl space-y-4">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            {/* Search Bar */}
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input
-                type="text"
-                placeholder="কর্মকর্তার নাম, পদবী বা ব্যাংক আইডি দিয়ে খুঁজুন..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
-              />
-            </div>
-            
-            {/* Toggle Panel Button */}
-            <button
-              type="button"
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className={`w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                showAdvancedFilters || filterCell !== 'ALL' || filterType !== 'ALL' || filterAttendance !== 'ALL' || filterDeduction !== 'ALL'
-                  ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400 font-bold'
-                  : 'bg-white/40 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-350'
-              }`}
-            >
-              <Filter size={14} />
-              <span>ফিল্টারসমূহ</span>
-              {(filterCell !== 'ALL' || filterType !== 'ALL' || filterAttendance !== 'ALL' || filterDeduction !== 'ALL') && (
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
-              )}
+            <button onClick={() => data.setSuccessMessage(null)} className="text-slate-400 hover:text-slate-600">
+              <X size={16} />
             </button>
           </div>
-
-          {/* Advanced Filter Options Panel */}
-          {showAdvancedFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 animate-fadeIn">
-              
-              {/* Cell Filter */}
-              {isAdmin && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">শাখা/সেল</label>
-                  <select
-                    value={filterCell}
-                    onChange={(e) => setFilterCell(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
-                  >
-                    <option value="ALL">সকল সেল (All)</option>
-                    <option value="0">নির্বাহী প্যানেল (Executives)</option>
-                    {cells.map(c => (
-                      <option key={c.id} value={c.id.toString()}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Type Filter */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ধরণ</label>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
-                >
-                  <option value="ALL">সবাই (All)</option>
-                  <option value="officer">কর্মকর্তা (Cell Officers)</option>
-                  <option value="executive">নির্বাহী (Executives)</option>
-                </select>
-              </div>
-
-              {/* Attendance Filter */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">উপস্থিতি</label>
-                <select
-                  value={filterAttendance}
-                  onChange={(e) => setFilterAttendance(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
-                >
-                  <option value="ALL">সবাই (All)</option>
-                  <option value="full_present">পূর্ণ উপস্থিতি (Full Present)</option>
-                  <option value="has_absences">অনুপস্থিতি আছে (Absent Days &gt; ০)</option>
-                </select>
-              </div>
-
-              {/* Deduction Filter */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">অতিরিক্ত কর্তন</label>
-                <select
-                  value={filterDeduction}
-                  onChange={(e) => setFilterDeduction(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
-                >
-                  <option value="ALL">সবাই (All)</option>
-                  <option value="has_deduction">অতিরিক্ত কর্তন আছে</option>
-                  <option value="no_deduction">অতিরিক্ত কর্তন নেই</option>
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Messages Alerts */}
-        {successMessage && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-3 font-sans font-medium text-sm animate-fade-in">
-            <CheckCircle size={18} className="text-emerald-600 shrink-0" />
-            <p>{successMessage}</p>
-          </div>
         )}
-        {errorMessage && (
-          <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-3 font-sans font-medium text-sm animate-fade-in">
-            <AlertTriangle size={18} className="text-rose-600 shrink-0" />
-            <p>{errorMessage}</p>
+
+        {data.errorMessage && (
+          <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-400 rounded-2xl flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle size={18} className="text-rose-600" />
+              <span className="text-sm font-semibold">{data.errorMessage}</span>
+            </div>
+            <button onClick={() => data.setErrorMessage(null)} className="text-slate-400 hover:text-slate-600">
+              <X size={16} />
+            </button>
           </div>
         )}
 
-        {/* Loading Indicator */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="animate-spin text-indigo-600" size={36} />
-            <p className="text-sm font-bold text-slate-500">ডাটা লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...</p>
-          </div>
-        ) : activeRecords.length > 0 ? (
-          <div className="glass-card rounded-2xl overflow-hidden border border-slate-200/60 dark:border-slate-800/80">
-            
-            {/* Card Header Actions */}
-            <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">
-                  {isAdmin ? 'সমন্বিত লাঞ্চ বিল এন্ট্রি শিট' : `লাঞ্চ ভাতা বিল শিট - ${cells.find(c => c.id === primaryCellId)?.name || ''}`} - {getBanglaMonthName(selectedMonth)}
-                </h3>
-                <p className="text-[10px] mt-0.5 font-sans">
-                  {savedLunchBill ? (
-                    <span className="text-emerald-600 font-bold flex items-center gap-1">
-                      <CheckCircle size={10} /> administration সেল কর্তৃক চূড়ান্ত সমন্বিত রেকর্ড
-                    </span>
-                  ) : (
-                    <span className="text-amber-500 font-bold flex items-center gap-1">
-                      <AlertTriangle size={10} /> খসড়া (ডাটাবেজে এখনও চূড়ান্ত সংরক্ষণ করা হয়নি)
-                    </span>
-                  )}
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2.5">
-                {(isAdmin || !isAdmin) && (
-                  <button
-                    onClick={saveLunchBill}
-                    disabled={saving}
-                    className="h-9 px-4 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-white cursor-pointer flex items-center gap-2 shadow-md shadow-primary/20 transition-all font-sans"
-                    title="লাঞ্চ বিল সংরক্ষণ করুন"
-                  >
-                    {saving ? <Loader2 className="animate-spin" size={13} /> : <Save size={13} />}
-                    <span>সেভ করুন</span>
-                  </button>
-                )}
-                
-                <button
-                  onClick={handlePrintPreview}
-                  disabled={generating}
-                  className="h-9 px-3.5 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 transition-all font-sans"
-                  title="ইন-পেজ প্রিন্ট প্রিভিউ দেখুন"
-                >
-                  <Eye size={13} />
-                  <span>প্রিন্ট প্রিভিউ</span>
-                </button>
-
-                <button
-                  onClick={handlePrintWarningCheck}
-                  disabled={generating}
-                  className="h-9 px-4 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer flex items-center gap-1.5 transition-all shadow-md shadow-emerald-600/10 font-sans"
-                  title="লাঞ্চ বিল প্রিন্ট করুন"
-                >
-                  {generating ? <Loader2 className="animate-spin" size={13} /> : <Printer size={13} />}
-                  <span>প্রিন্ট পিডিএফ</span>
-                </button>
-              </div>
-            </div>
-
-            {/* List and Combined view */}
-            <div className="p-3 sm:p-4 space-y-6">
-              
-              {/* Group B: DGM & AGM Executives */}
-              {isAdmin && activeRecords.some(r => r.isExecutive) && (() => {
-                const execRecs = activeRecords.filter(r => r.isExecutive).sort((a, b) => {
-                  const priority = (desig: string | null | undefined) => {
-                    if (!desig) return 3;
-                    const d = desig.toLowerCase();
-                    if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
-                    if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
-                    return 3;
-                  };
-                  const pA = priority(a.designation);
-                  const pB = priority(b.designation);
-                  if (pA !== pB) return pA - pB;
-                  return (a.bankId || '').localeCompare(b.bankId || '', undefined, { numeric: true, sensitivity: 'base' });
-                });
-                const execClaim = execRecs.reduce((sum, r) => sum + r.totalBill, 0);
-                const execStamp = execRecs.length * 15;
-                const execExtra = execRecs.reduce((sum, r) => sum + (r.additionalDeduction || 0), 0);
-                const execGrand = execRecs.reduce((sum, r) => sum + r.netPayable, 0);
-
-                const dgmCount = execRecs.filter(r => {
-                  const d = (r.designation || '').toLowerCase();
-                  return d.includes('ডিজিএম') || d.includes('dgm') || d.includes('উপ-মহাব্যবস্থাপক');
-                }).length;
-                const agmCount = execRecs.filter(r => {
-                  const d = (r.designation || '').toLowerCase();
-                  return d.includes('এজিএম') || d.includes('agm') || d.includes('সহকারী মহাব্যবস্থাপক');
-                }).length;
-                const totalExec = dgmCount + agmCount;
-
-                return (
-                  <div className="border border-rose-150 dark:border-rose-900/40 rounded-xl overflow-hidden shadow-xs" style={{ borderLeft: '3px solid #db2777' }}>
-                    <div className="px-4 py-2.5 bg-rose-50/40 dark:bg-rose-950/10 border-b border-rose-150 dark:border-rose-900/40 flex items-center justify-between font-sans">
-                      <div className="flex items-center gap-2">
-                        <Lock size={15} className="text-rose-500" />
-                        <span className="font-extrabold text-xs text-rose-800 dark:text-rose-300 uppercase tracking-wide">
-                          নির্বাহী প্যানেল (ডিজিএম {toBanglaDigits(dgmCount)} জন + এজিএম {toBanglaDigits(agmCount)} জন = মোট {toBanglaDigits(totalExec)} জন নির্বাহী)
-                        </span>
-                      </div>
-                      <span className="text-xs font-bold text-rose-600 dark:text-rose-350">
-                        নির্বাহীদের বিল সমষ্টি: ৳{toBanglaDigits(execGrand)}
-                      </span>
-                    </div>
-
-                    <div className="overflow-x-auto w-full">
-                      <table className="w-full text-xs text-center border-collapse">
-                        <thead>
-                          <tr className="bg-rose-50/30 dark:bg-rose-950/20 text-rose-900 dark:text-rose-300 font-bold text-[11px] border-b border-rose-150 dark:border-rose-900/40 uppercase tracking-wider">
-                            <th className="py-2.5 px-1 w-7 text-center">ক্রমিক</th>
-                            <th className="py-2.5 px-2 text-left min-w-[120px]">নির্বাহীর নাম</th>
-                            <th className="py-2.5 px-1 text-center">পদবী</th>
-                            <th className="py-2.5 px-1 text-center">ব্যাংক আইডি</th>
-                            <th className="py-2.5 px-1 text-center">মোবাইল</th>
-                            <th className="py-2.5 px-1 text-center">দৈনিক হার</th>
-                            <th className="py-2.5 px-1 text-center">উপস্থিত</th>
-                            <th className="py-2.5 px-1 text-center bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200">
-                              অনুপস্থিত (CL) ✍️
-                            </th>
-                            <th className="py-2.5 px-1 text-center">মোট দাবী</th>
-                            <th className="py-2.5 px-1 text-center">স্ট্যাম্প</th>
-                            <th className="py-2.5 px-1 text-center">অতিরিক্ত কর্তন</th>
-                            <th className="py-2.5 px-1 text-center">মোট কর্তন</th>
-                            <th className="py-2.5 px-1.5 text-center bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200">
-                              প্রাপ্তব্য
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-rose-50 dark:divide-rose-950/20">
-                          {execRecs.map((r, index) => {
-                            const additional = r.additionalDeduction ?? 0;
-                            const totalDed = 15 + additional;
-                            return (
-                              <tr key={r.employeeId} className="hover:bg-rose-50/20 dark:hover:bg-rose-950/10 transition-colors">
-                                <td className="py-2 px-1 font-bold text-rose-800 dark:text-rose-300 text-xs">{toBanglaDigits(index + 1)}</td>
-                                <td className="py-2 px-2 text-left font-extrabold text-rose-900 dark:text-rose-100 text-xs">{r.employeeName}</td>
-                                <td className="py-2 px-1 font-bold text-rose-700 dark:text-rose-300 text-[11px]">{r.designation}</td>
-                                <td className="py-2 px-1 text-[11px] font-semibold font-sans">{r.bankId || '-'}</td>
-                                <td className="py-2 px-1 font-semibold font-sans text-[10.5px] text-rose-800 dark:text-rose-300">
-                                  {(() => {
-                                    const exec = executives.find(e => e.id === r.employeeId);
-                                    return exec?.phone ? toBanglaDigits(exec.phone) : 'N/A';
-                                  })()}
-                                </td>
-                                <td className="py-2 px-1 font-bold font-sans text-slate-500 text-xs">৳{toBanglaDigits(400)}</td>
-                                
-                                <td className="py-2 px-1 font-bold font-sans tabular-nums text-xs">{toBanglaDigits(r.presentDays)}</td>
-
-                                {/* CL absence input with clear editable affordance */}
-                                <td className="py-1 px-1 bg-blue-50/30 dark:bg-blue-950/10">
-                                  <div className="relative inline-flex items-center justify-center">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max={workingDays}
-                                      value={r.absenceDays === 0 ? '' : r.absenceDays}
-                                      placeholder="০"
-                                      onChange={(e) => handleAbsenceChange(r.employeeId, true, e.target.value)}
-                                      className="w-12 h-7 px-1 text-center bg-blue-50/90 hover:bg-blue-50 dark:bg-blue-950/50 dark:hover:bg-blue-950/70 border border-blue-200 dark:border-blue-800 hover:border-primary/70 focus:border-primary focus:ring-1 focus:ring-primary/20 rounded font-black font-sans text-xs text-blue-950 dark:text-blue-200 transition-all cursor-text disabled:opacity-75 disabled:cursor-not-allowed"
-                                      title="অনুপস্থিত দিন (CL) লিখুন"
-                                    />
-                                  </div>
-                                </td>
-
-                                <td className="py-2 px-1 font-semibold font-sans text-slate-700 dark:text-slate-300 tabular-nums text-xs">৳{toBanglaDigits(r.totalBill)}</td>
-                                
-                                {/* রেভেনিউ স্ট্যাম্প */}
-                                <td className="py-2 px-1 font-semibold font-sans text-slate-500 tabular-nums text-xs">৳{toBanglaDigits(15)}</td>
-
-                                {/* অতিরিক্ত কর্তন */}
-                                <td className="py-1 px-1">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={r.additionalDeduction}
-                                    onChange={(e) => handleManualDeductionChange(r.employeeId, true, e.target.value)}
-                                    className="w-14 h-7 px-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
-                                  />
-                                </td>
-
-                                {/* মোট কর্তন */}
-                                <td className="py-2 px-1 font-bold font-sans text-rose-700 dark:text-rose-400 tabular-nums text-xs">৳{toBanglaDigits(totalDed)}</td>
-
-                                {/* Net Payable with Highlighted Prominence */}
-                                <td className="py-2 px-1">
-                                  <span className="font-black text-xs text-emerald-700 dark:text-emerald-350 font-sans tabular-nums bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200/80 dark:border-emerald-800/50 inline-block shadow-2xs">
-                                    ৳{toBanglaDigits(r.netPayable)}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-
-                          {/* ১. সর্বমোট নির্বাহী প্যানেল হিসাব রো */}
-                          <tr className="bg-rose-100/80 dark:bg-rose-900/60 font-bold border-t border-rose-200 dark:border-rose-800">
-                            <td colSpan={8} className="py-2.5 px-3 text-right pr-4 text-rose-900 dark:text-rose-200 text-xs">
-                              সর্বমোট (নির্বাহী প্যানেল) =
-                            </td>
-                            <td className="py-2.5 px-1 font-sans font-bold text-rose-900 dark:text-rose-200 tabular-nums text-xs">
-                              ৳{toBanglaDigits(execClaim)}/-
-                            </td>
-                            <td className="py-2.5 px-1 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums text-xs">
-                              ৳{toBanglaDigits(execStamp)}/-
-                            </td>
-                            <td className="py-2.5 px-1 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums text-xs">
-                              ৳{toBanglaDigits(execExtra)}/-
-                            </td>
-                            <td className="py-2.5 px-1 font-sans font-bold text-rose-600 dark:text-rose-400 tabular-nums text-xs">
-                              ৳{toBanglaDigits(execStamp + execExtra)}/-
-                            </td>
-                            <td className="py-2.5 px-1 font-sans">
-                              <span className="font-black text-xs text-emerald-700 dark:text-emerald-350 tabular-nums bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/80 inline-block shadow-2xs">
-                                ৳{toBanglaDigits(execGrand)}/-
-                              </span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Group A: Cell-wise Officers */}
-              {cells.map(cell => {
-                if (!isAdmin && cell.id !== primaryCellId) return null;
-                const cellRecs = activeRecords.filter(r => !r.isExecutive && r.cellId === cell.id);
-                if (cellRecs.length === 0) return null;
-
-                const isCollapsed = collapsedCells[cell.id];
-
-                // Calculate Cell sums
-                const cellClaim = cellRecs.reduce((sum, r) => sum + r.totalBill, 0);
-                const cellStamp = cellRecs.length * 15;
-                const cellExtra = cellRecs.reduce((sum, r) => sum + (r.additionalDeduction || 0), 0);
-                const cellGrand = cellRecs.reduce((sum, r) => sum + r.netPayable, 0);
-
-                return (
-                  <div key={cell.id} className="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-                    {/* Collapsible header */}
-                    <div 
-                      onClick={() => toggleCellCollapse(cell.id)}
-                      className="px-4 py-2.5 bg-slate-100/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-950/30 transition-colors font-sans select-none"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Users size={15} className="text-slate-400" />
-                        <span className="font-extrabold text-xs text-slate-800 dark:text-slate-50 uppercase tracking-wide">
-                          সেল: {cell.name} (মোট কার্যদিবস: {toBanglaDigits(workingDays)} দিন, {cellRecs.length} জন কর্মকর্তা)
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
-                        <span>সেলের দাবী সমষ্টি: ৳{toBanglaDigits(cellGrand)}</span>
-                        {isCollapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
-                      </div>
-                    </div>
-
-                    {!isCollapsed && (
-                      <div className="overflow-x-auto w-full">
-                        <table className="w-full text-xs text-center border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50/70 dark:bg-slate-950/20 text-slate-600 dark:text-slate-300 font-bold text-[11px] border-b border-slate-100 dark:border-slate-800 uppercase tracking-wider">
-                              <th className="py-2.5 px-1 w-7 text-center">ক্রমিক</th>
-                              <th className="py-2.5 px-2 text-left min-w-[120px]">কর্মকর্তার নাম</th>
-                              <th className="py-2.5 px-1 text-center">পদবী</th>
-                              <th className="py-2.5 px-1 text-center">ব্যাংক আইডি</th>
-                              <th className="py-2.5 px-1 text-center">মোবাইল</th>
-                              <th className="py-2.5 px-1 text-center">দৈনিক হার</th>
-                              <th className="py-2.5 px-1 text-center">উপস্থিত</th>
-                              <th className="py-2.5 px-1 text-center bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200">
-                                অনুপস্থিত (CL) ✍️
-                              </th>
-                              <th className="py-2.5 px-1 text-center">মোট দাবী</th>
-                              <th className="py-2.5 px-1 text-center">স্ট্যাম্প</th>
-                              <th className="py-2.5 px-1 text-center">অতিরিক্ত কর্তন</th>
-                              <th className="py-2.5 px-1 text-center">মোট কর্তন</th>
-                              <th className="py-2.5 px-1.5 text-center bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200">
-                                প্রাপ্তব্য
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {cellRecs.map((r, index) => {
-                              const additional = r.additionalDeduction ?? 0;
-                              const totalDed = 15 + additional;
-                              return (
-                                <tr key={r.employeeId} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/10 transition-colors">
-                                  <td className="py-2 px-1 font-bold text-slate-700 dark:text-slate-300 text-xs">{toBanglaDigits(index + 1)}</td>
-                                  <td className="py-2 px-2 text-left font-extrabold text-slate-800 dark:text-slate-100 text-xs">{r.employeeName}</td>
-                                  <td className="py-2 px-1 text-[11px] font-medium text-slate-600 dark:text-slate-300">{r.designation}</td>
-                                  <td className="py-2 px-1 text-[11px] font-semibold font-sans">{r.bankId || '-'}</td>
-                                  <td className="py-2 px-1 font-semibold font-sans text-[10.5px] text-slate-600 dark:text-slate-400">
-                                    {(() => {
-                                      const emp = employees.find(e => e.id === r.employeeId);
-                                      return emp?.mobile ? toBanglaDigits(emp.mobile) : 'N/A';
-                                    })()}
-                                  </td>
-                                  <td className="py-2 px-1 font-bold font-sans text-slate-500 text-xs">৳{toBanglaDigits(400)}</td>
-                                  
-                                  <td className="py-2 px-1 font-bold font-sans tabular-nums text-xs">{toBanglaDigits(r.presentDays)}</td>
-
-                                  {/* CL absence input with clear editable affordance */}
-                                  <td className="py-1 px-1 bg-blue-50/30 dark:bg-blue-950/10">
-                                    <div className="relative inline-flex items-center justify-center">
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        max={workingDays}
-                                        value={r.absenceDays === 0 ? '' : r.absenceDays}
-                                        placeholder="০"
-                                        onChange={(e) => handleAbsenceChange(r.employeeId, false, e.target.value)}
-                                        className="w-12 h-7 px-1 text-center bg-blue-50/90 hover:bg-blue-50 dark:bg-blue-950/50 dark:hover:bg-blue-950/70 border border-blue-200 dark:border-blue-800 hover:border-primary/70 focus:border-primary focus:ring-1 focus:ring-primary/20 rounded font-black font-sans text-xs text-blue-950 dark:text-blue-200 transition-all cursor-text disabled:opacity-75 disabled:cursor-not-allowed"
-                                        title="অনুপস্থিত দিন (CL) লিখুন"
-                                      />
-                                    </div>
-                                  </td>
-
-                                  <td className="py-2 px-1 font-semibold font-sans text-slate-700 dark:text-slate-300 tabular-nums text-xs">৳{toBanglaDigits(r.totalBill)}</td>
-                                  
-                                  {/* রেভেনিউ স্ট্যাম্প */}
-                                  <td className="py-2 px-1 font-semibold font-sans text-slate-500 tabular-nums text-xs">৳{toBanglaDigits(15)}</td>
-
-                                  {/* অতিরিক্ত কর্তন */}
-                                  <td className="py-1 px-1">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      value={r.additionalDeduction}
-                                      onChange={(e) => handleManualDeductionChange(r.employeeId, false, e.target.value)}
-                                      className="w-14 h-7 px-1 text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-indigo-500 font-bold font-sans text-xs disabled:opacity-75 disabled:cursor-not-allowed"
-                                    />
-                                  </td>
-
-                                  {/* মোট কর্তন */}
-                                  <td className="py-2 px-1 font-bold font-sans text-rose-700 dark:text-rose-450 tabular-nums text-xs">৳{toBanglaDigits(totalDed)}</td>
-
-                                  {/* Net Payable with Highlighted Prominence */}
-                                  <td className="py-2 px-1">
-                                    <span className="font-black text-xs text-emerald-700 dark:text-emerald-350 font-sans tabular-nums bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200/80 dark:border-emerald-800/50 inline-block shadow-2xs">
-                                      ৳{toBanglaDigits(r.netPayable)}
-                                    </span>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-
-                            {/* ১. সর্বমোট দাবী ও কর্তন রো */}
-                            <tr className="bg-slate-100/80 dark:bg-slate-900/60 font-bold border-t border-slate-200 dark:border-slate-800">
-                              <td colSpan={8} className="py-2.5 px-3 text-right pr-4 text-slate-800 dark:text-slate-200 text-xs">
-                                সর্বমোট (১ থেকে {toBanglaDigits(cellRecs.length)} নং কর্মকর্তা) =
-                              </td>
-                              <td className="py-2.5 px-1 font-sans font-bold text-slate-800 dark:text-slate-200 tabular-nums text-xs">
-                                ৳{toBanglaDigits(cellClaim)}/-
-                              </td>
-                              <td className="py-2.5 px-1 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums text-xs">
-                                ৳{toBanglaDigits(cellStamp)}/-
-                              </td>
-                              <td className="py-2.5 px-1 font-sans font-bold text-amber-600 dark:text-amber-500 tabular-nums text-xs">
-                                ৳{toBanglaDigits(cellExtra)}/-
-                              </td>
-                              <td className="py-2.5 px-1 font-sans font-bold text-rose-600 dark:text-rose-400 tabular-nums text-xs">
-                                ৳{toBanglaDigits(cellStamp + cellExtra)}/-
-                              </td>
-                              <td className="py-2.5 px-1 font-sans">
-                                <span className="font-black text-xs text-emerald-700 dark:text-emerald-350 tabular-nums bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/80 inline-block shadow-2xs">
-                                  ৳{toBanglaDigits(cellGrand)}/-
-                                </span>
-                              </td>
-                            </tr>
-
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Deductions Breakdown Summary Box — Consistent Grid Layout */}
-              <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3 animate-scale-up font-sans">
-                <h5 className="font-extrabold text-slate-800 dark:text-slate-100 text-xs flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  কর্তনের বিস্তারিত বিবরণী:
-                </h5>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="p-3.5 bg-white dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 rounded-xl flex flex-col justify-between">
-                    <p className="text-[11px] text-slate-400 font-bold">রেভেনিউ স্ট্যাম্প কর্তন</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">১৫/- টাকা হারে মোট {toBanglaDigits(totalEmployeesCount)} জনের</p>
-                    <p className="text-sm font-black text-slate-800 dark:text-slate-100 mt-1 tabular-nums">৳{toBanglaDigits(totalStampAll)}/-</p>
-                  </div>
-                  <div className="p-3.5 bg-white dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 rounded-xl flex flex-col justify-between">
-                    <p className="text-[11px] text-slate-400 font-bold">অতিরিক্ত কর্তন</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">ডিজিএম/নির্বাহী নির্দেশানুযায়ী</p>
-                    <p className="text-sm font-black text-slate-800 dark:text-slate-100 mt-1 tabular-nums">৳{toBanglaDigits(totalExtraAll)}/-</p>
-                  </div>
-                  <div className="p-3.5 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/40 rounded-xl flex flex-col justify-between">
-                    <p className="text-[11px] text-rose-600 dark:text-rose-400 font-bold">সর্বমোট কর্তন (RS + Extra)</p>
-                    <p className="text-xs text-rose-500/80 dark:text-rose-400/80 mt-0.5">রেভেনিউ স্ট্যাম্প + অতিরিক্ত কর্তন</p>
-                    <p className="text-base font-black text-rose-700 dark:text-rose-300 mt-1 tabular-nums">৳{toBanglaDigits(totalDeductionAll)}/-</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Grand Unified Summary Table Footer Breakdown */}
-              <div className="bg-indigo-50/30 dark:bg-indigo-950/10 border-2 border-indigo-500 dark:border-indigo-800/80 rounded-2xl p-6 shadow-sm text-center">
-                <p className="text-sm sm:text-base md:text-lg font-black text-slate-800 dark:text-slate-100 leading-relaxed font-sans">
-                  <strong>সেলের প্রাপ্তব্য টাকার পরিমাণ = ৳{toBanglaDigits(totalClaimAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
-                  <strong>রেভেনিউ স্ট্যাম্প = ৳{toBanglaDigits(totalStampAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
-                  <strong>অতিরিক্ত কর্তন = ৳{toBanglaDigits(totalExtraAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
-                  <strong>মোট কর্তন = ৳{toBanglaDigits(totalDeductionAll)}/-</strong> &nbsp;&nbsp;&nbsp;&nbsp;
-                  <span className="text-emerald-600 dark:text-emerald-400 font-black">প্রাপ্তব্য = ৳{toBanglaDigits(grandTotalAll)}/-</span>
-                </p>
-              </div>
-
-              {/* Words Summary */}
-              <div className="p-5 bg-indigo-50/10 dark:bg-indigo-950/5 border border-indigo-150/20 dark:border-indigo-900/10 rounded-2xl">
-                <p className="text-xs font-bold text-slate-500">কথায় সর্বমোট প্রাপ্তব্য:</p>
-                <p className="text-sm text-indigo-650 dark:text-indigo-400 font-extrabold mt-1">{getBanglaNumberWords(grandTotalAll)}</p>
-              </div>
-
-            </div>
-
-          </div>
-        ) : (
-          /* Empty / Lock placeholder */
-          <div className="glass-card p-10 rounded-3xl text-center space-y-6 flex flex-col items-center justify-center max-w-2xl mx-auto border border-slate-200/60 dark:border-slate-800/80 animate-scale-up">
-            <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-950 text-slate-400 dark:text-slate-600 flex items-center justify-center">
-              <Lock size={28} />
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">লাঞ্চ বিল প্রস্তুত করা হয়নি</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-                {isAdmin 
-                  ? 'এই সেলে এই মাসের কোনো সক্রিয় কর্মকর্তা ডেটাবেজে তালিকাভুক্ত নেই। অনুগ্রহ করে কর্মকর্তা তথ্য যুক্ত করুন।'
-                  : 'প্রশাসন সেল কর্তৃক এই মাসের লাঞ্চ ভাতা বিল এখনও প্রস্তুত বা চূড়ান্ত করা হয়নি। অনুগ্রহ করে চূড়ান্ত হওয়ার পর চেক করুন।'}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Warning verification Modal */}
-        {isWarningOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
-            <div className="bg-white dark:bg-slate-900 rounded-[28px] w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl p-6 text-center space-y-5 animate-scale-up">
-              <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/20 text-amber-500 flex items-center justify-center mx-auto">
-                <AlertTriangle size={26} />
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-extrabold text-slate-800 dark:text-slate-50 text-base">অতিরিক্ত কর্তন ও ডেটা সংরক্ষণ</h4>
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed">
-                  এ মাসে কোনো কর্মকর্তার বেতন/ভাতা থেকে অতিরিক্ত কর্তন (ডিজিএম বা নির্বাহীর নির্দেশানুযায়ী) কাটা হবে কি না?
-                </p>
-              </div>
-              <div className="flex items-center justify-center gap-3 pt-2">
-                <button
-                  onClick={() => setIsWarningOpen(false)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer transition-colors"
-                >
-                  হ্যাঁ, অতিরিক্ত কর্তন কাটবো
-                </button>
-                <button
-                  onClick={() => {
-                    setIsWarningOpen(false);
-                    handleDirectPrint();
-                  }}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-colors shadow-md shadow-indigo-500/10"
-                >
-                  &quot;না, অতিরিক্ত কর্তন নেই (প্রিন্ট করুন)&quot;
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Premium In-Page Print Preview Modal */}
-        {isPreviewOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
-            <div className="bg-white dark:bg-slate-950 w-full max-w-5xl rounded-[32px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-scale-up h-[90vh]">
-              
-              {/* Modal Header */}
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <div>
-                  <h4 className="font-extrabold text-slate-800 dark:text-slate-50 text-sm">ইন-পেজ লাঞ্চ বিল প্রিন্ট প্রিভিউ</h4>
-                  <p className="text-[10px] text-slate-400 mt-0.5">নতুন ট্যাবে ওপেন না করে সরাসরি ড্যাশবোর্ড থেকে প্রিভিউ করুন।</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => {
-                      const iframe = document.getElementById('preview-print-iframe') as HTMLIFrameElement;
-                      if (iframe) {
-                        iframe.contentWindow?.focus();
-                        iframe.contentWindow?.print();
-                      }
-                    }}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md cursor-pointer"
-                  >
-                    <Printer size={13} />
-                    প্রিন্ট করুন
-                  </button>
-                  <button 
-                    onClick={() => setIsPreviewOpen(false)}
-                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 rounded-full cursor-pointer"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Body: Printable HTML loaded inside Iframe */}
-              <div className="flex-1 bg-slate-50/50 dark:bg-slate-950/10 p-4 relative">
-                <iframe 
-                  id="preview-print-iframe"
-                  src={iframeUrl}
-                  className="w-full h-full border border-slate-100 dark:border-slate-800 rounded-2xl shadow-inner bg-white animate-scale-up"
-                />
-              </div>
-
-            </div>
-          </div>
-        )}
-
-        {/* Hidden Iframe for silent printing */}
-        <iframe 
-          id="silent-print-iframe" 
-          className="hidden" 
-          style={{ width: '0px', height: '0px', border: '0px' }}
+        {/* 1. Header & Actions */}
+        <LunchBillHeader
+          selectedMonth={data.selectedMonth}
+          setSelectedMonth={data.setSelectedMonth}
+          isMonthPickerOpen={isMonthPickerOpen}
+          setIsMonthPickerOpen={setIsMonthPickerOpen}
+          currentPickerYear={currentPickerYear}
+          setCurrentPickerYear={setCurrentPickerYear}
+          monthPickerRef={monthPickerRef}
+          workingDays={data.workingDays}
+          handleWorkingDaysChange={handleWorkingDaysChange}
+          isAutoWorkingDays={data.isAutoWorkingDays}
+          setIsAutoWorkingDays={data.setIsAutoWorkingDays}
+          workingDaysLoading={data.workingDaysLoading}
+          showAdvancedFilters={showAdvancedFilters}
+          setShowAdvancedFilters={setShowAdvancedFilters}
+          onOpenPreview={() => data.setIsPreviewOpen(true)}
+          onSave={data.handleSaveDraft}
+          onPrint={data.handlePrintCombinedBill}
+          saving={data.saving}
+          generating={data.generating}
         />
 
+        {/* 2. Filters & Deduction Settings */}
+        <LunchBillFilters
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterCell={filterCell}
+          setFilterCell={setFilterCell}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          cells={data.cells}
+          showAdvancedFilters={showAdvancedFilters}
+          deductionMode={data.deductionMode}
+          setDeductionMode={data.setDeductionMode}
+          flatDeductionRate={data.flatDeductionRate}
+          applyFlatRate={applyFlatRate}
+          designationRates={data.designationRates}
+          applyDesignationRates={applyDesignationRates}
+          isAdmin={isAdmin}
+        />
+
+        {/* 3. Table of Officers & Executives */}
+        <LunchBillTable
+          cells={data.cells}
+          records={activeRecords}
+          workingDays={data.workingDays}
+          handleAbsenceChange={handleAbsenceChange}
+          handleManualDeductionChange={handleManualDeductionChange}
+          collapsedCells={collapsedCells}
+          setCollapsedCells={setCollapsedCells}
+          filterCell={filterCell}
+          filterType={filterType}
+          isAdmin={isAdmin}
+          executivesList={data.executives}
+        />
       </div>
     </AuthGuard>
   );
