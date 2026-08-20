@@ -7,6 +7,7 @@ import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 import { 
   UploadCloud, 
@@ -1550,17 +1551,11 @@ export default function DocumentsPage() {
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
                   </div>
                 ) : filteredDocuments.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
-                      <AlertCircle size={28} />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">কোন ফাইল পাওয়া যায়নি</h3>
-                      <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
-                        {searchQuery ? 'আপনার অনুসন্ধানকৃত নাম অনুযায়ী কোনো ফাইল খুঁজে পাওয়া যায়নি।' : 'সংরক্ষণাগারটিতে এখনও কোনো অফিস আদেশ বা গেজেট ফাইল যুক্ত করা হয়নি।'}
-                      </p>
-                    </div>
-                  </div>
+                  <EmptyState
+                    icon={FileText}
+                    title="কোনো ফাইল পাওয়া যায়নি"
+                    description={searchQuery ? 'আপনার অনুসন্ধানকৃত নাম অনুযায়ী কোনো ফাইল খুঁজে পাওয়া যায়নি।' : 'সংরক্ষণাগারটিতে এখনও কোনো অফিস আদেশ বা গেজেট ফাইল যুক্ত করা হয়নি।'}
+                  />
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredDocuments.map((doc) => (
@@ -1913,19 +1908,15 @@ export default function DocumentsPage() {
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
                   </div>
                 ) : filteredManualDocs.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
-                      <AlertCircle size={28} />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">কোন ফাইল পাওয়া যায়নি</h3>
-                      <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
-                        {manualDocsSearchQuery || filterFileType !== 'ALL' || filterDateRange !== 'ALL' || filterSize !== 'ALL' 
-                          ? 'আপনার ফিল্টার বা অনুসন্ধানকৃত নাম অনুযায়ী কোনো ফাইল খুঁজে পাওয়া যায়নি।' 
-                          : 'সংরক্ষণাগারটিতে এখনও কোনো ফাইল আপলোড করে যুক্ত করা হয়নি।'}
-                      </p>
-                    </div>
-                  </div>
+                  <EmptyState
+                    icon={FileText}
+                    title="কোনো ফাইল পাওয়া যায়নি"
+                    description={
+                      manualDocsSearchQuery || filterFileType !== 'ALL' || filterDateRange !== 'ALL' || filterSize !== 'ALL' 
+                        ? 'আপনার ফিল্টার বা অনুসন্ধানকৃত নাম অনুযায়ী কোনো ফাইল খুঁজে পাওয়া যায়নি।' 
+                        : 'সংরক্ষণাগারটিতে এখনও কোনো ফাইল আপলোড করে যুক্ত করা হয়নি।'
+                    }
+                  />
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredManualDocs.map((doc) => (
@@ -2164,17 +2155,11 @@ export default function DocumentsPage() {
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
                 </div>
               ) : filteredOfficeOrders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
-                    <AlertCircle size={28} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">কোন সূত্র সংরক্ষিত নেই</h3>
-                    <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
-                      {orderSearchQuery ? 'অনুসন্ধানকৃত স্মারক সূত্র অনুযায়ী কোনো তথ্য পাওয়া যায়নি।' : 'ডিউটি শিডিউল পেজে প্রিন্ট প্রিভিউ বা পিডিএফ ডাউনলোড করা হলে, সূত্রটি এখানে স্বয়ংক্রিয়ভাবে পাশে "প্রিন্টেড" ট্যাগসহ সংরক্ষিত হবে।'}
-                    </p>
-                  </div>
-                </div>
+                <EmptyState
+                  icon={AlertCircle}
+                  title="কোনো সূত্র সংরক্ষিত নেই"
+                  description={orderSearchQuery ? 'অনুসন্ধানকৃত স্মারক সূত্র অনুযায়ী কোনো তথ্য পাওয়া যায়নি।' : 'ডিউটি শিডিউল পেজে প্রিন্ট প্রিভিউ বা পিডিএফ ডাউনলোড করা হলে, সূত্রটি এখানে স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।'}
+                />
               ) : (
                 <div className="space-y-8">
                   {/* Section 1: Pending Billing */}
@@ -2186,9 +2171,12 @@ export default function DocumentsPage() {
                     {pendingBillingOfficeOrders.length > 0 ? (
                       renderOrdersGrid(pendingBillingOfficeOrders)
                     ) : (
-                      <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-450 dark:text-slate-400 italic text-xs">
-                        কোনো বিল অপেক্ষমাণ অফিস আদেশ নেই।
-                      </div>
+                      <EmptyState
+                        icon={AlertCircle}
+                        title="কোনো অপেক্ষমাণ অফিস আদেশ নেই"
+                        description="বর্তমানে কোনো বিল অপেক্ষমাণ অফিস আদেশ পাওয়া যায়নি।"
+                        className="py-8"
+                      />
                     )}
                   </div>
 
@@ -2201,9 +2189,12 @@ export default function DocumentsPage() {
                     {billedOfficeOrders.length > 0 ? (
                       renderOrdersGrid(billedOfficeOrders)
                     ) : (
-                      <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-450 dark:text-slate-400 italic text-xs">
-                        কোনো বিল প্রস্তুতকৃত অফিস আদেশ নেই।
-                      </div>
+                      <EmptyState
+                        icon={AlertCircle}
+                        title="কোনো প্রস্তুতকৃত অফিস আদেশ নেই"
+                        description="বর্তমানে কোনো বিল প্রস্তুতকৃত অফিস আদেশ পাওয়া যায়নি।"
+                        className="py-8"
+                      />
                     )}
                   </div>
                 </div>
@@ -2297,17 +2288,11 @@ export default function DocumentsPage() {
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
                 </div>
               ) : filteredBillMemos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
-                    <AlertCircle size={28} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">কোন বিল স্মারক সংরক্ষিত নেই</h3>
-                    <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
-                      {orderSearchQuery ? 'অনুসন্ধানকৃত স্মারক সূত্র অনুযায়ী কোনো তথ্য পাওয়া যায়নি।' : 'ডিউটি বিল বিবরণী পেজে প্রিন্ট প্রিভিউ বা পিডিএফ ডাউনলোড করা হলে, বিবরণীটি এখানে স্বয়ংক্রিয়ভাবে পাশে "প্রিন্টেড" ট্যাগসহ সংরক্ষিত হবে।'}
-                    </p>
-                  </div>
-                </div>
+                <EmptyState
+                  icon={Receipt}
+                  title="কোনো বিল স্মারক সংরক্ষিত নেই"
+                  description={orderSearchQuery ? 'অনুসন্ধানকৃত স্মারক সূত্র অনুযায়ী কোনো তথ্য পাওয়া যায়নি।' : 'ডিউটি বিল বিবরণী পেজে প্রিন্ট প্রিভিউ বা পিডিএফ ডাউনলোড করা হলে, বিবরণীটি এখানে স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।'}
+                />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredBillMemos.map((order) => (

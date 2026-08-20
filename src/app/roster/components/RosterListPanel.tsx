@@ -22,6 +22,7 @@ import {
   getBanglaMonthYearLabel 
 } from '../types';
 import { toBanglaDigits } from '@/lib/bengali-converter';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface RosterListPanelProps {
   currentUser: User | null;
@@ -668,13 +669,11 @@ export default function RosterListPanel({
         {(() => {
           if (pendingDuties.length === 0 && filteredOfficeOrders.length === 0) {
             return (
-              <div className="py-16 text-center flex flex-col items-center justify-center max-w-md mx-auto">
-                <div className="p-4 bg-slate-50 text-slate-400 rounded-full mb-4 border border-slate-100">
-                  <Calendar size={32} />
-                </div>
-                <h4 className="text-base font-semibold text-slate-800 mb-1">কোনো রেকর্ড পাওয়া যায়নি</h4>
-                <p className="text-sm text-slate-400">এই সেল, মাস বা ক্যাটাগরির অধীনে কোনো অপেক্ষমাণ ডিউটি বা জেনারেটেড অফিস আদেশ নেই।</p>
-              </div>
+              <EmptyState
+                icon={Calendar}
+                title="কোনো রেকর্ড পাওয়া যায়নি"
+                description="এই সেল, মাস বা ক্যাটাগরির অধীনে কোনো অপেক্ষমাণ ডিউটি বা জেনারেটেড অফিস আদেশ নেই।"
+              />
             );
           }
 
@@ -731,9 +730,12 @@ export default function RosterListPanel({
                   {pendingDuties.length > 0 ? (
                     renderDutiesTable(pendingDuties)
                   ) : (
-                    <div className="p-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 italic text-xs bg-slate-50/30 dark:bg-slate-900/10">
-                      কোনো অপেক্ষমাণ ডিউটি পাওয়া যায়নি।
-                    </div>
+                    <EmptyState
+                      icon={Calendar}
+                      title="কোনো অপেক্ষমাণ ডিউটি নেই"
+                      description="বর্তমানে কোনো অপেক্ষমাণ ডিউটি অ্যাসাইনমেন্ট পাওয়া যায়নি।"
+                      className="py-8"
+                    />
                   )}
                 </div>
               ) : (
@@ -745,9 +747,12 @@ export default function RosterListPanel({
                   {filteredOfficeOrders.length > 0 ? (
                     renderOfficeOrdersList(filteredOfficeOrders)
                   ) : (
-                    <div className="p-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 italic text-xs bg-slate-50/30 dark:bg-slate-900/10">
-                      কোনো জেনারেটেড অফিস আদেশ পাওয়া যায়নি।
-                    </div>
+                    <EmptyState
+                      icon={FileSignature}
+                      title="কোনো জেনারেটেড অফিস আদেশ নেই"
+                      description="বর্তমানে কোনো প্রস্তুতকৃত অফিস আদেশ পাওয়া যায়নি।"
+                      className="py-8"
+                    />
                   )}
                 </div>
               )}

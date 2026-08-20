@@ -4,6 +4,7 @@ import logger from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import AuthGuard from '@/components/AuthGuard';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { 
   ClipboardList, 
   Search, 
@@ -288,10 +289,11 @@ export default function AuditPage() {
               <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">অডিট লগ লোড হচ্ছে...</p>
             </div>
           ) : filteredLogs.length === 0 ? (
-            <div className="text-center py-20 bg-slate-50/30 border border-dashed border-slate-200 rounded-xl space-y-3">
-              <Database className="mx-auto text-slate-300" size={40} />
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">কোনো অডিট রেকর্ড পাওয়া যায়নি</p>
-            </div>
+            <EmptyState
+              icon={ClipboardList}
+              title="কোনো অডিট রেকর্ড পাওয়া যায়নি"
+              description={searchQuery || selectedAction !== 'ALL' || selectedCell !== 'ALL' || startDate || endDate ? 'আপনার নির্বাচিত ফিল্টারের সাথে মিলে এমন কোনো অডিট লগ নেই।' : 'বর্তমানে সিস্টেমে কোনো অডিট লগ বিদ্যমান নেই।'}
+            />
           ) : viewMode === 'table' ? (
             <div className="overflow-x-auto rounded-xl border border-slate-100">
               <table className="w-full text-left border-collapse">

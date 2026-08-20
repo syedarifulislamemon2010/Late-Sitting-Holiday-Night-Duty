@@ -22,6 +22,7 @@ import {
 import MyDutySummaryCard from './components/MyDutySummaryCard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/context/ToastContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -814,7 +815,12 @@ export default function DashboardPage() {
                   <span>সেল ভিত্তিক ডিউটি বিভাজন (Cell Split)</span>
                 </h4>
                 {cellWiseData.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic py-6">কোনো ডিউটি রেকর্ড পাওয়া যায়নি।</p>
+                  <EmptyState
+                    icon={Building2}
+                    title="কোনো সেল রেকর্ড নেই"
+                    description="বর্তমানে এই ক্যাটাগরির কোনো সেল-ভিত্তিক ডিউটি রেকর্ড পাওয়া যায়নি।"
+                    className="py-6"
+                  />
                 ) : (
                   <div className="space-y-3">
                     {cellWiseData.slice(0, 5).map((item, idx) => {
@@ -847,9 +853,12 @@ export default function DashboardPage() {
                 </h4>
                 
                 {monthlyTrend.length === 0 || Math.max(...monthlyTrend.map(t => t.count)) === 0 ? (
-                  <div className="w-full h-40 border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-50/30 dark:bg-slate-950/10 flex items-center justify-center text-slate-400 italic text-xs">
-                    কোনো ড্যাটা পাওয়া যায়নি
-                  </div>
+                  <EmptyState
+                    icon={TrendingUp}
+                    title="কোনো ট্রেন্ড ডাটা নেই"
+                    description="বর্তমানে প্রদর্শনের জন্য কোনো মাসিক ডিউটি ট্রেন্ড পাওয়া যায়নি।"
+                    className="py-6"
+                  />
                 ) : (
                   <div className="w-full h-40 border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-50/30 dark:bg-slate-955/10 p-4 relative">
                     {(() => {

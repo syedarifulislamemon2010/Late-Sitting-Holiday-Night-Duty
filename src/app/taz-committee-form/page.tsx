@@ -7,6 +7,7 @@ import { isNonWorkingDay } from '@/lib/leave-calculator';
 import AuthGuard from '@/components/AuthGuard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/context/ToastContext';
 import { 
   Printer, 
@@ -1045,9 +1046,11 @@ export default function TazCommitteeFormPage() {
               /* Archive / History list on the Left */
               <div className="space-y-4">
                 {archivedForms.length === 0 ? (
-                  <div className="text-center py-12 text-slate-400 italic text-sm">
-                    No TAZ Request Form records found.
-                  </div>
+                  <EmptyState
+                    icon={FileText}
+                    title="কোনো ফর্ম রেকর্ড নেই"
+                    description="বর্তমানে কোনো তাজ কমিটির আবেদন ফর্ম সংরক্ষিত নেই।"
+                  />
                 ) : (
                   <div className="grid grid-cols-1 gap-4">
                     {archivedForms.map((form) => (

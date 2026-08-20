@@ -8,6 +8,7 @@ import InlineEdit from '@/components/InlineEdit';
 import { TableSkeleton, CardSkeleton } from "@/components/SkeletonLoader";
 import { useLanguage } from '@/context/LanguageContext';
 import { toBanglaDigits } from '@/lib/bengali-converter';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 
 import { 
@@ -1527,17 +1528,15 @@ export default function EmployeesPage() {
                 })}
             </div>
           ) : (
-            <div className="glass-card p-12 text-center rounded-2xl max-w-md mx-auto space-y-3">
-              <Users className="mx-auto text-slate-300" size={32} />
-              <h4 className="font-bold text-slate-800 dark:text-slate-100">
-                {cellFilter === 'select' ? 'সেল নির্বাচন করুন' : 'কোনো কর্মকর্তা পাওয়া যায়নি'}
-              </h4>
-              <p className="text-xs text-slate-400">
-                {cellFilter === 'select' 
+            <EmptyState
+              icon={Users}
+              title={cellFilter === 'select' ? 'সেল নির্বাচন করুন' : 'কোনো কর্মকর্তা পাওয়া যায়নি'}
+              description={
+                cellFilter === 'select' 
                   ? 'অনুগ্রহ করে ড্রপডাউন মেনু থেকে কোনো সেল বা অপশন নির্বাচন করুন।' 
-                  : 'খুঁজে পাওয়া ডাটা খালি। অনুগ্রহ করে অন্য নাম লিখুন বা নতুন কর্মকর্তা যোগ করুন।'}
-              </p>
-            </div>
+                  : 'খুঁজে পাওয়া ডাটা খালি। অনুগ্রহ করে অন্য নাম লিখুন বা নতুন কর্মকর্তা যোগ করুন।'
+              }
+            />
           )}
         </div>
       ) : (

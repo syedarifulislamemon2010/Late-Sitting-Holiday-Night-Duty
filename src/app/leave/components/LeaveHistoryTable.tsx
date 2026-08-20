@@ -1,5 +1,6 @@
-import { Printer, Edit2, Trash2 } from 'lucide-react';
+import { Printer, Edit2, Trash2, Calendar } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface Leave {
   id: number;
@@ -42,7 +43,12 @@ export default function LeaveHistoryTable({
       }
     >
       {archivedLeaves.length === 0 ? (
-        <p className="text-xs text-slate-400 font-medium text-center py-6">আর্কাইভে কোনো ছুটির আবেদন নেই।</p>
+        <EmptyState
+          icon={Calendar}
+          title="কোনো ছুটির আবেদন নেই"
+          description="আর্কাইভে বর্তমানে কোনো সংরক্ষিত ছুটির আবেদন পাওয়া যায়নি।"
+          className="py-6"
+        />
       ) : (
         <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
           {archivedLeaves.map((leave) => (

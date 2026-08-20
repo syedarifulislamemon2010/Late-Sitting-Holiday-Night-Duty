@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { toBanglaDigits, getBanglaDate } from '@/lib/bengali-converter';
 import { getCategoryConfig } from '@/lib/category-colors';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface OfficeOrder {
   id: number;
@@ -187,9 +188,11 @@ export default function ReportsTab({
         </div>
         
         {billGroups.length === 0 ? (
-          <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs font-sans">
-            কোনো বিলিং স্লট গ্রুপ পাওয়া যায়নি।
-          </div>
+          <EmptyState
+            icon={Calendar}
+            title="কোনো বিলিং স্লট গ্রুপ পাওয়া যায়নি"
+            description="বর্তমানে কোনো বিলিং স্লট বা তারিখ-ভিত্তিক গ্রুপ বিদ্যমান নেই।"
+          />
         ) : (
           <div className="space-y-4">
             {billGroups.map((group) => {
@@ -459,17 +462,11 @@ export default function ReportsTab({
         </div>
 
         {reportData.totalBillsCount === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 glass-card rounded-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
-              <AlertCircle size={28} />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 font-sans">নির্বাচিত তারিখে কোনো বিল জেনারেট করা হয়নি</h3>
-              <p className="text-xs text-slate-400 mt-1 max-w-[320px] mx-auto font-sans">
-                {getBanglaDate(reportDate)} তারিখে কোনো অফিস আদেশ স্মারক বিবরণীর বিল জেনারেট করা পাওয়া যায়নি। অনুগ্রহ করে অন্য তারিখ নির্বাচন করুন।
-              </p>
-            </div>
-          </div>
+          <EmptyState
+            icon={AlertCircle}
+            title="নির্বাচিত তারিখে কোনো বিল জেনারেট করা হয়নি"
+            description={`${getBanglaDate(reportDate)} তারিখে কোনো অফিস আদেশ স্মারক বিবরণীর বিল জেনারেট করা পাওয়া যায়নি। অনুগ্রহ করে অন্য তারিখ নির্বাচন করুন।`}
+          />
         ) : (
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* KPI Cards Grid — Unified with Category Tokens */}

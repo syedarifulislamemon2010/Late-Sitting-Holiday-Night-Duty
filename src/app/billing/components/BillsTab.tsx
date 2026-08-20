@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { getCategoryConfig } from '@/lib/category-colors';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface OfficeOrder {
   id: number;
@@ -286,17 +287,11 @@ export default function BillsTab({
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">লোড হচ্ছে...</p>
         </div>
       ) : filteredBillMemos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
-            <AlertCircle size={28} />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">কোন বিল মেমো সংরক্ষিত নেই</h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
-              নির্বাচিত ফিল্টারের অধীনে কোনো বিল মেমো পাওয়া যায়নি।
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon={AlertCircle}
+          title="কোনো বিল মেমো সংরক্ষিত নেই"
+          description="নির্বাচিত ফিল্টারের অধীনে কোনো বিল মেমো পাওয়া যায়নি।"
+        />
       ) : (
         <div className="space-y-8">
           {/* Section 1: Generated but not printed */}
@@ -308,9 +303,12 @@ export default function BillsTab({
             {pendingPrintBillMemos.length > 0 ? (
               renderBillMemosGrid(pendingPrintBillMemos)
             ) : (
-              <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs">
-                কোনো প্রিন্ট অপেক্ষমাণ বিল মেমো নেই।
-              </div>
+              <EmptyState
+                icon={AlertCircle}
+                title="কোনো অপেক্ষমাণ বিল মেমো নেই"
+                description="বর্তমানে কোনো প্রিন্ট অপেক্ষমাণ বিল মেমো নেই।"
+                className="py-8"
+              />
             )}
           </div>
 
@@ -419,9 +417,12 @@ export default function BillsTab({
                 )}
               </div>
             ) : (
-              <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-slate-400 dark:text-slate-500 italic text-xs">
-                কোনো প্রিন্টেড বিল মেমো নেই।
-              </div>
+              <EmptyState
+                icon={FileSignature}
+                title="কোনো প্রিন্টেড বিল মেমো নেই"
+                description="বর্তমানে কোনো প্রিন্টেড বা প্রস্তুতকৃত বিল মেমো নেই।"
+                className="py-8"
+              />
             )}
           </div>
         </div>

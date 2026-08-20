@@ -12,6 +12,7 @@ import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { 
   Printer, 
   ArrowLeft, 
@@ -1006,9 +1007,11 @@ export default function HardwareRequisitionPage() {
                   {loading ? (
                     <div className="text-center py-12 text-slate-500 text-xs font-bold animate-pulse">ডাটা লোড হচ্ছে...</div>
                   ) : requisitions.length === 0 ? (
-                    <div className="text-center py-12 text-slate-400 text-xs font-bold glass-card rounded-2xl p-5 border border-dashed border-slate-200">
-                      কোনো রিকুইজিশন রেকর্ড পাওয়া যায়নি।
-                    </div>
+                    <EmptyState
+                      icon={FileText}
+                      title="কোনো রিকুইজিশন রেকর্ড পাওয়া যায়নি"
+                      description="বর্তমানে আর্কাইভে কোনো হার্ডওয়্যার রিকুইজিশন রেকর্ড সংরক্ষিত নেই।"
+                    />
                   ) : (
                     requisitions.map(req => (
                       <div key={req.id} className="glass-card p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all space-y-3 font-sans text-xs">

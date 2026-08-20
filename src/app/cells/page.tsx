@@ -4,6 +4,7 @@ import logger from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import AuthGuard from '@/components/AuthGuard';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { 
   Building2, 
   Plus, 
@@ -180,11 +181,16 @@ export default function CellsPage() {
             সেল তালিকা লোড হচ্ছে...
           </div>
         ) : cells.length === 0 ? (
-          <div className="py-20 text-center glass-card rounded-3xl border border-dashed border-slate-200 p-8 space-y-2">
-            <Building2 className="mx-auto text-slate-300" size={48} />
-            <p className="text-sm font-bold text-slate-600">কোনো সেল পাওয়া যায়নি।</p>
-            <p className="text-xs text-slate-400">নতুন সেল তৈরি করতে উপরের বাটন চাপুন।</p>
-          </div>
+          <EmptyState
+            icon={Building2}
+            title="কোনো সেল পাওয়া যায়নি"
+            description="বর্তমানে কোনো সেল ইউনিট তৈরি করা নেই। নতুন সেল তৈরি করতে উপরের বাটনে চাপুন।"
+            action={{
+              label: 'নতুন সেল যুক্ত করুন',
+              onClick: handleOpenAddModal,
+              icon: Plus
+            }}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cells.map((cell) => (

@@ -28,6 +28,7 @@ import {
   Info
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface AnalyticsChartsProps {
   allowanceTrend: { month: string; totalAllowance: number }[];
@@ -125,10 +126,12 @@ export default function AnalyticsCharts({
         
         <div className="h-72 w-full">
           {formattedTrendData.length === 0 ? (
-            <div className="h-full w-full flex flex-col items-center justify-center text-slate-400 text-xs gap-2">
-              <TrendingUp className="text-slate-300 dark:text-slate-600" size={28} />
-              <span>কোনো ভাতার তথ্য পাওয়া যায়নি।</span>
-            </div>
+            <EmptyState
+              icon={TrendingUp}
+              title="কোনো ভাতার তথ্য নেই"
+              description="নির্বাচিত সময় ও ফিল্টারে কোনো ভাতার রেকর্ড পাওয়া যায়নি।"
+              className="h-full py-6"
+            />
           ) : (
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart data={formattedTrendData} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
@@ -175,10 +178,12 @@ export default function AnalyticsCharts({
 
           <div className="h-72 w-full">
             {topPerformers.length === 0 ? (
-              <div className="h-full w-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-400 text-xs gap-2">
-                <Award className="text-slate-300 dark:text-slate-600" size={28} />
-                <span>কোনো পারফর্মার ডাটা পাওয়া যায়নি।</span>
-              </div>
+              <EmptyState
+                icon={Award}
+                title="কোনো পারফর্মার ডাটা নেই"
+                description="নির্বাচিত সময়সীমার মধ্যে কোনো পারফর্মার রেকর্ড পাওয়া যায়নি।"
+                className="h-full py-6"
+              />
             ) : (
               <div className="h-full flex flex-col justify-between">
                 <div className="flex-1 min-h-[220px]">
@@ -254,10 +259,12 @@ export default function AnalyticsCharts({
 
           <div className="h-72 w-full flex flex-col md:flex-row items-center justify-between gap-4">
             {cellBudget.length === 0 ? (
-              <div className="h-full w-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-400 text-xs gap-2">
-                <PieIcon className="text-slate-300 dark:text-slate-600" size={28} />
-                <span>কোনো বাজেট তথ্য পাওয়া যায়নি।</span>
-              </div>
+              <EmptyState
+                icon={PieIcon}
+                title="কোনো বাজেট তথ্য নেই"
+                description="নির্বাচিত সময়ে কোনো সেল-ভিত্তিক বাজেট বণ্টন পাওয়া যায়নি।"
+                className="h-full py-6"
+              />
             ) : (
               <>
                 <div className="h-56 w-full md:w-1/2">
@@ -342,10 +349,12 @@ export default function AnalyticsCharts({
 
         <div className="h-72 w-full">
           {formattedLeaveData.every(item => Object.keys(item).length <= 1) ? (
-            <div className="h-full w-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-400 text-xs gap-2">
-              <CalendarDays className="text-slate-300 dark:text-slate-600" size={28} />
-              <span>কোনো ছুটির ডাটা পাওয়া যায়নি।</span>
-            </div>
+            <EmptyState
+              icon={CalendarDays}
+              title="কোনো ছুটির ডাটা নেই"
+              description="নির্বাচিত সময়ে কোনো ছুটির আবেদনের ট্রেন্ড পাওয়া যায়নি।"
+              className="h-full py-6"
+            />
           ) : (
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart data={formattedLeaveData} margin={{ top: 15, right: 15, left: -15, bottom: 5 }}>
@@ -396,10 +405,12 @@ export default function AnalyticsCharts({
 
         <div className="h-72 w-full">
           {billReleases.length === 0 ? (
-            <div className="h-full w-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-400 text-xs gap-2">
-              <BarChart3 className="text-slate-300 dark:text-slate-600" size={28} />
-              <span>কোনো বিল রিলিজের তথ্য পাওয়া যায়নি।</span>
-            </div>
+            <EmptyState
+              icon={BarChart3}
+              title="কোনো বিল রিলিজের তথ্য নেই"
+              description="অফিস আদেশ অনুযায়ী কোনো বিল রিলিজের ডাটা পাওয়া যায়নি।"
+              className="h-full py-6"
+            />
           ) : billReleases.length <= SPARSE_DATA_THRESHOLD ? (
             /* Smart Centered Stat Display for Sparse Data (<= 3 items) */
             <div className="h-full flex flex-col items-center justify-center space-y-4 py-4">
@@ -471,10 +482,12 @@ export default function AnalyticsCharts({
 
           <div className="overflow-y-auto max-h-64 pr-1 no-scrollbar space-y-3">
             {employeeBillCounts.length === 0 ? (
-              <div className="h-44 flex flex-col items-center justify-center text-slate-400 dark:text-slate-400 text-xs gap-2">
-                <Users className="text-slate-300 dark:text-slate-600" size={28} />
-                <span>কোনো কর্মকর্তার বিলের রেকর্ড নেই।</span>
-              </div>
+              <EmptyState
+                icon={Users}
+                title="কোনো কর্মকর্তার বিলের রেকর্ড নেই"
+                description="কর্মকর্তা-ভিত্তিক কোনো বিল রিলিজ রেকর্ড পাওয়া যায়নি।"
+                className="h-44 py-6"
+              />
             ) : (
               employeeBillCounts.map((emp, idx) => {
                 const percentage = Math.round((emp.count / maxEmployeeBillCount) * 100);
