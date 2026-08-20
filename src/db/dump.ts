@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import logger from '../lib/logger';
 import * as schema from './schema';
 
 // Simple .env parser to read DATABASE_URL natively without dependency
@@ -15,11 +16,11 @@ try {
     }
   }
 } catch (e) {
-  console.warn('Failed to parse .env file natively:', e);
+  logger.warn('Failed to parse .env file natively:', e);
 }
 
 async function main() {
-  console.log('Fetching all tables from PostgreSQL Neon Cloud via Drizzle...');
+  logger.info('Fetching all tables from PostgreSQL Neon Cloud via Drizzle...');
   const { db } = await import('../lib/db');
   
   const cells = await db.select().from(schema.cells);
@@ -61,12 +62,12 @@ async function main() {
   };
 
   fs.writeFileSync('postgres_dump.json', JSON.stringify(dump, null, 2));
-  console.log('PostgreSQL Neon data successfully dumped to postgres_dump.json via Drizzle!');
+  logger.info('PostgreSQL Neon data successfully dumped to postgres_dump.json via Drizzle!');
   process.exit(0);
 }
 
 main()
   .catch(e => {
-    console.error('Migration Dump failed:', e);
+    logger.error('Migration Dump failed:', e);
     process.exit(1);
   });

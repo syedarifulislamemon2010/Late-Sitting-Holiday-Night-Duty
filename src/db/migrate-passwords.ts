@@ -2,6 +2,7 @@ import { db } from '@/lib/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { isBcryptHash, hashPassword } from '@/lib/password';
+import logger from '@/lib/logger';
 
 /**
  * One-time password migration script:
@@ -9,11 +10,11 @@ import { isBcryptHash, hashPassword } from '@/lib/password';
  * while preserving every user's existing password value unchanged.
  */
 async function migratePasswords() {
-  console.log('🔒 [Password Migration]: Starting password hashing migration...');
+  logger.info('🔒 [Password Migration]: Starting password hashing migration...');
 
   try {
     const allUsers = await db.select().from(users);
-    console.log(`📊 [Password Migration]: Found total ${allUsers.length} user records.`);
+    logger.info(`📊 [Password Migration]: Found total ${allUsers.length} user records.`);
 
     let alreadyHashedCount = 0;
     let migratedCount = 0;
@@ -21,7 +22,7 @@ async function migratePasswords() {
 
     for (const user of allUsers) {
       if (!user.password || user.password.trim() === '') {
-        console.warn(`⚠️ [Skip]: User @${user.username} (ID: ${user.id}) has empty password.`);
+        logger.warn(`⚠️ [Skip]: User @${user.username} (ID: ${user.id}) has empty password.`);
         skippedCount++;
         continue;
       }
@@ -39,21 +40,21 @@ async function migratePasswords() {
         .set({ password: hashedPassword })
         .where(eq(users.id, user.id));
 
-      console.log(`✅ [Migrated]: User @${user.username} (ID: ${user.id}) password converted to bcrypt hash.`);
+      logger.info(`✅ [Migrated]: User @${user.username} (ID: ${user.id}) password converted to bcrypt hash.`);
       migratedCount++;
     }
 
-    console.log('\n=========================================');
-    console.log('🎉 [Password Migration Summary]');
-    console.log(`- Total Users Checked: ${allUsers.length}`);
-    console.log(`- Already Bcrypt Hashed: ${alreadyHashedCount}`);
-    console.log(`- Successfully Migrated: ${migratedCount}`);
-    console.log(`- Skipped (empty): ${skippedCount}`);
-    console.log('=========================================\n');
+    logger.info('\n=========================================');
+    logger.info('🎉 [Password Migration Summary]');
+    logger.info(`- Total Users Checked: ${allUsers.length}`);
+    logger.info(`- Already Bcrypt Hashed: ${alreadyHashedCount}`);
+    logger.info(`- Successfully Migrated: ${migratedCount}`);
+    logger.info(`- Skipped (empty): ${skippedCount}`);
+    logger.info('=========================================\n');
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ [Password Migration Error]: Failed to migrate passwords:', error);
+    logger.error('❌ [Password Migration Error]: Failed to migrate passwords:', error);
     process.exit(1);
   }
 }
