@@ -37,12 +37,14 @@ import {
 import DutyAssignmentPanel from './components/DutyAssignmentPanel';
 import RosterListPanel from './components/RosterListPanel';
 import OfficeOrderPrintPreview from './components/OfficeOrderPrintPreview';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export default function RosterPage() {
   const { currentUser } = useProfile();
   const { activeLayout, setLayoutPriority } = useLayout();
   const isAssignmentPrimary = activeLayout === LayoutPriority.ASSIGNMENT;
   const [orderGenerated, setOrderGenerated] = useState(false);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
   const [isArchived, setIsArchived] = useState(false);
   const [isEditingArchive, setIsEditingArchive] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -1537,11 +1539,12 @@ export default function RosterPage() {
     }
   };
 
-  const handleBulkDeleteDuties = async () => {
+  const handleBulkDeleteDuties = () => {
     if (selectedDutyIds.length === 0) return;
-    if (!window.confirm(`আপনি কি নিশ্চিত যে নির্বাচিত ${toBanglaDigits(selectedDutyIds.length)} টি ডিউটি মুছে ফেলতে চান?`)) {
-      return;
-    }
+    setIsBulkDeleteConfirmOpen(true);
+  };
+
+  const executeBulkDeleteDuties = async () => {
     try {
       setSubmitting(true);
       await Promise.all(selectedDutyIds.map(id => fetch(`/api/duties/${id}`, { method: 'DELETE' })));
@@ -1550,9 +1553,10 @@ export default function RosterPage() {
       await loadDuties();
     } catch (err) {
       logger.error(err);
-      alert('ডিউটি মুছে ফেলতে সমস্যা হয়েছে।');
+      showToast('ডিউটি মুছে ফেলতে সমস্যা হয়েছে।', 'error');
     } finally {
       setSubmitting(false);
+      setIsBulkDeleteConfirmOpen(false);
     }
   };
 
@@ -2384,6 +2388,18 @@ export default function RosterPage() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={isBulkDeleteConfirmOpen}
+        title="ডিউটি রোস্টার মুছে ফেলা"
+        description={`আপনি কি নিশ্চিত যে নির্বাচিত ${toBanglaDigits(selectedDutyIds.length)} টি ডিউটি মুছে ফেলতে চান?`}
+        confirmText="হ্যাঁ, মুছে ফেলুন"
+        cancelText="বাতিল"
+        variant="danger"
+        isLoading={submitting}
+        onConfirm={executeBulkDeleteDuties}
+        onCancel={() => setIsBulkDeleteConfirmOpen(false)}
+      />
     </div>
   );
 }

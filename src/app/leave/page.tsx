@@ -16,6 +16,7 @@ import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { BANGLADESH_AREAS } from './bangladesh_areas';
 import LeaveFormHeader from './components/LeaveFormHeader';
 import LeaveSummaryCard from './components/LeaveSummaryCard';
@@ -306,6 +307,15 @@ export default function LeaveGeneratorPage() {
   const [editingLeaveId, setEditingLeaveId] = useState<number | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    leaveId: number | null;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    leaveId: null,
+    isLoading: false
+  });
 
   // Fetch all archived leaves for the current officer
   const fetchArchivedLeaves = async (targetBankId?: string) => {
@@ -545,12 +555,20 @@ export default function LeaveGeneratorPage() {
   };
 
   // Delete archived application
-  const handleDeleteLeave = async (leaveId: number) => {
-    if (!window.confirm('প্রিন্টেড বা প্রিভিউড এপ্লিকেশন ডিলেট না করাই বেটার। আপনি কি সত্যিই এটা ডিলেট করতে চান?')) {
-      return;
-    }
+  const handleDeleteLeave = (leaveId: number) => {
+    setDeleteConfirmModal({
+      isOpen: true,
+      leaveId,
+      isLoading: false
+    });
+  };
+
+  const executeDeleteLeave = async () => {
+    const leaveId = deleteConfirmModal.leaveId;
+    if (!leaveId) return;
 
     try {
+      setDeleteConfirmModal(prev => ({ ...prev, isLoading: true }));
       const res = await fetch(`/api/leaves/${leaveId}`, {
         method: 'DELETE'
       });
@@ -578,6 +596,8 @@ export default function LeaveGeneratorPage() {
       logger.error('Error deleting leave application:', err);
       setErrorMsg('একটি নেটওয়ার্ক সমস্যা হয়েছে।');
       setTimeout(() => setErrorMsg(''), 4000);
+    } finally {
+      setDeleteConfirmModal({ isOpen: false, leaveId: null, isLoading: false });
     }
   };
 
@@ -2246,6 +2266,17 @@ export default function LeaveGeneratorPage() {
           }
         }
       `}</style>
+      <ConfirmDialog
+        isOpen={deleteConfirmModal.isOpen}
+        title="ছুটির আবেদন মুছে ফেলা"
+        description="প্রিন্টেড বা প্রিভিউড এপ্লিকেশন ডিলেট না করাই বেটার। আপনি কি সত্যিই এটা ডিলেট করতে চান?"
+        confirmText="হ্যাঁ, মুছে ফেলুন"
+        cancelText="বাতিল"
+        variant="danger"
+        isLoading={deleteConfirmModal.isLoading}
+        onConfirm={executeDeleteLeave}
+        onCancel={() => setDeleteConfirmModal({ isOpen: false, leaveId: null, isLoading: false })}
+      />
     </AuthGuard>
   );
 }
