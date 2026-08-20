@@ -1,13 +1,12 @@
-'use client';
-
 import React from 'react';
 import { AlertCircle, Eye, Trash2 } from 'lucide-react';
+import { DutyAssignment } from '../types';
 
 interface RosterConflictModalProps {
   conflictModalData: {
     message: string;
-    details?: any;
-    assignments: any[];
+    details?: unknown;
+    assignments: DutyAssignment[];
   } | null;
   onClose: () => void;
   onRedirectToConflictingDuties: () => void;

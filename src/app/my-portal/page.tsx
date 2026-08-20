@@ -123,9 +123,9 @@ export default function MyPortalPage() {
       if (data.employee?.mobile) {
         setMobileNo(data.employee.mobile);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error(err);
-      setError(err.message || 'সার্ভার থেকে তথ্য সংগ্রহ করা যাচ্ছে না।');
+      setError(err instanceof Error ? err.message : 'সার্ভার থেকে তথ্য সংগ্রহ করা যাচ্ছে না।');
     } finally {
       setLoading(false);
     }
@@ -196,8 +196,8 @@ export default function MyPortalPage() {
         setShowApplyModal(false);
         setFormSuccess('');
       }, 2000);
-    } catch (err: any) {
-      setFormError(err.message || 'সার্ভার ত্রুটি!');
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'সার্ভার ত্রুটি!');
     } finally {
       setFormSubmitLoading(false);
     }
@@ -561,7 +561,7 @@ export default function MyPortalPage() {
                       <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">ছুটির ধরণ</label>
                       <select
                         value={leaveType}
-                        onChange={(e) => setLeaveType(e.target.value as any)}
+                        onChange={(e) => setLeaveType(e.target.value as 'CASUAL' | 'STATION_LEAVE' | 'POST_FACTO')}
                         className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-[#0b5e9e] transition-all"
                         required
                       >

@@ -17,13 +17,32 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
+import { LucideIcon } from 'lucide-react';
+
 interface SearchResultItem {
   id: string;
   title: string;
   subtitle: string;
   category: string;
   href: string;
-  icon: any;
+  icon: LucideIcon | React.ComponentType<{ size?: number; className?: string }>;
+}
+
+interface EmpSearchItem {
+  id: number;
+  name: string;
+  nameEn?: string | null;
+  designation: string;
+  designationEn?: string | null;
+  bankId?: string | null;
+  mobile?: string | null;
+  fileNo?: string | null;
+}
+
+interface CellSearchItem {
+  id: number;
+  name: string;
+  description?: string | null;
 }
 
 export default function CommandPalette() {
@@ -86,8 +105,8 @@ export default function CommandPalette() {
         const qLower = query.toLowerCase();
 
         // Filter employees (Dual Bangla & English search support)
-        const empMatches: SearchResultItem[] = (Array.isArray(empRes) ? empRes : [])
-          .filter((emp: any) => 
+        const empMatches: SearchResultItem[] = (Array.isArray(empRes) ? (empRes as EmpSearchItem[]) : [])
+          .filter((emp: EmpSearchItem) => 
             emp.name?.toLowerCase().includes(qLower) || 
             emp.nameEn?.toLowerCase().includes(qLower) || 
             emp.bankId?.toLowerCase().includes(qLower) ||
@@ -96,7 +115,7 @@ export default function CommandPalette() {
             emp.fileNo?.toLowerCase().includes(qLower)
           )
           .slice(0, 5)
-          .map((emp: any) => ({
+          .map((emp: EmpSearchItem) => ({
             id: `emp-${emp.id}`,
             title: isEn && emp.nameEn ? `${emp.nameEn} (${emp.designationEn || emp.designation})` : `${emp.name} (${emp.designation})`,
             subtitle: `${isEn ? 'Bank ID:' : 'ব্যাংক আইডি:'} ${emp.bankId || 'N/A'} • ${isEn ? 'Mobile:' : 'মোবাইল:'} ${emp.mobile || 'N/A'}`,
@@ -106,10 +125,10 @@ export default function CommandPalette() {
           }));
 
         // Filter cells
-        const cellMatches: SearchResultItem[] = (Array.isArray(cellRes) ? cellRes : [])
-          .filter((c: any) => c.name?.toLowerCase().includes(qLower))
+        const cellMatches: SearchResultItem[] = (Array.isArray(cellRes) ? (cellRes as CellSearchItem[]) : [])
+          .filter((c: CellSearchItem) => c.name?.toLowerCase().includes(qLower))
           .slice(0, 3)
-          .map((c: any) => ({
+          .map((c: CellSearchItem) => ({
             id: `cell-${c.id}`,
             title: `${isEn ? 'Cell:' : 'সেল:'} ${c.name}`,
             subtitle: c.description || (isEn ? 'Online Banking Department' : 'অনলাইন ব্যাংকিং ডিপার্টমেন্ট'),

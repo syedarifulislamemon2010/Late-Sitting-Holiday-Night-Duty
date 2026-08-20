@@ -30,7 +30,7 @@ interface HardwareRequisitionFormProps {
   isSubmitting: boolean;
   onAddItem: () => void;
   onRemoveItem: (id: string) => void;
-  onUpdateItem: (id: string, field: keyof HardwareItem, val: any) => void;
+  onUpdateItem: <K extends keyof HardwareItem>(id: string, field: K, val: HardwareItem[K]) => void;
   onSubmit: (e: React.FormEvent) => void;
   onReset: () => void;
 }

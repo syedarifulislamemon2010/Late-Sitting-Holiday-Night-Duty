@@ -6,7 +6,7 @@ import { duties, employees, cells, leaveApplications, officeOrders } from '@/db/
 import { eq, and, or, sql, like, inArray, asc } from 'drizzle-orm';
 
 // In-memory cache for ultra-fast analytics queries (TTL: 30 seconds)
-const analyticsCache = new Map<string, { timestamp: number; data: any }>();
+const analyticsCache = new Map<string, { timestamp: number; data: unknown }>();
 const CACHE_TTL_MS = 30 * 1000;
 
 export async function GET(request: Request) {
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       return NextResponse.json(cached.data);
     }
 
-    const allowedCellNames = user.cells?.map((c: any) => c.name) || [];
+    const allowedCellNames = user.cells?.map((c: { name: string }) => c.name) || [];
 
     // Parallel fetch base tables in 1 concurrent round-trip
     const [
@@ -125,7 +125,15 @@ export async function GET(request: Request) {
     const employeeBillCountMap = new Map<string, number>();
 
     filteredOrders.forEach(order => {
-      let dutiesList: any[] = [];
+      interface OrderDutyRecord {
+        employeeName?: string;
+        name?: string;
+        designation?: string;
+        dates?: string[];
+        date?: string;
+        days?: number;
+      }
+      let dutiesList: OrderDutyRecord[] = [];
       if (order.dutiesJson) {
         try {
           dutiesList = JSON.parse(order.dutiesJson);
@@ -133,7 +141,7 @@ export async function GET(request: Request) {
       }
 
       let orderDays = 0;
-      dutiesList.forEach((d: any) => {
+      dutiesList.forEach((d: OrderDutyRecord) => {
         const empName = (d.employeeName || d.name || order.employeeName || '').trim();
         const desig = d.designation || 'কর্মকর্তা';
         const dates: string[] = Array.isArray(d.dates) ? d.dates : (d.date ? [d.date] : []);

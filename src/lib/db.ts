@@ -39,3 +39,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Export the Drizzle client initialized with schema relationships
 export const db = drizzle(client, { schema });
+
+export type DbClient = typeof db;
+export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DbExecutor = DbClient | DbTransaction;

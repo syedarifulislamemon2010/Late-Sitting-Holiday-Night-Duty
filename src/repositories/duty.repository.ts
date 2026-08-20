@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { db, DbExecutor } from '@/lib/db';
 import { duties, employees, cells } from '@/db/schema';
 import { eq, and, ne, inArray, desc, asc, SQL } from 'drizzle-orm';
 
@@ -65,7 +65,7 @@ export class DutyRepository {
     return list;
   }
 
-  static async deleteDutiesByOrderRef(orderRef: string, tx?: any) {
+  static async deleteDutiesByOrderRef(orderRef: string, tx?: DbExecutor) {
     const client = tx || db;
     return client.delete(duties).where(eq(duties.orderRef, orderRef)).returning();
   }
@@ -79,7 +79,7 @@ export class DutyRepository {
     allowance2: number;
     totalBill: number;
     orderRef?: string | null;
-  }[], tx?: any) {
+  }[], tx?: DbExecutor) {
     const client = tx || db;
     return client.insert(duties).values(dutiesData).returning();
   }
@@ -93,13 +93,13 @@ export class DutyRepository {
     allowance2?: number;
     totalBill?: number;
     orderRef?: string | null;
-  }, tx?: any) {
+  }, tx?: DbExecutor) {
     const client = tx || db;
     const list = await client.update(duties).set(data).where(eq(duties.id, id)).returning();
     return list[0];
   }
 
-  static async delete(id: number, tx?: any) {
+  static async delete(id: number, tx?: DbExecutor) {
     const client = tx || db;
     const list = await client.delete(duties).where(eq(duties.id, id)).returning();
     return list[0];

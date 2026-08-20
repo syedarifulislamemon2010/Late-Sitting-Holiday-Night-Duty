@@ -4,7 +4,7 @@ import crypto from 'crypto';
 // Since backup.service.ts doesn't exist but the route.ts contains the logic,
 // we'll test the core logic described in the prompt: manifest structure, checksum calculation, and restore validation logic.
 describe('backup service logic', () => {
-  const generateChecksum = (data: any) => {
+  const generateChecksum = (data: unknown) => {
     const dataString = JSON.stringify(data);
     return crypto.createHash('sha256').update(dataString).digest('hex');
   };

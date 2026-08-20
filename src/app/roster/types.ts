@@ -35,17 +35,29 @@ export interface Holiday {
 export type User = UserProfile;
 
 export interface OrderDuty {
-  employeeId?: string | null;
+  employeeId?: string | number | null;
   employeeName: string;
   designation: string;
-  days: number;
-  apyaonRate: number;
-  totalApyaon: number;
-  totalTransport: number;
-  grandTotal: number;
-  datesFormatted: string;
+  name?: string;
+  cellName?: string;
+  bankId?: string | null;
+  fileNo?: string | null;
+  days?: number;
+  apyaonRate?: number;
+  totalApyaon?: number;
+  totalTransport?: number;
+  grandTotal?: number;
+  datesFormatted?: string;
   dates?: string[];
-  description?: string;
+  date?: string;
+  description?: string | null;
+  employee?: {
+    id?: number;
+    name?: string;
+    designation?: string;
+    bankId?: string | null;
+    cellName?: string;
+  };
 }
 
 export interface OfficeOrder {
@@ -89,6 +101,29 @@ export interface Duty {
   allowance2: number;
   totalBill: number;
   orderRef?: string | null;
+}
+
+export interface LeaveRecord {
+  id?: number;
+  bankId: string;
+  startDate: string;
+  endDate: string;
+  leaveType: string;
+  reason?: string;
+  status?: string;
+}
+
+export interface GroupedDuty {
+  employee: Employee;
+  dates: string[];
+  description: string;
+}
+
+export interface DutyAssignment {
+  employeeId: number;
+  type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+  date: string;
+  description?: string | null;
 }
 
 export const getNormalizedRef = (ref: string | null | undefined): string => {

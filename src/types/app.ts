@@ -96,3 +96,9 @@ export interface EmployeeBreakdownRecord {
   deductions?: number;
   netPayable: number;
 }
+
+declare global {
+  interface Window {
+    __unsavedChanges?: boolean;
+  }
+}

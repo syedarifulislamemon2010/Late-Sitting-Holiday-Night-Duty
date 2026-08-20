@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { LUNCH_BILL_RATE, REVENUE_STAMP } from '@/constants/billing';
+import { UserProfile } from '@/context/ProfileContext';
 import { 
   Cell, 
   Employee, 
@@ -12,7 +13,7 @@ import {
   DEFAULT_2026_HOLIDAYS 
 } from '../types';
 
-export function useLunchBillData(currentUser: any) {
+export function useLunchBillData(currentUser: UserProfile | null | undefined) {
   const [activeCellId, setActiveCellId] = useState<number | null>(null);
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);

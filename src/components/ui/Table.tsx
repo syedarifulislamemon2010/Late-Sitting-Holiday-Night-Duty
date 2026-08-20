@@ -94,8 +94,8 @@ export function Table<T>({
   };
 
   // Helper to resolve nested object values (e.g. 'employee.name')
-  const getNestedValue = (obj: any, path: string): any => {
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+  const getNestedValue = (obj: unknown, path: string): unknown => {
+    return path.split('.').reduce<unknown>((acc, part) => (acc && typeof acc === 'object' && part in acc ? (acc as Record<string, unknown>)[part] : undefined), obj);
   };
 
   // 1. Filter and search data
@@ -116,7 +116,7 @@ export function Table<T>({
     // Search query processing
     if (debouncedSearch.trim() !== '') {
       const query = debouncedSearch.toLowerCase().trim();
-      result = result.filter((item: any) => {
+      result = result.filter((item: T) => {
         if (searchKeys.length > 0) {
           return searchKeys.some((key) => {
             const val = typeof key === 'string' ? getNestedValue(item, key) : item[key as keyof T];
@@ -124,7 +124,7 @@ export function Table<T>({
           });
         }
         // Fallback: check all string properties
-        return Object.values(item).some(
+        return Object.values(item as Record<string, unknown>).some(
           (val) => val !== null && val !== undefined && String(val).toLowerCase().includes(query)
         );
       });
@@ -132,9 +132,9 @@ export function Table<T>({
 
     // Sort processing
     if (sortColumn) {
-      result.sort((a: any, b: any) => {
-        let valA = getNestedValue(a, sortColumn) ?? '';
-        let valB = getNestedValue(b, sortColumn) ?? '';
+      result.sort((a: T, b: T) => {
+        let valA = (getNestedValue(a, sortColumn) ?? '') as string | number;
+        let valB = (getNestedValue(b, sortColumn) ?? '') as string | number;
 
         if (typeof valA === 'string') valA = valA.toLowerCase();
         if (typeof valB === 'string') valB = valB.toLowerCase();
@@ -394,7 +394,7 @@ export function Table<T>({
                           } text-slate-700 dark:text-slate-300 font-medium`}
                           style={{ letterSpacing: 'normal' }}
                         >
-                          {col.render ? col.render(item) : (getNestedValue(item, col.key) ?? '')}
+                          {col.render ? col.render(item) : String(getNestedValue(item, col.key) ?? '')}
                         </td>
                       ))}
                     </tr>

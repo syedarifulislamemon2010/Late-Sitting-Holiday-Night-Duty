@@ -4,9 +4,10 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { UserCheck, Shield, Key, Save, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { UserProfile } from '@/context/ProfileContext';
 
 interface UserProfileTabProps {
-  currentUser: any;
+  currentUser: UserProfile | null | undefined;
   profileName: string;
   setProfileName: (v: string) => void;
   profileMobile: string;

@@ -157,7 +157,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'forbidden', message: 'এই ফাইলটি পরিবর্তন করার অনুমতি আপনার নেই।' }, { status: 403 });
     }
 
-    const updateFields: any = {};
+    const updateFields: Partial<typeof manualDocuments.$inferInsert> = {};
     let details = '';
 
     if (name !== undefined) {

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { UserProfile } from '@/context/ProfileContext';
 import { Cell } from '../types';
 
 interface UseRosterFiltersProps {
-  currentUser: any;
+  currentUser: UserProfile | null | undefined;
   cells: Cell[];
   resetCustomOrderFields?: () => void;
 }

@@ -5,11 +5,17 @@ import { getShortDesignation } from '@/lib/print-helpers';
 import { 
   OfficeOrder, 
   DutyListEntry, 
+  Duty,
+  Employee,
+  Executive,
+  Cell,
+  DutySummary,
   getPrintCategoryRates 
 } from '../types';
+import { useBillingData } from './useBillingData';
 
 interface UseBillGenerationProps {
-  billing: any;
+  billing: ReturnType<typeof useBillingData>;
 }
 
 export function useBillGeneration({ billing }: UseBillGenerationProps) {
@@ -48,7 +54,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
   // Set default executive
   useEffect(() => {
     if (billing.executives.length > 0 && !selectedExecutiveId) {
-      const defaultExec = billing.executives.find((ex: any) => ex.name.includes('মোহাম্মদ সোহরাব হোসেন') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || billing.executives[0];
+      const defaultExec = billing.executives.find((ex: Executive) => ex.name.includes('মোহাম্মদ সোহরাব হোসেন') || ex.designation.includes('উপ-মহাব্যবস্থাপক')) || billing.executives[0];
       if (defaultExec) {
         setSelectedExecutiveId(defaultExec.id.toString());
         setSigningOfficer(defaultExec.name);
@@ -280,13 +286,13 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
               }
               
               if (matchedOrder.cellName) {
-                const matchedCell = localCells.find((c: any) => c.name === matchedOrder.cellName);
+                const matchedCell = localCells.find((c: Cell) => c.name === matchedOrder.cellName);
                 if (matchedCell) {
                   billing.setSelectedCell(matchedCell.id.toString());
                 }
               }
               
-              let dutiesList: DutyListEntry[] = (matchedOrder.duties as any) || [];
+              let dutiesList: DutyListEntry[] = (matchedOrder.duties as DutyListEntry[]) || [];
               if (dutiesList.length === 0 && matchedOrder.dutiesJson) {
                 try {
                   dutiesList = JSON.parse(matchedOrder.dutiesJson);
@@ -297,7 +303,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
               
               let yearMonth = '';
               if (dutiesList.length > 0) {
-                const firstDuty = dutiesList[0] as any;
+                const firstDuty = dutiesList[0];
                 const firstDate = firstDuty?.date || (Array.isArray(firstDuty?.dates) && firstDuty.dates[0]) || '';
                 if (firstDate) {
                   const parts = firstDate.split('-');
@@ -325,7 +331,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
   const handlePrintButtonClick = () => {
     if (billing.selectedCategory === 'all') {
       const categoriesWithDuties = new Set<'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT'>();
-      billing.duties.forEach((d: any) => {
+      billing.duties.forEach((d: Duty) => {
         if (d.type === 'LATE_SITTING' || d.type === 'HOLIDAY' || d.type === 'NIGHT_SHIFT') {
           categoriesWithDuties.add(d.type);
         }
@@ -393,13 +399,13 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
     }
     
     if (order.cellName) {
-      const matchedCell = billing.cells.find((c: any) => c.name === order.cellName);
+      const matchedCell = billing.cells.find((c: Cell) => c.name === order.cellName);
       if (matchedCell) {
         billing.setSelectedCell(matchedCell.id.toString());
       }
     }
     
-    let dutiesList: DutyListEntry[] = (order.duties as any) || [];
+    let dutiesList: DutyListEntry[] = (order.duties as DutyListEntry[]) || [];
     if (dutiesList.length === 0 && order.dutiesJson) {
       try {
         dutiesList = JSON.parse(order.dutiesJson);
@@ -410,7 +416,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
     
     let yearMonth = '';
     if (dutiesList.length > 0) {
-      const firstDuty = dutiesList[0] as any;
+      const firstDuty = dutiesList[0];
       const firstDate = firstDuty?.date || (Array.isArray(firstDuty?.dates) && firstDuty.dates[0]) || '';
       if (firstDate) {
         const parts = firstDate.split('-');
@@ -485,13 +491,13 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
       lastPrintCategoryForPayee.current = billing.printCategory;
 
       if (billing.selectedOrderRef && billing.archivedOrders.length > 0) {
-        const matchedOrder = billing.archivedOrders.find((o: any) => {
+        const matchedOrder = billing.archivedOrders.find((o: OfficeOrder) => {
           if (!o.orderRef) return false;
           return o.orderRef.replace(/\/বিল$/, '') === billing.selectedOrderRef.replace(/\/বিল$/, '');
         });
         if (matchedOrder && matchedOrder.employeeName) {
           const nameVal = matchedOrder.employeeName;
-          const matchedEmp = billing.employees.find((e: any) => e.name === nameVal);
+          const matchedEmp = billing.employees.find((e: Employee) => e.name === nameVal);
           const desigVal = matchedEmp ? getShortDesignation(matchedEmp.designation) : 'এসও-আইটি';
           setTimeout(() => {
             setRepresentativeName(nameVal);
@@ -539,7 +545,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
       const billingMonthName = formatMonthName(billing.selectedMonth);
       const { transportRate, apyaonRate } = getPrintCategoryRates(billing.printCategory);
 
-      const summariesPayload = billing.printFilteredSummaries.map((s: any) => {
+      const summariesPayload = billing.printFilteredSummaries.map((s: DutySummary) => {
         const days = billing.printCategory === 'LATE_SITTING' ? s.lateDays : billing.printCategory === 'HOLIDAY' ? s.holidayDays : s.nightDays;
         const totalTransport = days * transportRate;
         const totalApyaon = days * apyaonRate;
@@ -557,10 +563,10 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
         };
       });
 
-      const matchedCellObj = billing.cells.find((c: any) => c.id.toString() === billing.selectedCell);
+      const matchedCellObj = billing.cells.find((c: Cell) => c.id.toString() === billing.selectedCell);
       const cellName = matchedCellObj ? matchedCellObj.name : (billing.selectedCell === 'all' ? 'All Cells' : 'IT Department');
 
-      const backingOrder = billing.archivedOrders.find((o: any) => {
+      const backingOrder = billing.archivedOrders.find((o: OfficeOrder) => {
         if (!o.orderRef) return false;
         const cleanO = o.orderRef.replace(/\/বিল$/, '');
         const cleanS = billing.selectedOrderRef.replace(/\/বিল$/, '');
@@ -575,7 +581,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
         employeeName: representativeName,
         cellName: cellName,
         status: action === 'generate' ? 'Generated' : 'Printed',
-        duties: summariesPayload.map((s: any) => ({
+        duties: summariesPayload.map(s => ({
           employeeId: s.bankId,
           employeeName: s.name,
           designation: s.designation,
@@ -587,7 +593,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
           datesFormatted: s.datesFormatted
         })),
         dutyIds: billing.duties
-          .filter((d: any) => {
+          .filter((d: Duty) => {
             if (!d.orderRef || d.type !== billing.printCategory) return false;
             const cleanD = d.orderRef.replace(/\/বিল$/, '');
             const cleanSel = billing.selectedOrderRef.replace(/\/বিল$/, '');
@@ -601,7 +607,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
               (cleanOrig && cleanD === cleanOrig)
             );
           })
-          .map((d: any) => d.id),
+          .map((d: Duty) => d.id),
         content: {
           openingParagraph: openingParagraph,
           totalDays: billing.totalDaysAll,

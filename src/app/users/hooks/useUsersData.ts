@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import logger from '@/lib/logger';
+import { UserProfile } from '@/context/ProfileContext';
 import { User, Cell, Employee, AuditLog } from '../types';
 
-export function useUsersData(currentUser: any, refetchProfile?: () => Promise<void>) {
+export function useUsersData(currentUser: UserProfile | null | undefined, refetchProfile?: () => Promise<void>) {
   const [users, setUsers] = useState<User[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -145,7 +146,15 @@ export function useUsersData(currentUser: any, refetchProfile?: () => Promise<vo
     setError('');
 
     try {
-      const payload: any = {
+      const payload: {
+        name: string;
+        username: string;
+        role: string;
+        cellIds: number[];
+        mobile: string;
+        cellDuties: string;
+        password?: string;
+      } = {
         name,
         username,
         role,
@@ -215,7 +224,11 @@ export function useUsersData(currentUser: any, refetchProfile?: () => Promise<vo
 
     try {
       setUpdatingProfile(true);
-      const payload: any = {
+      const payload: {
+        name: string;
+        mobile: string;
+        password?: string;
+      } = {
         name: profileName,
         mobile: profileMobile
       };

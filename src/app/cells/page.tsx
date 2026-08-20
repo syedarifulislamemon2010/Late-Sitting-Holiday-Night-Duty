@@ -102,8 +102,8 @@ export default function CellsPage() {
       setIsModalOpen(false);
       fetchCells();
       setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'সার্ভারে সমস্যা হয়েছে।');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'সার্ভারে সমস্যা হয়েছে।');
     } finally {
       setSubmitting(false);
     }

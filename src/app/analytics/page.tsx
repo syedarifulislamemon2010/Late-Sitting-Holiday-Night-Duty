@@ -270,9 +270,9 @@ export default function AnalyticsDashboardPage() {
       setHasEmployeeProfile(data.hasEmployeeProfile || false);
       setAvailableReleaseDates(data.availableReleaseDates || []);
       setResolvedReleaseDate(data.selectedReleaseDate || '');
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error(err);
-      setError(err.message || 'ডাটাবেজ সংযোগ ত্রুটি।');
+      setError(err instanceof Error ? err.message : 'ডাটাবেজ সংযোগ ত্রুটি।');
     } finally {
       setLoading(false);
     }

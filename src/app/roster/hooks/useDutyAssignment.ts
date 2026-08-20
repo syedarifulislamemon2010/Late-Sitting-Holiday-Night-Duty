@@ -8,17 +8,23 @@ import {
   Cell, 
   Holiday, 
   Duty, 
-  checkIsWorkingDay, 
+  OfficeOrder, 
+  OrderDuty, 
+  LeaveRecord,
+  DutyAssignment,
+  GroupedDuty,
+  getNormalizedRef,
   getDefaultDescription,
   getShortDesignation,
-  getFormattedDateList
+  getFormattedDateList,
+  checkIsWorkingDay
 } from '../types';
 
 interface UseDutyAssignmentProps {
   employees: Employee[];
   cells: Cell[];
   holidays: Holiday[];
-  leaves: any[];
+  leaves: LeaveRecord[];
   duties: Duty[];
   loadDuties: () => Promise<void>;
   showToast: (message: string, type?: 'success' | 'error') => void;
@@ -32,7 +38,7 @@ interface UseDutyAssignmentProps {
   setFormCellFilter: (val: string) => void;
   setFormSearchQuery: (val: string) => void;
   setUserCustomOrderRef?: (val: string | null) => void;
-  getGroupedDuties: () => any[];
+  getGroupedDuties: () => GroupedDuty[];
   updateAssociatedBill: (orderRef: string, origRef?: string) => Promise<void>;
   copies: string[];
   signingOfficer: string;
@@ -93,8 +99,8 @@ export function useDutyAssignment({
   const [preConflicts, setPreConflicts] = useState<Array<{ date: string; type: string; message: string }>>([]);
   const [conflictModalData, setConflictModalData] = useState<{
     message: string;
-    details?: any;
-    assignments: any[];
+    details?: unknown;
+    assignments: DutyAssignment[];
   } | null>(null);
   const [selectedDutyIds, setSelectedDutyIds] = useState<number[]>([]);
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
@@ -102,7 +108,7 @@ export function useDutyAssignment({
   // Live debounce conflict check
   useEffect(() => {
     const handler = setTimeout(async () => {
-      let conflicts: any[] = [];
+      const conflicts: Array<{ date: string; type: string; message: string }> = [];
       const type = assignmentForm.type;
       if (!type) return setPreConflicts([]);
 
@@ -147,7 +153,7 @@ export function useDutyAssignment({
   }, [assignmentForm.date, assignmentForm.selectedEmployeeIds, assignmentForm.type, opt1Assignments, entryMode]);
 
   const handleBulkDutyImport = async (entries: { bankId: string; employeeName: string; dates: string[] }[]) => {
-    const assignmentsToImport: any[] = [];
+    const assignmentsToImport: DutyAssignment[] = [];
     const targetType = assignmentForm.type || 'LATE_SITTING';
     
     for (const entry of entries) {

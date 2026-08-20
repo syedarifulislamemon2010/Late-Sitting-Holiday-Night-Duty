@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import logger from '@/lib/logger';
-import { Cell, Employee, Executive, Holiday, OfficeOrder, Duty } from '../types';
+import { UserProfile } from '@/context/ProfileContext';
+import { Cell, Employee, Executive, Holiday, OfficeOrder, Duty, LeaveRecord } from '../types';
 
 interface UseRosterDataProps {
-  currentUser: any;
+  currentUser: UserProfile | null | undefined;
   selectedMonths: string[];
   selectedCell: string;
   selectedCategory: string;
@@ -26,7 +27,7 @@ export function useRosterData({
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [duties, setDuties] = useState<Duty[]>([]);
-  const [leaves, setLeaves] = useState<any[]>([]);
+  const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [executives, setExecutives] = useState<Executive[]>([]);
   const [officeOrders, setOfficeOrders] = useState<OfficeOrder[]>([]);

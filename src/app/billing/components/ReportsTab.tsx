@@ -17,6 +17,8 @@ import { toBanglaDigits, getBanglaDate } from '@/lib/bengali-converter';
 import { getCategoryConfig } from '@/lib/category-colors';
 import { EmptyState } from '@/components/ui/EmptyState';
 
+import { OrderDuty } from '../types';
+
 interface OfficeOrder {
   id: number;
   orderRef: string;
@@ -26,7 +28,7 @@ interface OfficeOrder {
   cellName: string | null;
   status: string;
   dutiesJson?: string | null;
-  duties?: any[];
+  duties?: OrderDuty[];
 }
 
 interface BillGroup {
@@ -46,6 +48,8 @@ interface EmployeeBreakdown {
   nightShiftAmount: number;
   totalDays: number;
   grandTotal: number;
+  deduction?: number;
+  deductions?: number;
 }
 
 interface PayeeSummary {
@@ -110,7 +114,7 @@ export default function ReportsTab({
 
   // Check if any employee has deductions to conditionally show "কর্তন" column
   const hasAnyDeductions = React.useMemo(() => {
-    return reportData.employeesBreakdown.some((r: any) => (r.deduction && r.deduction > 0) || (r.deductions && r.deductions > 0));
+    return reportData.employeesBreakdown.some((r: EmployeeBreakdown) => (r.deduction && r.deduction > 0) || (r.deductions && r.deductions > 0));
   }, [reportData.employeesBreakdown]);
 
   const handleExportReportCSV = () => {
@@ -129,17 +133,17 @@ export default function ReportsTab({
     ];
     
     const rows = reportData.employeesBreakdown.map((record, idx) => [
-      idx + 1,
+      toBanglaDigits(idx + 1),
       record.employeeName,
       record.designation,
-      record.lateSittingDays,
-      record.lateSittingAmount,
-      record.holidayDays,
-      record.holidayAmount,
-      record.nightShiftDays,
-      record.nightShiftAmount,
-      record.totalDays,
-      record.grandTotal
+      toBanglaDigits(record.lateSittingDays),
+      toBanglaDigits(record.lateSittingAmount),
+      toBanglaDigits(record.holidayDays),
+      toBanglaDigits(record.holidayAmount),
+      toBanglaDigits(record.nightShiftDays),
+      toBanglaDigits(record.nightShiftAmount),
+      toBanglaDigits(record.totalDays),
+      toBanglaDigits(record.grandTotal)
     ]);
 
     // Add totals row
@@ -147,14 +151,14 @@ export default function ReportsTab({
       'সর্বমোট',
       '',
       '',
-      reportData.totalLateDays,
-      reportData.totalLateAmount,
-      reportData.totalHolidayDays,
-      reportData.totalHolidayAmount,
-      reportData.totalNightDays,
-      reportData.totalNightAmount,
-      reportData.totalDaysSum,
-      reportData.grandTotalSum
+      toBanglaDigits(reportData.totalLateDays),
+      toBanglaDigits(reportData.totalLateAmount),
+      toBanglaDigits(reportData.totalHolidayDays),
+      toBanglaDigits(reportData.totalHolidayAmount),
+      toBanglaDigits(reportData.totalNightDays),
+      toBanglaDigits(reportData.totalNightAmount),
+      toBanglaDigits(reportData.totalDaysSum),
+      toBanglaDigits(reportData.grandTotalSum)
     ]);
 
     const csvContent = [
@@ -199,11 +203,11 @@ export default function ReportsTab({
               const isExpanded = !!expandedSlots[group.date];
               const slotTotalAmount = group.bills.reduce((sum, b) => {
                 let innerTotal = 0;
-                let dutiesList: any[] = (b.duties as any) || [];
+                let dutiesList: OrderDuty[] = (b.duties as OrderDuty[]) || [];
                 if (dutiesList.length === 0 && b.dutiesJson) {
                   try { dutiesList = JSON.parse(b.dutiesJson); } catch {}
                 }
-                dutiesList.forEach((d: any) => {
+                dutiesList.forEach((d: OrderDuty) => {
                   innerTotal += Number(d.grandTotal || 0);
                 });
                 return sum + innerTotal;
@@ -281,11 +285,11 @@ export default function ReportsTab({
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                           {group.bills.map((bill, bIdx) => {
                             const order = findMatchingOfficeOrder(bill);
-                            let dutiesList: any[] = (bill.duties as any) || [];
+                            let dutiesList: OrderDuty[] = bill.duties || [];
                             if (dutiesList.length === 0 && bill.dutiesJson) {
                               try { dutiesList = JSON.parse(bill.dutiesJson); } catch {}
                             }
-                            const totalDays = dutiesList.reduce((sum, d) => sum + Number(d.days || (d.dates && d.dates.length) || 0), 0);
+                            const totalDays = dutiesList.reduce((sum, d) => sum + Number(d.days || (Array.isArray(d.dates) && d.dates.length) || 0), 0);
                             const grandTotal = dutiesList.reduce((sum, d) => sum + Number(d.grandTotal || 0), 0);
 
                             const catConfig = getCategoryConfig(bill.category);

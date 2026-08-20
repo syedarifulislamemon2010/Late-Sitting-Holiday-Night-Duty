@@ -53,7 +53,7 @@ export default function LunchBillTable({
       {/* 1. Executives Table (if visible by filters) */}
       {(filterType === 'ALL' || filterType === 'executive') && (filterCell === 'ALL' || filterCell === '0') && (
         <LunchBillExecutiveTable
-          records={records as any}
+          records={records}
           executives={executivesList}
           workingDays={workingDays}
           onAbsenceChange={handleAbsenceChange}

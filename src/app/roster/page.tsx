@@ -74,7 +74,7 @@ export default function RosterPage() {
     setOpt1CellId: filters.setOpt1CellId,
     opt1Assignments: {},
     setOpt1Assignments: () => {},
-    assignmentForm: {},
+    assignmentForm: { selectedEmployeeIds: [], type: '', date: '', description: '' },
     entryMode: 'EMPLOYEE_WISE',
     editingDuty: null,
     setBillSuggestion,

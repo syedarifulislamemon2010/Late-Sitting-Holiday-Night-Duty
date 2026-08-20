@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toBanglaDigits, getBanglaMonthYearLabel } from '@/lib/bengali-converter';
+import { UserProfile, UserCell } from '@/context/ProfileContext';
 import { Cell } from '../types';
 
 interface BillingFiltersProps {
-  currentUser: any;
+  currentUser: UserProfile | null | undefined;
   cells: Cell[];
   selectedCell: string;
   setSelectedCell: (val: string) => void;
@@ -56,7 +57,7 @@ export default function BillingFilters({
             <option value="all">সকল সেল (All Cells)</option>
           )}
           {cells
-            .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: any) => uc.id === c.id))
+            .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: UserCell) => uc.id === c.id))
             .map(c => <option key={c.id} value={c.id.toString()}>{c.name}</option>)
           }
         </select>

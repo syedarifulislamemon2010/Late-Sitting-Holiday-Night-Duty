@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import logger from '@/lib/logger';
+import { UserProfile } from '@/context/ProfileContext';
 import { HardwareItem, HardwareRequisition, Employee, Cell, DEFAULT_HARDWARE_ITEMS } from '../types';
 
 export const INITIAL_ITEM: HardwareItem = {
@@ -13,7 +14,7 @@ export const INITIAL_ITEM: HardwareItem = {
   remarks: ''
 };
 
-export function useHardwareRequisitionData(currentUser: any) {
+export function useHardwareRequisitionData(currentUser: UserProfile | null | undefined) {
   const [requisitions, setRequisitions] = useState<HardwareRequisition[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -97,7 +98,7 @@ export function useHardwareRequisitionData(currentUser: any) {
     setItems(prev => prev.filter(item => item.id !== id));
   };
 
-  const handleUpdateItem = (id: string, field: keyof HardwareItem, value: any) => {
+  const handleUpdateItem = <K extends keyof HardwareItem>(id: string, field: K, value: HardwareItem[K]) => {
     setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 

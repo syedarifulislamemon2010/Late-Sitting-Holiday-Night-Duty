@@ -75,11 +75,26 @@ export async function GET(request: Request) {
 
     let htmlContent = '';
 
+    interface RawOrderDuty {
+      employeeName?: string;
+      name?: string;
+      designation?: string;
+      datesFormatted?: string;
+      dates?: string[];
+      bankId?: string | number;
+      days?: number;
+      totalApyaon?: number;
+      totalTransport?: number;
+      grandTotal?: number;
+      description?: string;
+      employee?: { name?: string; designation?: string };
+    }
+
     if (isBill) {
       const printCategory = order.category.replace(/^BILL_/, '') as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
       const { transportRate, apyaonRate } = getPrintCategoryRates(printCategory);
 
-      const summariesHtml = duties.map((s: any, index: number) => {
+      const summariesHtml = (duties as RawOrderDuty[]).map((s: RawOrderDuty, index: number) => {
         const empName = s.employeeName || s.name || '';
         const displayName = empName.replace(/\s*\([^)]*\)\s*$/, '').trim();
         const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
@@ -347,7 +362,7 @@ export async function GET(request: Request) {
 </html>
       `;
     } else {
-      const dutiesHtml = duties.map((d: any, index: number) => {
+      const dutiesHtml = (duties as RawOrderDuty[]).map((d: RawOrderDuty, index: number) => {
         const name = d.employeeName || d.employee?.name || d.name || '';
         const nameFormatted = name.startsWith('জনাব ') || name.startsWith('জনাব')
           ? name

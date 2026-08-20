@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import logger from '@/lib/logger';
+import { UserProfile } from '@/context/ProfileContext';
 import { Cell, Employee, Executive } from '../types';
 
-export function useEmployeeManagement(currentUser: any) {
+export function useEmployeeManagement(currentUser: UserProfile | null | undefined) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [executives, setExecutives] = useState<Executive[]>([]);

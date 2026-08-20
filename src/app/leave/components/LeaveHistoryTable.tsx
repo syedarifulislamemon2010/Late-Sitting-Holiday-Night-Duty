@@ -2,26 +2,35 @@ import { Printer, Edit2, Trash2, Calendar } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-interface Leave {
+export interface Leave {
   id: number;
   leaveType: 'CASUAL' | 'POST_FACTO' | 'STATION_LEAVE';
-  applicationDate: string;
   startDate: string;
   endDate: string;
+  applicationDate: string;
   applicantName: string;
   designation: string;
   bankId: string;
+  fileNo?: string | null;
   cellName: string;
   leaveLocation: string;
   mobileNo: string;
+  selectedDistrict?: string | null;
+  delegateId?: string | null;
+  casualTotal: number;
+  casualUsed: number;
+  ordinaryTotal: number;
+  ordinaryUsed: number;
+  specialTotal: number;
+  specialUsed: number;
 }
 
 interface LeaveHistoryTableProps {
   archivedLeaves: Leave[];
   toBanglaDigits: (num: number | string) => string;
   toDisplayDateStr: (dateStr: string) => string;
-  handleLoadLeavePreview: (leave: any) => void;
-  handleEditLeave: (leave: any) => void;
+  handleLoadLeavePreview: (leave: Leave) => void;
+  handleEditLeave: (leave: Leave) => void;
   handleDeleteLeave: (id: number) => void;
 }
 

@@ -50,8 +50,8 @@ export async function GET(req: Request) {
     const dataString = JSON.stringify(allData);
     const checksum = crypto.createHash('sha256').update(dataString).digest('hex');
     const recordCounts: Record<string, number> = {};
-    Object.keys(allData).forEach((key) => {
-      recordCounts[key] = (allData as any)[key].length;
+    Object.entries(allData).forEach(([key, val]) => {
+      recordCounts[key] = Array.isArray(val) ? val.length : 0;
     });
 
     const manifest = {

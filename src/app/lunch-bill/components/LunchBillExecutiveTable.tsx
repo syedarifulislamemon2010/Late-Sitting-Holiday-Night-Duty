@@ -1,30 +1,10 @@
-'use client';
-
 import React from 'react';
 import { Lock } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
-
-export interface LunchBillRecord {
-  employeeId: number;
-  employeeName: string;
-  designation: string;
-  bankId: string;
-  mobile?: string;
-  cellId: number;
-  isExecutive: boolean;
-  dailyRate: number;
-  workingDays: number;
-  presentDays: number;
-  absenceDays: number;
-  totalBill: number;
-  stampDeduction: number;
-  additionalDeduction: number;
-  totalDeduction: number;
-  netPayable: number;
-}
+import { LunchRecord } from '../types';
 
 interface LunchBillExecutiveTableProps {
-  records: LunchBillRecord[];
+  records: LunchRecord[];
   executives: Array<{ id: number; phone?: string | null }>;
   workingDays: number;
   onAbsenceChange: (employeeId: number, isExec: boolean, val: string) => void;

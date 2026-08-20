@@ -130,7 +130,7 @@ export default function DashboardPage() {
           const cellsMap: Record<string, number> = {};
           const monthlyCounts = Array(12).fill(0);
 
-          list.forEach((duty: any) => {
+          list.forEach((duty: { employee?: { cell?: { name?: string } }; date?: string }) => {
             const cellName = duty.employee?.cell?.name || 'অন্যান্য';
             cellsMap[cellName] = (cellsMap[cellName] || 0) + 1;
 
@@ -321,7 +321,7 @@ export default function DashboardPage() {
         showToast('ডিউটি সফলভাবে মুছে ফেলা হয়েছে!', 'success');
       } else {
         // Prepare assignments based on option
-        let assignments: any[] = [];
+        let assignments: Array<{ employeeId: number; date: string; type: string }> = [];
         if (selectedOption === 'LATE_SITTING') {
           assignments = [{ employeeId: employee.id, date: dateStr, type: 'LATE_SITTING' }];
         } else if (selectedOption === 'NIGHT_SHIFT') {
@@ -362,9 +362,10 @@ export default function DashboardPage() {
           setMyDuties(portalData.duties);
         }
       }
-    } catch (err: any) {
-      setEntryError(err.message);
-      showToast(err.message || 'ডিউটি সংরক্ষণে সমস্যা হয়েছে', 'error');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'ডিউটি সংরক্ষণে সমস্যা হয়েছে';
+      setEntryError(errorMsg);
+      showToast(errorMsg, 'error');
       throw err;
     } finally {
       setSavingDuties(false);
@@ -988,7 +989,7 @@ function DutySelectionModal({
   dateStr: string;
   formattedDate: string;
   isHoliday: boolean;
-  existing: any[];
+  existing: Array<{ id?: number; type?: string; [key: string]: unknown }>;
   initialOption: string;
   onClose: () => void;
   onSave: (option: string) => void;

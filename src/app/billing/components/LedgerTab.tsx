@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { toBanglaDigits, getBanglaDate } from '@/lib/bengali-converter';
 import { renderDatesInPairs } from '@/lib/print-helpers';
+import { UserProfile, UserCell } from '@/context/ProfileContext';
+import { Employee, OrderDuty } from '../types';
 
 interface MetricState {
   totalLateSittingBill: number;
@@ -45,7 +47,7 @@ interface OfficeOrder {
   cellName: string | null;
   status: string;
   dutiesJson?: string | null;
-  duties?: any[];
+  duties?: OrderDuty[];
 }
 
 interface LedgerTabProps {
@@ -53,7 +55,7 @@ interface LedgerTabProps {
   showOrderWarning: boolean;
   metrics: MetricState;
   allActiveOfficeOrders: OfficeOrder[];
-  findAssociatedBill: (order: OfficeOrder) => any;
+  findAssociatedBill: (order: OfficeOrder) => OfficeOrder | null | undefined;
   handleLoadBillForEditing: (ref: string) => void;
   handleGenerateBillFromOrder: (order: OfficeOrder) => void;
   ledgerGrandTotal: number;
@@ -62,8 +64,8 @@ interface LedgerTabProps {
   setViewingOrder: (order: OfficeOrder) => void;
   handleDeleteOrder: (id: number) => Promise<void> | void;
   hasDeletePermission: (order: OfficeOrder) => boolean;
-  employees: any[];
-  currentUser: any;
+  employees: Employee[];
+  currentUser: UserProfile | null | undefined;
   selectedCell: string;
 }
 
@@ -118,7 +120,7 @@ export default function LedgerTab({
         }
       }
 
-      const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
+      const totalDays = dutiesList.reduce((sum: number, d: OrderDuty) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
       if (totalDays === 0) return;
 
       let transportRate = 200;
@@ -153,7 +155,7 @@ export default function LedgerTab({
     return Array.from(detailMap.values());
   };
 
-  const getEmployeeMetrics = (emp: any) => {
+  const getEmployeeMetrics = (emp: Employee) => {
     let lateSitting = 0;
     let holiday = 0;
     let nightShift = 0;
@@ -168,7 +170,7 @@ export default function LedgerTab({
         }
       }
 
-      dutiesList.forEach((d: any) => {
+      dutiesList.forEach((d: OrderDuty) => {
         const empIdStr = d.employeeId ? d.employeeId.toString() : '';
         const empName = d.employeeName || '';
 
@@ -214,7 +216,7 @@ export default function LedgerTab({
     };
   };
 
-  const getEmployeeDuties = (emp: any) => {
+  const getEmployeeDuties = (emp: Employee) => {
     const duties: {
       category: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
       orderRef: string;
@@ -233,7 +235,7 @@ export default function LedgerTab({
         }
       }
 
-      dutiesList.forEach((d: any) => {
+      dutiesList.forEach((d: OrderDuty) => {
         const empIdStr = d.employeeId ? d.employeeId.toString() : '';
         const empName = d.employeeName || '';
 
@@ -245,7 +247,7 @@ export default function LedgerTab({
         if (isMatch) {
           const dates = Array.isArray(d.dates) 
             ? d.dates 
-            : (d.date ? [d.date] : (d.datesFormatted ? d.datesFormatted.split(/,\s*/) : []));
+            : (typeof d.dates === 'string' ? d.dates.split(/,\s*/) : (d.datesFormatted ? d.datesFormatted.split(/,\s*/) : []));
           const days = Array.isArray(d.dates) ? d.dates.length : (d.days || 0);
           
           let transportRate = 200;
@@ -265,7 +267,7 @@ export default function LedgerTab({
           const orderCategory = order.category.startsWith('BILL_') ? order.category.replace('BILL_', '') : order.category;
 
           duties.push({
-            category: orderCategory as any,
+            category: orderCategory as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT',
             orderRef: order.orderRef,
             dates: dates,
             days: days,
@@ -284,7 +286,7 @@ export default function LedgerTab({
     if (selectedCell !== 'all') {
       list = list.filter(emp => emp.cellId?.toString() === selectedCell);
     } else if (currentUser && currentUser.role !== 'ADMIN') {
-      const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+      const userCellNames = currentUser.cells?.map((c: UserCell) => c.name) || [];
       list = list.filter(emp => emp.cell?.name && userCellNames.includes(emp.cell.name));
     }
     
@@ -308,7 +310,7 @@ export default function LedgerTab({
           logger.error(e);
         }
       }
-      const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
+      const totalDays = dutiesList.reduce((sum: number, d: OrderDuty) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
       
       let transportRate = 200;
       let apyaonRate = 100;
@@ -696,7 +698,7 @@ export default function LedgerTab({
                       logger.error(e);
                     }
                   }
-                  const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
+                  const totalDays = dutiesList.reduce((sum: number, d: OrderDuty) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
                   
                   let transportRate = 200;
                   let apyaonRate = 100;

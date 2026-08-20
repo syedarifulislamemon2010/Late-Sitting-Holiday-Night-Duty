@@ -53,6 +53,7 @@ interface OrderDuty {
   employeeId?: string | null;
   employeeName: string;
   designation: string;
+  cellName?: string;
   days: number;
   apyaonRate: number;
   totalApyaon: number;
@@ -197,7 +198,7 @@ export default function DocumentsPage() {
     const userCellNames = currentUser.cells?.map((c: { name: string }) => c.name) || [];
     if (order.cellName && userCellNames.includes(order.cellName)) return true;
     if (order.duties && Array.isArray(order.duties)) {
-      return order.duties.some((d: any) => d.cellName && userCellNames.includes(d.cellName));
+      return order.duties.some((d: OrderDuty) => d.cellName && userCellNames.includes(d.cellName));
     }
     return false;
   };
@@ -208,7 +209,7 @@ export default function DocumentsPage() {
     const userCellNames = currentUser.cells?.map((c: { name: string }) => c.name) || [];
     if (order.cellName && userCellNames.includes(order.cellName)) return true;
     if (order.duties && Array.isArray(order.duties)) {
-      return order.duties.some((d: any) => d.cellName && userCellNames.includes(d.cellName));
+      return order.duties.some((d: OrderDuty) => d.cellName && userCellNames.includes(d.cellName));
     }
     return false;
   };
@@ -1841,7 +1842,7 @@ export default function DocumentsPage() {
                       <ArrowUpDown size={14} className="text-slate-400" />
                       <select
                         value={sortByManual}
-                        onChange={(e) => setSortByManual(e.target.value as any)}
+                        onChange={(e) => setSortByManual(e.target.value as 'date-desc' | 'date-asc' | 'size-desc' | 'size-asc')}
                         className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer"
                       >
                         <option value="date-desc">আপলোড তারিখ (নতুন আগে)</option>

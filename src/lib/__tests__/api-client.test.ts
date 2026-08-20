@@ -10,7 +10,7 @@ describe('apiClient', () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: 'success' }),
-    } as any);
+    } as unknown as Response);
 
     const result = await apiClient.get('/test');
     expect(result).toEqual({ data: 'success' });
@@ -26,7 +26,7 @@ describe('apiClient', () => {
       ok: false,
       status: 404,
       json: async () => ({ error: 'Not found' }),
-    } as any);
+    } as unknown as Response);
 
     await expect(apiClient.get('/test')).rejects.toThrow(ApiError);
   });
@@ -35,7 +35,7 @@ describe('apiClient', () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ id: 1 }),
-    } as any);
+    } as unknown as Response);
 
     const result = await apiClient.post('/test', { name: 'test' });
     expect(result).toEqual({ id: 1 });

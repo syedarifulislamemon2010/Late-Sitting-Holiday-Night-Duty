@@ -457,7 +457,7 @@ export default function LeaveGeneratorPage() {
             
             // Also update selectedApplicantEmp state to keep it in sync
             if (selectedApplicantEmp?.bankId) {
-              const updatedApplicant = empsArray.find((emp: any) => emp.bankId === selectedApplicantEmp.bankId);
+              const updatedApplicant = empsArray.find((emp: { bankId?: string | null }) => emp.bankId === selectedApplicantEmp.bankId);
               if (updatedApplicant) {
                 setSelectedApplicantEmp(updatedApplicant);
               }
@@ -1494,7 +1494,7 @@ export default function LeaveGeneratorPage() {
                       id="leaveType"
                       value={leaveType}
                       onChange={(e) => {
-                        setLeaveType(e.target.value as any);
+                        setLeaveType(e.target.value as 'CASUAL' | 'POST_FACTO' | 'STATION_LEAVE' | '');
                         if (e.target.value) {
                           setShowValidationErrors(false);
                         }
@@ -1862,7 +1862,7 @@ export default function LeaveGeneratorPage() {
 
                 {/* Past Applications List */}
                 <LeaveHistoryTable 
-                  archivedLeaves={archivedLeaves as any} 
+                  archivedLeaves={archivedLeaves} 
                   toBanglaDigits={toBanglaDigits}
                   toDisplayDateStr={toDisplayDateStr}
                   handleLoadLeavePreview={handleLoadLeavePreview}

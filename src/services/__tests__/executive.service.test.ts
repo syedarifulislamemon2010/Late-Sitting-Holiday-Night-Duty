@@ -48,7 +48,7 @@ describe('ExecutiveService', () => {
       from: vi.fn().mockReturnValue({
         orderBy: vi.fn().mockResolvedValue(mockExecutives)
       })
-    } as any);
+    } as unknown as ReturnType<typeof db.select>);
 
     const result = await ExecutiveService.listExecutives(regularUser);
     expect(result).toHaveLength(1);

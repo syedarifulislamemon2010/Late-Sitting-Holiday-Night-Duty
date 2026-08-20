@@ -185,7 +185,7 @@ export async function GET(request: Request) {
     const userBills = allBillOrders.filter(o => {
       try {
         const ds = JSON.parse(o.dutiesJson || '[]');
-        return ds.some((d: any) => 
+        return (ds as Array<{ employeeId?: string | number }>).some((d) => 
           String(d.employeeId) === String(employee.bankId) || 
           String(d.employeeId) === String(employee.id)
         );

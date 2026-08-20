@@ -121,8 +121,18 @@ export async function POST(request: Request) {
 
     const allEmployeesForExpansion = await db.select().from(employees);
 
+    interface CellEmployeeItem {
+      id: number;
+      name: string;
+      designation: string;
+      bankId?: string | null;
+      fileNo?: string | null;
+      mobile?: string | null;
+      dutyType: string;
+    }
+
     const cellsListWithEmployees = cellsList.map(cell => {
-      const cellEmps: any[] = [];
+      const cellEmps: CellEmployeeItem[] = [];
       
       // 1. Process primary cell employees
       for (const emp of cell.employees) {
@@ -312,7 +322,7 @@ export async function POST(request: Request) {
 
       let rowsHtml = '';
       let hasFoundFirstSPO = false;
-      sortedEmployees.forEach((emp: any, index) => {
+      sortedEmployees.forEach((emp: CellEmployeeItem, index) => {
         let isCellIncharge = emp.dutyType === 'INCHARGE';
         if (!emp.dutyType) {
           if (emp.designation === 'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)' && !hasFoundFirstSPO) {

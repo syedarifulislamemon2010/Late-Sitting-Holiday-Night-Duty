@@ -9,14 +9,19 @@ import {
   Lock, 
   Search 
 } from 'lucide-react';
+import { UserProfile, UserCell } from '@/context/ProfileContext';
 import { 
   Cell, 
   Employee, 
   Holiday, 
-  User, 
   Duty, 
+  LeaveRecord,
+  DutyAssignment,
+  checkIsWorkingDay, 
   getHolidayStatus,
-  checkIsWorkingDay 
+  getDefaultDescription,
+  getShortDesignation,
+  getFormattedDateList
 } from '../types';
 import EmployeeSelectCard from './EmployeeSelectCard';
 import CalendarDatePicker from './CalendarDatePicker';
@@ -27,11 +32,11 @@ import dynamic from 'next/dynamic';
 const RosterOCRImport = dynamic(() => import('./RosterOCRImport'), { ssr: false });
 
 interface DutyAssignmentPanelProps {
-  currentUser: User | null;
+  currentUser: UserProfile | null | undefined;
   cells: Cell[];
   employees: Employee[];
   holidays: Holiday[];
-  leaves: any[];
+  leaves: LeaveRecord[];
   entryMode: 'EMPLOYEE_WISE' | 'DATE_WISE';
   setEntryMode: (mode: 'EMPLOYEE_WISE' | 'DATE_WISE') => void;
   assignmentForm: {
@@ -70,7 +75,7 @@ interface DutyAssignmentPanelProps {
   handleSubmit: (e: React.FormEvent) => void;
   handleCancelEdit: () => void;
   handleCancelRosterEdit: () => void;
-  handleBulkDutyImport: (importedDuties: any[]) => void;
+  handleBulkDutyImport: (importedDuties: { bankId: string; employeeName: string; dates: string[] }[]) => void;
   isSubmitDisabled: () => boolean;
 }
 
@@ -228,8 +233,8 @@ export default function DutyAssignmentPanel({
 
   // Option 1 filtered employees
   const allowedCellIds = currentUser?.role === 'ADMIN'
-    ? cells.map(c => c.id)
-    : currentUser?.cells?.map(c => c.id) || [];
+    ? cells.map((c: Cell) => c.id)
+    : currentUser?.cells?.map((c: UserCell) => c.id) || [];
 
   const cellFilteredEmployees = employees.filter(emp => 
     opt1CellId === 'all' 
@@ -389,7 +394,7 @@ export default function DutyAssignmentPanel({
                         <option value="all">সকল সেল (All Cells)</option>
                       )}
                       {cells
-                        .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some(uc => uc.id === c.id))
+                        .filter(c => currentUser?.role === 'ADMIN' || currentUser?.cells?.some((uc: UserCell) => uc.id === c.id))
                         .map(c => (
                           <option key={c.id} value={c.id.toString()}>{c.name}</option>
                         ))}

@@ -31,16 +31,22 @@ export interface Executive {
 }
 
 export interface OrderDuty {
-  employeeId?: string | null;
+  employeeId?: string | number | null;
   employeeName: string;
   designation: string;
-  days: number;
-  apyaonRate: number;
-  totalApyaon: number;
-  totalTransport: number;
-  grandTotal: number;
-  datesFormatted: string;
-  dates?: string;
+  name?: string;
+  cellName?: string;
+  bankId?: string | null;
+  fileNo?: string | null;
+  days?: number;
+  apyaonRate?: number;
+  totalApyaon?: number;
+  totalTransport?: number;
+  grandTotal?: number;
+  datesFormatted?: string;
+  dates?: string | string[];
+  date?: string;
+  description?: string | null;
 }
 
 export interface DutyListEntry {
@@ -49,9 +55,12 @@ export interface DutyListEntry {
   designation?: string;
   bankId?: string;
   datesFormatted?: string;
+  dates?: string[];
   date?: string;
   description?: string;
 }
+
+export type DutySummary = EmployeeBillingSummary;
 
 export interface OfficeOrder {
   id: number;
@@ -231,11 +240,13 @@ export const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' 
   return { transportRate, apyaonRate };
 };
 
-export const userHasAccessToOrder = (o: OfficeOrder, currentUser: any, employees: Employee[]): boolean => {
+import { UserProfile, UserCell } from '@/context/ProfileContext';
+
+export const userHasAccessToOrder = (o: OfficeOrder, currentUser: UserProfile | null | undefined, employees: Employee[]): boolean => {
   if (!currentUser) return false;
   if (currentUser.role === 'ADMIN') return true;
 
-  let userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+  let userCellNames = currentUser.cells?.map((c: UserCell) => c.name) || [];
   if (userCellNames.includes('CBS Integrated Development Cell')) {
     return true;
   } else {
@@ -248,7 +259,7 @@ export const userHasAccessToOrder = (o: OfficeOrder, currentUser: any, employees
   }
 
   // 2. Fallback: Check involved employees
-  let dutiesList: any[] = o.duties || [];
+  let dutiesList: OrderDuty[] = o.duties || [];
   if (dutiesList.length === 0 && o.dutiesJson) {
     try {
       dutiesList = JSON.parse(o.dutiesJson);
@@ -267,7 +278,7 @@ export const userHasAccessToOrder = (o: OfficeOrder, currentUser: any, employees
     return false;
   }
 
-  return dutiesList.some((d: any) => {
+  return dutiesList.some((d: OrderDuty) => {
     const empIdStr = d.employeeId ? d.employeeId.toString() : '';
     const empName = d.employeeName || '';
     

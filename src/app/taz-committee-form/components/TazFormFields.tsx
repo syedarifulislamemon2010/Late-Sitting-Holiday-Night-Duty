@@ -6,16 +6,16 @@ import { Button } from '@/components/ui/Button';
 import { PlusCircle, MinusCircle, Save, RefreshCw } from 'lucide-react';
 import TazDatePicker from './TazDatePicker';
 import { isNonWorkingDay } from '@/lib/leave-calculator';
-import { Employee, Cell, Implementer } from '../types';
+import { Employee, Cell, Implementer, TazFormData } from '../types';
 
 interface TazFormFieldsProps {
-  formData: any;
+  formData: TazFormData;
   implementers: Implementer[];
   editingId: number | null;
   isSubmitting: boolean;
   employees: Employee[];
   cells: Cell[];
-  onInputChange: (field: string, val: any) => void;
+  onInputChange: (field: string, val: string | number) => void;
   onAddImplementer: () => void;
   onRemoveImplementer: (idx: number) => void;
   onUpdateImplementer: (idx: number, field: keyof Implementer, val: string) => void;

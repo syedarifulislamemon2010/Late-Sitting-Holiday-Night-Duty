@@ -1,10 +1,15 @@
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult, Part } from '@google/generative-ai';
 import { imageParseSchema } from '@/validations/imageParse.schema';
 
 // Helper function to handle API calls with exponential backoff retries
-async function generateContentWithRetry(model: any, content: any, retries = 2, delayMs = 1000): Promise<any> {
+async function generateContentWithRetry(
+  model: GenerativeModel, 
+  content: string | Array<string | Part>, 
+  retries = 2, 
+  delayMs = 1000
+): Promise<GenerateContentResult> {
   try {
     return await model.generateContent(content);
   } catch (error) {

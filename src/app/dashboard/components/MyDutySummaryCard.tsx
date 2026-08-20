@@ -99,10 +99,10 @@ export default function MyDutySummaryCard() {
           };
 
           // 1. Extract duties from bills
-          bills.forEach((bill: any) => {
+          (bills as Array<{ category?: string; orderRef?: string; orderDate?: string; dutiesJson?: string }>).forEach((bill) => {
             try {
               const ds = JSON.parse(bill.dutiesJson || '[]');
-              const myEntry = ds.find((d: any) => 
+              const myEntry = (ds as Array<{ employeeId: string | number; datesFormatted?: string }>).find((d) => 
                 String(d.employeeId) === String(emp.bankId) || 
                 String(d.employeeId) === String(emp.id)
               );
@@ -139,7 +139,7 @@ export default function MyDutySummaryCard() {
           });
 
           // 2. Add unbilled duties from rawDuties (avoiding duplicates by date and type)
-          rawDuties.forEach((d: any) => {
+          (rawDuties as Array<{ id: number; type: string; date: string; totalBill: number; orderRef?: string | null }>).forEach((d) => {
             const isAlreadyBilled = mergedDuties.some(bd => bd.date === d.date && bd.type === d.type);
             if (!isAlreadyBilled) {
               mergedDuties.push({
@@ -162,7 +162,7 @@ export default function MyDutySummaryCard() {
 
           // Default selectedMonths to the most recent month in the merged duties list
           const months = Array.from(
-            new Set(mergedDuties.map((d: any) => d.date ? d.date.substring(0, 7) : null).filter(Boolean))
+            new Set(mergedDuties.map(d => d.date ? d.date.substring(0, 7) : null).filter(Boolean))
           ).sort().reverse() as string[];
           if (months.length > 0) {
             setSelectedMonths([months[0]]);

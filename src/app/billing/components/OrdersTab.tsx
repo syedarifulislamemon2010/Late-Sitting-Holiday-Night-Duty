@@ -17,6 +17,8 @@ interface Cell {
   description: string | null;
 }
 
+import { OrderDuty } from '../types';
+
 interface OfficeOrder {
   id: number;
   orderRef: string;
@@ -26,7 +28,7 @@ interface OfficeOrder {
   cellName: string | null;
   status: string;
   dutiesJson?: string | null;
-  duties?: any[];
+  duties?: OrderDuty[];
 }
 
 interface OrdersTabProps {

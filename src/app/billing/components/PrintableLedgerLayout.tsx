@@ -1,6 +1,7 @@
 import React from 'react';
 import { Printer, ChevronLeft } from 'lucide-react';
 import { toBanglaDigits, getBanglaMonthYearLabel } from '@/lib/bengali-converter';
+import { OrderDuty } from '../types';
 
 interface OfficeOrder {
   id: number;
@@ -12,8 +13,8 @@ interface OfficeOrder {
   cellName: string | null;
   status: string;
   dutiesJson?: string | null;
-  duties?: any[];
-  content?: any;
+  duties?: OrderDuty[];
+  content?: Record<string, unknown> | null;
 }
 
 interface PrintableLedgerLayoutProps {
@@ -102,7 +103,7 @@ export default function PrintableLedgerLayout({
                   console.error(e);
                 }
               }
-              const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
+              const totalDays = dutiesList.reduce((sum: number, d: OrderDuty) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
               
               let transportRate = 200;
               let apyaonRate = 100;
@@ -137,7 +138,7 @@ export default function PrintableLedgerLayout({
                   if (dutiesList.length === 0 && order.dutiesJson) {
                     try { dutiesList = JSON.parse(order.dutiesJson); } catch {}
                   }
-                  return sum + dutiesList.reduce((s: number, d: any) => s + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
+                  return sum + dutiesList.reduce((s: number, d: OrderDuty) => s + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
                 }, 0))} দিন
               </td>
               <td className="p-2 text-right pr-2 font-bold text-indigo-600">৳{toBanglaDigits(ledgerGrandTotal.toLocaleString('en-US'))}/-</td>

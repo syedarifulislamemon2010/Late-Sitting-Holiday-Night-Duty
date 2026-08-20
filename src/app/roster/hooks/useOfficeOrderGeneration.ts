@@ -40,7 +40,12 @@ interface UseOfficeOrderGenerationProps {
   setOpt1CellId: (val: string) => void;
   opt1Assignments: Record<number, string[]>;
   setOpt1Assignments: React.Dispatch<React.SetStateAction<Record<number, string[]>>>;
-  assignmentForm: any;
+  assignmentForm: {
+    selectedEmployeeIds: number[];
+    type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | '';
+    date: string;
+    description: string;
+  };
   entryMode: 'EMPLOYEE_WISE' | 'DATE_WISE';
   editingDuty: Duty | null;
   setBillSuggestion: (val: { ref: string; category: string } | null) => void;
@@ -427,11 +432,11 @@ export function useOfficeOrderGeneration({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hasUnsavedAssignments = (entryMode === 'EMPLOYEE_WISE' && Object.keys(opt1Assignments).length > 0) || (entryMode === 'DATE_WISE' && (assignmentForm.selectedEmployeeIds.length > 0 || assignmentForm.date));
-      (window as any).__unsavedChanges = isEditingArchive || !!editingDuty || !!hasUnsavedAssignments;
+      window.__unsavedChanges = isEditingArchive || !!editingDuty || !!hasUnsavedAssignments;
     }
     return () => {
       if (typeof window !== 'undefined') {
-        (window as any).__unsavedChanges = false;
+        window.__unsavedChanges = false;
       }
     };
   }, [isEditingArchive, editingDuty, opt1Assignments, assignmentForm.selectedEmployeeIds, assignmentForm.date, entryMode]);
@@ -861,7 +866,7 @@ export function useOfficeOrderGeneration({
       }
     }
     
-    let list: any[] = [];
+    let list: Duty[] = [];
     try {
       const res = await fetch(`/api/duties?orderRef=${encodeURIComponent(order.orderRef)}&includeArchived=true`);
       if (res.ok) {
@@ -887,8 +892,8 @@ export function useOfficeOrderGeneration({
         totalBill = 1000;
       }
 
-      const reconstructed: any[] = [];
-      order.duties.forEach((group: any) => {
+      const reconstructed: Duty[] = [];
+      order.duties.forEach((group: OrderDuty) => {
         const finalEmpId = typeof group.employeeId === 'string' ? parseInt(group.employeeId, 10) : group.employeeId;
         const matchedEmp = employees.find(e => e.id === finalEmpId);
         const datesList = group.dates || [];
@@ -896,7 +901,7 @@ export function useOfficeOrderGeneration({
         datesList.forEach((date: string) => {
           reconstructed.push({
             id: Math.random(),
-            employeeId: finalEmpId,
+            employeeId: finalEmpId || 0,
             date: date,
             type: category,
             description: group.description || null,
@@ -905,10 +910,14 @@ export function useOfficeOrderGeneration({
             totalBill,
             orderRef: order.orderRef,
             employee: matchedEmp || {
-              id: finalEmpId,
-              name: group.employeeName,
-              designation: group.designation,
-              cellId: matchedRep ? matchedRep.cellId : 7
+              id: finalEmpId || 0,
+              name: group.employeeName || '',
+              designation: group.designation || '',
+              cellId: matchedRep ? matchedRep.cellId : 7,
+              bankId: null,
+              fileNo: null,
+              mobile: null,
+              cell: { id: matchedRep ? matchedRep.cellId : 7, name: group.cellName || 'General', description: null }
             }
           });
         });

@@ -14,7 +14,7 @@ interface OfficeOrder {
   cellName: string | null;
   status: string;
   dutiesJson?: string | null;
-  duties?: any[];
+  duties?: Array<OrderDuty | DutyListEntry>;
   content?: {
     subjectText?: string;
     openingParagraph?: string;
@@ -30,14 +30,18 @@ interface OfficeOrder {
 }
 
 interface OrderDuty {
-  employeeName: string;
+  employeeName?: string;
+  name?: string;
   designation: string;
+  bankId?: string | null;
+  date?: string;
   datesFormatted?: string;
-  dates?: string;
-  days: number;
-  totalTransport: number;
-  totalApyaon: number;
-  grandTotal: number;
+  dates?: string | string[];
+  days?: number;
+  totalTransport?: number;
+  totalApyaon?: number;
+  grandTotal?: number;
+  description?: string | null;
 }
 
 interface DutyListEntry {
@@ -237,7 +241,7 @@ export default function BulkBillPrintLayout({
 
     viewingOrders.forEach((order) => {
       const isBill = order.category?.startsWith('BILL_');
-      let dutiesList: any[] = [];
+      let dutiesList: OrderDuty[] = [];
       try {
         dutiesList = order.duties || JSON.parse(order.dutiesJson || '[]');
       } catch (e) {
@@ -311,7 +315,7 @@ export default function BulkBillPrintLayout({
                   </thead>
                   <tbody>
                     ${sortedDuties.map((s: OrderDuty, idx: number) => {
-                      const displayName = s.employeeName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                      const displayName = (s.employeeName || s.name || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
                       const nameStr = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
                       const datesArr = renderDatesInPairs(s.datesFormatted || s.dates || '');
                       return `
@@ -428,7 +432,7 @@ export default function BulkBillPrintLayout({
                     </tr>
                   </thead>
                   <tbody>
-                    ${sortedDuties.map((d: DutyListEntry, idx: number) => {
+                    ${sortedDuties.map((d: OrderDuty, idx: number) => {
                       const fullNm = d.employeeName || d.name || '';
                       const displayName = fullNm.replace(/\s*\([^)]*\)\s*$/, '').trim();
                       const nameStr = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
@@ -524,7 +528,7 @@ export default function BulkBillPrintLayout({
         <div className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-950 p-8 flex flex-col items-center gap-8">
           {viewingOrders.map((order, idx) => {
             const isBill = order.category?.startsWith('BILL_');
-            let dutiesList: any[] = [];
+            let dutiesList: OrderDuty[] = [];
             try {
               dutiesList = order.duties || JSON.parse(order.dutiesJson || '[]');
             } catch (e) {
@@ -617,7 +621,7 @@ export default function BulkBillPrintLayout({
                                         <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(sIdx + 1)}</td>
                                         <td className="border border-black p-1.5 text-left pl-3 font-normal whitespace-nowrap" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.1', whiteSpace: 'nowrap' }}>
                                           {(() => {
-                                            const displayName = s.employeeName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                                            const displayName = (s.employeeName || s.name || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
                                             const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
                                             return (
                                               <>
@@ -743,7 +747,7 @@ export default function BulkBillPrintLayout({
                               </tr>
                             </thead>
                             <tbody>
-                              {dutiesList.map((d: DutyListEntry, dIdx: number) => {
+                              {dutiesList.map((d: OrderDuty, dIdx: number) => {
                                 const fullNm = d.employeeName || d.name || '';
                                 const displayName = fullNm.replace(/\s*\([^)]*\)\s*$/, '').trim();
                                 return (

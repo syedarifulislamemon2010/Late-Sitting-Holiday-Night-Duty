@@ -2,11 +2,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import logger from '@/lib/logger';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { getShortDesignation } from '@/lib/print-helpers';
+import { UserProfile, UserCell } from '@/context/ProfileContext';
 import {
   Cell,
   Employee,
   Executive,
   OfficeOrder,
+  OrderDuty,
   Duty,
   EmployeeBillingSummary,
   BillGroup,
@@ -19,7 +21,7 @@ import {
   userHasAccessToOrder
 } from '../types';
 
-export function useBillingData(currentUser: any) {
+export function useBillingData(currentUser: UserProfile | null | undefined) {
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [executives, setExecutives] = useState<Executive[]>([]);
@@ -45,7 +47,7 @@ export function useBillingData(currentUser: any) {
   const [archiveSuccess, setArchiveSuccess] = useState<string | null>(null);
   const [archiveError, setArchiveError] = useState<string | null>(null);
 
-  const userCellNamesString = currentUser?.cells?.map((c: any) => c.name).sort().join(',') || '';
+  const userCellNamesString = currentUser?.cells?.map((c: UserCell) => c.name).sort().join(',') || '';
   const userRole = currentUser?.role || '';
   const userUsername = currentUser?.username || '';
 
@@ -158,7 +160,7 @@ export function useBillingData(currentUser: any) {
       }
 
       if (currentUser && currentUser.role !== 'ADMIN') {
-        const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+        const userCellNames = currentUser.cells?.map((c: UserCell) => c.name) || [];
         activeList = activeList.filter(d => d.employee?.cell?.name && userCellNames.includes(d.employee.cell.name));
       }
 
@@ -276,10 +278,10 @@ export function useBillingData(currentUser: any) {
   const hasDeletePermission = (order: OfficeOrder) => {
     if (!currentUser) return false;
     if (currentUser.role === 'ADMIN') return true;
-    const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+    const userCellNames = currentUser.cells?.map((c: UserCell) => c.name) || [];
     if (order.cellName && userCellNames.includes(order.cellName)) return true;
     if (order.duties && Array.isArray(order.duties)) {
-      return order.duties.some((d: any) => (d as any).cellName && userCellNames.includes((d as any).cellName));
+      return order.duties.some((d: OrderDuty) => d.cellName && userCellNames.includes(d.cellName));
     }
     return false;
   };
@@ -287,10 +289,10 @@ export function useBillingData(currentUser: any) {
   const hasEditPermission = (order: OfficeOrder) => {
     if (!currentUser) return false;
     if (currentUser.role === 'ADMIN') return true;
-    const userCellNames = currentUser.cells?.map((c: any) => c.name) || [];
+    const userCellNames = currentUser.cells?.map((c: UserCell) => c.name) || [];
     if (order.cellName && userCellNames.includes(order.cellName)) return true;
     if (order.duties && Array.isArray(order.duties)) {
-      return order.duties.some((d: any) => (d as any).cellName && userCellNames.includes((d as any).cellName));
+      return order.duties.some((d: OrderDuty) => d.cellName && userCellNames.includes(d.cellName));
     }
     return false;
   };
@@ -357,7 +359,7 @@ export function useBillingData(currentUser: any) {
       if (selectedCell !== 'all') {
         const targetCellObj = cells.find(c => c.id.toString() === selectedCell);
         if (targetCellObj && order.cellName !== targetCellObj.name && order.cellName !== 'All Cells' && order.cellName !== 'সকল সেল') {
-          let dutiesList: any[] = order.duties || [];
+          let dutiesList: OrderDuty[] = order.duties || [];
           if (dutiesList.length === 0 && order.dutiesJson) {
             try {
               dutiesList = JSON.parse(order.dutiesJson);
@@ -374,7 +376,7 @@ export function useBillingData(currentUser: any) {
               }
             }
           } else {
-            hasTargetCellEmployee = dutiesList.some((d: any) => {
+            hasTargetCellEmployee = dutiesList.some((d: OrderDuty) => {
               const empIdStr = d.employeeId ? d.employeeId.toString() : '';
               const empName = d.employeeName || '';
               const matched = employees.find(e => 
@@ -487,7 +489,7 @@ export function useBillingData(currentUser: any) {
           console.error(e);
         }
       }
-      const totalDays = dutiesList.reduce((dSum: number, d: any) => dSum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
+      const totalDays = dutiesList.reduce((dSum: number, d: OrderDuty) => dSum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
       let transportRate = 200;
       let apyaonRate = 100;
       if (order.category === 'HOLIDAY') {
@@ -546,7 +548,7 @@ export function useBillingData(currentUser: any) {
       });
 
       if (backingOrder) {
-        let orderDutiesList: any[] = [];
+        let orderDutiesList: OrderDuty[] = [];
         if (backingOrder.duties && backingOrder.duties.length > 0) {
           orderDutiesList = backingOrder.duties;
         } else if (backingOrder.dutiesJson) {
@@ -746,7 +748,7 @@ export function useBillingData(currentUser: any) {
     const empMap = new Map<string, any>();
 
     targetBills.forEach(bill => {
-      let dutiesList: any[] = (bill.duties as any) || [];
+      let dutiesList: OrderDuty[] = (bill.duties as OrderDuty[]) || [];
       if (dutiesList.length === 0 && bill.dutiesJson) {
         try {
           dutiesList = JSON.parse(bill.dutiesJson);
@@ -835,7 +837,7 @@ export function useBillingData(currentUser: any) {
       const payeeName = bill.employeeName || 'অজ্ঞাত কর্মকর্তা';
       const designation = bill.content?.representativeDesignation || '';
       
-      let dutiesList: any[] = (bill.duties as any) || [];
+      let dutiesList: OrderDuty[] = (bill.duties as OrderDuty[]) || [];
       if (dutiesList.length === 0 && bill.dutiesJson) {
         try {
           dutiesList = JSON.parse(bill.dutiesJson);
@@ -956,7 +958,7 @@ export function useBillingData(currentUser: any) {
 
     ledgerActiveOfficeOrders.forEach(order => {
       if (selectedCategory !== 'all' && order.category !== selectedCategory) return;
-      let dutiesList = (order.duties as any) || [];
+      let dutiesList: OrderDuty[] = order.duties || [];
       if (dutiesList.length === 0 && order.dutiesJson) {
         try {
           dutiesList = JSON.parse(order.dutiesJson);
@@ -965,7 +967,7 @@ export function useBillingData(currentUser: any) {
         }
       }
       
-      dutiesList.forEach((d: any) => {
+      dutiesList.forEach((d: OrderDuty) => {
         if (targetCellObj) {
           const empIdStr = d.employeeId ? d.employeeId.toString() : '';
           const empName = d.employeeName || '';

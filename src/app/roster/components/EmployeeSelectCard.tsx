@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Check, X } from 'lucide-react';
-import { Employee, Holiday } from '../types';
+import { Employee, Holiday, LeaveRecord } from '../types';
 import EmployeeCalendarPicker from './EmployeeCalendarPicker';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
@@ -12,7 +12,7 @@ interface EmployeeSelectCardProps {
   selectedDates: string[];
   viewedMonth: string;
   holidays: Holiday[];
-  leaves: any[];
+  leaves: LeaveRecord[];
   dutyType: string;
   onToggle: (empId: number) => void;
   onAddDate: (empId: number, dateStr: string) => void;

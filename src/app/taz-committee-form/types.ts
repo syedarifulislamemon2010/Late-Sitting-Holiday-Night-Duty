@@ -55,6 +55,10 @@ export interface Cell {
   name: string;
 }
 
+export type TazFormData = Omit<TazForm, 'id' | 'createdAt' | 'implementersJson'> & {
+  implementers: Implementer[];
+};
+
 export interface CalendarDatePickerProps {
   value: string;
   onChange: (date: string) => void;

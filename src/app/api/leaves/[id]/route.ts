@@ -58,7 +58,7 @@ export async function PUT(
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || 'Unknown';
 
-    const result = await LeaveService.updateLeave(user, leaveId, validatedData as unknown as any, { ipAddress, userAgent });
+    const result = await LeaveService.updateLeave(user, leaveId, validatedData as import('@/validations/leave.schema').LeaveCreateInput, { ipAddress, userAgent });
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof ConflictError) {

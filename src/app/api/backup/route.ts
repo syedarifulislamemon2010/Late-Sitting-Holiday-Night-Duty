@@ -43,7 +43,7 @@ function decryptData(encryptedData: string, ivBase64: string, authTagBase64: str
   return decrypted.toString('utf8');
 }
 
-function addHistoryLog(log: any) {
+function addHistoryLog(log: Record<string, unknown>) {
   try {
     const history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
     history.push(log);
@@ -92,14 +92,14 @@ export async function GET(req: NextRequest) {
     };
 
     const format = req.nextUrl.searchParams.get('format');
-    let responseData: any = allData;
+    let responseData: unknown = allData;
 
     if (format !== 'raw') {
       const dataString = JSON.stringify(allData);
       const checksum = crypto.createHash('sha256').update(dataString).digest('hex');
       const recordCounts: Record<string, number> = {};
-      Object.keys(allData).forEach((key) => {
-        recordCounts[key] = (allData as any)[key].length;
+      Object.entries(allData).forEach(([key, val]) => {
+        recordCounts[key] = Array.isArray(val) ? val.length : 0;
       });
 
       const encrypted = encryptData(dataString);

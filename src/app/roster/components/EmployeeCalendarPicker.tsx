@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Holiday, getHolidayStatus, isDateDisabledForType } from '../types';
+import { Holiday, LeaveRecord, getHolidayStatus, isDateDisabledForType } from '../types';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
 interface EmployeeCalendarPickerProps {
@@ -12,7 +12,7 @@ interface EmployeeCalendarPickerProps {
   ym: string;
   selectedDates: string[];
   holidays: Holiday[];
-  leaves: any[];
+  leaves: LeaveRecord[];
   dutyType: string;
   onAddDate: (empId: number, dateStr: string) => void;
   onRemoveDate: (empId: number, dateStr: string) => void;

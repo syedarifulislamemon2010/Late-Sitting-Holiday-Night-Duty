@@ -14,6 +14,7 @@ import {
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { getCategoryConfig } from '@/lib/category-colors';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { OrderDuty } from '../types';
 
 interface OfficeOrder {
   id: number;
@@ -24,7 +25,7 @@ interface OfficeOrder {
   cellName: string | null;
   status: string;
   dutiesJson?: string | null;
-  duties?: any[];
+  duties?: OrderDuty[];
 }
 
 const getSlotName = (dateStr: string) => {
@@ -105,7 +106,7 @@ export default function BillsTab({
           logger.error(e);
         }
       }
-      const totalDays = dutiesList.reduce((sum: number, d: any) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
+      const totalDays = dutiesList.reduce((sum: number, d: OrderDuty) => sum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
       
       let transportRate = 200;
       let apyaonRate = 100;

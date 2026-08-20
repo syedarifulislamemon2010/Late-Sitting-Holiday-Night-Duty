@@ -81,14 +81,27 @@ export default function SummaryReportModal({ isOpen, onClose, availableCells = [
 
       const res = await fetch(`/api/duties?${queryParams.toString()}`);
       if (res.ok) {
+        interface DutyApiResponse {
+          type: string;
+          totalBill?: number;
+          cellId?: number;
+          employee?: {
+            id: number;
+            name: string;
+            designation: string;
+            bankId?: string;
+            cellId?: number;
+            cell?: { id: number; name: string };
+          };
+        }
         const data = await res.json();
         // Support both direct Array response and object with duties key
-        const dutiesList: any[] = Array.isArray(data) ? data : (data.duties || []);
+        const dutiesList: DutyApiResponse[] = Array.isArray(data) ? data : (data.duties || []);
 
         // Aggregate by employee
         const empMap = new Map<number, EmployeeSummaryItem>();
 
-        dutiesList.forEach((d: any) => {
+        dutiesList.forEach((d: DutyApiResponse) => {
           const emp = d.employee;
           if (!emp) return;
 

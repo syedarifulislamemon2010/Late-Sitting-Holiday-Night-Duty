@@ -35,7 +35,7 @@ describe('DutyService - Allowance & Holiday Calculations', () => {
 
   describe('checkIsHoliday', () => {
     it('should return true for weekends (Friday & Saturday) by default', async () => {
-      vi.mocked(HolidayRepository.findByDate).mockResolvedValue(null as any);
+      vi.mocked(HolidayRepository.findByDate).mockResolvedValue(null as unknown as typeof import('@/db/schema').holidays.$inferSelect);
 
       // Friday: 2026-06-12
       const isFridayHoliday = await DutyService.checkIsHoliday('2026-06-12');

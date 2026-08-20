@@ -21,7 +21,7 @@ interface OfficeOrder {
   cellName: string | null;
   status: string;
   dutiesJson?: string | null;
-  duties?: any[];
+  duties?: OrderDuty[];
   content?: {
     subjectText?: string;
     openingParagraph?: string;
@@ -40,11 +40,11 @@ interface OrderDuty {
   employeeName: string;
   designation: string;
   datesFormatted?: string;
-  dates?: string;
-  days: number;
-  totalTransport: number;
-  totalApyaon: number;
-  grandTotal: number;
+  dates?: string | string[];
+  days?: number;
+  totalTransport?: number;
+  totalApyaon?: number;
+  grandTotal?: number;
 }
 
 interface DutyListEntry {
@@ -523,7 +523,7 @@ export default function BillPrintLayout({
 
                   {/* Table */}
                   {(() => {
-                    let dutiesList: DutyListEntry[] = (viewingOrder.duties as any) || [];
+                    let dutiesList: DutyListEntry[] = (viewingOrder.duties as unknown as DutyListEntry[]) || [];
                     if (dutiesList.length === 0 && viewingOrder.dutiesJson) {
                       try {
                         dutiesList = JSON.parse(viewingOrder.dutiesJson);
