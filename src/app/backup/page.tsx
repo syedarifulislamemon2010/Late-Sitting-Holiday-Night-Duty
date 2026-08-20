@@ -344,8 +344,9 @@ export default function BackupPage() {
           </div>
           {historyLoading ? (
             <div className="space-y-3">
-              <Skeleton className="h-10 w-full rounded-xl" />
-              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
             </div>
           ) : history.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">{isEn ? 'No backup snapshots found.' : 'কোনো ব্যাকআপ স্ন্যাপশট পাওয়া যায়নি।'}</p>

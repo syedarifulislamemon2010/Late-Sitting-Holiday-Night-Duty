@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import SummaryReportModal from './components/SummaryReportModal';
+import { AnalyticsSkeleton } from '@/components/ui/Skeleton';
 
 // Dynamically import the charts component to disable Server-Side Rendering (SSR) for Recharts.
 // This completely resolves hydration mismatch and SSR "window is not defined" warnings.
@@ -319,6 +320,10 @@ export default function AnalyticsDashboardPage() {
   };
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  if (loading) {
+    return <AnalyticsSkeleton />;
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">

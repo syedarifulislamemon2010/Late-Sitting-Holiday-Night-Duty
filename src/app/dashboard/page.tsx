@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/context/ToastContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { DashboardSkeleton } from '@/components/ui/Skeleton';
 
 
 
@@ -379,15 +380,7 @@ export default function DashboardPage() {
   });
 
   if (loading) {
-    return (
-      <div className="flex flex-col gap-6 animate-pulse">
-        <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-[450px] bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-          <div className="h-[450px] bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (

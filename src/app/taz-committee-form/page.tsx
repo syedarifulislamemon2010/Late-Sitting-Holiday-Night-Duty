@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useProfile } from '@/context/ProfileContext';
-import { TableSkeleton } from '@/components/SkeletonLoader';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import AuthGuard from '@/components/AuthGuard';
 import { Button } from '@/components/ui/Button';
 import { Printer, ArrowLeft } from 'lucide-react';

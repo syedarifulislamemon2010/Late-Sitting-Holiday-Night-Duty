@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
-import { TableSkeleton, CardSkeleton } from "@/components/SkeletonLoader";
+import { TableSkeleton, CardSkeleton } from '@/components/ui/Skeleton';
 import { toBanglaDigits, getBanglaNumberWords } from '@/lib/bengali-converter';
 
 import { useBillingData } from './hooks/useBillingData';

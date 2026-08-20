@@ -56,7 +56,7 @@ export interface Cell {
 }
 
 export type TazFormData = Omit<TazForm, 'id' | 'createdAt' | 'implementersJson'> & {
-  implementers: Implementer[];
+  implementers?: Implementer[];
 };
 
 export interface CalendarDatePickerProps {

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 import { useProfile } from '@/context/ProfileContext';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 interface Cell {
   id: number;
@@ -645,10 +646,7 @@ export default function ClosingBillPage() {
 
         {/* Loading / Data Table */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="animate-spin text-indigo-600" size={36} />
-            <p className="text-sm font-bold text-slate-500">ক্লোজিং বিল ডাটা লোড হচ্ছে...</p>
-          </div>
+          <TableSkeleton rows={8} columns={6} />
         ) : !selectedMonth ? (
           <div className="glass-card p-10 rounded-3xl text-center space-y-6 flex flex-col items-center justify-center max-w-2xl mx-auto border border-slate-200/60 dark:border-slate-800/80 animate-scale-up">
             <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-950 text-slate-400 dark:text-slate-600 flex items-center justify-center animate-pulse">

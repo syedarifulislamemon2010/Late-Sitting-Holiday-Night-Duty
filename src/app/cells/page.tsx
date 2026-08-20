@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import AuthGuard from '@/components/AuthGuard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { CardSkeleton } from '@/components/ui/Skeleton';
 import { 
   Building2, 
   Plus, 
@@ -177,9 +178,7 @@ export default function CellsPage() {
 
         {/* Cell Grid */}
         {loading ? (
-          <div className="py-20 text-center text-xs font-bold text-slate-400 animate-pulse">
-            সেল তালিকা লোড হচ্ছে...
-          </div>
+          <CardSkeleton count={6} />
         ) : cells.length === 0 ? (
           <EmptyState
             icon={Building2}

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { useLayout, LayoutPriority } from '@/context/LayoutContext';
-import { TableSkeleton } from "@/components/SkeletonLoader";
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { AlertCircle, X, CheckCircle, ChevronRight } from 'lucide-react';

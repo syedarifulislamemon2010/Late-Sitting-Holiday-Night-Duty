@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useProfile } from '@/context/ProfileContext';
-import { TableSkeleton } from '@/components/SkeletonLoader';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import { Shield, UserCheck, Users, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 
 import { useUsersData } from './hooks/useUsersData';

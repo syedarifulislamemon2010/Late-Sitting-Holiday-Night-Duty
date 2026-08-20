@@ -17,6 +17,7 @@ import AuthGuard from '@/components/AuthGuard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { FormSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { BANGLADESH_AREAS } from './bangladesh_areas';
 import LeaveFormHeader from './components/LeaveFormHeader';
 import LeaveSummaryCard from './components/LeaveSummaryCard';
@@ -1216,11 +1217,11 @@ export default function LeaveGeneratorPage() {
         {/* TOP BAR / NAVIGATION */}
         <LeaveFormHeader handlePrint={handlePrint} handleDownloadDocx={handleDownloadDocx} />
 
-        {/* Loading Spinner */}
+        {/* Loading State */}
         {loading ? (
-          <div className="no-print flex flex-col items-center justify-center py-24 space-y-3 glass-card rounded-2xl">
-            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-            <p className="text-xs font-bold text-slate-500">প্রয়োজনীয় তথ্যসমূহ লোড হচ্ছে...</p>
+          <div className="no-print space-y-6">
+            <FormSkeleton fields={6} />
+            <TableSkeleton rows={4} columns={5} />
           </div>
         ) : (
           <div className="space-y-6">

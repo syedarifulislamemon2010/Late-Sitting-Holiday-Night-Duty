@@ -21,6 +21,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
+import { MetricCardsSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 
 interface Employee {
   id: number;
@@ -261,8 +262,9 @@ export default function MyPortalPage() {
 
   if (loading && !employee) {
     return (
-      <div className="min-h-[500px] w-full flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-[#0b5e9e] border-t-transparent rounded-full animate-spin" />
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        <MetricCardsSkeleton count={4} />
+        <TableSkeleton rows={6} columns={4} />
       </div>
     );
   }

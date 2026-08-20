@@ -8,6 +8,7 @@ import { toBanglaDigits } from '@/lib/bengali-converter';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { CardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 
 import { 
   UploadCloud, 
@@ -1547,10 +1548,7 @@ export default function DocumentsPage() {
                 </div>
 
                 {loading ? (
-                  <div className="flex flex-col items-center justify-center py-20 space-y-3">
-                    <Loader2 size={36} className="text-indigo-500 animate-spin" />
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
-                  </div>
+                  <CardSkeleton count={4} />
                 ) : filteredDocuments.length === 0 ? (
                   <EmptyState
                     icon={FileText}
@@ -1904,10 +1902,7 @@ export default function DocumentsPage() {
                 </div>
 
                 {loadingManualDocs ? (
-                  <div className="flex flex-col items-center justify-center py-20 space-y-3">
-                    <Loader2 size={36} className="text-indigo-500 animate-spin" />
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
-                  </div>
+                  <CardSkeleton count={4} />
                 ) : filteredManualDocs.length === 0 ? (
                   <EmptyState
                     icon={FileText}
@@ -2151,10 +2146,7 @@ export default function DocumentsPage() {
 
               {/* Grid lists of office orders */}
               {loadingOrders ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-3">
-                  <Loader2 size={36} className="text-indigo-500 animate-spin" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
-                </div>
+                <TableSkeleton rows={6} columns={5} />
               ) : filteredOfficeOrders.length === 0 ? (
                 <EmptyState
                   icon={AlertCircle}

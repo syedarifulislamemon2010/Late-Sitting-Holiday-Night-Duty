@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
-import { TableSkeleton } from '@/components/SkeletonLoader';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import { AlertTriangle, CheckCircle, X } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 

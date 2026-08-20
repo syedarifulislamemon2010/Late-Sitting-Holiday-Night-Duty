@@ -6,6 +6,7 @@ import { useProfile } from '@/context/ProfileContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { CardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { 
   Plus, 
   Search, 
@@ -615,12 +616,7 @@ export default function ExecutivesPage() {
       </div>
 
       {loading ? (
-        /* Skeletons */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-44 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-          ))}
-        </div>
+        <CardSkeleton count={6} />
       ) : (
         <div className="space-y-6">
           {/* Controls Menu */}

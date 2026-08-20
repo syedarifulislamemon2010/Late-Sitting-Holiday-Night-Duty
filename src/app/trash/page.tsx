@@ -7,7 +7,7 @@ import AuthGuard from '@/components/AuthGuard';
 import { Card } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import { 
   Trash2, 
   RefreshCw, 
@@ -302,11 +302,7 @@ export default function TrashPage() {
 
           {/* Trash List Table */}
           {loading ? (
-            <div className="space-y-3 py-4">
-              <Skeleton className="h-12 w-full rounded-xl" />
-              <Skeleton className="h-12 w-full rounded-xl" />
-              <Skeleton className="h-12 w-full rounded-xl" />
-            </div>
+            <TableSkeleton rows={5} columns={6} />
           ) : filteredItems.length === 0 ? (
             <EmptyState
               title="এই বিভাগে কোনো মুছে ফেলা রেকর্ড নেই"

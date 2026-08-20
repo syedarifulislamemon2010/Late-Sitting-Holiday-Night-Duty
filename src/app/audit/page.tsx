@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import AuthGuard from '@/components/AuthGuard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import { 
   ClipboardList, 
   Search, 
@@ -284,10 +285,7 @@ export default function AuditPage() {
           </div>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 space-y-3">
-              <div className="w-8 h-8 border-3 border-indigo-650 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">অডিট লগ লোড হচ্ছে...</p>
-            </div>
+            <TableSkeleton rows={7} columns={6} />
           ) : filteredLogs.length === 0 ? (
             <EmptyState
               icon={ClipboardList}

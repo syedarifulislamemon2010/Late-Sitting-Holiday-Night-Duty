@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 import { useProfile } from '@/context/ProfileContext';
 import InlineEdit from '@/components/InlineEdit';
-import { TableSkeleton, CardSkeleton } from "@/components/SkeletonLoader";
+import { TableSkeleton, CardSkeleton } from '@/components/ui/Skeleton';
 import { useLanguage } from '@/context/LanguageContext';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { EmptyState } from '@/components/ui/EmptyState';
