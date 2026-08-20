@@ -259,3 +259,19 @@ export const calculateOrderDate = (earliestDateStr: string, holidaysList: Holida
     }
   }
 };
+
+export const getShortDesignation = (desig: string | undefined | null): string => {
+  if (!desig) return '';
+  const match = desig.match(/\(([^)]+)\)/);
+  return match ? match[1] : desig;
+};
+
+export const getFormattedDateList = (dates: string[]): string => {
+  return [...dates]
+    .sort()
+    .map(d => {
+      const [year, month, day] = d.split('-');
+      return toBanglaDigits(`${day}-${month}-${year}`);
+    })
+    .join(', ');
+};
