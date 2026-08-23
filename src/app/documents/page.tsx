@@ -10,6 +10,7 @@ import OrdersTab from './components/OrdersTab';
 import BillsTab from './components/BillsTab';
 import OfficeOrderPrintModal from './components/OfficeOrderPrintModal';
 import RenameDocumentModal from './components/RenameDocumentModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ManualDoc } from './types';
 
 export default function DocumentsPage() {
@@ -101,6 +102,8 @@ export default function DocumentsPage() {
     handleDeleteDoc,
     handleUploadSubmit,
     handleDeleteOrder,
+    deleteConfirm,
+    setDeleteConfirm
   } = useDocumentsData(currentUser);
 
   const filesCount = documents.length;
@@ -262,6 +265,23 @@ export default function DocumentsPage() {
           setEditDocName('');
         }}
         onSubmit={handleRenameManualDoc}
+      />
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={!!deleteConfirm?.isOpen}
+        title={deleteConfirm?.title || 'মুছে ফেলার নিশ্চিতকরণ'}
+        description={deleteConfirm?.description || ''}
+        confirmText="হ্যাঁ, মুছে ফেলুন"
+        cancelText="বাতিল"
+        variant="danger"
+        onConfirm={async () => {
+          if (deleteConfirm?.onConfirm) {
+            await deleteConfirm.onConfirm();
+          }
+          setDeleteConfirm(null);
+        }}
+        onCancel={() => setDeleteConfirm(null)}
       />
     </div>
   );

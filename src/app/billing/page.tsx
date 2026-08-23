@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { TableSkeleton, CardSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { toBanglaDigits, getBanglaNumberWords } from '@/lib/bengali-converter';
 
 import { useBillingData } from './hooks/useBillingData';
@@ -250,6 +251,22 @@ export default function BillingPage() {
           fetchDutiesForBilling={billing.fetchDutiesForBilling}
         />
       )}
+
+      {/* Confirm Delete Order/Bill Dialog */}
+      <ConfirmDialog
+        isOpen={!!billing.orderToDelete}
+        title={billing.orderToDelete?.isBill ? 'বিল মেমো মুছে ফেলার নিশ্চিতকরণ' : 'অফিস আদেশ মুছে ফেলার নিশ্চিতকরণ'}
+        description={
+          billing.orderToDelete?.isBill
+            ? `আপনি কি নিশ্চিত যে এই বিল স্মারক বিবরণীটি (${billing.orderToDelete?.orderRef}) আর্কাইভ থেকে মুছে ফেলতে চান? এটি ডিলিট করলে বিলের রেকর্ডটি রিসাইকেল বিনে স্থানান্তরিত হবে।`
+            : `আপনি কি নিশ্চিত যে এই অফিস আদেশ স্মারক বিবরণীটি (${billing.orderToDelete?.orderRef}) আর্কাইভ থেকে মুছে ফেলতে চান? এটি ডিলিট করলে এটি রিসাইকেল বিনে স্থানান্তরিত হবে।`
+        }
+        confirmText="হ্যাঁ, মুছে ফেলুন"
+        cancelText="বাতিল"
+        variant="danger"
+        onConfirm={billing.confirmDeleteOrder}
+        onCancel={() => billing.setOrderToDelete(null)}
+      />
     </div>
   );
 }

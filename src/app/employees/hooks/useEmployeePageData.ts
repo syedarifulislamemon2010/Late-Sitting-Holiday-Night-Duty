@@ -63,6 +63,9 @@ export function useEmployeePageData(currentUser: UserProfile | null | undefined)
   });
 
   const [errorMessage, setErrorMessage] = useState('');
+  const [empToDelete, setEmpToDelete] = useState<Employee | null>(null);
+  const [cellToDelete, setCellToDelete] = useState<Cell | null>(null);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
 
   // Bulk Employee Import
   const [isBulkEmpModalOpen, setIsBulkEmpModalOpen] = useState(false);
@@ -292,25 +295,35 @@ export function useEmployeePageData(currentUser: UserProfile | null | undefined)
     }
   };
 
-  const deleteEmployee = async (id: number) => {
-    if (!confirm('আপনি কি নিশ্চিতভাবে এই কর্মকর্তাকে মুছে ফেলতে চান? এর ফলে তার সব ডিউটি হিস্ট্রি ডিলিট হবে।')) return;
+  const deleteEmployee = (id: number) => {
+    const emp = employees.find(e => e.id === id);
+    setEmpToDelete(emp || ({ id, name: 'কর্মকর্তা' } as Employee));
+  };
+
+  const confirmDeleteEmp = async () => {
+    if (!empToDelete) return;
     try {
-      const res = await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/employees/${empToDelete.id}`, { method: 'DELETE' });
       if (res.ok) loadData();
     } catch (err) {
       logger.error('Error deleting officer:', err);
+    } finally {
+      setEmpToDelete(null);
     }
   };
 
-  const deleteCell = async (cell: Cell) => {
+  const deleteCell = (cell: Cell) => {
     if (cell._count && cell._count.employees > 0) {
       alert('এই সেলে কর্মকর্তা কর্মরত রয়েছে! সেলটি ডিলিট করার আগে কর্মকর্তাদের অন্য সেলে স্থানান্তর করুন।');
       return;
     }
-    if (!confirm(`আপনি কি নিশ্চিতভাবে "${cell.name}" সেলটি মুছে ফেলতে চান?`)) return;
-    
+    setCellToDelete(cell);
+  };
+
+  const confirmDeleteCell = async () => {
+    if (!cellToDelete) return;
     try {
-      const res = await fetch(`/api/cells/${cell.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/cells/${cellToDelete.id}`, { method: 'DELETE' });
       if (res.ok) {
         loadData();
       } else {
@@ -319,6 +332,8 @@ export function useEmployeePageData(currentUser: UserProfile | null | undefined)
       }
     } catch (err) {
       logger.error('Error deleting cell:', err);
+    } finally {
+      setCellToDelete(null);
     }
   };
 
@@ -793,14 +808,19 @@ export function useEmployeePageData(currentUser: UserProfile | null | undefined)
     );
   };
 
-  const handleBulkDelete = async () => {
-    if (!confirm(`আপনি কি নিশ্চিতভাবে নির্বাচিত ${selectedEmps.length} জন কর্মকর্তাকে মুছে ফেলতে চান?`)) return;
+  const handleBulkDelete = () => {
+    setIsBulkDeleteConfirmOpen(true);
+  };
+
+  const confirmBulkDelete = async () => {
     try {
       await Promise.all(selectedEmps.map(id => fetch(`/api/employees/${id}`, { method: 'DELETE' })));
       setSelectedEmps([]);
       loadData();
     } catch (err) {
       logger.error('Failed to bulk delete officers:', err);
+    } finally {
+      setIsBulkDeleteConfirmOpen(false);
     }
   };
 
@@ -891,7 +911,13 @@ export function useEmployeePageData(currentUser: UserProfile | null | undefined)
     handleEmpSubmit,
     handleCellSubmit,
     deleteEmployee,
+    confirmDeleteEmp,
+    empToDelete,
+    setEmpToDelete,
     deleteCell,
+    confirmDeleteCell,
+    cellToDelete,
+    setCellToDelete,
     handleBulkEmpSubmit,
     handleBulkCellSubmit,
     handleTextareaPaste,
@@ -902,6 +928,9 @@ export function useEmployeePageData(currentUser: UserProfile | null | undefined)
     toggleSelectAll,
     toggleSelectEmp,
     handleBulkDelete,
+    confirmBulkDelete,
+    isBulkDeleteConfirmOpen,
+    setIsBulkDeleteConfirmOpen,
     handleBulkChangeCell
   };
 }

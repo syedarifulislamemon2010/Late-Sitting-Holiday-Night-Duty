@@ -46,6 +46,7 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
 
   const [archiveSuccess, setArchiveSuccess] = useState<string | null>(null);
   const [archiveError, setArchiveError] = useState<string | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<{ id: number; orderRef: string; isBill: boolean } | null>(null);
 
   const userCellNamesString = currentUser?.cells?.map((c: UserCell) => c.name).sort().join(',') || '';
   const userRole = currentUser?.role || '';
@@ -305,7 +306,7 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
     );
   }, [archivedOrders]);
 
-  const handleDeleteOrder = async (id: number) => {
+  const handleDeleteOrder = (id: number) => {
     const order = archivedOrders.find(o => o.id === id);
     if (!order) return;
 
@@ -315,13 +316,12 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
     }
 
     const isBill = order.category?.startsWith('BILL_');
-    const warningMsg = isBill 
-      ? `⚠️ সতর্কবার্তা!\n\nআপনি কি নিশ্চিত যে এই বিল স্মারক বিবরণীটি (${order.orderRef}) আর্কাইভ থেকে মুছে ফেলতে চান?\n\nএটি ডিলিট করলে বিলের রেকর্ডটি রিসাইকেল বিনে স্থানান্তরিত হবে। এটি স্থায়ীভাবে মুছে ফেলা হবে না এবং পরবর্তীতে পুনরুদ্ধার (Restore) করা সম্ভব।`
-      : `⚠️ সতর্কবার্তা!\n\nআপনি কি নিশ্চিত যে এই অফিস আদেশ স্মারক বিবরণীটি (${order.orderRef}) আর্কাইভ থেকে মুছে ফেলতে চান?\n\nএটি ডিলিট করলে এটি রিসাইকেল বিনে স্থানান্তরিত হবে এবং পুনরুদ্ধার করা সম্ভব। কিন্তু রিস্টোর করার পূর্ব পর্যন্ত এই আদেশের বিপরীতে বিল প্রসেস করা সম্ভব হবে না।`;
+    setOrderToDelete({ id, orderRef: order.orderRef, isBill: !!isBill });
+  };
 
-    if (!confirm(warningMsg)) {
-      return;
-    }
+  const confirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    const { id, isBill } = orderToDelete;
 
     try {
       const res = await fetch(`/api/office-orders/${id}`, {
@@ -340,6 +340,8 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
     } catch {
       setArchiveError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
       setTimeout(() => setArchiveError(null), 5000);
+    } finally {
+      setOrderToDelete(null);
     }
   };
 
@@ -1148,6 +1150,9 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
     archiveSuccess,
     setArchiveSuccess,
     archiveError,
-    setArchiveError
+    setArchiveError,
+    orderToDelete,
+    setOrderToDelete,
+    confirmDeleteOrder
   };
 }

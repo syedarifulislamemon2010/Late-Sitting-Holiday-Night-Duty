@@ -104,6 +104,7 @@ export function useDutyAssignment({
   } | null>(null);
   const [selectedDutyIds, setSelectedDutyIds] = useState<number[]>([]);
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+  const [groupDutiesToDelete, setGroupDutiesToDelete] = useState<Duty[] | null>(null);
 
   // Live debounce conflict check
   useEffect(() => {
@@ -275,17 +276,25 @@ export function useDutyAssignment({
     }
   };
 
-  const deleteGroupedDuties = async (dutiesToDelete: Duty[]) => {
-    if (!confirm(`আপনি কি নিশ্চিতভাবে এই কর্মকর্তার ${toBanglaDigits(dutiesToDelete.length)} টি ডিউটি রেকর্ড মুছে ফেলতে চান?`)) return;
+  const deleteGroupedDuties = (dutiesToDelete: Duty[]) => {
+    setGroupDutiesToDelete(dutiesToDelete);
+  };
+
+  const confirmDeleteGroupedDuties = async () => {
+    if (!groupDutiesToDelete) return;
     try {
+      setSubmitting(true);
       await Promise.all(
-        dutiesToDelete.map(d => fetch(`/api/duties/${d.id}`, { method: 'DELETE' }))
+        groupDutiesToDelete.map(d => fetch(`/api/duties/${d.id}`, { method: 'DELETE' }))
       );
       loadDuties();
-      alert('ডিউটি রেকর্ডসমূহ সফলভাবে মুছে ফেলা হয়েছে।');
+      showToast('ডিউটি রেকর্ডসমূহ সফলভাবে মুছে ফেলা হয়েছে।', 'success');
     } catch (err) {
       logger.error('Error deleting duties:', err);
-      alert('ডিউটি রেকর্ড মুছতে ব্যর্থ হয়েছে।');
+      showToast('ডিউটি রেকর্ড মুছতে ব্যর্থ হয়েছে।', 'error');
+    } finally {
+      setSubmitting(false);
+      setGroupDutiesToDelete(null);
     }
   };
 
@@ -843,6 +852,9 @@ export function useDutyAssignment({
     handleCancelEdit,
     handleCancelRosterEdit,
     deleteGroupedDuties,
+    groupDutiesToDelete,
+    setGroupDutiesToDelete,
+    confirmDeleteGroupedDuties,
     handleBulkDeleteDuties,
     executeBulkDeleteDuties,
     handleOverwriteAndSave,

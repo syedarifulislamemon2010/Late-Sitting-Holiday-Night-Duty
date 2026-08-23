@@ -64,6 +64,14 @@ export function useDocumentsData(currentUser: UserSession | null) {
   const [viewingOrder, setViewingOrder] = useState<OfficeOrder | null>(null);
   const [msgBanner, setMsgBanner] = useState<{ type: 'success' | 'cancel'; text: string } | null>(null);
 
+  // Confirm Modal state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -217,31 +225,34 @@ export function useDocumentsData(currentUser: UserSession | null) {
   };
 
   // Delete Manual Document
-  const handleDeleteManualDoc = async (id: number) => {
+  const handleDeleteManualDoc = (id: number) => {
     const doc = manualDocs.find(d => d.id === id);
     if (!doc) return;
 
-    if (!confirm(`⚠️ সতর্কবার্তা!\n\nআপনি কি নিশ্চিত যে এই ফাইলটি (${doc.name}) আর্কাইভ থেকে মুছে ফেলতে চান?\n\nএটি ডিলিট করলে ফাইলটি রিসাইকেল বিনে স্থানান্তরিত হবে। এটি স্থায়ীভাবে মুছে ফেলা হবে না এবং পরবর্তীতে পুনরুদ্ধার (Restore) করা সম্ভব।`)) {
-      return;
-    }
+    setDeleteConfirm({
+      isOpen: true,
+      title: 'ফাইল মুছে ফেলার নিশ্চিতকরণ',
+      description: `আপনি কি নিশ্চিত যে এই ফাইলটি (${doc.name}) আর্কাইভ থেকে মুছে ফেলতে চান? এটি ডিলিট করলে ফাইলটি রিসাইকেল বিনে স্থানান্তরিত হবে এবং পরবর্তীতে পুনরুদ্ধার (Restore) করা সম্ভব।`,
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/manual-documents', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+          });
 
-    try {
-      const res = await fetch('/api/manual-documents', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      });
-
-      if (res.ok) {
-        setSuccessMsg('ফাইলটি সফলভাবে মুছে ফেলা হয়েছে ও রিসাইকেল বিনে পাঠানো হয়েছে।');
-        fetchManualDocs();
-      } else {
-        const data = await res.json();
-        setError(data.message || 'ফাইলটি মুছে ফেলা সম্ভব হয়নি।');
+          if (res.ok) {
+            setSuccessMsg('ফাইলটি সফলভাবে মুছে ফেলা হয়েছে ও রিসাইকেল বিনে পাঠানো হয়েছে।');
+            fetchManualDocs();
+          } else {
+            const data = await res.json();
+            setError(data.message || 'ফাইলটি মুছে ফেলা সম্ভব হয়নি।');
+          }
+        } catch {
+          setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+        }
       }
-    } catch {
-      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
-    }
+    });
   };
 
   // Rename Manual Document
@@ -298,25 +309,28 @@ export function useDocumentsData(currentUser: UserSession | null) {
   };
 
   // Delete generated document (Tab 1)
-  const handleDeleteDoc = async (id: number) => {
+  const handleDeleteDoc = (id: number) => {
     const doc = documents.find(d => d.id === id);
     if (!doc) return;
 
-    if (!confirm(`⚠️ সতর্কবার্তা!\n\nআপনি কি নিশ্চিত যে এই ফাইলটি (${doc.name}) আর্কাইভ থেকে মুছে ফেলতে চান?\n\nএটি ডিলিট করলে ফাইলটি রিসাইকেল বিনে স্থানান্তরিত হবে। এটি স্থায়ীভাবে মুছে ফেলা হবে না এবং পরবর্তীতে পুনরুদ্ধার (Restore) করা সম্ভব।`)) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/documents?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setSuccessMsg('ফাইলটি সফলভাবে মুছে ফেলা হয়েছে ও রিসাইকেল বিনে পাঠানো হয়েছে।');
-        fetchDocuments();
-      } else {
-        setError('ফাইলটি মুছে ফেলতে ব্যর্থ হয়েছে।');
+    setDeleteConfirm({
+      isOpen: true,
+      title: 'ডকুমেন্ট মুছে ফেলার নিশ্চিতকরণ',
+      description: `আপনি কি নিশ্চিত যে এই ফাইলটি (${doc.name}) আর্কাইভ থেকে মুছে ফেলতে চান? এটি ডিলিট করলে ফাইলটি রিসাইকেল বিনে স্থানান্তরিত হবে এবং পরবর্তীতে পুনরুদ্ধার (Restore) করা সম্ভব।`,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/documents?id=${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            setSuccessMsg('ফাইলটি সফলভাবে মুছে ফেলা হয়েছে ও রিসাইকেল বিনে পাঠানো হয়েছে।');
+            fetchDocuments();
+          } else {
+            setError('ফাইলটি মুছে ফেলতে ব্যর্থ হয়েছে।');
+          }
+        } catch {
+          setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+        }
       }
-    } catch {
-      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
-    }
+    });
   };
 
   // Upload Generated PDF (Tab 1)
@@ -356,7 +370,7 @@ export function useDocumentsData(currentUser: UserSession | null) {
   };
 
   // Delete office order by id
-  const handleDeleteOrder = async (id: number) => {
+  const handleDeleteOrder = (id: number) => {
     const order = officeOrders.find(o => o.id === id);
     if (!order) return;
 
@@ -367,56 +381,62 @@ export function useDocumentsData(currentUser: UserSession | null) {
 
     const isBill = order.category?.startsWith('BILL_');
     const warningMsg = isBill 
-      ? `⚠️ সতর্কবার্তা!\n\nআপনি কি নিশ্চিত যে এই বিল স্মারক বিবরণীটি (${order.orderRef}) আর্কাইভ থেকে মুছে ফেলতে চান?\n\nএটি ডিলিট করলে বিলের রেকর্ডটি রিসাইকেল বিনে স্থানান্তরিত হবে। এটি স্থায়ীভাবে মুছে ফেলা হবে না এবং পরবর্তীতে পুনরুদ্ধার (Restore) করা সম্ভব।`
-      : `⚠️ সতর্কবার্তা!\n\nআপনি কি নিশ্চিত যে এই অফিস আদেশ স্মারক বিবরণীটি (${order.orderRef}) আর্কাইভ থেকে মুছে ফেলতে চান?\n\nএটি ডিলিট করলে এটি রিসাইকেল বিনে স্থানান্তরিত হবে এবং পুনরুদ্ধার করা সম্ভব। কিন্তু রিস্টোর করার পূর্ব পর্যন্ত এই আদেশের বিপরীতে বিল প্রসেস করা সম্ভব হবে না।`;
+      ? `আপনি কি নিশ্চিত যে এই বিল স্মারক বিবরণীটি (${order.orderRef}) আর্কাইভ থেকে মুছে ফেলতে চান? এটি ডিলিট করলে বিলের রেকর্ডটি রিসাইকেল বিনে স্থানান্তরিত হবে। এটি স্থায়ীভাবে মুছে ফেলা হবে না এবং পরবর্তীতে পুনরুদ্ধার (Restore) করা সম্ভব।`
+      : `আপনি কি নিশ্চিত যে এই অফিস আদেশ স্মারক বিবরণীটি (${order.orderRef}) আর্কাইভ থেকে মুছে ফেলতে চান? এটি ডিলিট করলে এটি রিসাইকেল বিনে স্থানান্তরিত হবে এবং পুনরুদ্ধার করা সম্ভব। কিন্তু রিস্টোর করার পূর্ব পর্যন্ত এই আদেশের বিপরীতে বিল প্রসেস করা সম্ভব হবে না।`;
 
-    if (!confirm(warningMsg)) {
-      return;
-    }
+    setDeleteConfirm({
+      isOpen: true,
+      title: isBill ? 'বিল মেমো মুছে ফেলার নিশ্চিতকরণ' : 'অফিস আদেশ মুছে ফেলার নিশ্চিতকরণ',
+      description: warningMsg,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/office-orders/${id}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const res = await fetch(`/api/office-orders/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setSuccessMsg(isBill ? 'বিল মেমোটি সফলভাবে মুছে ফেলা হয়েছে।' : 'অফিস আদেশটি সফলভাবে মুছে ফেলা হয়েছে।');
-        fetchOfficeOrders();
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        setError(errData.message || 'অফিস আদেশটি মুছে ফেলা সম্ভব হয়নি।');
+          if (res.ok) {
+            setSuccessMsg(isBill ? 'বিল মেমোটি সফলভাবে মুছে ফেলা হয়েছে।' : 'অফিস আদেশটি সফলভাবে মুছে ফেলা হয়েছে।');
+            fetchOfficeOrders();
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            setError(errData.message || 'অফিস আদেশটি মুছে ফেলা সম্ভব হয়নি।');
+          }
+        } catch {
+          setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+        }
       }
-    } catch {
-      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
-    }
+    });
   };
 
   // Delete office order
-  const handleDeleteOfficeOrder = async (orderRef: string, category: string) => {
+  const handleDeleteOfficeOrder = (orderRef: string, category: string) => {
     const isBill = category?.startsWith('BILL_');
     const typeLabel = isBill ? 'বিল' : 'অফিস আদেশ';
 
-    if (!confirm(`⚠️ সতর্কবার্তা!\n\nআপনি কি নিশ্চিত যে আপনি স্মারক নম্বর "${orderRef}" এর সংরক্ষিত ${typeLabel}টি মুছে ফেলতে চান?\n\nএটি ডিলিট করলে সংশ্লিষ্ট সকল রেকর্ড রিসাইকেল বিনে স্থানান্তরিত হবে এবং ডিউটি তালিকা পুনরায় আন-অ্যাসাইনড হবে।`)) {
-      return;
-    }
+    setDeleteConfirm({
+      isOpen: true,
+      title: `${typeLabel} মুছে ফেলার নিশ্চিতকরণ`,
+      description: `আপনি কি নিশ্চিত যে আপনি স্মারক নম্বর "${orderRef}" এর সংরক্ষিত ${typeLabel}টি মুছে ফেলতে চান? এটি ডিলিট করলে সংশ্লিষ্ট সকল রেকর্ড রিসাইকেল বিনে স্থানান্তরিত হবে এবং ডিউটি তালিকা পুনরায় আন-অ্যাসাইনড হবে।`,
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/office-orders', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderRef, category }),
+          });
 
-    try {
-      const res = await fetch('/api/office-orders', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderRef, category }),
-      });
-
-      if (res.ok) {
-        setSuccessMsg(`${typeLabel} সফলভাবে মুছে ফেলা হয়েছে ও রিসাইকেল বিনে পাঠানো হয়েছে।`);
-        fetchOfficeOrders();
-      } else {
-        const data = await res.json();
-        setError(data.message || `${typeLabel} মুছে ফেলতে সমস্যা হয়েছে।`);
+          if (res.ok) {
+            setSuccessMsg(`${typeLabel} সফলভাবে মুছে ফেলা হয়েছে ও রিসাইকেল বিনে পাঠানো হয়েছে।`);
+            fetchOfficeOrders();
+          } else {
+            const data = await res.json();
+            setError(data.message || `${typeLabel} মুছে ফেলতে সমস্যা হয়েছে।`);
+          }
+        } catch {
+          setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+        }
       }
-    } catch {
-      setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
-    }
+    });
   };
 
   return {
@@ -509,5 +529,7 @@ export function useDocumentsData(currentUser: UserSession | null) {
     handleUploadSubmit,
     handleDeleteOrder,
     handleDeleteOfficeOrder,
+    deleteConfirm,
+    setDeleteConfirm
   };
 }

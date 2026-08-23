@@ -54,6 +54,7 @@ export function useTazFormData() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMonth, setFilterMonth] = useState('ALL');
   const [previewForm, setPreviewForm] = useState<TazForm | null>(null);
+  const [formToDelete, setFormToDelete] = useState<number | null>(null);
 
   // Fetch initial data
   useEffect(() => {
@@ -217,10 +218,14 @@ export function useTazFormData() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('আপনি কি নিশ্চিত যে এই ফর্মটি মুছে ফেলতে চান?')) return;
+  const handleDelete = (id: number) => {
+    setFormToDelete(id);
+  };
+
+  const confirmDeleteForm = async () => {
+    if (!formToDelete) return;
     try {
-      const res = await fetch(`/api/taz-committee-forms/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/taz-committee-forms/${formToDelete}`, { method: 'DELETE' });
       if (res.ok) {
         showToast('ফর্ম সফলভাবে মুছে ফেলা হয়েছে!', 'success');
         loadForms();
@@ -230,6 +235,8 @@ export function useTazFormData() {
     } catch (err) {
       logger.error('Error deleting form:', err);
       showToast('সার্ভার এরর।', 'error');
+    } finally {
+      setFormToDelete(null);
     }
   };
 
@@ -249,6 +256,8 @@ export function useTazFormData() {
     setFilterMonth,
     previewForm,
     setPreviewForm,
+    formToDelete,
+    setFormToDelete,
     handleInputChange,
     handleAddImplementer,
     handleRemoveImplementer,
@@ -256,6 +265,7 @@ export function useTazFormData() {
     handleReset,
     handleEdit,
     handleSubmit,
-    handleDelete
+    handleDelete,
+    confirmDeleteForm
   };
 }

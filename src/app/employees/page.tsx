@@ -4,6 +4,7 @@ import React from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { TableSkeleton, CardSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 import EmployeeControls from './components/EmployeeControls';
 import EmployeeAdvancedFilters from './components/EmployeeAdvancedFilters';
@@ -92,7 +93,13 @@ export default function EmployeesPage() {
     handleEmpSubmit,
     handleCellSubmit,
     deleteEmployee,
+    confirmDeleteEmp,
+    empToDelete,
+    setEmpToDelete,
     deleteCell,
+    confirmDeleteCell,
+    cellToDelete,
+    setCellToDelete,
     handleBulkEmpSubmit,
     handleBulkCellSubmit,
     handleTextareaPaste,
@@ -100,7 +107,10 @@ export default function EmployeesPage() {
     startEditCell,
     exportEmployeesToCSV,
     exportCellsToCSV,
-    handleBulkDelete
+    handleBulkDelete,
+    confirmBulkDelete,
+    isBulkDeleteConfirmOpen,
+    setIsBulkDeleteConfirmOpen
   } = useEmployeePageData(currentUser);
 
   const isSelfEditingOnly = !!(
@@ -296,6 +306,42 @@ export default function EmployeesPage() {
 
       {/* Hidden print iframe */}
       <iframe id="silent-print-iframe" className="hidden" title="silent-print" />
+
+      {/* Confirm Delete Single Employee Dialog */}
+      <ConfirmDialog
+        isOpen={!!empToDelete}
+        title="কর্মকর্তা মুছে ফেলার নিশ্চিতকরণ"
+        description={`আপনি কি নিশ্চিতভাবে "${empToDelete?.name}" (${empToDelete?.designation || 'কর্মকর্তা'})-কে মুছে ফেলতে চান? এর ফলে তার সব ডিউটি হিস্ট্রি ডিলিট হবে।`}
+        confirmText="হ্যাঁ, মুছে ফেলুন"
+        cancelText="বাতিল"
+        variant="danger"
+        onConfirm={confirmDeleteEmp}
+        onCancel={() => setEmpToDelete(null)}
+      />
+
+      {/* Confirm Delete Cell Dialog */}
+      <ConfirmDialog
+        isOpen={!!cellToDelete}
+        title="সেল মুছে ফেলার নিশ্চিতকরণ"
+        description={`আপনি কি নিশ্চিতভাবে "${cellToDelete?.name}" সেলটি মুছে ফেলতে চান?`}
+        confirmText="হ্যাঁ, মুছে ফেলুন"
+        cancelText="বাতিল"
+        variant="danger"
+        onConfirm={confirmDeleteCell}
+        onCancel={() => setCellToDelete(null)}
+      />
+
+      {/* Confirm Bulk Delete Dialog */}
+      <ConfirmDialog
+        isOpen={isBulkDeleteConfirmOpen}
+        title="একাধিক কর্মকর্তা মুছে ফেলার নিশ্চিতকরণ"
+        description={`আপনি কি নিশ্চিতভাবে নির্বাচিত ${selectedEmps.length} জন কর্মকর্তাকে মুছে ফেলতে চান? এটি মুছে ফেললে সংশ্লিষ্ট সকল ডিউটি হিস্ট্রি ডিলিট হবে।`}
+        confirmText="হ্যাঁ, সকলকে মুছুন"
+        cancelText="বাতিল"
+        variant="danger"
+        onConfirm={confirmBulkDelete}
+        onCancel={() => setIsBulkDeleteConfirmOpen(false)}
+      />
     </div>
   );
 }

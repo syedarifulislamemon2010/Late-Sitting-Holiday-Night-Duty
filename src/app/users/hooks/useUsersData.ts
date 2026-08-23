@@ -19,6 +19,7 @@ export function useUsersData(currentUser: UserProfile | null | undefined, refetc
   // Form modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -192,11 +193,20 @@ export function useUsersData(currentUser: UserProfile | null | undefined, refetc
   };
 
   // Delete User
-  const handleDeleteUser = async (id: number) => {
-    if (!confirm('আপনি কি নিশ্চিত যে এই ব্যবহারকারী অ্যাকাউন্টটি মুছে ফেলতে চান?')) return;
+  const handleDeleteUser = (id: number) => {
+    const target = users.find(u => u.id === id);
+    if (target) {
+      setUserToDelete(target);
+    } else {
+      setUserToDelete({ id, name: 'ব্যবহারকারী', username: String(id), role: 'USER', cells: [] });
+    }
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
 
     try {
-      const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/users/${userToDelete.id}`, { method: 'DELETE' });
       if (res.ok) {
         setSuccess('ব্যবহারকারী অ্যাকাউন্ট সফলভাবে মুছে ফেলা হয়েছে!');
         setTimeout(() => setSuccess(''), 3000);
@@ -208,6 +218,8 @@ export function useUsersData(currentUser: UserProfile | null | undefined, refetc
     } catch (err) {
       logger.error('Error deleting user:', err);
       setError('সার্ভার এরর।');
+    } finally {
+      setUserToDelete(null);
     }
   };
 
@@ -307,10 +319,13 @@ export function useUsersData(currentUser: UserProfile | null | undefined, refetc
     loadingLogs,
     logSearchQuery,
     setLogSearchQuery,
+    userToDelete,
+    setUserToDelete,
     handleOpenAddModal,
     handleOpenEditModal,
     handleSaveUser,
     handleDeleteUser,
+    confirmDeleteUser,
     handleUpdateProfile
   };
 }

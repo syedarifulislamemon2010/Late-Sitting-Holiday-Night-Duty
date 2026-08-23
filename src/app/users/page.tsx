@@ -3,6 +3,7 @@
 import React from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Shield, UserCheck, Users, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 
 import { useUsersData } from './hooks/useUsersData';
@@ -163,6 +164,18 @@ export default function UserManagementPage() {
         employees={data.employees}
         error={data.error}
         onSave={data.handleSaveUser}
+      />
+
+      {/* Confirm Delete User Dialog */}
+      <ConfirmDialog
+        isOpen={!!data.userToDelete}
+        title="ব্যবহারকারী মুছে ফেলার নিশ্চিতকরণ"
+        description={`আপনি কি নিশ্চিত যে "${data.userToDelete?.name}" (@${data.userToDelete?.username}) ব্যবহারকারী অ্যাকাউন্টটি মুছে ফেলতে চান?`}
+        confirmText="হ্যাঁ, মুছে ফেলুন"
+        cancelText="বাতিল"
+        variant="danger"
+        onConfirm={data.confirmDeleteUser}
+        onCancel={() => data.setUserToDelete(null)}
       />
     </div>
   );

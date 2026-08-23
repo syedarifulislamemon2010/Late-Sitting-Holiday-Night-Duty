@@ -32,9 +32,9 @@ export function useHardwareRequisitionData(currentUser: UserProfile | null | und
   const [reason, setReason] = useState('');
   const [items, setItems] = useState<HardwareItem[]>([{ ...INITIAL_ITEM, id: Math.random().toString(36).substring(2, 9) }]);
 
-  // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
   const [previewReq, setPreviewReq] = useState<HardwareRequisition | null>(null);
+  const [reqToDelete, setReqToDelete] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -177,10 +177,14 @@ export function useHardwareRequisitionData(currentUser: UserProfile | null | und
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('আপনি কি নিশ্চিত যে এই রিকুইজিশনটি মুছে ফেলতে চান?')) return;
+  const handleDelete = (id: number) => {
+    setReqToDelete(id);
+  };
+
+  const confirmDeleteReq = async () => {
+    if (!reqToDelete) return;
     try {
-      const res = await fetch(`/api/hardware-requisitions/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/hardware-requisitions/${reqToDelete}`, { method: 'DELETE' });
       if (res.ok) {
         setSuccessMessage('রিকুইজিশন সফলভাবে মুছে ফেলা হয়েছে!');
         loadData();
@@ -191,6 +195,8 @@ export function useHardwareRequisitionData(currentUser: UserProfile | null | und
     } catch (err) {
       logger.error('Error deleting requisition:', err);
       setErrorMessage('সার্ভার এরর।');
+    } finally {
+      setReqToDelete(null);
     }
   };
 
@@ -220,6 +226,8 @@ export function useHardwareRequisitionData(currentUser: UserProfile | null | und
     setSearchQuery,
     previewReq,
     setPreviewReq,
+    reqToDelete,
+    setReqToDelete,
     successMessage,
     setSuccessMessage,
     errorMessage,
@@ -230,6 +238,7 @@ export function useHardwareRequisitionData(currentUser: UserProfile | null | und
     handleReset,
     handleEdit,
     handleSubmit,
-    handleDelete
+    handleDelete,
+    confirmDeleteReq
   };
 }

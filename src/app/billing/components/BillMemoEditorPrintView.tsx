@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { toBanglaDigits, getBanglaDate } from '@/lib/bengali-converter';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { 
   Employee, 
   Executive, 
@@ -106,6 +107,8 @@ export default function BillMemoEditorPrintView({
   grandTotalPrintAll,
   getBanglaNumberWords
 }: BillMemoEditorPrintViewProps) {
+  const [existingBillToEdit, setExistingBillToEdit] = React.useState<string | null>(null);
+
   return (
     <div className="space-y-6">
       {/* Dynamic Media Print Style Overrides to ensure precise Legal spacing with Kalpurush font family */}
@@ -328,7 +331,7 @@ export default function BillMemoEditorPrintView({
               </label>
               <select
                 value={selectedOrderRef}
-                onChange={async (e) => {
+                onChange={(e) => {
                   const val = e.target.value;
                   setSelectedOrderRef(val);
                   
@@ -337,9 +340,7 @@ export default function BillMemoEditorPrintView({
                     const norm = getNormalizedRef(val);
                     const existingBill = archivedOrders.find(o => o.category?.startsWith('BILL_') && getNormalizedRef(o.orderRef) === norm);
                     if (existingBill) {
-                      if (confirm('এই অফিস আদেশের অধীনে ইতিমধ্যেই বিল তৈরি করা হয়েছে। আপনি কি পূর্ববর্তী বিলটি সম্পাদনা (Edit) করতে চান?')) {
-                        window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}`;
-                      }
+                      setExistingBillToEdit(existingBill.orderRef);
                     }
                   }
                 }}
@@ -583,6 +584,22 @@ export default function BillMemoEditorPrintView({
 
         </div>
       </div>
+
+      {/* Confirm Edit Existing Bill Dialog */}
+      <ConfirmDialog
+        isOpen={!!existingBillToEdit}
+        title="পূর্ববর্তী বিল সম্পাদনা"
+        description="এই অফিস আদেশের অধীনে ইতিমধ্যেই বিল তৈরি করা হয়েছে। আপনি কি পূর্ববর্তী বিলটি সম্পাদনা (Edit) করতে চান?"
+        confirmText="হ্যাঁ, সম্পাদনা করুন"
+        cancelText="বাতিল"
+        variant="primary"
+        onConfirm={() => {
+          if (existingBillToEdit) {
+            window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBillToEdit)}`;
+          }
+        }}
+        onCancel={() => setExistingBillToEdit(null)}
+      />
     </div>
   );
 }

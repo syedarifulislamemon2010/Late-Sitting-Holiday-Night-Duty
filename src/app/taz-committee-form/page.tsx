@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import AuthGuard from '@/components/AuthGuard';
 import { Button } from '@/components/ui/Button';
 import { Printer, ArrowLeft } from 'lucide-react';
@@ -147,6 +148,18 @@ export default function TazCommitteeFormPage() {
           }}
           onEdit={data.handleEdit}
           onDelete={data.handleDelete}
+        />
+
+        {/* Confirm Delete Dialog */}
+        <ConfirmDialog
+          isOpen={!!data.formToDelete}
+          title="তায কমিটি ফরম মুছে ফেলার নিশ্চিতকরণ"
+          description="আপনি কি নিশ্চিত যে এই ফরম রেকর্ডটি মুছে ফেলতে চান? এটি মুছে ফেললে তা স্থায়ীভাবে ডিলিট হয়ে যাবে।"
+          confirmText="হ্যাঁ, মুছে ফেলুন"
+          cancelText="বাতিল"
+          variant="danger"
+          onConfirm={data.confirmDeleteForm}
+          onCancel={() => data.setFormToDelete(null)}
         />
       </div>
     </AuthGuard>

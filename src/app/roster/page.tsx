@@ -318,6 +318,31 @@ export default function RosterPage() {
         onConfirm={dutyAssignment.executeBulkDeleteDuties}
         onCancel={() => dutyAssignment.setIsBulkDeleteConfirmOpen(false)}
       />
+
+      {/* Delete Grouped Duties Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={!!dutyAssignment.groupDutiesToDelete}
+        title="ডিউটি রেকর্ডসমূহ মুছে ফেলা"
+        description={`আপনি কি নিশ্চিতভাবে এই কর্মকর্তার ${toBanglaDigits(dutyAssignment.groupDutiesToDelete?.length || 0)} টি ডিউটি রেকর্ড মুছে ফেলতে চান?`}
+        confirmText="হ্যাঁ, মুছে ফেলুন"
+        cancelText="বাতিল"
+        variant="danger"
+        isLoading={dutyAssignment.submitting}
+        onConfirm={dutyAssignment.confirmDeleteGroupedDuties}
+        onCancel={() => dutyAssignment.setGroupDutiesToDelete(null)}
+      />
+
+      {/* Delete Office Order Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={!!orderGen.orderToDelete}
+        title="অফিস আদেশ মুছে ফেলার নিশ্চিতকরণ"
+        description={`আপনি কি নিশ্চিত যে স্মারক নং: ${orderGen.orderToDelete?.refNo} এর অফিস আদেশটি মুছে ফেলতে চান? এটি মুছে ফেললে এর সাথে সম্পর্কিত ডিউটিগুলো আবার অপেক্ষমাণ তালিকায় ফিরে যাবে।`}
+        confirmText="হ্যাঁ, মুছে ফেলুন"
+        cancelText="বাতিল"
+        variant="danger"
+        onConfirm={orderGen.confirmDeleteOfficeOrder}
+        onCancel={() => orderGen.setOrderToDelete(null)}
+      />
     </div>
   );
 }

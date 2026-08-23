@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { 
   Plus, 
   Search, 
@@ -97,6 +98,7 @@ export default function ExecutivesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExec, setEditingExec] = useState<Executive | null>(null);
   const [profileExec, setProfileExec] = useState<Executive | null>(null);
+  const [execToDelete, setExecToDelete] = useState<Executive | null>(null);
 
   // Form states
   const [form, setForm] = useState({
@@ -212,13 +214,19 @@ export default function ExecutivesPage() {
   };
 
   // Delete Executive
-  const deleteExec = async (id: number) => {
-    if (!confirm('আপনি কি নিশ্চিতভাবে এই নির্বাহী কর্মকর্তাকে মুছে ফেলতে চান?')) return;
+  const deleteExec = (exec: Executive) => {
+    setExecToDelete(exec);
+  };
+
+  const confirmDeleteExec = async () => {
+    if (!execToDelete) return;
     try {
-      const res = await fetch(`/api/executives/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/executives/${execToDelete.id}`, { method: 'DELETE' });
       if (res.ok) loadData();
     } catch (err) {
       logger.error('Error deleting executive:', err);
+    } finally {
+      setExecToDelete(null);
     }
   };
 
@@ -864,7 +872,7 @@ export default function ExecutivesPage() {
                           <Edit2 size={13} />
                         </button>
                         <button
-                          onClick={() => deleteExec(exec.id)}
+                          onClick={() => deleteExec(exec)}
                           className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors cursor-pointer"
                           title="মুছে ফেলুন"
                         >
@@ -1198,6 +1206,18 @@ export default function ExecutivesPage() {
         id="silent-print-iframe" 
         className="hidden" 
         style={{ width: '0px', height: '0px', border: '0px' }}
+      />
+
+      {/* Confirm Delete Executive Dialog */}
+      <ConfirmDialog
+        isOpen={!!execToDelete}
+        title="নির্বাহী কর্মকর্তা মুছে ফেলার নিশ্চিতকরণ"
+        description={`আপনি কি নিশ্চিতভাবে "${execToDelete?.name}" (${execToDelete?.designation})-কে মুছে ফেলতে চান?`}
+        confirmText="হ্যাঁ, মুছে ফেলুন"
+        cancelText="বাতিল"
+        variant="danger"
+        onConfirm={confirmDeleteExec}
+        onCancel={() => setExecToDelete(null)}
       />
     </div>
   );

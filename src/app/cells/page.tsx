@@ -6,6 +6,7 @@ import { useProfile } from '@/context/ProfileContext';
 import AuthGuard from '@/components/AuthGuard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { 
   Building2, 
   Plus, 
@@ -35,6 +36,7 @@ export default function CellsPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCell, setEditingCell] = useState<Cell | null>(null);
+  const [cellToDelete, setCellToDelete] = useState<Cell | null>(null);
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -110,15 +112,18 @@ export default function CellsPage() {
     }
   };
 
-  const handleDelete = async (cell: Cell) => {
+  const handleDelete = (cell: Cell) => {
     if (cell._count && cell._count.employees > 0) {
       alert(`"${cell.name}" সেলে ${cell._count.employees} জন কর্মকর্তা কর্মরত রয়েছেন। ডিলিট করার আগে কর্মকর্তাদের সরিয়ে নিন।`);
       return;
     }
-    if (!confirm(`আপনি কি নিশ্চিতভাবে "${cell.name}" সেলটি ডিলিট করতে চান?`)) return;
+    setCellToDelete(cell);
+  };
 
+  const confirmDeleteCell = async () => {
+    if (!cellToDelete) return;
     try {
-      const res = await fetch(`/api/cells/${cell.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/cells/${cellToDelete.id}`, { method: 'DELETE' });
       if (res.ok) {
         setSuccessMsg('সেল সফলভাবে মুছে ফেলা হয়েছে।');
         fetchCells();
@@ -128,6 +133,8 @@ export default function CellsPage() {
       }
     } catch (err) {
       logger.error(err);
+    } finally {
+      setCellToDelete(null);
     }
   };
 
@@ -312,6 +319,18 @@ export default function CellsPage() {
             </div>
           </div>
         )}
+
+        {/* Confirm Delete Cell Dialog */}
+        <ConfirmDialog
+          isOpen={!!cellToDelete}
+          title="সেল মুছে ফেলার নিশ্চিতকরণ"
+          description={`আপনি কি নিশ্চিতভাবে "${cellToDelete?.name}" সেলটি ডিলিট করতে চান? এটি ডিলিট করলে সেলটি মুছে যাবে।`}
+          confirmText="হ্যাঁ, মুছে ফেলুন"
+          cancelText="বাতিল"
+          variant="danger"
+          onConfirm={confirmDeleteCell}
+          onCancel={() => setCellToDelete(null)}
+        />
       </div>
     </AuthGuard>
   );

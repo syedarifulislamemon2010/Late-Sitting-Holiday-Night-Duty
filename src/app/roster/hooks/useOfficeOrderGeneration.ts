@@ -88,6 +88,7 @@ export function useOfficeOrderGeneration({
   const [orderGenerated, setOrderGenerated] = useState(false);
   const [isArchived, setIsArchived] = useState(false);
   const [activePartIdx, setActivePartIdx] = useState(0);
+  const [orderToDelete, setOrderToDelete] = useState<{ id: number; refNo: string } | null>(null);
 
   const [signingOfficer, setSigningOfficer] = useState('জনাব মোহাম্মদ সোহরাব হোসেন');
   const [signingDesignation, setSigningDesignation] = useState('উপ-মহাব্যবস্থাপক');
@@ -943,10 +944,13 @@ export function useOfficeOrderGeneration({
     setIsPrintMode(true);
   };
 
-  const handleDeleteOfficeOrder = async (orderId: number, refNo: string) => {
-    if (!confirm(`আপনি কি নিশ্চিত যে স্মারক নং: ${refNo} এর অফিস আদেশটি মুছে ফেলতে চান? এটি মুছে ফেললে এর সাথে সম্পর্কিত ডিউটিগুলো আবার অপেক্ষমাণ তালিকায় ফিরে যাবে।`)) {
-      return;
-    }
+  const handleDeleteOfficeOrder = (orderId: number, refNo: string) => {
+    setOrderToDelete({ id: orderId, refNo });
+  };
+
+  const confirmDeleteOfficeOrder = async () => {
+    if (!orderToDelete) return;
+    const { id: orderId } = orderToDelete;
     
     try {
       const res = await fetch(`/api/office-orders/${orderId}`, {
@@ -964,6 +968,8 @@ export function useOfficeOrderGeneration({
     } catch (err) {
       logger.error('Error deleting office order:', err);
       alert('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
+    } finally {
+      setOrderToDelete(null);
     }
   };
 
@@ -1256,6 +1262,9 @@ export function useOfficeOrderGeneration({
     saveOrderToArchive,
     handlePreviewOfficeOrder,
     handleDeleteOfficeOrder,
+    orderToDelete,
+    setOrderToDelete,
+    confirmDeleteOfficeOrder,
     handleBackToRoster
   };
 }

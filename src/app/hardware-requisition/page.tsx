@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import AuthGuard from '@/components/AuthGuard';
 import { Button } from '@/components/ui/Button';
 import { Printer, ArrowLeft, CheckCircle, AlertTriangle, X } from 'lucide-react';
@@ -179,6 +180,18 @@ export default function HardwareRequisitionPage() {
           }}
           onEdit={data.handleEdit}
           onDelete={data.handleDelete}
+        />
+
+        {/* Confirm Delete Dialog */}
+        <ConfirmDialog
+          isOpen={!!data.reqToDelete}
+          title="হার্ডওয়্যার রিকুইজিশন মুছে ফেলার নিশ্চিতকরণ"
+          description="আপনি কি নিশ্চিত যে এই রিকুইজিশন রেকর্ডটি মুছে ফেলতে চান? এটি মুছে ফেললে তা রিসাইকেল বিনে স্থানান্তরিত বা ডিলিট হবে।"
+          confirmText="হ্যাঁ, মুছে ফেলুন"
+          cancelText="বাতিল"
+          variant="danger"
+          onConfirm={data.confirmDeleteReq}
+          onCancel={() => data.setReqToDelete(null)}
         />
       </div>
     </AuthGuard>
