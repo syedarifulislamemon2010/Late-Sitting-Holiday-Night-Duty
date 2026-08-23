@@ -97,7 +97,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const validated = userCreateSchema.parse(body);
+    const parseResult = userCreateSchema.safeParse(body);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const validated = parseResult.data;
     const { username, password, name, role, cellIds } = validated;
     const { cellDuties, mobile } = body;
 

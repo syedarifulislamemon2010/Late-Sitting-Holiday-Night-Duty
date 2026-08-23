@@ -5,6 +5,8 @@ import { db } from '@/lib/db';
 import { documents, trash } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
+import { documentDeleteSchema } from '@/validations/manualDocument.schema';
+import { handleApiError } from '@/lib/errors';
 
 export async function GET() {
   try {
@@ -28,11 +30,12 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইল মুছে ফেলতে পারবেন।' }, { status: 403 });
     }
 
-    const { id } = await request.json();
-    
-    if (!id) {
-      return NextResponse.json({ error: 'id_required' }, { status: 400 });
+    const body = await request.json();
+    const parseResult = documentDeleteSchema.safeParse(body);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
     }
+    const { id } = parseResult.data;
 
     const docId = Number(id);
     const docList = await db.select().from(documents).where(eq(documents.id, docId));

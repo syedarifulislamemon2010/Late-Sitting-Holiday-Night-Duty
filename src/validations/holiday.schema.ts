@@ -12,7 +12,9 @@ export const holidayBulkCreateSchema = z.object({
 
 export const holidayParseSchema = z.object({
   text: z.string().optional(),
-  year: z.number().int().optional()
+  fileData: z.string().optional(),
+  fileType: z.string().optional(),
+  year: z.union([z.string(), z.number()]).optional()
 });
 
 export type HolidayCreateInput = z.infer<typeof holidayCreateSchema>;

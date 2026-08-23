@@ -60,7 +60,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const validated = tazCommitteeFormCreateSchema.parse(body);
+    const parseResult = tazCommitteeFormCreateSchema.safeParse(body);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const validated = parseResult.data;
     const {
       formDate,
       ref,

@@ -9,6 +9,7 @@ import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
 import { billMemoGenerateSchema } from '@/validations/documentGeneration.schema';
+import { handleApiError } from '@/lib/errors';
 
 interface BillSummaryItem {
   name: string;
@@ -40,8 +41,11 @@ function getBnDate(dateStr: string | null | undefined): string {
 export async function POST(request: Request) {
   try {
     const rawPayload = await request.json();
-    billMemoGenerateSchema.parse(rawPayload);
-    const payload = rawPayload;
+    const parseResult = billMemoGenerateSchema.safeParse(rawPayload);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const payload = parseResult.data as unknown as any;
     const {
       openingParagraph,
       summaries,
@@ -416,7 +420,7 @@ export async function POST(request: Request) {
     // Audit trail
     const currentUser = await getCurrentUser();
     if (currentUser) {
-      const orderRecordList = await db.select().from(officeOrders).where(eq(officeOrders.orderRef, billRef)).limit(1);
+      const orderRecordList = billRef ? await db.select().from(officeOrders).where(eq(officeOrders.orderRef, billRef)).limit(1) : [];
       const orderRecord = orderRecordList[0];
       const ipAddress = request.headers.get('x-forwarded-for') || '127.0.0.1';
       const userAgent = request.headers.get('user-agent') || 'Unknown';

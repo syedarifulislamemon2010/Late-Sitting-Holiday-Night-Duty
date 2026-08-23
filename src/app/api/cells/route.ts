@@ -64,8 +64,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const validated = cellCreateSchema.parse(body);
-    const { name, description } = validated;
+    const parseResult = cellCreateSchema.safeParse(body);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const { name, description } = parseResult.data;
 
     const currentUser = await getCurrentUser();
 

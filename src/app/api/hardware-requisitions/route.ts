@@ -62,7 +62,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const validated = hardwareRequisitionCreateSchema.parse(body);
+    const parseResult = hardwareRequisitionCreateSchema.safeParse(body);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const validated = parseResult.data;
     const {
       requisitionDate,
       hardwareType,

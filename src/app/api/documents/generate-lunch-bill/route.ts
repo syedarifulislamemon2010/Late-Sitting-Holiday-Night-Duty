@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { lunchBillGenerateSchema } from '@/validations/documentGeneration.schema';
+import { handleApiError } from '@/lib/errors';
 
 interface LunchBillRecord {
   employeeName: string;
@@ -91,8 +92,11 @@ function abbreviateDesignation(desig: string | null | undefined): string {
 export async function POST(request: Request) {
   try {
     const rawPayload = await request.json();
-    lunchBillGenerateSchema.parse(rawPayload);
-    const payload = rawPayload as LunchBillPayload;
+    const parseResult = lunchBillGenerateSchema.safeParse(rawPayload);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const payload = parseResult.data as unknown as LunchBillPayload;
     const {
       monthName,
       groupedData,

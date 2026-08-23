@@ -17,6 +17,11 @@ export const fileUploadMetadataSchema = z.object({
   name: z.string().optional()
 });
 
+export const documentDeleteSchema = z.object({
+  id: z.union([z.number(), z.string().min(1, 'আইডি আবশ্যক')])
+});
+
 export type ManualDocumentCreateInput = z.infer<typeof manualDocumentCreateSchema>;
 export type ManualDocumentUpdateInput = z.infer<typeof manualDocumentUpdateSchema>;
 export type FileUploadMetadataInput = z.infer<typeof fileUploadMetadataSchema>;
+export type DocumentDeleteInput = z.infer<typeof documentDeleteSchema>;

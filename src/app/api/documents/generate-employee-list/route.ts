@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/lib/auth-wrapper';
 import fs from 'fs';
 import path from 'path';
 import { employeeListGenerateSchema } from '@/validations/documentGeneration.schema';
+import { handleApiError } from '@/lib/errors';
 
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
@@ -35,8 +36,11 @@ export async function POST(request: Request) {
     const isAdmin = currentUser.role === 'ADMIN';
 
     const payload = await request.json();
-    employeeListGenerateSchema.parse(payload);
-    const { cellFilter } = payload; 
+    const parseResult = employeeListGenerateSchema.safeParse(payload);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const { cellFilter } = parseResult.data; 
 
     if (cellFilter === 'select') {
       return NextResponse.json({ error: 'invalid_filter', message: 'অনুগ্রহ করে কোনো সেল নির্বাচন করুন।' }, { status: 400 });

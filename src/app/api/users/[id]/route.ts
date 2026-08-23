@@ -33,7 +33,11 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const validated = userUpdateSchema.parse(body);
+    const parseResult = userUpdateSchema.safeParse(body);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const validated = parseResult.data;
     const { name, password, role, cellIds } = validated;
     const { cellDuties, mobile } = body;
 

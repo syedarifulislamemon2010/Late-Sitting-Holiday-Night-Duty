@@ -2,6 +2,7 @@ import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { holidayParseSchema } from '@/validations/holiday.schema';
+import { handleApiError } from '@/lib/errors';
 
 const MONTHS_MAP: { [key: string]: number } = {
   january: 0, jan: 0,
@@ -127,8 +128,11 @@ function fallbackParseHolidays(text: string, defaultYear: number = 2026): Parsed
 export async function POST(request: Request) {
   try {
     const rawBody = await request.json();
-    holidayParseSchema.parse(rawBody);
-    const { text, fileData, fileType, year } = rawBody;
+    const parseResult = holidayParseSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const { text, fileData, fileType, year } = parseResult.data;
     const defaultYear = year ? parseInt(String(year), 10) : 2026;
     
     let parsedHolidays: ParsedHoliday[] = [];
@@ -166,7 +170,7 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
             }
           ]);
         } else {
-          result = await model.generateContent([prompt, "\n\nHoliday Text Data:\n", text]);
+          result = await model.generateContent([prompt, "\n\nHoliday Text Data:\n", text || '']);
         }
 
         const responseText = result.response.text().trim();

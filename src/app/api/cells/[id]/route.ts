@@ -19,8 +19,11 @@ export async function PUT(
     }
     
     const body = await request.json();
-    const validated = cellUpdateSchema.parse(body);
-    const { name, description } = validated;
+    const parseResult = cellUpdateSchema.safeParse(body);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const { name, description } = parseResult.data;
 
     const currentUser = await getCurrentUser();
 

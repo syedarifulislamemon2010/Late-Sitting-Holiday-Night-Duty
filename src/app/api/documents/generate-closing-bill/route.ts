@@ -5,6 +5,7 @@ import { documents } from '@/db/schema';
 import fs from 'fs';
 import path from 'path';
 import { closingBillGenerateSchema } from '@/validations/documentGeneration.schema';
+import { handleApiError } from '@/lib/errors';
 
 interface ClosingBillRecord {
   employeeName: string;
@@ -83,8 +84,11 @@ function abbreviateDesignation(desig: string | null | undefined): string {
 export async function POST(request: Request) {
   try {
     const rawPayload = await request.json();
-    closingBillGenerateSchema.parse(rawPayload);
-    const payload = rawPayload as ClosingBillPayload;
+    const parseResult = closingBillGenerateSchema.safeParse(rawPayload);
+    if (!parseResult.success) {
+      return handleApiError(parseResult.error);
+    }
+    const payload = parseResult.data as unknown as ClosingBillPayload;
     const {
       monthName,
       groupedData, // Array of: { cellName, records, totalClaim, totalDeduction, grandTotal }

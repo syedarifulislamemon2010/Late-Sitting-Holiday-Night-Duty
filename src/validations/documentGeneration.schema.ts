@@ -49,6 +49,7 @@ export const closingBillGenerateSchema = z.object({
 
 export const employeeListGenerateSchema = z.object({
   cellId: z.union([z.string(), z.number()]).optional(),
+  cellFilter: z.string().optional(),
   includeInactive: z.boolean().optional()
 }).passthrough();
 
