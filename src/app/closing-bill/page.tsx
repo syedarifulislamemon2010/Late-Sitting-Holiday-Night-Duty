@@ -1,5 +1,6 @@
 'use client';
 import { CLOSING_BILL_RATE, REVENUE_STAMP } from '@/constants/billing';
+import logger from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -168,7 +169,7 @@ export default function ClosingBillPage() {
         });
         setExecutives(filteredExecs);
       } catch (err) {
-        console.error('Error loading structural lists:', err);
+        logger.error('Error loading structural lists:', err);
       } finally {
         setLoading(false);
       }
@@ -263,7 +264,7 @@ export default function ClosingBillPage() {
 
         setRecords(defaultRecords);
       } catch (err) {
-        console.error('Error loading closing sheet:', err);
+        logger.error('Error loading closing sheet:', err);
       }
     }
 
@@ -387,7 +388,7 @@ export default function ClosingBillPage() {
         return null;
       }
     } catch (err) {
-      console.error('Error saving closing bill:', err);
+      logger.error('Error saving closing bill:', err);
       setErrorMessage('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
       return null;
     } finally {
@@ -484,7 +485,7 @@ export default function ClosingBillPage() {
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।';
-      console.error('Error generating closing bill:', err);
+      logger.error('Error generating closing bill:', err);
       setErrorMessage(errorMsg);
       return null;
     } finally {

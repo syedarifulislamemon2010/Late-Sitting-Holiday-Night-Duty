@@ -12,6 +12,7 @@ import {
   Trash2 
 } from 'lucide-react';
 import InlineEdit from '@/components/InlineEdit';
+import logger from '@/lib/logger';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
@@ -62,7 +63,7 @@ export default function EmployeeCardsGrid({
         onReload();
       }
     } catch (err) {
-      console.error('Failed to inline update employee field:', err);
+      logger.error('Failed to inline update employee field:', err);
     }
   };
 

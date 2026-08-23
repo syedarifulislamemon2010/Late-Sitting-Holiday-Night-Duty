@@ -448,7 +448,7 @@ export function useOfficeOrderGeneration({
         .then(data => {
           if (data.nextRef) setSuggestedRef(data.nextRef);
         })
-        .catch(err => console.error(err));
+        .catch(err => logger.error('Failed to fetch next office order ref:', err));
     }
   }, [isPrintMode, printCategory]);
 

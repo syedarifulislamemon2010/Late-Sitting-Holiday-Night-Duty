@@ -157,13 +157,13 @@ export default function LeaveGeneratorPage() {
   };
 
   const handlePrint = async () => {
-    handleSaveToArchive().catch(console.error);
+    handleSaveToArchive().catch(err => logger.error('Error saving to archive before print:', err));
     window.print();
   };
 
   const handleDownloadDocx = async () => {
     try {
-      handleSaveToArchive().catch(console.error);
+      handleSaveToArchive().catch(err => logger.error('Error saving to archive before docx download:', err));
 
       const { generateLeaveDocx } = await import('@/lib/docx-generator');
       const delegateEmp = employees.find(e => String(e.id) === delegateId);
