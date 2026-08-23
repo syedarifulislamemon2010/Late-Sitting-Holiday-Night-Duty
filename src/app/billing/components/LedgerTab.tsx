@@ -12,10 +12,12 @@ import {
   Printer,
   Eye,
   Trash2,
+  Users,
   X
 } from 'lucide-react';
 import { toBanglaDigits, getBanglaDate } from '@/lib/bengali-converter';
 import { renderDatesInPairs } from '@/lib/print-helpers';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { UserProfile, UserCell } from '@/context/ProfileContext';
 import { Employee, OrderDuty } from '../types';
 
@@ -472,8 +474,16 @@ export default function LedgerTab({
           <p className="text-xs text-slate-400 mt-0.5 font-sans">সেলের অন্তর্ভুক্ত প্রত্যেক কর্মকর্তার ক্যাটাগরি ভিত্তিক অর্জিত ভাতার বিবরণী।</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
-          {visibleEmployees.map(emp => {
+        {visibleEmployees.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="কোনো কর্মকর্তা পাওয়া যায়নি"
+            description="নির্বাচিত সেলে কোনো কর্মকর্তা তালিকাভুক্ত নেই অথবা এই ক্যাটাগরিতে কোনো তথ্য পাওয়া যায়নি।"
+            className="py-10"
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
+            {visibleEmployees.map(emp => {
             const empMetrics = getEmployeeMetrics(emp);
             const empDuties = getEmployeeDuties(emp);
             const isZeroData = empMetrics.grand === 0 && empDuties.length === 0;
@@ -623,7 +633,8 @@ export default function LedgerTab({
             );
           })}
         </div>
-      </div>
+      )}
+    </div>
 
       {/* Aggregated Officers Ledger Table Grouped By Cell */}
       <div className="glass-card p-6 rounded-2xl space-y-4 border border-slate-200 dark:border-slate-800 mt-6">
@@ -811,9 +822,12 @@ export default function LedgerTab({
             </table>
           </div>
         ) : (
-          <div className="p-16 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-400 italic">
-            কোনো অপেক্ষমান বিল অফিস আদেশ পাওয়া যায়নি।
-          </div>
+          <EmptyState
+            icon={Receipt}
+            title="কোনো বিলিং খতিয়ান নেই"
+            description="নির্বাচিত ফিল্টারের জন্য কোনো সক্রিয় অফিস আদেশ বা বিল রেকর্ড পাওয়া যায়নি।"
+            className="py-12"
+          />
         )}
       </div>
 
@@ -905,8 +919,13 @@ export default function LedgerTab({
                     ))}
                     {getCategoryDetails().length === 0 && (
                       <tr>
-                        <td colSpan={selectedDetailCategory === 'GRAND_TOTAL' ? 9 : 8} className="px-4 py-8 text-center text-slate-400 italic">
-                          কোনো রেকর্ড পাওয়া যায়নি।
+                        <td colSpan={selectedDetailCategory === 'GRAND_TOTAL' ? 9 : 8} className="px-4 py-4">
+                          <EmptyState
+                            icon={Receipt}
+                            title="কোনো বিস্তারিত রেকর্ড নেই"
+                            description="নির্বাচিত ক্যাটাগরির জন্য কোনো ডিউটি বা বিল রেকর্ড পাওয়া যায়নি।"
+                            className="py-6"
+                          />
                         </td>
                       </tr>
                     )}

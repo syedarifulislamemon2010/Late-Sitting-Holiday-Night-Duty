@@ -1,7 +1,6 @@
-'use client';
-
 import React from 'react';
-import { Download, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Download, Plus, Edit2, Trash2, Layers } from 'lucide-react';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Cell } from '../types';
 import { UserProfile } from '@/context/ProfileContext';
 
@@ -69,46 +68,61 @@ export default function CellsTab({
       </div>
 
       {/* Cells List Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cells.map((cell) => (
-          <div key={cell.id} className="glass-card p-6 rounded-2xl flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
-            <div className="space-y-3">
-              <div className="flex justify-between items-start">
-                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">{cell.name}</h3>
-                <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/40 rounded-lg text-xs font-bold font-sans">
-                  {cell._count?.employees || 0} জন কর্মরত
-                </span>
+      {cells.length === 0 ? (
+        <EmptyState
+          icon={Layers}
+          title="কোনো সেল পাওয়া যায়নি"
+          description="বর্তমানে সিস্টেমে কোনো সেলের তথ্য সংরক্ষিত নেই। নতুন সেল যোগ করতে উপরের বাটনে ক্লিক করুন।"
+          action={
+            currentUser?.role === 'ADMIN' ? {
+              label: 'নতুন সেল যোগ করুন',
+              onClick: onOpenNewCellModal
+            } : undefined
+          }
+          className="py-12"
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cells.map((cell) => (
+            <div key={cell.id} className="glass-card p-6 rounded-2xl flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">{cell.name}</h3>
+                  <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/40 rounded-lg text-xs font-bold font-sans">
+                    {cell._count?.employees || 0} জন কর্মরত
+                  </span>
+                </div>
+                {cell.description && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    {cell.description}
+                  </p>
+                )}
               </div>
-              {cell.description && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {cell.description}
-                </p>
+
+              {currentUser?.role === 'ADMIN' && (
+                <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={() => onStartEditCell(cell)}
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                    title="সম্পাদনা"
+                  >
+                    <Edit2 size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteCell(cell)}
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-600 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                    title="মুছে ফেলুন"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               )}
             </div>
-
-            {currentUser?.role === 'ADMIN' && (
-              <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                <button
-                  type="button"
-                  onClick={() => onStartEditCell(cell)}
-                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-                  title="সম্পাদনা"
-                >
-                  <Edit2 size={13} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDeleteCell(cell)}
-                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-600 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 transition-colors cursor-pointer"
-                  title="মুছে ফেলুন"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

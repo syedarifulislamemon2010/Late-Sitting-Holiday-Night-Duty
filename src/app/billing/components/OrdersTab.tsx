@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { getCategoryConfig } from '@/lib/category-colors';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface Cell {
   id: number;
@@ -208,17 +209,12 @@ export default function OrdersTab({
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">আর্কাইভ লোড হচ্ছে...</p>
         </div>
       ) : pendingBillingOfficeOrders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-600">
-            <AlertCircle size={28} />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">কোনো অপেক্ষমাণ বিল অফিস আদেশ নেই</h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
-              নির্বাচিত ফিল্টারের অধীনে কোনো বিল অপেক্ষমাণ অফিস আদেশ পাওয়া যায়নি।
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon={Receipt}
+          title="কোনো অপেক্ষমাণ বিল অফিস আদেশ নেই"
+          description="নির্বাচিত ফিল্টারের অধীনে কোনো বিল অপেক্ষমাণ অফিস আদেশ পাওয়া যায়নি।"
+          className="py-16"
+        />
       ) : (
         <div className="space-y-8">
           <div className="space-y-4">
