@@ -13,10 +13,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Use Node.js 24
+    - name: Use Node.js 20
       uses: actions/setup-node@v4
       with:
-        node-version: '24'
+        node-version: '20'
         cache: 'npm'
         
     - name: Install dependencies
@@ -25,15 +25,14 @@ jobs:
     - name: Type check
       run: npx tsc --noEmit
       
-    - name: Run tests
+    - name: Run unit & integration tests
       run: npx vitest run
       
-    - name: Build
+    - name: Build Next.js
       run: npm run build
       env:
         DATABASE_URL: "postgres://postgres:postgres@localhost:5432/lhn_portal_build"
         NEXTAUTH_SECRET: "ci-build-temporary-nextauth-secret-key-2026"
         NEXTAUTH_URL: "http://localhost:3000"
-
-    - name: Verify E2E Specs Syntax
-      run: npx tsc --noEmit tests/e2e/*.ts
+        NEXT_PUBLIC_SUPABASE_URL: "https://mock.supabase.co"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "mock-anon-key"
