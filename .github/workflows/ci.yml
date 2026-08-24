@@ -34,3 +34,6 @@ jobs:
         DATABASE_URL: "postgres://postgres:postgres@localhost:5432/lhn_portal_build"
         NEXTAUTH_SECRET: "ci-build-temporary-nextauth-secret-key-2026"
         NEXTAUTH_URL: "http://localhost:3000"
+
+    - name: Verify E2E Specs Syntax
+      run: npx tsc --noEmit tests/e2e/*.ts
