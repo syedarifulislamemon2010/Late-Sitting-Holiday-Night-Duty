@@ -140,7 +140,7 @@ export default function RosterPage() {
             }}
           />
 
-          <div className="flex flex-col xl:flex-row gap-6 items-start no-print">
+          <div className="@container flex flex-col xl:flex-row gap-6 items-start no-print">
             {/* Left Column: Duty Assignment Panel */}
             <DutyAssignmentPanel
               currentUser={currentUser}

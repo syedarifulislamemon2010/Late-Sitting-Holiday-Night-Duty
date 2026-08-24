@@ -1,11 +1,17 @@
 /**
- * E2E Flow 1: Login -> Dashboard Navigation Flow
+ * E2E Flow 1: Login -> Dashboard Navigation Flow with Invalid Credential Error Case
  */
 export async function testLoginAndDashboardFlow(page: any) {
-  // 1. Navigate to Login Page
+  // 1. Error Case: Try invalid login credentials
   await page.goto('/login');
+  await page.fill('input[type="text"]', 'invalid_user');
+  await page.fill('input[type="password"]', 'wrong_pass');
+  await page.click('button[type="submit"]');
   
-  // 2. Fill login credentials
+  // Verify error toast/message appears
+  await page.waitForSelector('.text-red-500, [role="alert"]');
+
+  // 2. Success Case: Fill valid credentials
   await page.fill('input[type="text"]', 'admin');
   await page.fill('input[type="password"]', 'admin123');
   await page.click('button[type="submit"]');
@@ -19,3 +25,4 @@ export async function testLoginAndDashboardFlow(page: any) {
     throw new Error('Dashboard title did not match expected');
   }
 }
+

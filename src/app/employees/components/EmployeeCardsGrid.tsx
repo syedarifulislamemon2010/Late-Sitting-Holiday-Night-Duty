@@ -105,7 +105,7 @@ export default function EmployeeCardsGrid({
           </div>
 
           {/* Executives Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="@container grid grid-cols-1 @md:grid-cols-2 @xl:grid-cols-3 gap-5">
             {sortedFilteredExecutives.map((exec) => {
               const dgmIndices = sortedFilteredExecutives
                 .filter(e => e.designation.includes('উপ-মহাব্যবস্থাপক') || e.designation.includes('ডিজিএম') || e.designation.toLowerCase().includes('dgm'))
@@ -212,7 +212,7 @@ export default function EmployeeCardsGrid({
               </div>
 
               {/* Employees Grid in this Cell */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="@container grid grid-cols-1 @md:grid-cols-2 @xl:grid-cols-3 gap-5">
                 {cellEmps.map((emp) => {
                   const firstSpoId = cellEmps.find(e => e.designation === 'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)')?.id || null;
                   const isCellIncharge = emp.dutyType === 'INCHARGE' || emp.id === firstSpoId;

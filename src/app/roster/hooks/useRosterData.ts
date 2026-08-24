@@ -37,13 +37,24 @@ export function useRosterData({
   useEffect(() => {
     async function loadInitialData() {
       try {
+        const fetchJson = async (url: string) => {
+          try {
+            const res = await fetch(url);
+            if (!res.ok) return [];
+            const data = await res.json();
+            return Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
+          } catch {
+            return [];
+          }
+        };
+
         const [empRes, cellRes, holRes, execRes, ordersRes, leavesRes] = await Promise.all([
-          fetch('/api/employees').then(r => r.json()),
-          fetch('/api/cells').then(r => r.json()),
-          fetch('/api/holidays').then(r => r.json()),
-          fetch('/api/executives').then(r => r.json()),
-          fetch('/api/office-orders').then(r => r.json()),
-          fetch('/api/leaves').then(r => r.json()).catch(() => [])
+          fetchJson('/api/employees'),
+          fetchJson('/api/cells'),
+          fetchJson('/api/holidays'),
+          fetchJson('/api/executives'),
+          fetchJson('/api/office-orders'),
+          fetchJson('/api/leaves')
         ]);
 
         if (Array.isArray(empRes)) setEmployees(empRes);
@@ -99,6 +110,7 @@ export function useRosterData({
       }
 
       const res = await fetch(url);
+      if (!res.ok) return;
       const data = await res.json();
       if (Array.isArray(data)) {
         setDuties(data);
