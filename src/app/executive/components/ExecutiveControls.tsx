@@ -77,13 +77,13 @@ export function ExecutiveControls({
         </button>
       </div>
 
-      <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 shrink-0">
         <button
           onClick={exportExecutivesToCSV}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-100/50 dark:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+          className="whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
         >
-          <Download size={16} />
-          এক্সপোর্ট করুন
+          <Download size={14} />
+          <span>এক্সপোর্ট করুন</span>
         </button>
         <button
           onClick={async () => {
@@ -94,10 +94,10 @@ export function ExecutiveControls({
             }
           }}
           disabled={generating}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer disabled:opacity-50"
+          className="whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer disabled:opacity-50"
         >
-          <Eye size={16} />
-          প্রিন্ট প্রিভিউ
+          <Eye size={14} />
+          <span>প্রিন্ট প্রিভিউ</span>
         </button>
         <button
           onClick={async () => {
@@ -114,26 +114,26 @@ export function ExecutiveControls({
             }
           }}
           disabled={generating}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors cursor-pointer disabled:opacity-50"
+          className="whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-50"
         >
-          {generating ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
-          ডাউনলোড পিডিএফ
+          {generating ? <Loader2 className="animate-spin" size={14} /> : <Printer size={14} />}
+          <span>ডাউনলোড পিডিএফ</span>
         </button>
         {currentUser?.role === 'ADMIN' && (
           <>
             <button
               onClick={openBulkModal}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer"
+              className="whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer"
             >
-              <Plus size={16} />
-              বাল্ক টেক্সট আপলোড
+              <Plus size={14} />
+              <span>বাল্ক টেক্সট আপলোড</span>
             </button>
             <button
               onClick={openNewExecModal}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 dark:shadow-none transition-colors cursor-pointer"
+              className="whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all hover:-translate-y-0.5 cursor-pointer"
             >
-              <Plus size={16} />
-              নতুন নির্বাহী যুক্ত করুন
+              <Plus size={14} />
+              <span>নতুন নির্বাহী যুক্ত করুন</span>
             </button>
           </>
         )}

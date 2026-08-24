@@ -49,14 +49,14 @@ export function CalendarGridCard({
       className="flex-1 flex flex-col justify-between"
     >
       {/* Month Selection Buttons */}
-      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 w-full mb-4">
+      <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5 w-full mb-4">
         {MONTH_NAMES.map((name, idx) => (
           <Button
             key={name}
             onClick={() => setSelectedMonth(idx)}
             variant={selectedMonth === idx ? 'primary' : 'secondary'}
             size="sm"
-            className="w-full text-center"
+            className="w-full text-center px-1 text-[11px] sm:text-xs"
           >
             {name}
           </Button>

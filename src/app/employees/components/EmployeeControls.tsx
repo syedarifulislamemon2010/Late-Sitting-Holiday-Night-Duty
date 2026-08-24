@@ -155,15 +155,15 @@ export default function EmployeeControls({
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto md:justify-end">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 shrink-0 w-full md:w-auto md:justify-end">
             {/* Export CSV */}
             <button
               type="button"
               onClick={exportEmployeesToCSV}
               disabled={cellFilter === 'select'}
-              className="h-10 flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              className="whitespace-nowrap shrink-0 h-10 flex items-center justify-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
-              <Download size={15} />
+              <Download size={14} />
               <span>এক্সপোর্ট করুন</span>
             </button>
             
@@ -172,9 +172,9 @@ export default function EmployeeControls({
               type="button"
               onClick={handlePrintPreview}
               disabled={generating || cellFilter === 'select'}
-              className="h-10 flex items-center justify-center gap-2 px-4 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+              className="whitespace-nowrap shrink-0 h-10 flex items-center justify-center gap-1.5 px-3.5 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
             >
-              {generating ? <Loader2 className="animate-spin" size={15} /> : <Eye size={15} />}
+              {generating ? <Loader2 className="animate-spin" size={14} /> : <Eye size={14} />}
               <span>প্রিন্ট প্রিভিউ</span>
             </button>
             
@@ -183,9 +183,9 @@ export default function EmployeeControls({
               type="button"
               onClick={handleDirectPrint}
               disabled={generating || cellFilter === 'select'}
-              className="h-10 flex items-center justify-center gap-2 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="whitespace-nowrap shrink-0 h-10 flex items-center justify-center gap-1.5 px-3.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {generating ? <Loader2 className="animate-spin" size={15} /> : <Printer size={15} />}
+              {generating ? <Loader2 className="animate-spin" size={14} /> : <Printer size={14} />}
               <span>ডাউনলোড পিডিএফ</span>
             </button>
 
@@ -195,9 +195,9 @@ export default function EmployeeControls({
                 <button
                   type="button"
                   onClick={onOpenBulkEmpModal}
-                  className="h-10 flex items-center justify-center gap-2 px-4 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer"
+                  className="whitespace-nowrap shrink-0 h-10 flex items-center justify-center gap-1.5 px-3.5 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer"
                 >
-                  <Plus size={15} />
+                  <Plus size={14} />
                   <span>বাল্ক টেক্সট আপলোড</span>
                 </button>
 
@@ -205,9 +205,9 @@ export default function EmployeeControls({
                 <button
                   type="button"
                   onClick={onOpenNewEmpModal}
-                  className="h-10 flex items-center justify-center gap-2 px-4.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all hover:-translate-y-0.5 cursor-pointer"
+                  className="whitespace-nowrap shrink-0 h-10 flex items-center justify-center gap-1.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all hover:-translate-y-0.5 cursor-pointer"
                 >
-                  <Plus size={15} />
+                  <Plus size={14} />
                   <span>নতুন কর্মকর্তা যোগ করুন</span>
                 </button>
               </>
