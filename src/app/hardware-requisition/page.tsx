@@ -1067,11 +1067,11 @@ export default function HardwareRequisitionPage() {
             </div>
 
             {/* RIGHT document layout preview */}
-            <div className="xl:col-span-8 w-full max-w-full overflow-x-auto flex justify-center pb-4 no-print-scrollbar">
+            <div className="xl:col-span-8 w-full flex justify-center pb-4">
               
               <div 
                 id="printable-hardware-requisition-sheet" 
-                className="w-[216mm] min-h-[355mm] bg-white text-black border border-slate-350 dark:border-slate-800 print:border-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] print:shadow-none flex flex-col justify-start shrink-0"
+                className="w-full max-w-[216mm] min-h-[355mm] bg-white text-black border border-slate-350 dark:border-slate-800 print:border-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] print:shadow-none flex flex-col justify-start"
                 style={{
                   paddingTop: '0.8in',
                   paddingBottom: '1in',

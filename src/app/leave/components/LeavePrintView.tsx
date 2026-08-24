@@ -201,11 +201,11 @@ export default function LeavePrintView({
         )}
       </div>
 
-      {/* Scrollable Container for Preview Sheet */}
-      <div className="w-full max-w-full overflow-x-auto flex justify-center pb-4 no-print-scrollbar">
+      {/* Preview Sheet Container */}
+      <div className="w-full flex justify-center pb-4">
         <div 
           id="printable-leave-sheet" 
-          className="print-legal-layout w-[216mm] min-h-[356mm] bg-white text-black p-[20mm] border-2 border-slate-300 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] relative flex flex-col justify-start shrink-0 font-sans"
+          className="print-legal-layout w-full max-w-[216mm] min-h-[356mm] bg-white text-black p-6 sm:p-[20mm] border-2 border-slate-300 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.08)] relative flex flex-col justify-start font-sans"
           style={{ contentVisibility: 'auto' }}
         >
           {/* 1. Header (Date + Leaves Table) */}
@@ -224,7 +224,7 @@ export default function LeavePrintView({
             </div>
 
             {/* Right block: Leaves Balance Table */}
-            <div className="w-[85mm] text-[10px] bg-white font-sans text-black">
+            <div className="w-[85mm] max-w-[50%] text-[10px] bg-white font-sans text-black">
               <table className="w-full text-center border-collapse border border-black">
                 <thead>
                   <tr className="border border-black font-bold text-center">

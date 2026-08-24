@@ -1172,11 +1172,11 @@ export default function TazCommitteeFormPage() {
               </div>
             </div>
 
-            {/* Scrollable Container for Preview Sheet */}
-            <div className="w-full max-w-full overflow-x-auto flex justify-center pb-4 no-print-scrollbar">
+            {/* Preview Sheet Container */}
+            <div className="w-full flex justify-center pb-4">
               <div 
                 id="taz-print-area" 
-                className="w-[210mm] min-h-[297mm] bg-white dark:bg-slate-950 text-black dark:text-slate-200 p-[15mm] border-2 border-slate-350 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.06)] relative flex flex-col justify-start shrink-0 font-serif text-[11px] leading-relaxed space-y-4"
+                className="w-full max-w-[210mm] min-h-[297mm] bg-white dark:bg-slate-950 text-black dark:text-slate-200 p-4 sm:p-[15mm] border-2 border-slate-350 dark:border-slate-800 rounded-3xl print:border-none print:rounded-none print:shadow-none shadow-[0_15px_50px_rgba(0,0,0,0.06)] relative flex flex-col justify-start font-serif text-[11px] leading-relaxed space-y-4"
               >
                 
                 {/* Header */}
@@ -1266,14 +1266,14 @@ export default function TazCommitteeFormPage() {
                     <tr>
                       <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Approximated Schedule</td>
                       <td className="border border-black dark:border-slate-700 px-2 py-1 text-center font-bold font-mono">Date</td>
-                      <td colSpan={2} className="border border-black dark:border-slate-700 px-2 py-1 font-mono text-center font-bold whitespace-nowrap">
+                      <td colSpan={2} className="border border-black dark:border-slate-700 px-2 py-1 font-mono text-center font-bold text-[10px] break-words">
                         {formatDateTimeForPrint(approxScheduleStart)} {approxScheduleEnd ? ` – ${formatDateTimeForPrint(approxScheduleEnd)}` : ''}
                       </td>
                     </tr>
                     <tr>
                       <td className="border border-black dark:border-slate-700 px-2 py-1 font-bold">Execution Schedule</td>
                       <td className="border border-black dark:border-slate-700 px-2 py-1 text-center font-bold font-mono">Date</td>
-                      <td colSpan={2} className="border border-black dark:border-slate-700 px-2 py-1 font-mono text-center font-bold whitespace-nowrap">
+                      <td colSpan={2} className="border border-black dark:border-slate-700 px-2 py-1 font-mono text-center font-bold text-[10px] break-words">
                         {formatDateTimeForPrint(execScheduleStart)} {execScheduleEnd ? ` – ${formatDateTimeForPrint(execScheduleEnd)}` : ''}
                       </td>
                     </tr>
