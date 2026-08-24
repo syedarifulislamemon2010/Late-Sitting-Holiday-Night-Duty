@@ -6,6 +6,16 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      thresholds: {
+        lines: 50,
+        functions: 50,
+        branches: 50,
+        statements: 50
+      }
+    },
     env: {
       DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/lhn_db',
     },

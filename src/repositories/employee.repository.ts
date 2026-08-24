@@ -1,6 +1,33 @@
 import { db } from '@/lib/db';
 import { employees, cells } from '@/db/schema';
 import { eq, sql, SQL } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
+
+const getCachedEmployeesWithCells = unstable_cache(
+  async () => {
+    return db
+      .select({
+        id: employees.id,
+        name: employees.name,
+        designation: employees.designation,
+        bankId: employees.bankId,
+        fileNo: employees.fileNo,
+        mobile: employees.mobile,
+        cellId: employees.cellId,
+        createdAt: employees.createdAt,
+        cell: {
+          id: cells.id,
+          name: cells.name,
+          description: cells.description,
+          createdAt: cells.createdAt
+        }
+      })
+      .from(employees)
+      .innerJoin(cells, eq(employees.cellId, cells.id));
+  },
+  ['all-employees-with-cells'],
+  { revalidate: 300, tags: ['employees'] }
+);
 
 export class EmployeeRepository {
   static async findById(id: number) {
@@ -18,6 +45,9 @@ export class EmployeeRepository {
   }
 
   static async listAllWithCell(conditions?: SQL | undefined) {
+    if (!conditions) {
+      return getCachedEmployeesWithCells();
+    }
     return db
       .select({
         id: employees.id,

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Noto_Sans_Bengali, Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
@@ -14,6 +15,19 @@ import { ToastProvider } from "@/context/ToastContext";
 import PageTransition from "@/components/PageTransition";
 import SessionExpiryWarning from "@/components/SessionExpiryWarning";
 
+const notoSansBengali = Noto_Sans_Bengali({
+  subsets: ["bengali"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-noto-bengali",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল",
   description: "সরকারি অফিস আদেশ ও আপ্যায়ন বিল অটোমেশন পোর্টাল",
@@ -28,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" className="h-full" suppressHydrationWarning={true}>
+    <html lang="bn" className={`h-full ${notoSansBengali.variable} ${inter.variable}`} suppressHydrationWarning={true}>
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#0b5e9e" />

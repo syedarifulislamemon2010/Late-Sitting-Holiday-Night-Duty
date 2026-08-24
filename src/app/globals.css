@@ -71,7 +71,7 @@
   --color-accent: var(--accent);
   --color-success: var(--success);
   --color-indigo-650: #493ee0;
-  --font-sans: 'SolaimanLipi', 'Noto Sans Bengali', 'Hind Siliguri', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-noto-bengali), var(--font-inter), 'SolaimanLipi', 'Noto Sans Bengali', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
 
   --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 150ms;
@@ -92,10 +92,10 @@
   --surface-bright: #ffffff;
   --text-muted: #64748b;
   --text-caption: #94a3b8;
-  --font-size-metric-hero: 26px;
-  --font-size-card-title: 16px;
-  --font-size-body: 13px;
-  --font-size-amount: 15px;
+  --font-size-metric-hero: clamp(1.4rem, 1.15rem + 1.25vw, 2rem);
+  --font-size-card-title: clamp(0.95rem, 0.88rem + 0.35vw, 1.15rem);
+  --font-size-body: clamp(0.8rem, 0.77rem + 0.15vw, 0.9rem);
+  --font-size-amount: clamp(0.85rem, 0.82rem + 0.2vw, 1rem);
 }
 
 .dark {
@@ -112,10 +112,10 @@
   --text-muted: #94a3b8;
   --text-caption: #64748b;
   --border-subtle: #334155;
-  --font-size-metric-hero: 26px;
-  --font-size-card-title: 16px;
-  --font-size-body: 13px;
-  --font-size-amount: 15px;
+  --font-size-metric-hero: clamp(1.4rem, 1.15rem + 1.25vw, 2rem);
+  --font-size-card-title: clamp(0.95rem, 0.88rem + 0.35vw, 1.15rem);
+  --font-size-body: clamp(0.8rem, 0.77rem + 0.15vw, 0.9rem);
+  --font-size-amount: clamp(0.85rem, 0.82rem + 0.2vw, 1rem);
 }
 
 body {
