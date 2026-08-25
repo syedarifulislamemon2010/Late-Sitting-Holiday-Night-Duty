@@ -217,9 +217,14 @@ export default function Sidebar() {
           <Link 
             href={isEmployee ? "/my-portal" : "/"} 
             onClick={(e) => {
+              const target = isEmployee ? '/my-portal' : '/';
+              if (pathname === target) {
+                e.preventDefault();
+                return;
+              }
               if (typeof window !== 'undefined' && (window as Window & { __unsavedChanges?: boolean }).__unsavedChanges) {
                 e.preventDefault();
-                setTargetHref(isEmployee ? '/my-portal' : '/');
+                setTargetHref(target);
                 setShowWarningModal(true);
               }
             }}
@@ -294,6 +299,10 @@ export default function Sidebar() {
                       href={item.href}
                       onClick={(e) => {
                         setIsOpen(false);
+                        if (isActive) {
+                          e.preventDefault();
+                          return;
+                        }
                         if (typeof window !== 'undefined' && (window as Window & { __unsavedChanges?: boolean }).__unsavedChanges) {
                           e.preventDefault();
                           setTargetHref(item.href);
