@@ -13,10 +13,12 @@ interface EmployeeProfileModalProps {
 
 const extractNickname = (nameStr: string): string => {
   const clean = nameStr.trim();
+  if (clean.toLowerCase().includes('admin') || clean.includes('এডমিন')) return 'Admin';
+  if (clean.includes('অভিজিৎ')) return 'অভিজিৎ';
+  if (clean.includes('জোবায়ের')) return 'জোবায়ের';
   if (clean.includes('মনোয়ার')) return 'মনোয়ার';
   if (clean.includes('প্রদীপ্ত')) return 'প্রদীপ্ত';
   if (clean.includes('মারুফ')) return 'মারুফ';
-  if (clean.includes('জোবায়ের')) return 'জোবায়ের';
   if (clean.includes('ইমন')) return 'ইমন';
   if (clean.includes('কিবরিয়া') || clean.includes('কিবর')) return 'কিবরিয়া';
   if (clean.includes('সাইফ')) return 'সাইফ';
@@ -26,23 +28,28 @@ const extractNickname = (nameStr: string): string => {
   if (clean.includes('বাহার')) return 'বাহার';
   if (clean.includes('রিয়াজ')) return 'রিয়াজ';
   if (clean.includes('রবিউল')) return 'রবিউল';
-  if (clean.includes('বাপ্পী') || clean.includes('হাদীউজ্জামান')) return 'বাপ্পী';
-  if (clean.includes('আরিফুল ইসলাম')) return 'আরিফ';
+  if (clean.includes('হাদীউজ্জামান') || clean.includes('বাপ্পী')) return 'বাপ্পী';
+  if (clean.includes('আরিফুল ইসলাম') || clean.includes('আরিফুল')) return 'আরিফুল';
   if (clean.includes('রাশেদ')) return 'রাশেদ';
   if (clean.includes('জাকির')) return 'জাকির';
-  if (clean.includes('ফাতিহ')) return 'ফাতিহ';
+  if (clean.includes('ফাতিহ') || clean.includes('ফাহিম')) return 'ফাহিম';
+  if (clean.includes('মিঠুন')) return 'মিঠুন';
+  if (clean.includes('ইমরান')) return 'ইমরান';
+  if (clean.includes('শায়েখুজ্জামান') || clean.includes('মাহমুদ')) return 'মাহমুদ';
+  if (clean.includes('শাহাদাত')) return 'শাহাদাত';
+  if (clean.includes('পারভেজ') || clean.includes('হাবিব')) return 'পারভেজ';
 
   const parts = clean.split(/\s+/);
-  if (parts.length === 0) return 'ইউ';
-  const prefixes = ['জনাব', 'মুhammad', 'muhammad', 'মুহাম্মদ', 'মোহাম্মদ', 'মোহাম্মাদ', 'মো', 'মোঃ', 'মোহা', 'শ্রী', 'ডা', 'ডাঃ', 'ড', 'ডক্টর', 'মহম্মদ', 'মিসেস', 'মিস', 'এসএম'];
+  if (parts.length === 0) return 'ইউজার';
+  const prefixes = ['জনাব', 'জনাবা', 'মুhammad', 'muhammad', 'মুহাম্মদ', 'মোহাম্মদ', 'মোহাম্মাদ', 'মো', 'মোঃ', 'মোহা', 'শ্রী', 'ডা', 'ডাঃ', 'ড', 'ডক্টর', 'মহম্মদ', 'মিসেস', 'মিস', 'এসএম', 'সৈয়দ', 'সৈয়দ'];
   for (let i = 0; i < parts.length; i++) {
     const word = parts[i];
-    const cleanedWord = word.replace(/[.,:;ঃ]/g, '').trim();
+    const cleanedWord = word.replace(/[.,:;ঃ()]/g, '').trim();
     if (!prefixes.includes(cleanedWord) && cleanedWord.length > 0) {
-      return word.substring(0, 10);
+      return cleanedWord;
     }
   }
-  return parts[0] ? parts[0].substring(0, 10) : 'ইউ';
+  return parts[0] || 'ইউজার';
 };
 
 export default function EmployeeProfileModal({

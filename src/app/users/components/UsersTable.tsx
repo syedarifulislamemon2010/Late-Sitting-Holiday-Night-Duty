@@ -57,12 +57,12 @@ export default function UsersTable({
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm shadow-sm ${palette.badge}`}>
-                      {nickname.substring(0, 2)}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className={`px-2.5 py-1 min-w-[42px] h-9 rounded-xl flex items-center justify-center font-bold text-xs shadow-xs tracking-tight whitespace-nowrap shrink-0 ${palette.badge}`}>
+                      {nickname}
                     </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-tight">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-tight truncate">
                         {user.name}
                       </h4>
                       <p className="text-xs font-mono text-slate-400 mt-0.5">

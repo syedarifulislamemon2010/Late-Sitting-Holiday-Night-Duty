@@ -2,24 +2,7 @@
 
 import React from 'react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
-
-interface User {
-  id: number;
-  name: string;
-  username: string;
-  role: 'ADMIN' | 'USER';
-  mobile?: string | null;
-  cells: { id: number; name: string }[];
-}
-
-interface Employee {
-  id: number;
-  name: string;
-  designation: string;
-  bankId: string | null;
-  fileNo: string | null;
-  cell?: { id: number; name: string };
-}
+import { User, Employee, extractNickname } from '../types';
 
 interface UserProfileModalProps {
   profileUser: User | null;
@@ -27,31 +10,6 @@ interface UserProfileModalProps {
   onClose: () => void;
   onEdit: (user: User) => void;
 }
-
-const extractNickname = (nameStr: string): string => {
-  const clean = nameStr.trim();
-  if (clean.includes('মনোয়ার')) return 'মনোয়ার';
-  if (clean.includes('প্রদীপ্ত')) return 'প্রদীপ্ত';
-  if (clean.includes('মারুফ')) return 'মারুফ';
-  if (clean.includes('জোবায়ের')) return 'জোবায়ের';
-  if (clean.includes('ইমন')) return 'ইমন';
-  if (clean.includes('কিবরিয়া') || clean.includes('কিবর')) return 'কিবরিয়া';
-  if (clean.includes('সাইফ')) return 'সাইফ';
-  if (clean.includes('দেবাশীষ')) return 'দেবাশীষ';
-  if (clean.includes('শাহিন')) return 'শাহিন';
-  if (clean.includes('সৈকত')) return 'সৈকত';
-  if (clean.includes('বাহার')) return 'বাহার';
-  if (clean.includes('রিয়াজ')) return 'রিয়াজ';
-  if (clean.includes('রবিউল')) return 'রবিউল';
-  if (clean.includes('বাপ্পী') || clean.includes('হাদীউজ্জামান')) return 'বাপ্পী';
-  if (clean.includes('আরিফুল ইসলাম')) return 'আরিফ';
-  if (clean.includes('রাশেদ')) return 'রাশেদ';
-  if (clean.includes('জাকির')) return 'জাকির';
-  if (clean.includes('ফাতিহ')) return 'ফাতিহ';
-
-  const parts = clean.split(/\s+/);
-  return parts[0] ? parts[0].substring(0, 10) : 'ইউ';
-};
 
 export default function UserProfileModal({
   profileUser,
