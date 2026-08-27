@@ -244,8 +244,12 @@ export class EmployeeService {
     });
 
     if (newEmp.bankId) {
+      const userSyncData: { mobile?: string | null; name?: string } = {};
+      if (newEmp.mobile !== undefined) userSyncData.mobile = newEmp.mobile;
+      if (newEmp.name !== undefined && newEmp.name.trim()) userSyncData.name = newEmp.name.trim();
+
       await db.update(users)
-        .set({ mobile: newEmp.mobile })
+        .set(userSyncData)
         .where(eq(sql`LOWER(TRIM(${users.username}))`, newEmp.bankId.trim().toLowerCase()));
     }
 
@@ -284,11 +288,14 @@ export class EmployeeService {
 
     const allowedCellIds = await getAllowedCellIds(currentUser);
     const isOwnCell = allowedCellIds.includes(existingEmployee.cellId);
-    if (!isOwnCell) {
-      throw new AuthError('অনুমতি নেই। আপনি শুধুমাত্র আপনার নিজের সেলের কর্মকর্তা সংশোধন করতে পারবেন।', 403, 'forbidden');
+    const isSelf = !!(existingEmployee.bankId && currentUser.username && existingEmployee.bankId.trim().toLowerCase() === currentUser.username.trim().toLowerCase());
+    const isAdmin = currentUser.role === 'ADMIN';
+
+    if (!isAdmin && !isOwnCell && !isSelf) {
+      throw new AuthError('অনুমতি নেই। আপনি শুধুমাত্র আপনার নিজের অথবা আপনার সেলের কর্মকর্তা সংশোধন করতে পারবেন।', 403, 'forbidden');
     }
 
-    if (validated.cellId !== undefined && !allowedCellIds.includes(validated.cellId)) {
+    if (validated.cellId !== undefined && validated.cellId !== existingEmployee.cellId && !isAdmin && !allowedCellIds.includes(validated.cellId)) {
       throw new AuthError('অনুমতি নেই। আপনি কর্মকর্তাকে আপনার সেলের বাইরের কোনো সেলে স্থানান্তর করতে পারবেন না।', 403, 'forbidden');
     }
 
@@ -311,10 +318,14 @@ export class EmployeeService {
 
     const updatedEmp = await EmployeeRepository.update(id, updatedData);
 
-    // Synchronize the mobile number to the User table if employee bankId corresponds to a user's username
+    // Synchronize both name and mobile to the User table if employee bankId corresponds to a user's username
     if (updatedEmp.bankId) {
+      const userSyncData: { mobile?: string | null; name?: string } = {};
+      if (updatedEmp.mobile !== undefined) userSyncData.mobile = updatedEmp.mobile;
+      if (updatedEmp.name !== undefined && updatedEmp.name.trim()) userSyncData.name = updatedEmp.name.trim();
+
       await db.update(users)
-        .set({ mobile: updatedEmp.mobile })
+        .set(userSyncData)
         .where(eq(sql`LOWER(TRIM(${users.username}))`, updatedEmp.bankId.trim().toLowerCase()));
     }
 

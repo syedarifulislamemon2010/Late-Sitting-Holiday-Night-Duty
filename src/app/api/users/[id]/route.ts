@@ -95,10 +95,14 @@ export async function PUT(
       .returning();
     const updatedUser = updatedUserList[0];
 
-    // Synchronize the mobile number to the Employee table if username corresponds to an employee's bankId
-    if (mobile !== undefined) {
+    // Synchronize both name and mobile to the Employee table if username corresponds to an employee's bankId
+    const employeeSyncData: { name?: string; mobile?: string | null } = {};
+    if (updatedUser.name) employeeSyncData.name = updatedUser.name.trim();
+    if (mobile !== undefined) employeeSyncData.mobile = mobile ? mobile.trim() : null;
+
+    if (Object.keys(employeeSyncData).length > 0) {
       await db.update(employees)
-        .set({ mobile: mobile ? mobile.trim() : null })
+        .set(employeeSyncData)
         .where(eq(sql`LOWER(TRIM(${employees.bankId}))`, targetUser.username.trim().toLowerCase()));
     }
 

@@ -251,7 +251,10 @@ export function useEmployeePageData(currentUser: UserProfile | null | undefined)
       setIsEmpModalOpen(false);
       setEditingEmp(null);
       setEmpForm({ name: '', nameEn: '', designation: STRICT_DESIGNATIONS[0], designationEn: '', bankId: '', fileNo: '', mobile: '', cellId: '' });
-      loadData();
+      await loadData();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('user-profile-updated'));
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       setErrorMessage(msg === 'cell_required' ? 'অনুগ্রহ করে সেল সিলেক্ট করুন।' : 'সার্ভার সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
