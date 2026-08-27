@@ -248,9 +248,21 @@ export class EmployeeService {
       if (newEmp.mobile !== undefined) userSyncData.mobile = newEmp.mobile;
       if (newEmp.name !== undefined && newEmp.name.trim()) userSyncData.name = newEmp.name.trim();
 
-      await db.update(users)
-        .set(userSyncData)
-        .where(eq(sql`LOWER(TRIM(${users.username}))`, newEmp.bankId.trim().toLowerCase()));
+      const matchingUsers = await db.select().from(users).where(eq(sql`LOWER(TRIM(${users.username}))`, newEmp.bankId.trim().toLowerCase()));
+      const matchingUser = matchingUsers[0];
+
+      if (matchingUser) {
+        if (Object.keys(userSyncData).length > 0) {
+          await db.update(users)
+            .set(userSyncData)
+            .where(eq(users.id, matchingUser.id));
+        }
+
+        const currentAssigned = await db.select().from(userCells).where(eq(userCells.B, matchingUser.id));
+        if (currentAssigned.length === 0) {
+          await db.insert(userCells).values({ A: validated.cellId, B: matchingUser.id });
+        }
+      }
     }
 
     const cellList = await db.select().from(cells).where(eq(cells.id, validated.cellId));
@@ -318,15 +330,34 @@ export class EmployeeService {
 
     const updatedEmp = await EmployeeRepository.update(id, updatedData);
 
-    // Synchronize both name and mobile to the User table if employee bankId corresponds to a user's username
+    // Synchronize name, mobile, and userCells if employee bankId corresponds to a user's username
     if (updatedEmp.bankId) {
       const userSyncData: { mobile?: string | null; name?: string } = {};
       if (updatedEmp.mobile !== undefined) userSyncData.mobile = updatedEmp.mobile;
       if (updatedEmp.name !== undefined && updatedEmp.name.trim()) userSyncData.name = updatedEmp.name.trim();
 
-      await db.update(users)
-        .set(userSyncData)
-        .where(eq(sql`LOWER(TRIM(${users.username}))`, updatedEmp.bankId.trim().toLowerCase()));
+      const matchingUsers = await db.select().from(users).where(eq(sql`LOWER(TRIM(${users.username}))`, updatedEmp.bankId.trim().toLowerCase()));
+      const matchingUser = matchingUsers[0];
+
+      if (matchingUser) {
+        if (Object.keys(userSyncData).length > 0) {
+          await db.update(users)
+            .set(userSyncData)
+            .where(eq(users.id, matchingUser.id));
+        }
+
+        // Synchronize userCells table so the officer does not duplicate across old and new cells
+        if (validated.cellId !== undefined) {
+          const currentAssigned = await db.select().from(userCells).where(eq(userCells.B, matchingUser.id));
+          const otherCellIds = currentAssigned
+            .map(uc => uc.A)
+            .filter(cid => cid !== existingEmployee.cellId && cid !== validated.cellId);
+          const newCellIds = [validated.cellId, ...otherCellIds];
+
+          await db.delete(userCells).where(eq(userCells.B, matchingUser.id));
+          await db.insert(userCells).values(newCellIds.map(cid => ({ A: cid, B: matchingUser.id })));
+        }
+      }
     }
 
     const cellList = await db.select().from(cells).where(eq(cells.id, updatedEmp.cellId));

@@ -95,10 +95,16 @@ export async function PUT(
       .returning();
     const updatedUser = updatedUserList[0];
 
-    // Synchronize both name and mobile to the Employee table if username corresponds to an employee's bankId
-    const employeeSyncData: { name?: string; mobile?: string | null } = {};
+    // Synchronize name, mobile, and primary cellId to the Employee table if username corresponds to an employee's bankId
+    const employeeSyncData: { name?: string; mobile?: string | null; cellId?: number } = {};
     if (updatedUser.name) employeeSyncData.name = updatedUser.name.trim();
     if (mobile !== undefined) employeeSyncData.mobile = mobile ? mobile.trim() : null;
+    if (currentUser.role === 'ADMIN' && Array.isArray(cellIds) && cellIds.length > 0) {
+      const primaryCid = typeof cellIds[0] === 'string' ? parseInt(cellIds[0], 10) : cellIds[0];
+      if (!isNaN(primaryCid)) {
+        employeeSyncData.cellId = primaryCid;
+      }
+    }
 
     if (Object.keys(employeeSyncData).length > 0) {
       await db.update(employees)
