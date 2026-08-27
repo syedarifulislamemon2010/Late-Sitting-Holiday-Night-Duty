@@ -1,6 +1,7 @@
 @import url('https://fonts.maateen.me/solaiman-lipi/font.css');
 @import "tailwindcss";
 @source "../**/*.{js,jsx,ts,tsx}";
+@source "../../src/**/*.{js,jsx,ts,tsx}";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
