@@ -6,6 +6,7 @@ import { logActivity } from '@/lib/audit';
 import { AppError, AuthError } from '@/lib/errors';
 import { officeOrderCreateSchema, officeOrderUpdateSchema } from '@/validations/officeOrder.schema';
 import { toBanglaDigits } from '@/lib/bengali-converter';
+import { sortDatesDescending, sortDatesStringDescending } from '@/lib/print-helpers';
 
 interface UserSession {
   id: number;
@@ -169,7 +170,7 @@ export class OfficeOrderService {
               const totalTransport = days * transportRate;
               const grandTotal = totalApyaon + totalTransport;
 
-              const sortedDates = g.dates.sort();
+              const sortedDates = [...g.dates].sort((a, b) => b.localeCompare(a));
               const formatted = sortedDates.map((dStr) => {
                 const [year, month, day] = dStr.split('-');
                 return toBanglaDigits(`${day}-${month}-${year}`);
@@ -199,18 +200,21 @@ export class OfficeOrderService {
             const cellName = (matches.length > 0 ? matches[0].employee.cellName : null) || findCellNameForEmp(s);
 
             if (!s.datesFormatted && matches.length > 0) {
-              const uniqueDates = Array.from(new Set(matches.map((m) => m.date))).sort();
+              const uniqueDates = Array.from(new Set(matches.map((m) => m.date))).sort((a, b) => b.localeCompare(a));
               const formatted = uniqueDates.map((dStr) => {
                 const [year, month, day] = dStr.split('-');
                 return toBanglaDigits(`${day}-${month}-${year}`);
               }).join(', ');
               return { ...s, datesFormatted: formatted, cellName };
             }
+            if (typeof s.datesFormatted === 'string') {
+              return { ...s, datesFormatted: sortDatesStringDescending(s.datesFormatted), cellName };
+            }
             return { ...s, cellName };
           });
         }
       } else {
-        // For standard office orders, also map cellName to each duty
+        // For standard office orders, also map cellName to each duty and ensure descending dates
         parsedDuties = parsedDuties.map((s) => {
           const matches = linkedDuties.filter((d) => {
             if (!d.orderRef) return false;
@@ -218,7 +222,14 @@ export class OfficeOrderService {
             (d.employee.bankId === s.employeeId || d.employee.id.toString() === s.employeeId || d.employee.name === s.employeeName);
           });
           const cellName = (matches.length > 0 ? matches[0].employee.cellName : null) || findCellNameForEmp(s);
-          return { ...s, cellName };
+          const updatedDuty: Record<string, unknown> = { ...s, cellName };
+          if (typeof s.datesFormatted === 'string') {
+            updatedDuty.datesFormatted = sortDatesStringDescending(s.datesFormatted);
+          }
+          if (Array.isArray(s.dates)) {
+            updatedDuty.dates = sortDatesDescending(s.dates as string[]);
+          }
+          return updatedDuty;
         });
       }
 
@@ -360,13 +371,26 @@ export class OfficeOrderService {
 
       const statusToSave = validated.status || (existed ? 'Modified' : 'Generated');
 
+      const normalizedDuties = validated.duties ? validated.duties.map((d: Record<string, unknown>) => {
+        const item = { ...d };
+        if (typeof item.datesFormatted === 'string') {
+          item.datesFormatted = sortDatesStringDescending(item.datesFormatted);
+        }
+        if (Array.isArray(item.dates)) {
+          item.dates = sortDatesDescending(item.dates as string[]);
+        }
+        return item;
+      }) : [];
+
+      const dutiesJsonString = JSON.stringify(normalizedDuties);
+
       const dataToSave = {
         orderRef: validated.orderRef,
         orderDate: validated.orderDate,
         category: validated.category,
         employeeName: validated.employeeName,
         cellName: validated.cellName || null,
-        dutiesJson: validated.duties ? JSON.stringify(validated.duties) : '[]',
+        dutiesJson: dutiesJsonString,
         contentJson: validated.content ? JSON.stringify(validated.content) : null,
         status: statusToSave
       };
@@ -378,7 +402,7 @@ export class OfficeOrderService {
           orderDate: validated.orderDate,
           employeeName: validated.employeeName,
           cellName: validated.cellName || null,
-          dutiesJson: validated.duties ? JSON.stringify(validated.duties) : '[]',
+          dutiesJson: dutiesJsonString,
           contentJson: validated.content ? JSON.stringify(validated.content) : null,
           status: statusToSave
         }, client);

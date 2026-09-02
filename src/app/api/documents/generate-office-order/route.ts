@@ -8,6 +8,7 @@ import path from 'path';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
 import { officeOrderGenerateSchema } from '@/validations/documentGeneration.schema';
+import { renderDatesInPairs } from '@/lib/print-helpers';
 
 interface DutyItem {
   employee: {
@@ -56,23 +57,8 @@ export async function POST(request: Request) {
     }
 
     const rowsHtml = duties.map((duty: DutyItem, index: number) => {
-      const datesList = (duty.datesFormatted || '')
-        .split(',')
-        .map(d => d.trim())
-        .filter(Boolean);
-
-      const pairs: string[] = [];
-      for (let i = 0; i < datesList.length; i += 2) {
-        const first = datesList[i];
-        const second = datesList[i + 1];
-        if (second) {
-          pairs.push(`${first}, ${second}`);
-        } else {
-          pairs.push(first);
-        }
-      }
-
-      const formattedDatesColumn = pairs.join('<br>');
+      const pairedDates = renderDatesInPairs(duty.datesFormatted || '');
+      const formattedDatesColumn = pairedDates.join('<br>');
       const displayName = duty.employee.name.replace(/\s*\([^)]*\)\s*$/, '').trim();
       const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
 

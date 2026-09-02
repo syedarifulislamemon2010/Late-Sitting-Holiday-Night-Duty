@@ -469,8 +469,8 @@ export function useOfficeOrderGeneration({
   };
 
   const getFormattedDateList = (dates: string[]) => {
-    return dates
-      .sort()
+    return [...dates]
+      .sort((a, b) => b.localeCompare(a))
       .map(d => {
         const [year, month, day] = d.split('-');
         return toBanglaDigits(`${day}-${month}-${year}`);
@@ -526,7 +526,7 @@ export function useOfficeOrderGeneration({
           totalApyaon: totalApyaon,
           totalTransport: totalTransport,
           grandTotal: empTotal,
-          datesFormatted: s.dates.sort().map(d => toBanglaDigits(d.split('-').reverse().join('-'))).join(', ')
+          datesFormatted: s.dates.slice().sort((a, b) => b.localeCompare(a)).map(d => toBanglaDigits(d.split('-').reverse().join('-'))).join(', ')
         };
       });
       

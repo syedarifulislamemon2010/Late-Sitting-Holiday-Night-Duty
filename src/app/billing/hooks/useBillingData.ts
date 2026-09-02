@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import logger from '@/lib/logger';
 import { toBanglaDigits } from '@/lib/bengali-converter';
-import { getShortDesignation } from '@/lib/print-helpers';
+import { getShortDesignation, sortDatesStringDescending } from '@/lib/print-helpers';
 import { UserProfile, UserCell } from '@/context/ProfileContext';
 import {
   Cell,
@@ -578,7 +578,7 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
             return;
           }
 
-          const sortedDates = [...dates].sort();
+          const sortedDates = [...dates].sort((a, b) => b.localeCompare(a));
           const formatted = sortedDates.map(dStr => {
             const [year, month, day] = dStr.split('-');
             const bnDay = toBanglaDigits(day.padStart(2, '0'));
@@ -684,12 +684,12 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
   const formatWorkedDatesForCategory = useCallback((empId: number) => {
     const summary = billingSummaries.find(s => s.employeeId === empId);
     if (summary && summary.datesFormatted) {
-      return summary.datesFormatted;
+      return sortDatesStringDescending(summary.datesFormatted);
     }
 
     const empDuties = duties.filter(d => d.employeeId === empId && d.type === printCategory);
     if (empDuties.length === 0) return '';
-    const sorted = [...empDuties].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sorted = [...empDuties].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     const formattedDates = sorted.map(d => {
       const [year, month, day] = d.date.split('-');

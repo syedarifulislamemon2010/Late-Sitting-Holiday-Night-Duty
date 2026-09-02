@@ -303,7 +303,7 @@ export const getShortDesignation = (desig: string | undefined | null): string =>
 
 export const getFormattedDateList = (dates: string[]): string => {
   return [...dates]
-    .sort()
+    .sort((a, b) => b.localeCompare(a))
     .map(d => {
       const [year, month, day] = d.split('-');
       return toBanglaDigits(`${day}-${month}-${year}`);

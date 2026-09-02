@@ -24,8 +24,8 @@ function getBnDate(dateStr: string | null | undefined): string {
 }
 
 const getFormattedDateList = (dates: string[]) => {
-  return dates
-    .sort()
+  return [...dates]
+    .sort((a, b) => b.localeCompare(a))
     .map(d => {
       const [year, month, day] = d.split('-');
       return toBnDigits(`${day}-${month}-${year}`);
