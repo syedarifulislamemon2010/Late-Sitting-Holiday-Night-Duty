@@ -55,20 +55,24 @@ export const formatToBanglaDate = (dateStr: string): string => {
   return `${toBanglaDigits(day)}-${toBanglaDigits(month)}-${toBanglaDigits(year)}`;
 };
 
-export const sortDatesDescending = (dates: string[]): string[] => {
+export const sortDatesAscending = (dates: string[]): string[] => {
   return [...dates].sort((a, b) => {
     const keyA = parseDateToIsoKey(a);
     const keyB = parseDateToIsoKey(b);
-    return keyB.localeCompare(keyA);
+    return keyA.localeCompare(keyB);
   });
 };
 
-export const sortDatesStringDescending = (datesStr: string): string => {
+export const sortDatesStringAscending = (datesStr: string): string => {
   if (!datesStr) return '';
   const dates = datesStr.split(/,\s*/).map(d => d.trim()).filter(Boolean);
-  const sorted = sortDatesDescending(dates);
+  const sorted = sortDatesAscending(dates);
   return sorted.map(d => formatToBanglaDate(d)).join(', ');
 };
+
+// Also export sortDatesDescending and sortDatesStringDescending pointing to ascending for backward compatibility
+export const sortDatesDescending = (dates: string[]): string[] => sortDatesAscending(dates);
+export const sortDatesStringDescending = (datesStr: string): string => sortDatesStringAscending(datesStr);
 
 export const renderDatesInPairs = (datesStrOrArr: string | string[]): string[] => {
   let rawDates: string[] = [];
@@ -78,8 +82,8 @@ export const renderDatesInPairs = (datesStrOrArr: string | string[]): string[] =
     rawDates = (datesStrOrArr || '').split(/,\s*/).map(item => item.trim()).filter(Boolean);
   }
 
-  // Sort descending (latest date first: e.g. 01-06-2026, 23-05-2026, ...)
-  const sortedDates = sortDatesDescending(rawDates);
+  // Sort ascending (chronological: earliest date first: e.g. 09-05-2026, 16-05-2026 ... 01-06-2026)
+  const sortedDates = sortDatesAscending(rawDates);
 
   // Format into standard Bangla DD-MM-YYYY
   const formattedDates = sortedDates.map(d => formatToBanglaDate(d));

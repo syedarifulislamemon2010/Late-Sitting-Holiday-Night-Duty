@@ -6,7 +6,7 @@ import { logActivity } from '@/lib/audit';
 import { AppError, AuthError } from '@/lib/errors';
 import { officeOrderCreateSchema, officeOrderUpdateSchema } from '@/validations/officeOrder.schema';
 import { toBanglaDigits } from '@/lib/bengali-converter';
-import { sortDatesDescending, sortDatesStringDescending } from '@/lib/print-helpers';
+import { sortDatesAscending, sortDatesStringAscending } from '@/lib/print-helpers';
 
 interface UserSession {
   id: number;
@@ -170,7 +170,7 @@ export class OfficeOrderService {
               const totalTransport = days * transportRate;
               const grandTotal = totalApyaon + totalTransport;
 
-              const sortedDates = [...g.dates].sort((a, b) => b.localeCompare(a));
+              const sortedDates = [...g.dates].sort((a, b) => a.localeCompare(b));
               const formatted = sortedDates.map((dStr) => {
                 const [year, month, day] = dStr.split('-');
                 return toBanglaDigits(`${day}-${month}-${year}`);
@@ -200,7 +200,7 @@ export class OfficeOrderService {
             const cellName = (matches.length > 0 ? matches[0].employee.cellName : null) || findCellNameForEmp(s);
 
             if (!s.datesFormatted && matches.length > 0) {
-              const uniqueDates = Array.from(new Set(matches.map((m) => m.date))).sort((a, b) => b.localeCompare(a));
+              const uniqueDates = Array.from(new Set(matches.map((m) => m.date))).sort((a, b) => a.localeCompare(b));
               const formatted = uniqueDates.map((dStr) => {
                 const [year, month, day] = dStr.split('-');
                 return toBanglaDigits(`${day}-${month}-${year}`);
@@ -208,13 +208,13 @@ export class OfficeOrderService {
               return { ...s, datesFormatted: formatted, cellName };
             }
             if (typeof s.datesFormatted === 'string') {
-              return { ...s, datesFormatted: sortDatesStringDescending(s.datesFormatted), cellName };
+              return { ...s, datesFormatted: sortDatesStringAscending(s.datesFormatted), cellName };
             }
             return { ...s, cellName };
           });
         }
       } else {
-        // For standard office orders, also map cellName to each duty and ensure descending dates
+        // For standard office orders, also map cellName to each duty and ensure ascending chronological dates
         parsedDuties = parsedDuties.map((s) => {
           const matches = linkedDuties.filter((d) => {
             if (!d.orderRef) return false;
@@ -224,10 +224,10 @@ export class OfficeOrderService {
           const cellName = (matches.length > 0 ? matches[0].employee.cellName : null) || findCellNameForEmp(s);
           const updatedDuty: Record<string, unknown> = { ...s, cellName };
           if (typeof s.datesFormatted === 'string') {
-            updatedDuty.datesFormatted = sortDatesStringDescending(s.datesFormatted);
+            updatedDuty.datesFormatted = sortDatesStringAscending(s.datesFormatted);
           }
           if (Array.isArray(s.dates)) {
-            updatedDuty.dates = sortDatesDescending(s.dates as string[]);
+            updatedDuty.dates = sortDatesAscending(s.dates as string[]);
           }
           return updatedDuty;
         });
@@ -374,10 +374,10 @@ export class OfficeOrderService {
       const normalizedDuties = validated.duties ? validated.duties.map((d: Record<string, unknown>) => {
         const item = { ...d };
         if (typeof item.datesFormatted === 'string') {
-          item.datesFormatted = sortDatesStringDescending(item.datesFormatted);
+          item.datesFormatted = sortDatesStringAscending(item.datesFormatted);
         }
         if (Array.isArray(item.dates)) {
-          item.dates = sortDatesDescending(item.dates as string[]);
+          item.dates = sortDatesAscending(item.dates as string[]);
         }
         return item;
       }) : [];
