@@ -139,13 +139,22 @@ export default function CalendarDatePicker({
         onClick={() => handleSelectDay(d)}
         className={`h-9 sm:h-10 rounded-xl transition-all duration-150 flex items-center justify-center text-xs sm:text-sm font-semibold border relative ${
           isSelected 
-            ? 'bg-indigo-600 text-white font-extrabold shadow-sm border-indigo-600 ring-2 ring-indigo-400/30 scale-102 cursor-pointer z-10' 
+            ? 'calendar-day-selected ring-2 ring-indigo-400/30 scale-102 cursor-pointer z-10' 
             : isWeekendOrHoliday 
-              ? 'text-rose-400 dark:text-rose-500/70 bg-rose-50/40 dark:bg-rose-950/20 border-rose-200/40 dark:border-rose-900/30 cursor-not-allowed font-medium opacity-80' 
+              ? 'calendar-day-holiday cursor-not-allowed font-medium' 
               : isOutOfRange
-                ? 'text-slate-300 dark:text-slate-650 bg-slate-50/50 dark:bg-slate-900/20 border-slate-200/30 cursor-not-allowed font-medium'
-                : 'text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/40 font-bold shadow-2xs cursor-pointer'
+                ? 'calendar-day-disabled font-medium'
+                : 'calendar-day-normal hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/40 font-bold shadow-2xs cursor-pointer'
         } ${isToday && !isSelected ? 'ring-1.5 ring-indigo-500/50 font-extrabold' : ''}`}
+        style={
+          isSelected
+            ? { backgroundColor: '#4f46e5', color: '#ffffff', borderColor: '#4f46e5' }
+            : isWeekendOrHoliday
+              ? { color: '#f43f5e', backgroundColor: '#fff1f2', borderColor: '#fecdd3' }
+              : isOutOfRange
+                ? { color: '#94a3b8', backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }
+                : undefined
+        }
         title={isWeekendOrHoliday ? 'ছুটির দিন / সরকারি ছুটি (আবেদনযোগ্য নয়)' : isOutOfRange ? 'অনুমোদিত তারিখের বাইরে (ডিজেবল)' : isToday ? 'আজকের দিন' : undefined}
       >
         <span>{toBanglaDigits(d)}</span>
@@ -204,8 +213,8 @@ export default function CalendarDatePicker({
             <div className="text-slate-500 dark:text-slate-400">মঙ্গল</div>
             <div className="text-slate-500 dark:text-slate-400">বুধ</div>
             <div className="text-slate-500 dark:text-slate-400">বৃহ</div>
-            <div className="text-rose-500 font-extrabold">শুক্র</div>
-            <div className="text-rose-500 font-extrabold">শনি</div>
+            <div className="text-rose-500 font-extrabold" style={{ color: '#f43f5e' }}>শুক্র</div>
+            <div className="text-rose-500 font-extrabold" style={{ color: '#f43f5e' }}>শনি</div>
           </div>
 
           {/* Days Grid */}

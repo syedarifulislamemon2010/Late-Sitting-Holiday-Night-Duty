@@ -525,3 +525,51 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   }
 }
 
+/* ==========================================================================
+   Universal Calendar Date Picker Styles (Guarantees identical rendering across OS)
+   ========================================================================== */
+.calendar-day-holiday {
+  color: #f43f5e !important;
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+}
+
+html.dark .calendar-day-holiday {
+  color: #fb7185 !important;
+  background-color: rgba(159, 18, 57, 0.2) !important;
+  border-color: rgba(225, 29, 72, 0.35) !important;
+}
+
+.calendar-day-normal {
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.dark .calendar-day-normal {
+  color: #f1f5f9 !important;
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.calendar-day-disabled {
+  color: #94a3b8 !important;
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  cursor: not-allowed !important;
+}
+
+html.dark .calendar-day-disabled {
+  color: #64748b !important;
+  background-color: rgba(15, 23, 42, 0.5) !important;
+  border-color: #1e293b !important;
+  cursor: not-allowed !important;
+}
+
+.calendar-day-selected {
+  color: #ffffff !important;
+  background-color: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+  font-weight: 800 !important;
+}
+
