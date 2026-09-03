@@ -36,7 +36,7 @@ export function Card({
   return (
     <div
       onClick={onClick}
-      className={`bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-850/60 rounded-2xl shadow-xs transition-all duration-fast ease-premium overflow-hidden ${
+      className={`bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-850/60 rounded-2xl shadow-xs transition-all duration-fast ease-premium ${className.includes('overflow-') ? '' : 'overflow-hidden'} ${
         topBorderAccent !== 'none' ? accentStyles[topBorderAccent] : ''
       } ${onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.005] select-none' : ''} ${className}`}
     >

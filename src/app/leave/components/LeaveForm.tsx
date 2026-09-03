@@ -238,6 +238,7 @@ export default function LeaveForm({
           
           {/* Box 1: Applicant information */}
           <Card
+            className="overflow-visible relative z-20"
             title={
               <span className="flex items-center gap-2">
                 <User size={16} className="text-indigo-600 dark:text-indigo-400" />
@@ -428,6 +429,7 @@ export default function LeaveForm({
 
           {/* Box 2: Leave dates and details */}
           <Card
+            className="overflow-visible relative z-30"
             title={
               <span className="flex items-center gap-2">
                 <CalendarRange size={16} className="text-indigo-600 dark:text-indigo-400" />
@@ -575,6 +577,7 @@ export default function LeaveForm({
 
           {/* Box 3: editable balance grid */}
           <Card
+            className="overflow-visible relative z-10"
             title={
               <span className="flex items-center gap-2">
                 <Settings size={16} className="text-indigo-600 dark:text-indigo-400" />
