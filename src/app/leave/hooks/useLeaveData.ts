@@ -325,8 +325,8 @@ export function useLeaveData(currentUser: UserSession | null) {
   const yesterdayStr = getLocalDateStr(yesterdayVal);
 
   const dateLimits = {
-    min: undefined,
-    max: undefined
+    min: (leaveType === 'CASUAL' || leaveType === 'STATION_LEAVE') ? tomorrowStr : undefined,
+    max: leaveType === 'POST_FACTO' ? yesterdayStr : undefined
   };
 
   // Automatically determine leave type based on dates and location

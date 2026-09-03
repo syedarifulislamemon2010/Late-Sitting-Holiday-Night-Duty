@@ -444,9 +444,21 @@ export default function LeaveForm({
                   id="leaveType"
                   value={leaveType}
                   onChange={(e) => {
-                    setLeaveType(e.target.value as any);
-                    if (e.target.value) {
+                    const newType = e.target.value as any;
+                    setLeaveType(newType);
+                    if (newType) {
                       setShowValidationErrors(false);
+                    }
+                    if ((newType === 'CASUAL' || newType === 'STATION_LEAVE') && dateLimits.min) {
+                      if (startDate && startDate < dateLimits.min) {
+                        setStartDate('');
+                        setEndDate('');
+                      }
+                    } else if (newType === 'POST_FACTO' && dateLimits.max) {
+                      if (startDate && startDate > dateLimits.max) {
+                        setStartDate('');
+                        setEndDate('');
+                      }
                     }
                   }}
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:border-indigo-500 font-bold cursor-pointer"

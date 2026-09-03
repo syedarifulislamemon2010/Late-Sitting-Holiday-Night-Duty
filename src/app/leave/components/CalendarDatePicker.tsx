@@ -92,15 +92,6 @@ export default function CalendarDatePicker({
     setCurrentDate(new Date(year, month + 1, 1));
   };
 
-  const jumpToToday = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const now = new Date();
-    setCurrentDate(now);
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    onChange(todayStr);
-    setIsOpen(false);
-  };
-
   const handleSelectDay = (day: number) => {
     const selectedDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     onChange(selectedDateStr);
@@ -136,7 +127,7 @@ export default function CalendarDatePicker({
     if (minDate && dateStr < minDate) isOutOfRange = true;
     if (maxDate && dateStr > maxDate) isOutOfRange = true;
 
-    const isDisabled = isOutOfRange;
+    const isDisabled = isWeekendOrHoliday || isOutOfRange;
     const isSelected = value === dateStr;
     const isToday = todayStr === dateStr;
 
@@ -150,12 +141,12 @@ export default function CalendarDatePicker({
           isSelected 
             ? 'bg-indigo-600 text-white font-extrabold shadow-sm border-indigo-600 ring-2 ring-indigo-400/30 scale-102 cursor-pointer z-10' 
             : isWeekendOrHoliday 
-              ? 'text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/40 border-rose-200/60 dark:border-rose-800/40 cursor-pointer font-bold hover:bg-rose-100/80 hover:border-rose-300' 
+              ? 'text-rose-400 dark:text-rose-500/70 bg-rose-50/40 dark:bg-rose-950/20 border-rose-200/40 dark:border-rose-900/30 cursor-not-allowed font-medium opacity-80' 
               : isOutOfRange
                 ? 'text-slate-300 dark:text-slate-650 bg-slate-50/50 dark:bg-slate-900/20 border-slate-200/30 cursor-not-allowed font-medium'
-                : 'text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/40 shadow-2xs cursor-pointer'
+                : 'text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/40 font-bold shadow-2xs cursor-pointer'
         } ${isToday && !isSelected ? 'ring-1.5 ring-indigo-500/50 font-extrabold' : ''}`}
-        title={isWeekendOrHoliday ? 'ছুটির দিন (শুক্রবার/শনিবার/সরকারি ছুটি)' : isToday ? 'আজকের দিন' : undefined}
+        title={isWeekendOrHoliday ? 'ছুটির দিন / সরকারি ছুটি (আবেদনযোগ্য নয়)' : isOutOfRange ? 'অনুমোদিত তারিখের বাইরে (ডিজেবল)' : isToday ? 'আজকের দিন' : undefined}
       >
         <span>{toBanglaDigits(d)}</span>
         {isToday && !isSelected && (
@@ -203,17 +194,6 @@ export default function CalendarDatePicker({
               title="পরবর্তী মাস"
             >
               <ChevronRight size={16} />
-            </button>
-          </div>
-
-          {/* Quick jump to Today */}
-          <div className="flex justify-end mb-2">
-            <button
-              type="button"
-              onClick={jumpToToday}
-              className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-            >
-              আজকের দিন ({toBanglaDigits(today.getDate())}ই {monthNamesBN[today.getMonth()]})
             </button>
           </div>
 
