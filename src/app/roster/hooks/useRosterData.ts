@@ -73,6 +73,9 @@ export function useRosterData({
   }, []);
 
   const loadDuties = useCallback(async () => {
+    if (isEditingArchive) {
+      return;
+    }
     try {
       let url = '/api/duties';
       const params = new URLSearchParams();

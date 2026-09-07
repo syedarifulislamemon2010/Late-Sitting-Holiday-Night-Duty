@@ -48,6 +48,14 @@ export default function RosterPage() {
   const [opt1Assignments, setOpt1Assignments] = useState<Record<number, string[]>>({});
   const [opt1ViewedMonths, setOpt1ViewedMonths] = useState<Record<number, string>>({});
 
+  const [isEditingArchiveInitial] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return !!params.get('edit_ref');
+    }
+    return false;
+  });
+
   // 1. Filters Layer Hook
   const filters = useRosterFilters({
     currentUser,
@@ -61,7 +69,7 @@ export default function RosterPage() {
     selectedCell: filters.selectedCell,
     selectedCategory: filters.selectedCategory,
     selectedEmployee: filters.selectedEmployee,
-    isEditingArchive: false
+    isEditingArchive: isEditingArchiveInitial
   });
 
   // 3. Office Order Generation Hook
@@ -90,6 +98,8 @@ export default function RosterPage() {
     setOpt1CellId: filters.setOpt1CellId,
     opt1Assignments,
     setOpt1Assignments,
+    setOpt1ViewedMonths,
+    setSelectedCategory: filters.setSelectedCategory,
     assignmentForm,
     setAssignmentForm,
     entryMode,

@@ -52,6 +52,8 @@ interface UseOfficeOrderGenerationProps {
     date: string;
     description: string;
   }>>;
+  setOpt1ViewedMonths?: React.Dispatch<React.SetStateAction<Record<number, string>>>;
+  setSelectedCategory?: (cat: string) => void;
   entryMode: 'EMPLOYEE_WISE' | 'DATE_WISE';
   editingDuty: Duty | null;
   setBillSuggestion: (val: { ref: string; category: string } | null) => void;
@@ -77,6 +79,8 @@ export function useOfficeOrderGeneration({
   setOpt1CellId,
   opt1Assignments,
   setOpt1Assignments,
+  setOpt1ViewedMonths,
+  setSelectedCategory,
   assignmentForm,
   setAssignmentForm,
   entryMode,
@@ -167,6 +171,7 @@ export function useOfficeOrderGeneration({
   }, []);
 
   const printCategory = useMemo(() => {
+    if (assignmentForm.type) return assignmentForm.type;
     if (userSelectedPrintCategory !== null) return userSelectedPrintCategory;
     if (duties && duties.length > 0) {
       let latestDuty = duties[0];
@@ -180,10 +185,13 @@ export function useOfficeOrderGeneration({
       }
     }
     return 'LATE_SITTING';
-  }, [userSelectedPrintCategory, duties]);
+  }, [assignmentForm.type, userSelectedPrintCategory, duties]);
 
   const changePrintCategory = (category: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT') => {
     setUserSelectedPrintCategory(category);
+    if (setAssignmentForm) {
+      setAssignmentForm(prev => ({ ...prev, type: category }));
+    }
     resetCustomOrderFields();
   };
 
@@ -376,14 +384,33 @@ export function useOfficeOrderGeneration({
     const catBangla = printCategory === 'LATE_SITTING' ? 'লেট-সিটিং' : printCategory === 'HOLIDAY' ? 'অফ-ডে' : 'নাইট';
 
     if (isEditingArchive && originalOrderRef) {
-      const hasPayeeChanged = initialRosterValues && payeeEmployeeId !== initialRosterValues.payeeEmployeeId;
-      const hasCategoryChanged = initialRosterValues && printCategory !== initialRosterValues.printCategory;
-      
-      const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
-      const originalRefContainsPayee = emp ? isNameMatchingRef(emp.name, originalOrderRef) : false;
-
-      if (!hasPayeeChanged && !hasCategoryChanged && originalRefContainsPayee) {
-        return originalOrderRef;
+      const parts = originalOrderRef.split('/');
+      if (parts.length >= 7) {
+        // [0: 9103, 1: dev, 2: empName, 3: catBangla, 4: office-order, 5: date, 6: rand]
+        const preservedPrefix = parts[0] || '৯১০৩';
+        const preservedDept = parts[1] || 'ডেভ';
+        const preservedDocType = parts[4] || 'অফিস-নির্দেশ';
+        
+        let targetBnDate = parts[5];
+        if (userCustomOrderDate !== null) {
+          targetBnDate = toBanglaDigits(userCustomOrderDate.replace(/-/g, ''));
+        }
+        
+        const preservedBnRand = parts.slice(6).join('/');
+        return `${preservedPrefix}/${preservedDept}/${empName}/${catBangla}/${preservedDocType}/${targetBnDate}/${preservedBnRand}`;
+      } else if (parts.length === 6) {
+        // [0: 9103, 1: dev, 2: empName, 3: office-order, 4: date, 5: rand]
+        const preservedPrefix = parts[0] || '৯১০৩';
+        const preservedDept = parts[1] || 'ডেভ';
+        const preservedDocType = parts[3] || 'অফিস-নির্দেশ';
+        
+        let targetBnDate = parts[4];
+        if (userCustomOrderDate !== null) {
+          targetBnDate = toBanglaDigits(userCustomOrderDate.replace(/-/g, ''));
+        }
+        
+        const preservedBnRand = parts[5];
+        return `${preservedPrefix}/${preservedDept}/${empName}/${catBangla}/${preservedDocType}/${targetBnDate}/${preservedBnRand}`;
       }
     }
 
@@ -392,7 +419,7 @@ export function useOfficeOrderGeneration({
     const activeStableNumber = stableNumber + activePartIdx;
     const bnRand = toBanglaDigits(activeStableNumber);
     return `৯১০৩/ডেভ/${empName}/${catBangla}/অফিস-নির্দেশ/${bnDate}/${bnRand}`;
-  }, [userCustomOrderRef, isArchived, duties, printCategory, payeeEmployeeId, employees, isEditingArchive, originalOrderRef, stableNumber, activePartIdx, getGroupedDuties, orderDate, initialRosterValues]);
+  }, [userCustomOrderRef, isArchived, duties, printCategory, payeeEmployeeId, employees, isEditingArchive, originalOrderRef, stableNumber, activePartIdx, getGroupedDuties, orderDate, initialRosterValues, userCustomOrderDate]);
 
   const isRosterDirty = useMemo(() => {
     if (!isEditingArchive || !initialRosterValues) return false;
@@ -1025,9 +1052,6 @@ export function useOfficeOrderGeneration({
             
             setEmployees(sortedLocalEmps);
             setCells(localCells);
-            if (Array.isArray(localCells) && localCells.length > 0) {
-              setOpt1CellId(localCells[0].id.toString());
-            }
             
             const matchingOrder = orders.find((o: OfficeOrder) => o.orderRef === editRef);
             if (matchingOrder) {
@@ -1039,6 +1063,9 @@ export function useOfficeOrderGeneration({
                   ...prev,
                   type: cat
                 }));
+              }
+              if (setSelectedCategory) {
+                setSelectedCategory(cat);
               }
               
               const cleanName = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -1056,7 +1083,14 @@ export function useOfficeOrderGeneration({
                 matchedCell = localCells.find((c: Cell) => c.name === matchingOrder.cellName);
                 if (matchedCell) {
                   setSelectedCell(matchedCell.id.toString());
+                  setOpt1CellId(matchedCell.id.toString());
+                } else {
+                  setSelectedCell('all');
+                  setOpt1CellId('all');
                 }
+              } else {
+                setSelectedCell('all');
+                setOpt1CellId('all');
               }
               
               const orderMonthsSet = new Set<string>();
@@ -1090,6 +1124,9 @@ export function useOfficeOrderGeneration({
               }
               
               const assignments: Record<number, string[]> = {};
+              const initialViewedMonths: Record<number, string> = {};
+              const fallbackMonth = orderMonthsSet.size > 0 ? Array.from(orderMonthsSet).sort()[0] : new Date().toISOString().substring(0, 7);
+
               orderDuties.forEach((group: OrderDuty) => {
                 const matchedEmp = localEmps.find((e: Employee) => 
                   e.id.toString() === group.employeeId?.toString() || 
@@ -1097,10 +1134,19 @@ export function useOfficeOrderGeneration({
                   cleanName(e.name) === cleanName(group.employeeName || '')
                 );
                 if (matchedEmp) {
-                  assignments[matchedEmp.id] = group.dates || [];
+                  const dList = group.dates || [];
+                  assignments[matchedEmp.id] = dList;
+                  if (dList.length > 0 && dList[0].includes('-')) {
+                    initialViewedMonths[matchedEmp.id] = dList[0].substring(0, 7);
+                  } else {
+                    initialViewedMonths[matchedEmp.id] = fallbackMonth;
+                  }
                 }
               });
               setOpt1Assignments(assignments);
+              if (setOpt1ViewedMonths) {
+                setOpt1ViewedMonths(initialViewedMonths);
+              }
               
               const reconstructedDuties: Duty[] = [];
               orderDuties.forEach((group: OrderDuty) => {
