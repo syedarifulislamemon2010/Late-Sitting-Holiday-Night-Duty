@@ -218,8 +218,8 @@ export function useOfficeOrderGeneration({
       if (isEditingArchive) {
         return matchesCategory && (
           !d.orderRef ||
-          getNormalizedRef(d.orderRef) === getNormalizedRef(originalOrderRef) ||
-          getNormalizedRef(d.orderRef) === getNormalizedRef(orderRef)
+          (originalOrderRef ? getNormalizedRef(d.orderRef) === getNormalizedRef(originalOrderRef) : false) ||
+          (userCustomOrderRef ? getNormalizedRef(d.orderRef) === getNormalizedRef(userCustomOrderRef) : false)
         );
       }
       const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
@@ -276,7 +276,7 @@ export function useOfficeOrderGeneration({
     });
 
     return groupedList;
-  }, [duties, selectedCell, printCategory, isEditingArchive, isPrintMode, isArchived, originalOrderRef, activePartIdx]);
+  }, [duties, selectedCell, printCategory, isEditingArchive, isPrintMode, isArchived, originalOrderRef, userCustomOrderRef, activePartIdx]);
 
   const payeeEmployeeId = useMemo(() => {
     if (userSelectedPayeeId !== null) return userSelectedPayeeId;
