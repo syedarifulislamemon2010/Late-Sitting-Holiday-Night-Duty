@@ -44,7 +44,7 @@ interface OfficeOrderPrintPreviewProps {
   selectedCell: string;
   activePartIdx: number;
   stableNumber: number;
-  setUserCustomOrderRef: (ref: string) => void;
+  setUserCustomOrderRef: (ref: string | null) => void;
   setUserCustomOrderDate: (date: string) => void;
   setUserCustomOrderText: (text: string) => void;
   setUserSelectedPayeeId: (id: string) => void;
@@ -252,7 +252,7 @@ export default function OfficeOrderPrintPreview({
                 value={payeeEmployeeId}
                 onChange={(e) => {
                   setUserSelectedPayeeId(e.target.value);
-                  setUserCustomOrderRef('');
+                  setUserCustomOrderRef(null);
                 }}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
               >

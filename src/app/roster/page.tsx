@@ -32,6 +32,22 @@ export default function RosterPage() {
   const [msgBanner, setMsgBanner] = useState<{ type: 'success' | 'cancel'; text: string } | null>(null);
   const [billSuggestion, setBillSuggestion] = useState<{ ref: string; category: string } | null>(null);
 
+  // Shared state between DutyAssignment and OfficeOrderGeneration
+  const [entryMode, setEntryMode] = useState<'EMPLOYEE_WISE' | 'DATE_WISE'>('EMPLOYEE_WISE');
+  const [assignmentForm, setAssignmentForm] = useState<{
+    selectedEmployeeIds: number[];
+    type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | '';
+    date: string;
+    description: string;
+  }>({
+    selectedEmployeeIds: [],
+    type: '',
+    date: new Date().toISOString().split('T')[0],
+    description: ''
+  });
+  const [opt1Assignments, setOpt1Assignments] = useState<Record<number, string[]>>({});
+  const [opt1ViewedMonths, setOpt1ViewedMonths] = useState<Record<number, string>>({});
+
   // 1. Filters Layer Hook
   const filters = useRosterFilters({
     currentUser,
@@ -53,9 +69,9 @@ export default function RosterPage() {
     duties: rosterData.duties,
     setDuties: rosterData.setDuties,
     employees: rosterData.employees,
-    setEmployees: () => {},
+    setEmployees: rosterData.setEmployees,
     cells: rosterData.cells,
-    setCells: () => {},
+    setCells: rosterData.setCells,
     executives: rosterData.executives,
     holidays: rosterData.holidays,
     officeOrders: rosterData.officeOrders,
@@ -72,10 +88,11 @@ export default function RosterPage() {
     selectedMonths: filters.selectedMonths,
     setSelectedMonths: filters.setSelectedMonths,
     setOpt1CellId: filters.setOpt1CellId,
-    opt1Assignments: {},
-    setOpt1Assignments: () => {},
-    assignmentForm: { selectedEmployeeIds: [], type: '', date: '', description: '' },
-    entryMode: 'EMPLOYEE_WISE',
+    opt1Assignments,
+    setOpt1Assignments,
+    assignmentForm,
+    setAssignmentForm,
+    entryMode,
     editingDuty: null,
     setBillSuggestion,
     setMsgBanner
@@ -109,7 +126,15 @@ export default function RosterPage() {
     orderDate: orderGen.orderDate,
     orderText: orderGen.orderText,
     payeeEmployeeId: orderGen.payeeEmployeeId,
-    selectedCell: filters.selectedCell
+    selectedCell: filters.selectedCell,
+    opt1Assignments,
+    setOpt1Assignments,
+    opt1ViewedMonths,
+    setOpt1ViewedMonths,
+    assignmentForm,
+    setAssignmentForm,
+    entryMode,
+    setEntryMode
   });
 
   const pendingDutiesCount = rosterData.duties.filter(d => !d.orderRef).length;

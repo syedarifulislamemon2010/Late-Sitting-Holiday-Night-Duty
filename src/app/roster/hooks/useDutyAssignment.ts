@@ -48,6 +48,24 @@ interface UseDutyAssignmentProps {
   orderText: string;
   payeeEmployeeId: string;
   selectedCell: string;
+  opt1Assignments: Record<number, string[]>;
+  setOpt1Assignments: React.Dispatch<React.SetStateAction<Record<number, string[]>>>;
+  opt1ViewedMonths: Record<number, string>;
+  setOpt1ViewedMonths: React.Dispatch<React.SetStateAction<Record<number, string>>>;
+  assignmentForm: {
+    selectedEmployeeIds: number[];
+    type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | '';
+    date: string;
+    description: string;
+  };
+  setAssignmentForm: React.Dispatch<React.SetStateAction<{
+    selectedEmployeeIds: number[];
+    type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | '';
+    date: string;
+    description: string;
+  }>>;
+  entryMode: 'EMPLOYEE_WISE' | 'DATE_WISE';
+  setEntryMode: (mode: 'EMPLOYEE_WISE' | 'DATE_WISE') => void;
 }
 
 export function useDutyAssignment({
@@ -77,20 +95,16 @@ export function useDutyAssignment({
   orderDate,
   orderText,
   payeeEmployeeId,
-  selectedCell
+  selectedCell,
+  opt1Assignments,
+  setOpt1Assignments,
+  opt1ViewedMonths,
+  setOpt1ViewedMonths,
+  assignmentForm,
+  setAssignmentForm,
+  entryMode,
+  setEntryMode
 }: UseDutyAssignmentProps) {
-  const [entryMode, setEntryMode] = useState<'EMPLOYEE_WISE' | 'DATE_WISE'>('EMPLOYEE_WISE');
-  
-  const [assignmentForm, setAssignmentForm] = useState({
-    selectedEmployeeIds: [] as number[],
-    type: '' as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | '',
-    date: new Date().toISOString().split('T')[0],
-    description: ''
-  });
-
-  const [opt1Assignments, setOpt1Assignments] = useState<Record<number, string[]>>({});
-  const [opt1ViewedMonths, setOpt1ViewedMonths] = useState<Record<number, string>>({});
-
   const [editingDuty, setEditingDuty] = useState<Duty | null>(null);
   const [editingDuties, setEditingDuties] = useState<Duty[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -113,6 +127,8 @@ export function useDutyAssignment({
       const type = assignmentForm.type;
       if (!type) return setPreConflicts([]);
 
+      const excludeDutyIds = editingDuties.map(d => d.id).filter(id => Number.isInteger(id) && id > 0);
+
       if (entryMode === 'DATE_WISE') {
         const { date, selectedEmployeeIds } = assignmentForm;
         if (!date || selectedEmployeeIds.length === 0) return setPreConflicts([]);
@@ -121,7 +137,7 @@ export function useDutyAssignment({
             const res = await fetch('/api/duties/check-conflicts', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ employeeId: empId, dates: [date], type })
+              body: JSON.stringify({ employeeId: empId, dates: [date], type, excludeDutyIds })
             });
             const data = await res.json();
             if (data.conflicts && data.conflicts.length > 0) {
@@ -138,7 +154,7 @@ export function useDutyAssignment({
             const res = await fetch('/api/duties/check-conflicts', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ employeeId: Number(empId), dates, type })
+              body: JSON.stringify({ employeeId: Number(empId), dates, type, excludeDutyIds })
             });
             const data = await res.json();
             if (data.conflicts && data.conflicts.length > 0) {
@@ -151,7 +167,7 @@ export function useDutyAssignment({
     }, 500);
 
     return () => clearTimeout(handler);
-  }, [assignmentForm.date, assignmentForm.selectedEmployeeIds, assignmentForm.type, opt1Assignments, entryMode]);
+  }, [assignmentForm.date, assignmentForm.selectedEmployeeIds, assignmentForm.type, opt1Assignments, entryMode, editingDuties]);
 
   const handleBulkDutyImport = async (entries: { bankId: string; employeeName: string; dates: string[] }[]) => {
     const assignmentsToImport: DutyAssignment[] = [];
@@ -759,6 +775,19 @@ export function useDutyAssignment({
   };
 
   const isSubmitDisabled = () => {
+    if (isEditingArchive) {
+      const activeEmployeeIds = Object.keys(opt1Assignments).map(Number);
+      if (activeEmployeeIds.length === 0) return true;
+      let hasDates = false;
+      for (const empId of activeEmployeeIds) {
+        if (opt1Assignments[empId] && opt1Assignments[empId].length > 0) {
+          hasDates = true;
+          break;
+        }
+      }
+      return !hasDates;
+    }
+
     if (!assignmentForm.type) return true;
     if (editingDuty) {
       if (entryMode === 'EMPLOYEE_WISE') {

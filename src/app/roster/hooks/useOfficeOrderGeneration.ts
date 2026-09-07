@@ -46,6 +46,12 @@ interface UseOfficeOrderGenerationProps {
     date: string;
     description: string;
   };
+  setAssignmentForm?: React.Dispatch<React.SetStateAction<{
+    selectedEmployeeIds: number[];
+    type: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT' | '';
+    date: string;
+    description: string;
+  }>>;
   entryMode: 'EMPLOYEE_WISE' | 'DATE_WISE';
   editingDuty: Duty | null;
   setBillSuggestion: (val: { ref: string; category: string } | null) => void;
@@ -72,6 +78,7 @@ export function useOfficeOrderGeneration({
   opt1Assignments,
   setOpt1Assignments,
   assignmentForm,
+  setAssignmentForm,
   entryMode,
   editingDuty,
   setBillSuggestion,
@@ -208,6 +215,13 @@ export function useOfficeOrderGeneration({
       if (isArchived && !isEditingArchive) {
         return matchesCategory && getNormalizedRef(d.orderRef) === getNormalizedRef(originalOrderRef);
       }
+      if (isEditingArchive) {
+        return matchesCategory && (
+          !d.orderRef ||
+          getNormalizedRef(d.orderRef) === getNormalizedRef(originalOrderRef) ||
+          getNormalizedRef(d.orderRef) === getNormalizedRef(orderRef)
+        );
+      }
       const matchesCell = selectedCell === 'all' || d.employee.cellId.toString() === selectedCell;
       return matchesCell && matchesCategory && !d.orderRef;
     });
@@ -343,7 +357,7 @@ export function useOfficeOrderGeneration({
   }, [duties, printCategory, payeeEmployeeId, selectedCell]);
 
   const orderRef = useMemo(() => {
-    if (userCustomOrderRef !== null) return userCustomOrderRef;
+    if (userCustomOrderRef !== null && userCustomOrderRef.trim() !== '') return userCustomOrderRef;
     if (isArchived && !isEditingArchive) return '';
 
     let empName = 'ইমন';
@@ -351,11 +365,11 @@ export function useOfficeOrderGeneration({
       const grouped = getGroupedDuties();
       const matchedGroup = grouped.find(g => g.employee.id.toString() === payeeEmployeeId);
       if (matchedGroup) {
-        empName = matchedGroup.employee.name.replace(/^জনাব\s+/, '');
+        empName = matchedGroup.employee.name.replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim();
       } else {
         const emp = employees.find(e => e.id.toString() === payeeEmployeeId);
         if (emp) {
-          empName = emp.name.replace(/^জনাব\s+/, '');
+          empName = emp.name.replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim();
         }
       }
     }
@@ -1018,7 +1032,14 @@ export function useOfficeOrderGeneration({
             const matchingOrder = orders.find((o: OfficeOrder) => o.orderRef === editRef);
             if (matchingOrder) {
               const orderDuties = matchingOrder.duties || [];
-              setUserSelectedPrintCategory(matchingOrder.category as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT');
+              const cat = matchingOrder.category as 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
+              setUserSelectedPrintCategory(cat);
+              if (setAssignmentForm) {
+                setAssignmentForm(prev => ({
+                  ...prev,
+                  type: cat
+                }));
+              }
               
               const cleanName = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
               

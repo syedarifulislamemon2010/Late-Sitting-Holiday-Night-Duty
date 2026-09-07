@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    const { employeeId, dates, type } = validation.data;
+    const { employeeId, dates, type, excludeDutyIds } = validation.data;
 
     const employee = await db.select().from(employees).where(eq(employees.id, employeeId)).then(r => r[0]);
     if (!employee) {
@@ -31,12 +31,15 @@ export async function POST(request: Request) {
 
     const conflicts: { date: string; type: string; message: string }[] = [];
     
-    const existingDuties = await db.select().from(duties).where(
+    const rawExistingDuties = await db.select().from(duties).where(
       and(
         eq(duties.employeeId, employeeId),
         inArray(duties.date, dates)
       )
     );
+
+    const excludeSet = new Set(excludeDutyIds || []);
+    const existingDuties = rawExistingDuties.filter(d => !excludeSet.has(d.id));
 
     let leaves: Array<typeof leaveApplications.$inferSelect> = [];
     if (employee.bankId) {

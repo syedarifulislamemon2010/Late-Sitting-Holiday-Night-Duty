@@ -128,7 +128,9 @@ export function useRosterData({
 
   return {
     employees,
+    setEmployees,
     cells,
+    setCells,
     duties,
     setDuties,
     leaves,

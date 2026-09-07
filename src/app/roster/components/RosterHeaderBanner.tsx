@@ -56,9 +56,9 @@ export default function RosterHeaderBanner({
         
         <button
           onClick={onOpenPrintMode}
-          disabled={pendingDutiesCount === 0}
+          disabled={pendingDutiesCount === 0 && !isEditingArchive}
           className={`flex items-center justify-center gap-2 text-sm transition-all cursor-pointer ${
-            pendingDutiesCount > 0 
+            pendingDutiesCount > 0 || isEditingArchive
               ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-semibold px-4 py-2 rounded-xl' 
               : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed px-4 py-2 rounded-xl'
           }`}
