@@ -115,17 +115,8 @@ export default function LeavePrintView({
   const appYear = applicationDate ? applicationDate.split('-')[0] : new Date().getFullYear().toString();
   const displayDaysWord = isSingleDay ? getBanglaDayWord(1) : (leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '');
 
-  const appliedDays = (startDate || endDate) 
-    ? (isSingleDay ? 1 : (leaveDetails.actualDeducted > 0 ? leaveDetails.actualDeducted : 1)) 
-    : 0;
-
-  const previousUsedNum = parseInt(String(casualUsed || 0), 10) || 0;
+  const currentCasualUsed = parseInt(String(casualUsed || 0), 10) || 0;
   const totalEntitledNum = parseInt(String(casualTotal || 20), 10) || 20;
-
-  const currentCasualUsed = (leaveType === 'CASUAL' || leaveType === 'POST_FACTO' || leaveType === 'STATION_LEAVE')
-    ? (previousUsedNum + appliedDays)
-    : previousUsedNum;
-
   const currentCasualRemaining = Math.max(0, totalEntitledNum - currentCasualUsed);
   const currentOrdinaryRemaining = getRemaining(ordinaryTotal, ordinaryUsed);
   const currentSpecialRemaining = getRemaining(specialTotal, specialUsed);

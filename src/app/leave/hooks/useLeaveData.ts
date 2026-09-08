@@ -387,13 +387,7 @@ export function useLeaveData(currentUser: UserSession | null) {
       return false;
     }
 
-    const appliedDaysNum = (startDate || endDate) 
-      ? (isSingleDay ? 1 : (leaveDetails.actualDeducted > 0 ? leaveDetails.actualDeducted : 1)) 
-      : 0;
-    const prevUsedNum = parseInt(String(casualUsed || 0), 10) || 0;
-    const nextCasualUsedVal = (leaveType === 'CASUAL' || leaveType === 'POST_FACTO' || leaveType === 'STATION_LEAVE')
-      ? (prevUsedNum + appliedDaysNum)
-      : prevUsedNum;
+    const finalCasualUsed = parseInt(String(casualUsed || 0), 10) || 0;
 
     const payload = {
       leaveType,
@@ -410,7 +404,7 @@ export function useLeaveData(currentUser: UserSession | null) {
       selectedDistrict,
       delegateId,
       casualTotal,
-      casualUsed: nextCasualUsedVal,
+      casualUsed: finalCasualUsed,
       ordinaryTotal,
       ordinaryUsed,
       specialTotal,
@@ -435,7 +429,6 @@ export function useLeaveData(currentUser: UserSession | null) {
 
       if (res.ok) {
         await res.json();
-        setCasualUsed(nextCasualUsedVal);
         setSuccessMsg(editingLeaveId ? 'আবেদনটি সফলভাবে আপডেট করা হয়েছে।' : 'আবেদনটি সফলভাবে আর্কাইভে সংরক্ষণ করা হয়েছে।');
         setErrorMsg('');
         

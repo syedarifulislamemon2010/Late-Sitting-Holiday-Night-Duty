@@ -184,14 +184,8 @@ export default function LeaveGeneratorPage() {
           : `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} হতে ${endDate ? toDisplayDateStr(endDate) : ''} ইং তারিখ পর্যন্ত মোট ${displayDaysWord} দিনের নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`;
       }
 
-      const appliedDays = (startDate || endDate) 
-        ? (isSingleDay ? 1 : (leaveDetails.actualDeducted > 0 ? leaveDetails.actualDeducted : 1)) 
-        : 0;
-      const previousUsedNum = parseInt(String(casualUsed || 0), 10) || 0;
+      const currentCasualUsed = parseInt(String(casualUsed || 0), 10) || 0;
       const totalEntitledNum = parseInt(String(casualTotal || 20), 10) || 20;
-      const currentCasualUsed = (leaveType === 'CASUAL' || leaveType === 'POST_FACTO' || leaveType === 'STATION_LEAVE')
-        ? (previousUsedNum + appliedDays)
-        : previousUsedNum;
       const currentCasualRemaining = Math.max(0, totalEntitledNum - currentCasualUsed);
 
       const getRemainingVal = (t: number | string, u: number | string) => {
