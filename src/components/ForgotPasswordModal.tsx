@@ -13,6 +13,7 @@ interface ForgotPasswordModalProps {
 export default function ForgotPasswordModal({ isOpen, onClose, onSuccess }: ForgotPasswordModalProps) {
   const [step, setStep] = useState<'REQUEST_OTP' | 'VERIFY_OTP'>('REQUEST_OTP');
   const [bankId, setBankId] = useState('');
+  const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -42,8 +43,13 @@ export default function ForgotPasswordModal({ isOpen, onClose, onSuccess }: Forg
     setSuccess('');
 
     const cleanBankId = bankId.trim();
+    const cleanMobile = mobile.trim();
     if (!cleanBankId) {
       setError('অনুগ্রহ করে আপনার ব্যাংক আইডি প্রদান করুন।');
+      return;
+    }
+    if (!cleanMobile) {
+      setError('অনুগ্রহ করে সিস্টেমে নিবন্ধিত মোবাইল নম্বর প্রদান করুন।');
       return;
     }
 
@@ -53,7 +59,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, onSuccess }: Forg
       const res = await fetch('/api/auth/forgot-password/request-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bankId: cleanBankId }),
+        body: JSON.stringify({ bankId: cleanBankId, mobile: cleanMobile }),
       });
 
       const data = await res.json();
@@ -155,7 +161,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, onSuccess }: Forg
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {step === 'REQUEST_OTP'
-              ? 'আপনার ব্যাংক আইডি প্রদান করুন। নিবন্ধিত মোবাইলে ওটিপি পাঠানো হবে।'
+              ? 'আপনার ব্যাংক আইডি ও নিবন্ধিত মোবাইল নম্বর প্রদান করুন। যাচাই শেষে ওটিপি পাঠানো হবে।'
               : `মোবাইলে (${maskedMobile}) প্রেরিত ওটিপি ও নতুন পাসওয়ার্ড প্রদান করুন।`}
           </p>
         </div>
@@ -188,7 +194,21 @@ export default function ForgotPasswordModal({ isOpen, onClose, onSuccess }: Forg
                 autoFocus
                 value={bankId}
                 onChange={(e) => setBankId(e.target.value)}
-                placeholder="যেমন: 12345 বা JB ID"
+                placeholder="যেমন: 026799 (ব্যাংক আইডি)"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                নিবন্ধিত মোবাইল নম্বর (Mobile No.)*
+              </label>
+              <input
+                type="tel"
+                required
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                placeholder="যেমন: 017XXXXXXXX"
                 className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono font-bold"
               />
             </div>

@@ -11,12 +11,22 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const rawBankId = body.bankId;
+    const rawInputMobile = body.mobile;
 
     if (!rawBankId || typeof rawBankId !== 'string' || !rawBankId.trim()) {
       return NextResponse.json({ error: 'অনুগ্রহ করে ব্যাংক আইডি প্রদান করুন।' }, { status: 400 });
     }
 
+    if (!rawInputMobile || typeof rawInputMobile !== 'string' || !rawInputMobile.trim()) {
+      return NextResponse.json({ error: 'অনুগ্রহ করে আপনার নিবন্ধিত মোবাইল নম্বর প্রদান করুন।' }, { status: 400 });
+    }
+
     const bankId = toEnglishDigits(rawBankId).trim();
+    const inputMobile = formatBangladeshiMobile(rawInputMobile);
+
+    if (!inputMobile) {
+      return NextResponse.json({ error: 'সঠিক ১১-সংখ্যার বাংলাদেশি মোবাইল নম্বর প্রদান করুন (যেমন: 01XXXXXXXXX)।' }, { status: 400 });
+    }
 
     // 1. Check rate limit
     const rateCheck = OtpStore.canRequestOtp(bankId);
@@ -44,6 +54,14 @@ export async function POST(req: NextRequest) {
     if (!formattedMobile) {
       return NextResponse.json(
         { error: 'আপনার কোনো মোবাইল নম্বর সিস্টেমে নিবন্ধিত নেই। অনুগ্রহ করে সিস্টেম অ্যাডমিনের সাথে যোগাযোগ করুন।' },
+        { status: 400 }
+      );
+    }
+
+    // 2b. Verify that input mobile matches registered mobile in database
+    if (inputMobile !== formattedMobile) {
+      return NextResponse.json(
+        { error: 'প্রদত্ত ব্যাংক আইডি এবং মোবাইল নম্বরের সাথে সিস্টেমে সংরক্ষিত তথ্যের মিল পাওয়া যায়নি।' },
         { status: 400 }
       );
     }
