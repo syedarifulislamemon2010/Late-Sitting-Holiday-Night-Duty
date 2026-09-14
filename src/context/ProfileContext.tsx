@@ -12,9 +12,10 @@ export interface UserProfile {
   id: number;
   name: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   mobile?: string | null;
   cells?: UserCell[];
+  mustChangePassword?: boolean;
 }
 
 interface ProfileContextType {

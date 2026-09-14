@@ -3,7 +3,7 @@ import { db } from './db';
 import { users, cells, userCells } from '../db/schema';
 import { eq, ilike } from 'drizzle-orm';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../app/api/auth/[...nextauth]/route';
+import { authOptions } from './auth-options';
 
 export async function getCurrentUser() {
   try {

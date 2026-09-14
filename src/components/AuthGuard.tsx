@@ -6,6 +6,8 @@ import { ShieldCheck, AlertCircle, Eye, EyeOff, Lock, User, KeyRound } from 'luc
 import { signIn, signOut } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { canAccessRoute } from '@/permissions/rbac';
+import ForcedPasswordChangeModal from '@/components/ForcedPasswordChangeModal';
+import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 
 // ===== INTERACTIVE DOG PHOTO EYE OVERLAY COMPONENT =====
 // Render a highly interactive, animated vector SVG dog mascot that tracks input and hides its eyes
@@ -287,6 +289,7 @@ interface UserProfile {
   username: string;
   role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   cells?: Cell[];
+  mustChangePassword?: boolean;
 }
 
 // ===== MAIN AUTH GUARD COMPONENT =====
@@ -301,6 +304,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState('');
   const [focusField, setFocusField] = useState<'none' | 'username' | 'password'>('none');
   const [showPassword, setShowPassword] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const checkBlockStatus = () => {
     return { isBlocked: false, timeRemaining: 0 };
   };
@@ -604,6 +608,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                       </div>
                     </div>
 
+                    {/* Forgot Password Link */}
+                    <div className="flex justify-end pr-1 -mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsForgotPasswordOpen(true)}
+                        className="text-xs font-semibold text-[#1565C0] hover:text-[#0D47A1] hover:underline transition-colors focus:outline-none cursor-pointer"
+                      >
+                        পাসওয়ার্ড ভুলে গেছেন?
+                      </button>
+                    </div>
+
                     {/* Login Submit Button */}
                     <button 
                       type="submit" 
@@ -639,6 +654,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             <span>ডিজাইন ও ডেভেলপমেন্ট: অনলাইন ব্যাংকিং ডিপার্টমেন্ট | সংস্করণ ১.০.০</span>
           </div>
         </footer>
+
+        {/* Forgot Password Modal */}
+        <ForgotPasswordModal
+          isOpen={isForgotPasswordOpen}
+          onClose={() => setIsForgotPasswordOpen(false)}
+          onSuccess={() => {
+            setIsForgotPasswordOpen(false);
+          }}
+        />
 
         {/* CSS Keyframe Animations for Mascot, Fade-In & Shake */}
         <style>{`
@@ -723,5 +747,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      {userProfile?.mustChangePassword && (
+        <ForcedPasswordChangeModal
+          isOpen={true}
+          onSuccess={() => {
+            setUserProfile((prev) => (prev ? { ...prev, mustChangePassword: false } : prev));
+          }}
+        />
+      )}
+    </>
+  );
 }
