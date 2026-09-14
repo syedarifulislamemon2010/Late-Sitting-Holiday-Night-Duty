@@ -1,6 +1,6 @@
 import { db, DbExecutor } from '@/lib/db';
 import { duties, employees, cells } from '@/db/schema';
-import { eq, and, ne, inArray, desc, asc, SQL } from 'drizzle-orm';
+import { eq, and, ne, inArray, desc, asc, SQL, sql } from 'drizzle-orm';
 
 export class DutyRepository {
   static async findById(id: number) {
@@ -8,8 +8,18 @@ export class DutyRepository {
     return list[0] || null;
   }
 
-  static async listAllWithDetails(conditions?: SQL | undefined) {
-    return db
+  static async countAllWithDetails(conditions?: SQL | undefined) {
+    const res = await db
+      .select({ count: sql<number>`count(${duties.id})::int` })
+      .from(duties)
+      .innerJoin(employees, eq(duties.employeeId, employees.id))
+      .innerJoin(cells, eq(employees.cellId, cells.id))
+      .where(conditions);
+    return res[0]?.count || 0;
+  }
+
+  static async listAllWithDetails(conditions?: SQL | undefined, pagination?: { limit?: number; offset?: number }) {
+    const baseQuery = db
       .select({
         id: duties.id,
         employeeId: duties.employeeId,
@@ -39,6 +49,15 @@ export class DutyRepository {
       .innerJoin(cells, eq(employees.cellId, cells.id))
       .where(conditions)
       .orderBy(desc(duties.date), asc(employees.name));
+
+    if (pagination && pagination.limit !== undefined) {
+      if (pagination.offset !== undefined) {
+        return baseQuery.limit(pagination.limit).offset(pagination.offset);
+      }
+      return baseQuery.limit(pagination.limit);
+    }
+
+    return baseQuery;
   }
 
   static async findExistingDuties(employeeIds: number[], dates: string[]) {

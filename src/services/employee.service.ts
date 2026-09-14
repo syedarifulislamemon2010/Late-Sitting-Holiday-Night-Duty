@@ -3,7 +3,7 @@ import { EmployeeRepository } from '@/repositories/employee.repository';
 import { UserRepository } from '@/repositories/user.repository';
 import { db } from '@/lib/db';
 import { trash, cells, users, employees, userCells, duties } from '@/db/schema';
-import { eq, inArray, and, sql, SQL } from 'drizzle-orm';
+import { eq, inArray, and, or, sql, SQL, ilike } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 import { AppError, AuthError } from '@/lib/errors';
@@ -69,17 +69,36 @@ async function getAllowedCellIds(currentUser: UserSession): Promise<number[]> {
   if (emp[0]) {
     cellIds.add(emp[0].cellId);
   }
-  if (cellIds.has(7)) cellIds.add(9);
-  if (cellIds.has(9)) cellIds.add(7);
+
+  // Dynamically link allied development cells (R09 & CBS)
+  try {
+    const allLinked = await db
+      .select({ id: cells.id, name: cells.name })
+      .from(cells)
+      .where(or(ilike(cells.name, '%R09%'), ilike(cells.name, '%CBS Integrated%')));
+    const r09Cell = allLinked.find(c => c.name.includes('R09'));
+    const cbsCell = allLinked.find(c => c.name.includes('CBS Integrated'));
+    if (r09Cell && cbsCell) {
+      if (cellIds.has(r09Cell.id)) cellIds.add(cbsCell.id);
+      if (cellIds.has(cbsCell.id)) cellIds.add(r09Cell.id);
+    }
+  } catch (err) {
+    logger.warn('Failed to dynamically link allied cells:', err);
+  }
+
   return Array.from(cellIds);
 }
 
 export class EmployeeService {
   static async listEmployees(currentUser: UserSession | null, isDirectory: boolean, cellId: string | null) {
+    if (!currentUser) {
+      throw new AuthError('অননুমোদিত এক্সেস। অনুগ্রহ করে লগইন করুন।', 401, 'unauthorized');
+    }
+
     let cellIds: number[] = [];
     let isUserRestricted = false;
 
-    if (currentUser && currentUser.role === 'USER') {
+    if (currentUser.role === 'USER') {
       isUserRestricted = true;
       if (currentUser.cells && currentUser.cells.length > 0) {
         cellIds = currentUser.cells.map((c) => c.id);

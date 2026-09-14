@@ -55,19 +55,19 @@ function addHistoryLog(log: Record<string, unknown>) {
 
 export async function GET(req: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+    // Allow cron secret bypass
+    const cronSecret = req.headers.get('authorization')?.split(' ')[1] || req.headers.get('cron_secret');
+    const isCron = Boolean(process.env.CRON_SECRET && cronSecret && cronSecret === process.env.CRON_SECRET);
+    
+    if (!isCron && (!currentUser || currentUser.role !== 'ADMIN')) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
+    }
+
     const action = req.nextUrl.searchParams.get('action');
     if (action === 'history') {
       const history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
       return NextResponse.json(history);
-    }
-
-    const currentUser = await getCurrentUser();
-    // Allow cron secret bypass
-    const cronSecret = req.headers.get('authorization')?.split(' ')[1] || req.headers.get('cron_secret');
-    const isCron = cronSecret === process.env.CRON_SECRET;
-    
-    if (!isCron && (!currentUser || currentUser.role !== 'ADMIN')) {
-      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }
 
     // Fetch all tables

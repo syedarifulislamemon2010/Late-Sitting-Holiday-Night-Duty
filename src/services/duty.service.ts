@@ -54,12 +54,18 @@ export class DutyService {
       orderRef: string | null;
       employeeId?: string | null;
       type?: string | null;
+      page?: number | null;
+      limit?: number | null;
     }
   ) {
+    if (!currentUser) {
+      throw new AuthError('অননুমোদিত এক্সেস। অনুগ্রহ করে লগইন করুন।', 401, 'unauthorized');
+    }
+
     let userCellIds: number[] = [];
     let isUserRestricted = false;
 
-    if (currentUser && currentUser.role !== 'ADMIN') {
+    if (currentUser.role !== 'ADMIN') {
       isUserRestricted = true;
       userCellIds = currentUser.cells ? currentUser.cells.map((c: { id: number }) => c.id) : [];
     }
@@ -158,9 +164,57 @@ export class DutyService {
       }
     }
 
-    const dutiesList = await DutyRepository.listAllWithDetails(
-      conditions.length > 0 ? and(...conditions) : undefined
-    );
+    const finalConditions = conditions.length > 0 ? and(...conditions) : undefined;
+
+    if (filters.page && filters.limit) {
+      const page = Math.max(1, filters.page);
+      const limit = Math.max(1, Math.min(500, filters.limit));
+      const offset = (page - 1) * limit;
+
+      const [total, dutiesList] = await Promise.all([
+        DutyRepository.countAllWithDetails(finalConditions),
+        DutyRepository.listAllWithDetails(finalConditions, { limit, offset })
+      ]);
+
+      const formatted = dutiesList.map(d => ({
+        id: d.id,
+        employeeId: d.employeeId,
+        type: d.type,
+        date: d.date,
+        description: d.description,
+        allowance1: d.allowance1,
+        allowance2: d.allowance2,
+        totalBill: d.totalBill,
+        orderRef: d.orderRef,
+        createdAt: d.createdAt,
+        employee: {
+          id: d.empId,
+          name: d.empName,
+          designation: d.empDesignation,
+          bankId: d.empBankId,
+          fileNo: d.empFileNo,
+          mobile: d.empMobile,
+          cellId: d.empCellId,
+          createdAt: d.empCreatedAt,
+          cell: {
+            id: d.cellId,
+            name: d.cellName,
+            description: d.cellDescription,
+            createdAt: d.cellCreatedAt
+          }
+        }
+      }));
+
+      return {
+        data: formatted,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    }
+
+    const dutiesList = await DutyRepository.listAllWithDetails(finalConditions);
 
     return dutiesList.map(d => ({
       id: d.id,

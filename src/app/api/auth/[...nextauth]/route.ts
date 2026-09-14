@@ -3,7 +3,7 @@ import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
 import { users, employees, userCells } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, ilike } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { logActivity } from '@/lib/audit';
 import { toEnglishDigits } from '@/lib/bengali-converter';
@@ -43,8 +43,12 @@ export const authOptions: NextAuthOptions = {
 
         // Case-insensitive fallback if exact match fails
         if (!user) {
-          const allUsers = await db.select().from(users);
-          user = allUsers.find((u) => u.username.toLowerCase() === username.toLowerCase())!;
+          const caseInsensitiveUsers = await db
+            .select()
+            .from(users)
+            .where(ilike(users.username, username))
+            .limit(1);
+          user = caseInsensitiveUsers[0];
         }
 
         // Auto-provision user if missing, but employee with this bankId exists
@@ -53,8 +57,12 @@ export const authOptions: NextAuthOptions = {
           let employee = empList[0];
 
           if (!employee) {
-            const allEmps = await db.select().from(employees);
-            employee = allEmps.find((e) => e.bankId?.toLowerCase() === username.toLowerCase())!;
+            const caseInsensitiveEmps = await db
+              .select()
+              .from(employees)
+              .where(ilike(employees.bankId, username))
+              .limit(1);
+            employee = caseInsensitiveEmps[0];
           }
 
           if (employee && employee.bankId) {

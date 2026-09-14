@@ -3,8 +3,7 @@ import type { NextRequest } from 'next/server';
 
 // High-performance token bucket rate limiter for single-instance deployment.
 // NOTE FOR FUTURE MULTI-INSTANCE SCALING:
-// In a multi-instance/clustered environment behind a load balancer, this in-memory Map
-// will be isolated per instance. When scaling beyond 1 node, migrate this state to a
+// In a multi-instance/clustered environment behind a load balancer, migrate this state to a
 // shared distributed store such as Redis (e.g., Upstash Redis / ioredis token bucket).
 const rateLimitMap = new Map<string, { tokens: number; lastRefilled: number }>();
 const BUCKET_CAPACITY = 5000;
@@ -29,6 +28,7 @@ export function proxy(request: NextRequest) {
 
   // Allow unrestricted access to public paths and static assets
   const publicPaths = [
+    '/',
     '/login', 
     '/api/auth', 
     '/api/profile', 
@@ -42,7 +42,7 @@ export function proxy(request: NextRequest) {
     '/janata-bank-logo-real.svg',
     '/janata-bank-logo-original.png'
   ];
-  const isPublic = publicPaths.some(p => pathname.startsWith(p));
+  const isPublic = publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
 
   // Authentication Check for non-public routes
   if (!isPublic) {
@@ -54,8 +54,8 @@ export function proxy(request: NextRequest) {
           { status: 401 }
         );
       }
-      if (pathname !== '/login') {
-        const loginUrl = new URL('/login', request.url);
+      if (pathname !== '/login' && pathname !== '/') {
+        const loginUrl = new URL('/', request.url);
         loginUrl.searchParams.set('callbackUrl', request.url);
         return NextResponse.redirect(loginUrl);
       }
@@ -64,7 +64,7 @@ export function proxy(request: NextRequest) {
 
   // Rate Limiting for API routes
   const rateLimitExempt = ['/api/profile', '/api/auth', '/api/notifications', '/api/ping'];
-  const isExempt = rateLimitExempt.some(p => pathname.startsWith(p));
+  const isExempt = rateLimitExempt.some(p => pathname === p || pathname.startsWith(p + '/'));
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '127.0.0.1';
   const isLoopback = ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
 
@@ -118,7 +118,7 @@ export function proxy(request: NextRequest) {
     frame-ancestors 'self';
     object-src 'none';
     base-uri 'self';
-  `.replace(/\s{2,}/g, ' ').trim();
+  `.replace(/\\s{2,}/g, ' ').trim();
   response.headers.set('Content-Security-Policy', cspHeader);
 
   // Strict-Transport-Security (enforced in production)

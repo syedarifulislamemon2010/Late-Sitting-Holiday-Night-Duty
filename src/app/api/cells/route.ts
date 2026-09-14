@@ -13,10 +13,14 @@ export const revalidate = 300; // 5 minutes
 export async function GET() {
   try {
     const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত এক্সেস। অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
+    }
+
     let cellIds: number[] = [];
     let isUserRestricted = false;
 
-    if (user && user.role === 'USER') {
+    if (user.role === 'USER') {
       isUserRestricted = true;
       cellIds = user.cells.map((c: { id: number }) => c.id);
     }

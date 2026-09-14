@@ -1,7 +1,7 @@
 import logger from '@/lib/logger';
 import { db } from './db';
 import { users, cells, userCells } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, ilike } from 'drizzle-orm';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../app/api/auth/[...nextauth]/route';
 
@@ -25,19 +25,23 @@ export async function getCurrentUser() {
             .innerJoin(cells, eq(userCells.A, cells.id))
             .where(eq(userCells.B, user.id));
 
-          const hasR09 = assignedCells.some(c => c.id === 7 || c.name === 'R09 Development & Customization Cell');
-          const hasCBS = assignedCells.some(c => c.id === 9 || c.name === 'CBS Integrated Development Cell');
+          const hasR09 = assignedCells.some(c => c.name.includes('R09'));
+          const hasCBS = assignedCells.some(c => c.name.includes('CBS Integrated'));
 
           if (hasR09 && !hasCBS) {
-            assignedCells.push({
-              id: 9,
-              name: 'CBS Integrated Development Cell'
-            });
+            const cbsCell = await db
+              .select({ id: cells.id, name: cells.name })
+              .from(cells)
+              .where(ilike(cells.name, '%CBS Integrated%'))
+              .limit(1);
+            if (cbsCell[0]) assignedCells.push(cbsCell[0]);
           } else if (hasCBS && !hasR09) {
-            assignedCells.push({
-              id: 7,
-              name: 'R09 Development & Customization Cell'
-            });
+            const r09Cell = await db
+              .select({ id: cells.id, name: cells.name })
+              .from(cells)
+              .where(ilike(cells.name, '%R09%'))
+              .limit(1);
+            if (r09Cell[0]) assignedCells.push(r09Cell[0]);
           }
 
           return {
