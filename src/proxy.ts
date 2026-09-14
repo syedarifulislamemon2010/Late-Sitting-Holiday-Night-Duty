@@ -33,6 +33,7 @@ export function proxy(request: NextRequest) {
     '/api/auth', 
     '/api/profile', 
     '/api/ping',
+    '/api/backup/cron',
     '/_next', 
     '/favicon.ico', 
     '/manifest.json', 
@@ -107,18 +108,7 @@ export function proxy(request: NextRequest) {
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   
   // Content Security Policy (allows Next.js inline styles, blob: for PDF/DOCX generation, Google & Maateen webfonts)
-  const cspHeader = `
-    default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:;
-    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.maateen.me https:;
-    style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.maateen.me https:;
-    img-src 'self' data: blob: https:;
-    font-src 'self' data: https://fonts.gstatic.com https://fonts.maateen.me https:;
-    connect-src 'self' https: ws: wss:;
-    frame-ancestors 'self';
-    object-src 'none';
-    base-uri 'self';
-  `.replace(/\\s{2,}/g, ' ').trim();
+  const cspHeader = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.maateen.me https:; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.maateen.me https:; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://fonts.maateen.me https:; connect-src 'self' https: ws: wss:; frame-ancestors 'self'; object-src 'none'; base-uri 'self';";
   response.headers.set('Content-Security-Policy', cspHeader);
 
   // Strict-Transport-Security (enforced in production)
