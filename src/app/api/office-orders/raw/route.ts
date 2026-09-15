@@ -138,7 +138,22 @@ export async function GET(request: Request) {
       const totalTransportInWords = getBanglaNumberWords(totalTransport);
       const totalApyaonInWords = getBanglaNumberWords(totalApyaon);
       const representativeName = order.employeeName || '';
-      const representativeDesignation = content.representativeDesignation || '';
+      let finalRepresentativeDesignation = content.representativeDesignation ? getShortDesignation(content.representativeDesignation) : '';
+      if (!finalRepresentativeDesignation && representativeName) {
+        const clean = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+        const matchedDuty = (duties as RawOrderDuty[]).find(d => {
+          const n = d.employeeName || d.name || '';
+          return clean(n) === clean(representativeName) || n.includes(representativeName) || representativeName.includes(n);
+        });
+        if (matchedDuty?.designation) {
+          finalRepresentativeDesignation = getShortDesignation(matchedDuty.designation);
+        }
+      }
+      if (!finalRepresentativeDesignation) {
+        finalRepresentativeDesignation = 'ও-আইটি';
+      }
+      const cleanRepName = representativeName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+      const repNameWithDesig = finalRepresentativeDesignation ? `${cleanRepName}, ${finalRepresentativeDesignation}` : cleanRepName;
       const subjectText = content.subjectText || '';
       const billDate = order.orderDate;
       const openingParagraph = content.openingParagraph || '';
@@ -316,14 +331,14 @@ export async function GET(request: Request) {
       ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>${toBnDigits(Math.round(totalTransport))}/- (${totalTransportInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>${toBnDigits(Math.round(totalApyaon))}/- (${totalApyaonInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
     </div>
     <div class="paragraph-item">
-      ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBnDigits(Math.round(grandTotal))}/- (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${representativeName || ''}, ${representativeDesignation || ''}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+      ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBnDigits(Math.round(grandTotal))}/- (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${repNameWithDesig}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
     </div>
   </div>
 
   <div class="signature-container">
     <div class="signature-block">
       <p class="font-bold">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, ''))})</p>
-      <p style="margin-top: 2px; color: #333; font-weight: bold;">${representativeDesignation || ''}</p>
+      <p style="margin-top: 2px; color: #333; font-weight: bold;">${finalRepresentativeDesignation.trim()}</p>
     </div>
   </div>
 

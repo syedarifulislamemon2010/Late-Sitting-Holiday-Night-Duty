@@ -6,6 +6,7 @@ import {
   OfficeOrder, 
   DutyListEntry, 
   Duty,
+  OrderDuty,
   Employee,
   Executive,
   Cell,
@@ -42,6 +43,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
     printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGHT_SHIFT';
     billDate: string;
     representativeName: string;
+    representativeDesignation?: string;
     subjectText: string;
     openingParagraph: string;
     signingOfficer: string;
@@ -101,6 +103,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
     if (billing.printCategory !== initialBillValues.printCategory) return true;
     if (billDate !== initialBillValues.billDate) return true;
     if (representativeName !== initialBillValues.representativeName) return true;
+    if (representativeDesignation !== (initialBillValues.representativeDesignation || '')) return true;
     if (subjectText !== initialBillValues.subjectText) return true;
     if (openingParagraph !== initialBillValues.openingParagraph) return true;
     if (signingOfficer !== initialBillValues.signingOfficer) return true;
@@ -113,6 +116,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
     billing.printCategory,
     billDate,
     representativeName,
+    representativeDesignation,
     subjectText,
     openingParagraph,
     signingOfficer,
@@ -188,6 +192,22 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
           billing.setBaseOrderRef(baseRef);
           billing.setSelectedOrderRef(baseRef);
 
+          let desigVal = archivedBill.content?.representativeDesignation || '';
+          if (!desigVal && archivedBill.employeeName) {
+            const clean = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+            const matchedEmp = billing.employees.find((e: Employee) => clean(e.name) === clean(archivedBill.employeeName));
+            if (matchedEmp) {
+              desigVal = getShortDesignation(matchedEmp.designation);
+            } else if (archivedBill.duties) {
+              const duty = (archivedBill.duties as OrderDuty[]).find(d => clean(d.employeeName) === clean(archivedBill.employeeName));
+              if (duty?.designation) desigVal = getShortDesignation(duty.designation);
+            }
+          }
+          if (!desigVal) {
+            desigVal = 'ও-আইটি';
+          }
+          setRepresentativeDesignation(desigVal);
+
           if (archivedBill.content) {
             if (archivedBill.content.openingParagraph) {
               setOpeningParagraph(archivedBill.content.openingParagraph);
@@ -210,6 +230,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
             printCategory: categoryVal,
             billDate: archivedBill.orderDate || new Date().toISOString().split('T')[0],
             representativeName: archivedBill.employeeName || '',
+            representativeDesignation: desigVal,
             subjectText: archivedBill.content?.subjectText || '',
             openingParagraph: archivedBill.content?.openingParagraph || '',
             signingOfficer: archivedBill.content?.signingOfficer || '',
@@ -270,11 +291,6 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
               window.location.href = '/documents';
               return;
             }
-            if (matchedOrder.status !== 'Generated & Printed' && matchedOrder.status !== 'Printed' && matchedOrder.status !== 'Generated' && matchedOrder.status !== 'Modified') {
-              alert(`এই অফিস আদেশের বিল তৈরি করা যাবে না। বিল তৈরির পূর্বে অফিস আদেশটি প্রিন্ট অথবা জেনারেটেড অবস্থায় থাকতে হবে (বর্তমান অবস্থা: ${matchedOrder.status})।`);
-              window.location.href = '/documents';
-              return;
-            }
 
             if (matchedOrder) {
               billing.setSelectedOrderRef(targetRef);
@@ -283,6 +299,14 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
               
               if (matchedOrder.employeeName) {
                 setRepresentativeName(matchedOrder.employeeName);
+                const clean = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+                const matchedEmp = (billing.employees || []).find((e: Employee) => clean(e.name) === clean(matchedOrder.employeeName));
+                let desig = matchedEmp ? getShortDesignation(matchedEmp.designation) : '';
+                if (!desig && matchedOrder.duties) {
+                  const duty = (matchedOrder.duties as OrderDuty[]).find(d => clean(d.employeeName) === clean(matchedOrder.employeeName));
+                  if (duty?.designation) desig = getShortDesignation(duty.designation);
+                }
+                setRepresentativeDesignation(desig || 'ও-আইটি');
               }
               
               if (matchedOrder.cellName) {
@@ -396,6 +420,14 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
     
     if (order.employeeName) {
       setRepresentativeName(order.employeeName);
+      const clean = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+      const matchedEmp = (billing.employees || []).find((e: Employee) => clean(e.name) === clean(order.employeeName));
+      let desig = matchedEmp ? getShortDesignation(matchedEmp.designation) : '';
+      if (!desig && order.duties) {
+        const duty = (order.duties as OrderDuty[]).find(d => clean(d.employeeName) === clean(order.employeeName));
+        if (duty?.designation) desig = getShortDesignation(duty.designation);
+      }
+      setRepresentativeDesignation(desig || 'ও-আইটি');
     }
     
     if (order.cellName) {
@@ -497,8 +529,18 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
         });
         if (matchedOrder && matchedOrder.employeeName) {
           const nameVal = matchedOrder.employeeName;
-          const matchedEmp = billing.employees.find((e: Employee) => e.name === nameVal);
-          const desigVal = matchedEmp ? getShortDesignation(matchedEmp.designation) : 'এসও-আইটি';
+          const clean = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+          const matchedEmp = (billing.employees || []).find((e: Employee) => clean(e.name) === clean(nameVal));
+          let desigVal = matchedEmp ? getShortDesignation(matchedEmp.designation) : '';
+          if (!desigVal && billing.printFilteredSummaries.length > 0) {
+            const sumMatch = billing.printFilteredSummaries.find(s => clean(s.name) === clean(nameVal));
+            if (sumMatch) desigVal = getShortDesignation(sumMatch.designation);
+          }
+          if (!desigVal && matchedOrder.duties) {
+            const duty = (matchedOrder.duties as OrderDuty[]).find(d => clean(d.employeeName) === clean(nameVal));
+            if (duty?.designation) desigVal = getShortDesignation(duty.designation);
+          }
+          if (!desigVal) desigVal = 'ও-আইটি';
           setTimeout(() => {
             setRepresentativeName(nameVal);
             setRepresentativeDesignation(desigVal);
@@ -509,12 +551,12 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
 
       if (billing.printFilteredSummaries.length > 0) {
         const nameVal = billing.printFilteredSummaries[0].name;
-        const desigVal = getShortDesignation(billing.printFilteredSummaries[0].designation);
+        const desigVal = getShortDesignation(billing.printFilteredSummaries[0].designation) || 'ও-আইটি';
         setTimeout(() => {
           setRepresentativeName(nameVal);
           setRepresentativeDesignation(desigVal);
         }, 0);
-      } else {
+      } else if (!billing.loading && billing.duties.length === 0) {
         setTimeout(() => {
           setRepresentativeName('');
           setRepresentativeDesignation('');

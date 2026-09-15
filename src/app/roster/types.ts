@@ -1,4 +1,5 @@
 import { toBanglaDigits } from '@/lib/bengali-converter';
+import { getShortDesignation as printGetShortDesignation } from '@/lib/print-helpers';
 import type { UserProfile } from '@/context/ProfileContext';
 
 export interface Cell {
@@ -296,9 +297,7 @@ export const calculateOrderDate = (earliestDateStr: string, holidaysList: Holida
 };
 
 export const getShortDesignation = (desig: string | undefined | null): string => {
-  if (!desig) return '';
-  const match = desig.match(/\(([^)]+)\)/);
-  return match ? match[1] : desig;
+  return printGetShortDesignation(desig);
 };
 
 export const getFormattedDateList = (dates: string[]): string => {

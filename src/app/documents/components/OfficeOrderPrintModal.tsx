@@ -20,6 +20,25 @@ export default function OfficeOrderPrintModal({
 
   const isBill = viewingOrder.category?.startsWith('BILL_');
 
+  const repDesig = (() => {
+    if (!viewingOrder) return '';
+    if (viewingOrder.content?.representativeDesignation) {
+      return getShortDesignation(viewingOrder.content.representativeDesignation);
+    }
+    const clean = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    let dutiesList: OrderDuty[] = [];
+    try {
+      dutiesList = viewingOrder.duties || JSON.parse(viewingOrder.dutiesJson || '[]');
+    } catch {
+      dutiesList = [];
+    }
+    const empDuty = dutiesList.find(d => clean(d.employeeName) === clean(viewingOrder.employeeName) || d.employeeName.includes(viewingOrder.employeeName) || viewingOrder.employeeName.includes(d.employeeName));
+    if (empDuty?.designation) {
+      return getShortDesignation(empDuty.designation);
+    }
+    return 'ও-আইটি';
+  })();
+
   const getFormattedNumberWords = (num: number) => {
     if (!num) return '';
     const singleWords = ['', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়'];
@@ -90,6 +109,18 @@ export default function OfficeOrderPrintModal({
           </div>
 
           <div className="flex items-center gap-2">
+            {isBill && (
+              <button
+                onClick={() => {
+                  window.location.href = `/billing?edit_ref=${encodeURIComponent(viewingOrder.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                }}
+                className="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                title="বিল এডিটর ওপেন করুন"
+              >
+                <Receipt size={14} />
+                <span>বিল সম্পাদন / প্রস্তুত করুন</span>
+              </button>
+            )}
             <button
               onClick={handlePrint}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
@@ -225,7 +256,7 @@ export default function OfficeOrderPrintModal({
                           ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalTransport ? getFormattedNumberWords(viewingOrder.content.totalTransport) : ''})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalApyaon ? getFormattedNumberWords(viewingOrder.content.totalApyaon) : ''})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                         </p>
                         <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
-                          ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal ?? 0)}/- ({viewingOrder.content && viewingOrder.content.grandTotal ? getFormattedNumberWords(viewingOrder.content.grandTotal) : ''})</strong> <strong>{viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                          ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal ?? 0)}/- ({viewingOrder.content && viewingOrder.content.grandTotal ? getFormattedNumberWords(viewingOrder.content.grandTotal) : ''})</strong> <strong>{viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, {repDesig}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                         </p>
                       </div>
                     </div>
@@ -236,7 +267,7 @@ export default function OfficeOrderPrintModal({
                     <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', paddingRight: '0.1in', lineHeight: '1.15' }}>
                       <p className="font-extrabold text-[10px]" style={{ margin: 0, padding: 0, lineHeight: '1.15' }}>({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
                       <p className="text-[10px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '3px', lineHeight: '1.15' }}>
-                        {viewingOrder.content?.representativeDesignation || viewingOrder.duties?.find((d: OrderDuty) => d.employeeName === viewingOrder.employeeName)?.designation || 'প্রিন্সিপাল অফিসার (পিও)'}
+                        {repDesig}
                       </p>
                     </div>
                   </div>

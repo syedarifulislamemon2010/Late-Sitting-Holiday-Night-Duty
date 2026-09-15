@@ -108,6 +108,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [authenticated, userProfile, pathname, router]);
 
+  // Prevent scrolling on the login screen
+  useEffect(() => {
+    if (authenticated === false) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [authenticated]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -171,7 +182,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // Login Screen
   if (!authenticated) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-between p-4 relative overflow-y-auto overflow-x-hidden font-sans z-0" suppressHydrationWarning={true}>
+      <div className="fixed inset-0 h-full w-full flex flex-col items-center justify-between p-2 sm:p-4 overflow-hidden font-sans z-50 select-none" suppressHydrationWarning={true}>
         {/* Animated Subtle Mesh Background */}
         <div className="absolute inset-0 -z-20 overflow-hidden bg-[#e8f4fd] transition-colors duration-500">
           <div className="absolute -inset-[10px] opacity-60">
@@ -182,13 +193,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Centered Main Login Layout (Stable, always visible, zero jitter) */}
-        <div className="flex-1 flex items-center justify-center w-full my-6 z-10">
-          <div className="w-full max-w-[420px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[28px] shadow-[0_20px_50px_rgba(21,101,192,0.14)] border border-white/80 dark:border-slate-800 p-6 sm:p-8 space-y-6 animate-fade-in">
+        {/* Centered Main Login Layout (Stable, always visible, zero jitter, zero scroll) */}
+        <div className="flex-1 flex items-center justify-center w-full z-10 py-1 min-h-0">
+          <div className="w-full max-w-[390px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_20px_50px_rgba(21,101,192,0.14)] border border-white/80 dark:border-slate-800 px-6 py-4 sm:px-7 sm:py-5 space-y-3 animate-fade-in">
             
             {/* Top: Janata Bank Logo & Header */}
-            <div className="flex items-center justify-center gap-3 pt-1">
-              <svg viewBox="0 0 512 512" className="h-12 w-12 shrink-0 text-[#00B7DE]" fill="none" aria-hidden="true">
+            <div className="flex items-center justify-center gap-2.5 pt-0.5">
+              <svg viewBox="0 0 512 512" className="h-9 w-9 shrink-0 text-[#00B7DE]" fill="none" aria-hidden="true">
                 <g>
                   <path fill="currentColor" d="M175.7,351.4c-53.1,0-96.4-43.3-96.4-96.4c0-24.9,9.5-48.6,26.6-66.5l8.2,7.9c-15.1,15.8-23.5,36.7-23.5,58.7c0,46.9,38.1,85.1,85,85.1c46.9,0,85.1-38.2,85.1-85.1v-97.7h11.4v97.7C272.1,308.1,228.9,351.4,175.7,351.4z"/>
                   <path fill="currentColor" d="M175.7,329.1c-41.3,0-74.9-33.6-74.9-74.9c0-19.4,7.3-37.7,20.7-51.7l8.2,7.9c-11.3,11.8-17.5,27.4-17.5,43.9c0,35.1,28.5,63.6,63.5,63.6c35.1,0,63.6-28.5,63.6-63.6v-96.9h11.4v96.9C250.7,295.4,217,329.1,175.7,329.1z"/>
@@ -202,43 +213,43 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 </g>
               </svg>
               <div className="flex flex-col text-left">
-                <span className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight tracking-wide font-sans">জনতা ব্যাংক পিএলসি.</span>
+                <span className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight tracking-wide font-sans">জনতা ব্যাংক পিএলসি.</span>
                 <span className="text-[10px] font-semibold text-[#00B7DE] uppercase tracking-wider">Janata Bank PLC</span>
               </div>
             </div>
 
             {/* Portal Branding Title & Tags */}
-            <div className="text-center space-y-2">
-              <h2 className="text-lg sm:text-xl font-black text-[#1565C0] dark:text-sky-400 tracking-wide">
+            <div className="text-center space-y-1">
+              <h2 className="text-base sm:text-lg font-black text-[#1565C0] dark:text-sky-400 tracking-wide leading-tight">
                 লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল
               </h2>
               
               <div className="flex items-center justify-center gap-1.5 pt-0.5">
-                <span className="px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold rounded-full border border-indigo-100 dark:border-indigo-800">Late Sitting</span>
+                <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold rounded-full border border-indigo-100 dark:border-indigo-800">Late Sitting</span>
                 <span className="text-slate-300 dark:text-slate-600 text-[10px]">•</span>
-                <span className="px-2.5 py-0.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 text-[10px] font-bold rounded-full border border-sky-100 dark:border-sky-800">Holiday</span>
+                <span className="px-2 py-0.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 text-[10px] font-bold rounded-full border border-sky-100 dark:border-sky-800">Holiday</span>
                 <span className="text-slate-300 dark:text-slate-600 text-[10px]">•</span>
-                <span className="px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-100 dark:border-emerald-800">Night Duty</span>
+                <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-100 dark:border-emerald-800">Night Duty</span>
               </div>
 
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#00B7DE]">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#00B7DE]">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
             </div>
 
             {/* Login Form */}
-            <form onSubmit={handleLogin} className="space-y-4 pt-1">
+            <form onSubmit={handleLogin} className="space-y-3 pt-0.5">
               {error && (
-                <div role="alert" className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-2xl flex items-center gap-2 text-xs font-semibold animate-shake">
-                  <AlertCircle size={16} className="shrink-0" />
+                <div role="alert" className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl flex items-center gap-2 text-xs font-semibold animate-shake">
+                  <AlertCircle size={15} className="shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
               {/* Username Input */}
-              <div className="space-y-1.5 text-left group">
-                <label htmlFor="username-input" className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">ইউজারনেম</label>
+              <div className="space-y-1 text-left group">
+                <label htmlFor="username-input" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">ইউজারনেম</label>
                 <div className="relative flex items-center">
-                  <span className="absolute left-4 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
-                    <User size={16} />
+                  <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
+                    <User size={15} />
                   </span>
                   <input 
                     id="username-input"
@@ -246,18 +257,18 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="যেমন: 026799 (ব্যাংক আইডি)"
-                    className="w-full pl-11 pr-4 py-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-2xl text-sm font-semibold outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-xl text-sm font-semibold outline-none transition-all"
                     required
                   />
                 </div>
               </div>
 
               {/* Password Input */}
-              <div className="space-y-1.5 text-left relative font-sans group">
-                <label htmlFor="password-input" className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
+              <div className="space-y-1 text-left relative font-sans group">
+                <label htmlFor="password-input" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
                 <div className="relative flex items-center">
-                  <span className="absolute left-4 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
-                    <KeyRound size={16} />
+                  <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
+                    <KeyRound size={15} />
                   </span>
                   <input 
                     id="password-input"
@@ -265,7 +276,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-11 pr-12 py-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-2xl text-sm font-semibold outline-none transition-all font-mono"
+                    className="w-full pl-10 pr-10 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-xl text-sm font-semibold outline-none transition-all font-mono"
                     required
                   />
                   <button
@@ -275,9 +286,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     aria-label={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখান"}
                   >
                     {showPassword ? (
-                      <EyeOff size={18} />
+                      <EyeOff size={16} />
                     ) : (
-                      <Eye size={18} />
+                      <Eye size={16} />
                     )}
                   </button>
                 </div>
@@ -298,20 +309,20 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full py-3.5 bg-gradient-to-r from-[#1565C0] via-[#0D47A1] to-[#0A2F6C] hover:from-[#0D47A1] hover:to-[#1565C0] focus:outline-none focus:ring-4 focus:ring-blue-100 text-white font-bold text-sm tracking-wide rounded-2xl transition-all shadow-md shadow-blue-700/10 hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                className="w-full py-2.5 sm:py-3 bg-gradient-to-r from-[#1565C0] via-[#0D47A1] to-[#0A2F6C] hover:from-[#0D47A1] hover:to-[#1565C0] focus:outline-none focus:ring-4 focus:ring-blue-100 text-white font-bold text-sm tracking-wide rounded-xl transition-all shadow-md shadow-blue-700/10 hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <ShieldCheck size={18} />
+                    <ShieldCheck size={17} />
                     নিরাপদ লগইন
                   </>
                 )}
               </button>
 
               {/* Compact Security Notice */}
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center leading-normal font-sans font-semibold pt-1">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center leading-tight font-sans font-medium pt-0.5">
                 এই সিস্টেম শুধুমাত্র অনুমোদিত কর্মকর্তা ও কর্মচারীদের জন্য।
                 <br />
                 অননুমোদিত প্রবেশ আইনত দণ্ডনীয়।
@@ -321,7 +332,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Footer */}
-        <footer className="w-full max-w-[420px] mx-auto text-center space-y-1 text-slate-500 select-none no-print print:hidden font-sans pb-4 z-10 px-4">
+        <footer className="w-full max-w-[420px] mx-auto text-center space-y-0.5 text-slate-500 select-none no-print print:hidden font-sans pb-2 sm:pb-3 z-10 px-4">
           <div className="flex flex-col gap-0.5 text-[10px] font-bold">
             <span>ডিজাইন ও ডেভেলপমেন্ট: অনলাইন ব্যাংকিং ডিপার্টমেন্ট | সংস্করণ ১.০.০</span>
           </div>
@@ -338,6 +349,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
         {/* CSS Keyframe Animations for Fade-In & Shake */}
         <style>{`
+          html, body {
+            overflow: hidden !important;
+            height: 100% !important;
+          }
           @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.97); }
             to { opacity: 1; transform: scale(1); }

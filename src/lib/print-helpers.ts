@@ -1,16 +1,54 @@
 import { toBanglaDigits, toEnglishDigits } from "./bengali-converter";
 
-export const getShortDesignation = (designation: string): string => {
+export const getShortDesignation = (designation: string | undefined | null): string => {
   if (!designation) return '';
-  const match = designation.match(/\(([^)]+)\)/);
-  if (match) return match[1];
-  const d = designation.toUpperCase();
-  if (d.includes('SENIOR PRINCIPAL') || d.includes('SPO') || d.includes('এসপিও')) return 'এসপিও';
-  if (d.includes('PRINCIPAL') || d.includes('PO') || d.includes('পিও')) return 'পিও';
-  if (d.includes('SENIOR OFFICER') || d.includes('SO') || d.includes('এসো')) {
-    return d.includes('IT') || d.includes('আইটি') ? 'এসো-আইটি' : 'এসো';
+  const trimmed = designation.trim();
+  const d = trimmed.toUpperCase();
+
+  const match = trimmed.match(/\(([^)]+)\)/);
+  if (match) {
+    const inside = match[1].trim();
+    const insideUpper = inside.toUpperCase();
+    if (insideUpper === 'IT' || insideUpper === 'আইটি') {
+      const isSenior = d.includes('SENIOR') || d.includes('সিনিয়র') || d.includes('সিনিয়র') || d.includes('এসও') || d.includes('এসো') || d.includes('SO');
+      return isSenior ? 'এসও-আইটি' : 'ও-আইটি';
+    }
+    if (insideUpper === 'O-IT' || insideUpper === 'ও-আইটি') return 'ও-আইটি';
+    if (insideUpper === 'SO-IT' || insideUpper === 'এসও-আইটি') return 'এসও-আইটি';
+    return inside;
   }
-  return designation;
+
+  if (d.includes('SENIOR PRINCIPAL') || d.includes('সিনিয়র প্রিন্সিপাল') || d.includes('সিনিয়র প্রিন্সিপাল') || d.includes('SPO') || d.includes('এসপিও')) {
+    return 'এসপিও';
+  }
+  if (d.includes('PRINCIPAL') || d.includes('প্রিন্সিপাল') || d.includes('PO') || d.includes('পিও')) {
+    return 'পিও';
+  }
+  const isSenior = d.includes('SENIOR') || d.includes('সিনিয়র') || d.includes('সিনিয়র') || d.includes('এসও') || d.includes('এসো') || d.includes('SO');
+  const isOfficer = d.includes('OFFICER') || d.includes('অফিসার') || d.includes('ও-');
+  const isIT = d.includes('IT') || d.includes('আইটি') || d.includes('ও-আইটি') || d.includes('O-IT');
+
+  if (isSenior) {
+    return isIT ? 'এসও-আইটি' : 'এসো';
+  }
+  if (isIT && (isOfficer || d.includes('ও-আইটি') || d.includes('O-IT'))) {
+    return 'ও-আইটি';
+  }
+  if (isOfficer) {
+    return 'অফিসার';
+  }
+  if (d.includes('PROGRAMMER') || d.includes('প্রোগ্রামার')) {
+    if (isSenior) return 'এসপি';
+    if (d.includes('ASSISTANT') || d.includes('সহকারী') || d.includes('অ্যাসিস্ট্যান্ট')) return 'সহকারী প্রোগ্রামার';
+    return 'প্রোগ্রামার';
+  }
+  if (d.includes('GENERAL MANAGER') || d.includes('মহাব্যবস্থাপক') || d.includes('GM') || d.includes('জিএম')) {
+    if (d.includes('DEPUTY') || d.includes('উপ-') || d.includes('DGM') || d.includes('ডিজিএম')) return 'ডিজিএম';
+    if (d.includes('ASSISTANT') || d.includes('সহকারী') || d.includes('AGM') || d.includes('এজিএম')) return 'এজিএম';
+    return 'জিএম';
+  }
+
+  return trimmed;
 };
 
 export const parseDateToIsoKey = (dateStr: string): string => {

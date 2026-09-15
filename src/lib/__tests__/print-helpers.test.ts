@@ -80,6 +80,14 @@ describe('print-helpers', () => {
       expect(getShortDesignation('Senior Principal Officer (SPO)')).toBe('SPO');
       expect(getShortDesignation('Principal Officer')).toBe('পিও');
       expect(getShortDesignation('Senior Officer')).toBe('এসো');
+      expect(getShortDesignation('Officer-IT')).toBe('ও-আইটি');
+      expect(getShortDesignation('Officer (IT)')).toBe('ও-আইটি');
+      expect(getShortDesignation('অফিসার-আইটি')).toBe('ও-আইটি');
+      expect(getShortDesignation('অফিসার (আইটি)')).toBe('ও-আইটি');
+      expect(getShortDesignation('ও-আইটি')).toBe('ও-আইটি');
+      expect(getShortDesignation('Senior Officer (IT)')).toBe('এসও-আইটি');
+      expect(getShortDesignation('সিনিয়র অফিসার (আইটি)')).toBe('এসও-আইটি');
+      expect(getShortDesignation('সিনিয়র অফিসার-আইটি')).toBe('এসও-আইটি');
     });
   });
 

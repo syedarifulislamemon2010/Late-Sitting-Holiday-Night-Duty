@@ -361,7 +361,7 @@ export default function BulkBillPrintLayout({
                     ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>${toBanglaDigits(order.content?.totalTransport || 0)}/- (${getBanglaNumberWords(order.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>${toBanglaDigits(order.content?.totalApyaon || 0)}/- (${getBanglaNumberWords(order.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                   </p>
                   <p style="margin: 2px 0;">
-                    ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBanglaDigits(order.content?.grandTotal || 0)}/- (${getBanglaNumberWords(order.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, ${order.content?.representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                    ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBanglaDigits(order.content?.grandTotal || 0)}/- (${getBanglaNumberWords(order.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, ${getShortDesignation(order.content?.representativeDesignation || '') || 'ও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                   </p>
                 </div>
               </div>
@@ -371,7 +371,7 @@ export default function BulkBillPrintLayout({
             <div class="w-full flex justify-end" style="margin-top: 0.25in; margin-bottom: 0.1in;">
               <div style="font-size: 14px; text-align: right; padding-right: 0.1in; line-height: 1.15;">
                 <p class="font-extrabold" style="margin: 0; text-align: right !important; line-height: 1.15 !important;">(${cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
-                <p style="color: #334155; margin: 0; margin-top: 3px; text-align: right !important; line-height: 1.15 !important;">${(order.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
+                <p style="color: #334155; margin: 0; margin-top: 3px; text-align: right !important; line-height: 1.15 !important;">${(getShortDesignation(order.content?.representativeDesignation || '') || 'ও-আইটি').trim()}</p>
               </div>
             </div>
 
@@ -677,7 +677,7 @@ export default function BulkBillPrintLayout({
                                 ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(order.content?.totalTransport)}/- ({getBanglaNumberWords(order.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(order.content?.totalApyaon)}/- ({getBanglaNumberWords(order.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                               </p>
                               <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25', textAlign: 'justify' }}>
-                                ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(order.content?.grandTotal)}/- ({getBanglaNumberWords(order.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, {order.content?.representativeDesignation || 'এসও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+                                ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(order.content?.grandTotal)}/- ({getBanglaNumberWords(order.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, {getShortDesignation(order.content?.representativeDesignation || '') || 'ও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                               </p>
                             </div>
                           </div>
@@ -688,7 +688,7 @@ export default function BulkBillPrintLayout({
                       <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
                         <div className="text-right leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', paddingRight: '0.1in' }}>
                           <p className="font-extrabold text-[11px]" style={{ margin: 0, padding: 0, lineHeight: '1.15', textAlign: 'right', fontSize: '11px' }}>({cleanBracketName(order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
-                          <p className="text-[11px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '3px', lineHeight: '1.15', textAlign: 'right', fontSize: '11px' }}>{(order.content?.representativeDesignation || 'এসও-আইটি').trim()}</p>
+                          <p className="text-[11px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '3px', lineHeight: '1.15', textAlign: 'right', fontSize: '11px' }}>{(getShortDesignation(order.content?.representativeDesignation || '') || 'ও-আইটি').trim()}</p>
                         </div>
                       </div>
                     </div>

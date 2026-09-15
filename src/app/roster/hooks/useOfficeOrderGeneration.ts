@@ -18,7 +18,8 @@ import {
   LATE_SITTING_TEMPLATE,
   NIGHT_SHIFT_TEMPLATE,
   HOLIDAY_TEMPLATE,
-  calculateOrderDate
+  calculateOrderDate,
+  getShortDesignation
 } from '../types';
 
 interface UseOfficeOrderGenerationProps {
@@ -502,12 +503,6 @@ export function useOfficeOrderGeneration({
       setRefDuplicate(false);
     }
   }, [orderRef, officeOrders, originalOrderRef]);
-
-  const getShortDesignation = (desig: string | undefined | null) => {
-    if (!desig) return '';
-    const match = desig.match(/\(([^)]+)\)/);
-    return match ? match[1] : desig;
-  };
 
   const getFormattedDateList = (dates: string[]) => {
     return [...dates]

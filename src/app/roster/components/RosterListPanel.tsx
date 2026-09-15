@@ -19,7 +19,8 @@ import {
   OfficeOrder, 
   OrderDuty, 
   User, 
-  getBanglaMonthYearLabel 
+  getBanglaMonthYearLabel,
+  getNormalizedRef 
 } from '../types';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -176,7 +177,15 @@ export default function RosterListPanel({
                 return ref.replace(/\/বিল$/, '').trim().toLowerCase();
               };
               const norm = getNorm(order.orderRef);
-              const existingBill = officeOrders.find(o => o.category?.startsWith('BILL_') && getNorm(o.orderRef) === norm);
+              const existingBill = officeOrders.find(o => 
+                o.category?.startsWith('BILL_') && 
+                o.status !== 'Deleted' && (
+                  (o.content?.backingOrderRef && o.content.backingOrderRef === order.orderRef) ||
+                  (o.content?.backingOrderId && o.content.backingOrderId === order.id) ||
+                  getNormalizedRef(o.orderRef) === getNormalizedRef(order.orderRef) ||
+                  getNorm(o.orderRef) === norm
+                )
+              );
 
               return (
                 <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors font-medium">
