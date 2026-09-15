@@ -320,13 +320,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                   </>
                 )}
               </button>
-
-              {/* Compact Security Notice */}
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center leading-tight font-sans font-medium pt-0.5">
-                এই সিস্টেম শুধুমাত্র অনুমোদিত কর্মকর্তা ও কর্মচারীদের জন্য।
-                <br />
-                অননুমোদিত প্রবেশ আইনত দণ্ডনীয়।
-              </p>
             </form>
           </div>
         </div>
