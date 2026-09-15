@@ -157,9 +157,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         window.location.href = '/';
       } else {
         if (res?.error === 'CredentialsSignin' || res?.error) {
-          setError('ভুল ইউজারনেম/ব্যাংক আইডি বা পাসওয়ার্ড! (প্রথমবার লগইনের জন্য ডিফল্ট পাসওয়ার্ড: 123456)');
+          setError('ভুল ব্যাংক আইডি বা পাসওয়ার্ড! (প্রথমবার লগইনের জন্য ডিফল্ট পাসওয়ার্ড: 123456)');
         } else {
-          setError('লগইন ব্যর্থ হয়েছে। অনুগ্রহ করে ইউজারনেম ও পাসওয়ার্ড পরীক্ষা করুন।');
+          setError('লগইন ব্যর্থ হয়েছে। অনুগ্রহ করে ব্যাংক আইডি ও পাসওয়ার্ড পরীক্ষা করুন।');
         }
       }
     } catch (err) {
@@ -247,9 +247,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 </div>
               )}
 
-              {/* Username Input */}
+              {/* Bank ID Input */}
               <div className="space-y-1 text-left group">
-                <label htmlFor="username-input" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">ইউজারনেম</label>
+                <label htmlFor="username-input" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">ব্যাংক আইডি</label>
                 <div className="relative flex items-center">
                   <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
                     <User size={15} />
@@ -259,7 +259,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     type="text" 
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="যেমন: 026799 (ব্যাংক আইডি)"
+                    placeholder="যেমন: 026799"
                     className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-xl text-sm font-semibold outline-none transition-all"
                     required
                   />
