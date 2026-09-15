@@ -194,8 +194,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Centered Main Login Layout (Stable, always visible, zero jitter, zero scroll) */}
-        <div className="flex-1 flex items-center justify-center w-full z-10 py-1 min-h-0">
-          <div className="w-full max-w-[390px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_20px_50px_rgba(21,101,192,0.14)] border border-white/80 dark:border-slate-800 px-6 py-4 sm:px-7 sm:py-5 space-y-3 animate-fade-in">
+        <div className="flex-1 flex items-center justify-center w-full z-10 py-1 min-h-0 px-4">
+          <div 
+            className="login-box w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_20px_50px_rgba(21,101,192,0.14)] border border-white/80 dark:border-slate-800 px-6 py-4 sm:px-7 sm:py-5 space-y-3 animate-fade-in"
+            style={{ maxWidth: '420px', width: '100%', margin: '0 auto' }}
+          >
             
             {/* Top: Janata Bank Logo & Header */}
             <div className="flex items-center justify-center gap-2.5 pt-0.5">
@@ -345,6 +348,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           html, body {
             overflow: hidden !important;
             height: 100% !important;
+          }
+          .login-box {
+            max-width: 420px !important;
+            width: 100% !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
           }
           @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.97); }
