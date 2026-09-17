@@ -74,10 +74,46 @@ export function useLeaveData(currentUser: UserSession | null) {
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [casualTotal, setCasualTotal] = useState<number | string>(20);
   const [casualUsed, setCasualUsed] = useState<number | string>(0);
-  const [ordinaryTotal, setOrdinaryTotal] = useState<number | string>(120);
-  const [ordinaryUsed, setOrdinaryUsed] = useState<number | string>('-');
-  const [specialTotal, setSpecialTotal] = useState<number | string>('-');
-  const [specialUsed, setSpecialUsed] = useState<number | string>('-');
+  const [ordinaryTotal, setOrdinaryTotal] = useState<number | string>(0);
+  const [ordinaryUsed, setOrdinaryUsed] = useState<number | string>(0);
+  const [specialTotal, setSpecialTotal] = useState<number | string>(0);
+  const [specialUsed, setSpecialUsed] = useState<number | string>(0);
+
+  // Track if the user has manually edited any balance fields in the form
+  const userEditedBalanceRef = useRef<{
+    casual: boolean;
+    ordinary: boolean;
+    special: boolean;
+  }>({
+    casual: false,
+    ordinary: false,
+    special: false,
+  });
+
+  const setCasualTotalManual = (val: number | string) => {
+    userEditedBalanceRef.current.casual = true;
+    setCasualTotal(val);
+  };
+  const setCasualUsedManual = (val: number | string) => {
+    userEditedBalanceRef.current.casual = true;
+    setCasualUsed(val);
+  };
+  const setOrdinaryTotalManual = (val: number | string) => {
+    userEditedBalanceRef.current.ordinary = true;
+    setOrdinaryTotal(val);
+  };
+  const setOrdinaryUsedManual = (val: number | string) => {
+    userEditedBalanceRef.current.ordinary = true;
+    setOrdinaryUsed(val);
+  };
+  const setSpecialTotalManual = (val: number | string) => {
+    userEditedBalanceRef.current.special = true;
+    setSpecialTotal(val);
+  };
+  const setSpecialUsedManual = (val: number | string) => {
+    userEditedBalanceRef.current.special = true;
+    setSpecialUsed(val);
+  };
 
   // Fetch all archived leaves for the current officer
   const fetchArchivedLeaves = async (targetBankId?: string) => {
@@ -238,7 +274,7 @@ export function useLeaveData(currentUser: UserSession | null) {
     }
   }, [currentUser, employees, hasSyncedProfile]);
 
-  // Prepopulate balance sheet editor when latestLeave changes
+  // Prepopulate balance sheet editor when active employee changes
   useEffect(() => {
     if (!editingLeaveId) {
       const activeBankId = selectedApplicantEmp?.bankId || '';
@@ -246,19 +282,20 @@ export function useLeaveData(currentUser: UserSession | null) {
         if (latestLeave) {
           setCasualTotal(latestLeave.casualTotal ?? 20);
           setCasualUsed(latestLeave.casualUsed ?? 0);
-          setOrdinaryTotal(latestLeave.ordinaryTotal || 120);
+          setOrdinaryTotal(latestLeave.ordinaryTotal ?? 0);
           setOrdinaryUsed(latestLeave.ordinaryUsed ?? 0);
           setSpecialTotal(latestLeave.specialTotal ?? 0);
           setSpecialUsed(latestLeave.specialUsed ?? 0);
         } else {
           setCasualTotal(20);
           setCasualUsed(0);
-          setOrdinaryTotal(120);
+          setOrdinaryTotal(0);
           setOrdinaryUsed(0);
           setSpecialTotal(0);
           setSpecialUsed(0);
         }
         lastLoadedBankIdRef.current = activeBankId;
+        userEditedBalanceRef.current = { casual: false, ordinary: false, special: false };
       }
     }
   }, [latestLeave, editingLeaveId, selectedApplicantEmp]);
@@ -279,18 +316,25 @@ export function useLeaveData(currentUser: UserSession | null) {
           const sUsed = data.specialUsed ?? data.special?.used;
           const sTotal = data.specialTotal ?? data.special?.total;
 
-          if (cTotal !== undefined) setCasualTotal(String(cTotal));
-          if (cUsed !== undefined) setCasualUsed(String(cUsed));
-          if (oTotal !== undefined) setOrdinaryTotal(String(oTotal));
-          if (oUsed !== undefined) setOrdinaryUsed(String(oUsed));
-          if (sTotal !== undefined) setSpecialTotal(String(sTotal));
-          if (sUsed !== undefined) setSpecialUsed(String(sUsed));
+          // Only update fields that the user has not manually edited in the form
+          if (!userEditedBalanceRef.current.casual) {
+            if (cTotal !== undefined) setCasualTotal(cTotal);
+            if (cUsed !== undefined) setCasualUsed(cUsed);
+          }
+          if (!userEditedBalanceRef.current.ordinary) {
+            if (oTotal !== undefined) setOrdinaryTotal(oTotal);
+            if (oUsed !== undefined) setOrdinaryUsed(oUsed);
+          }
+          if (!userEditedBalanceRef.current.special) {
+            if (sTotal !== undefined) setSpecialTotal(sTotal);
+            if (sUsed !== undefined) setSpecialUsed(sUsed);
+          }
         }
       } catch { /* silent */ }
       setBalanceLoading(false);
     };
     fetchBalance();
-  }, [bankId, isAutoBalance, archivedLeaves]);
+  }, [bankId, isAutoBalance]);
 
   // Date Check logic: public holiday or weekend
   const isNonWorkingDay = (dateStr: string): boolean => {
@@ -372,7 +416,7 @@ export function useLeaveData(currentUser: UserSession | null) {
   };
 
   // Handle Save / Update to Archive
-  const handleSaveToArchive = async () => {
+  const handleSaveToArchive = async (autoSwitchTab: boolean = true) => {
     if (!startDate || !endDate) {
       setErrorMsg('অনুগ্রহ করে ছুটির শুরুর এবং শেষের তারিখ নির্বাচন করুন।');
       setTimeout(() => setErrorMsg(''), 4000);
@@ -403,12 +447,12 @@ export function useLeaveData(currentUser: UserSession | null) {
       mobileNo,
       selectedDistrict,
       delegateId,
-      casualTotal,
+      casualTotal: parseInt(String(casualTotal || 0), 10) || 0,
       casualUsed: finalCasualUsed,
-      ordinaryTotal,
-      ordinaryUsed,
-      specialTotal,
-      specialUsed
+      ordinaryTotal: parseInt(String(ordinaryTotal || 0), 10) || 0,
+      ordinaryUsed: parseInt(String(ordinaryUsed || 0), 10) || 0,
+      specialTotal: parseInt(String(specialTotal || 0), 10) || 0,
+      specialUsed: parseInt(String(specialUsed || 0), 10) || 0
     };
 
     try {
@@ -457,7 +501,9 @@ export function useLeaveData(currentUser: UserSession | null) {
           logger.error('Error refreshing employees list after leave save:', empsErr);
         }
         
-        setActiveTab('ARCHIVE');
+        if (autoSwitchTab) {
+          setActiveTab('ARCHIVE');
+        }
         setTimeout(() => setSuccessMsg(''), 5000);
         return true;
       } else {
@@ -505,6 +551,8 @@ export function useLeaveData(currentUser: UserSession | null) {
     setSpecialTotal(leave.specialTotal);
     setSpecialUsed(leave.specialUsed);
 
+    userEditedBalanceRef.current = { casual: true, ordinary: true, special: true };
+
     setActiveTab('NEW');
     setSuccessMsg('আর্কাইভের তথ্য এডিটর ফর্মে লোড করা হয়েছে। পরিবর্তন করে আপডেট করুন।');
     setTimeout(() => setSuccessMsg(''), 4000);
@@ -533,6 +581,8 @@ export function useLeaveData(currentUser: UserSession | null) {
     setSpecialTotal(leave.specialTotal);
     setSpecialUsed(leave.specialUsed);
     
+    userEditedBalanceRef.current = { casual: true, ordinary: true, special: true };
+
     setEditingLeaveId(null);
     setSuccessMsg('আবেদনের তথ্য প্রিন্ট প্রিভিউতে লোড করা হয়েছে।');
     setTimeout(() => setSuccessMsg(''), 3000);
@@ -653,17 +703,17 @@ export function useLeaveData(currentUser: UserSession | null) {
     setIsAutoBalance,
     balanceLoading,
     casualTotal,
-    setCasualTotal,
+    setCasualTotal: setCasualTotalManual,
     casualUsed,
-    setCasualUsed,
+    setCasualUsed: setCasualUsedManual,
     ordinaryTotal,
-    setOrdinaryTotal,
+    setOrdinaryTotal: setOrdinaryTotalManual,
     ordinaryUsed,
-    setOrdinaryUsed,
+    setOrdinaryUsed: setOrdinaryUsedManual,
     specialTotal,
-    setSpecialTotal,
+    setSpecialTotal: setSpecialTotalManual,
     specialUsed,
-    setSpecialUsed,
+    setSpecialUsed: setSpecialUsedManual,
     eligibleCoveringOfficers,
     leaveDetails,
     isSingleDay,

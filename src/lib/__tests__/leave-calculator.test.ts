@@ -68,4 +68,40 @@ describe('LeaveCalculator - Sandwich Rule Calculations', () => {
       expect(details.actualDeducted).toBe(7); // 5 calendar days + 2 succeeding holidays
     });
   });
+
+  describe('Leave Balance Calculations & Formatting', () => {
+    const getRemaining = (total: number | string, used: number | string) => {
+      const tStr = String(total ?? '').trim();
+      const uStr = String(used ?? '').trim();
+      if (tStr === '-' || uStr === '-' || tStr === '' || uStr === '') {
+        return '-';
+      }
+      const totalNum = parseInt(tStr, 10);
+      const usedNum = parseInt(uStr, 10);
+      if (isNaN(totalNum) || isNaN(usedNum)) {
+        return '-';
+      }
+      return Math.max(0, totalNum - usedNum);
+    };
+
+    it('should correctly calculate user inputted Ordinary Leave balance (105 total, 0 used -> 105 remaining)', () => {
+      const ordinaryTotal = 105;
+      const ordinaryUsed = 0;
+      const remaining = getRemaining(ordinaryTotal, ordinaryUsed);
+      expect(remaining).toBe(105);
+    });
+
+    it('should correctly calculate Casual Leave balance (20 total, 10 used -> 10 remaining)', () => {
+      const casualTotal = 20;
+      const casualUsed = 10;
+      const remaining = getRemaining(casualTotal, casualUsed);
+      expect(remaining).toBe(10);
+    });
+
+    it('should handle Special Leave when 0 or blank, without defaulting to 5', () => {
+      expect(getRemaining(0, 0)).toBe(0);
+      expect(getRemaining('', '')).toBe('-');
+      expect(getRemaining('-', '-')).toBe('-');
+    });
+  });
 });

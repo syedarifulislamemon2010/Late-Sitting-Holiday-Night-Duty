@@ -112,6 +112,13 @@ export default function LeavePrintView({
     return Math.max(0, totalNum - usedNum);
   };
 
+  const formatCellValue = (val: number | string | undefined | null) => {
+    if (val === undefined || val === null || String(val).trim() === '' || String(val).trim() === '-') {
+      return '-';
+    }
+    return toBanglaDigits(val);
+  };
+
   const appYear = applicationDate ? applicationDate.split('-')[0] : new Date().getFullYear().toString();
   const displayDaysWord = isSingleDay ? getBanglaDayWord(1) : (leaveDetails.actualDeducted > 0 ? getBanglaDayWord(leaveDetails.actualDeducted) : '');
 
@@ -235,23 +242,23 @@ export default function LeavePrintView({
                   <tr className="border-b border-black">
                     <td className="border border-black px-1 py-0.5">০১.</td>
                     <td className="border border-black px-1.5 py-0.5 text-left">নৈমিত্তিক ছুটি</td>
-                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(casualTotal)}</td>
-                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(currentCasualUsed)}</td>
-                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(currentCasualRemaining)}</td>
+                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{formatCellValue(casualTotal)}</td>
+                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{formatCellValue(currentCasualUsed)}</td>
+                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{formatCellValue(currentCasualRemaining)}</td>
                   </tr>
                   <tr className="border-b border-black">
                     <td className="border border-black px-1 py-0.5">০২.</td>
                     <td className="border border-black px-1.5 py-0.5 text-left">সাধারণ ছুটি</td>
-                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(ordinaryTotal)}</td>
-                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(ordinaryUsed)}</td>
-                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(currentOrdinaryRemaining)}</td>
+                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{formatCellValue(ordinaryTotal)}</td>
+                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{formatCellValue(ordinaryUsed)}</td>
+                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{formatCellValue(currentOrdinaryRemaining)}</td>
                   </tr>
                   <tr>
                     <td className="border border-black px-1 py-0.5">০৩.</td>
                     <td className="border border-black px-1.5 py-0.5 text-left">বিশেষ ছুটি</td>
-                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(specialTotal)}</td>
-                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(specialUsed)}</td>
-                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{toBanglaDigits(currentSpecialRemaining)}</td>
+                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{formatCellValue(specialTotal)}</td>
+                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{formatCellValue(specialUsed)}</td>
+                    <td className="border border-black px-1 py-0.5 font-sans font-bold">{formatCellValue(currentSpecialRemaining)}</td>
                   </tr>
                 </tbody>
               </table>

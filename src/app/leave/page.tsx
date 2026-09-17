@@ -157,13 +157,13 @@ export default function LeaveGeneratorPage() {
   };
 
   const handlePrint = async () => {
-    handleSaveToArchive().catch(err => logger.error('Error saving to archive before print:', err));
+    handleSaveToArchive(false).catch(err => logger.error('Error saving to archive before print:', err));
     window.print();
   };
 
   const handleDownloadDocx = async () => {
     try {
-      handleSaveToArchive().catch(err => logger.error('Error saving to archive before docx download:', err));
+      handleSaveToArchive(false).catch(err => logger.error('Error saving to archive before docx download:', err));
 
       const { generateLeaveDocx } = await import('@/lib/docx-generator');
       const delegateEmp = employees.find(e => String(e.id) === delegateId);
@@ -195,6 +195,13 @@ export default function LeaveGeneratorPage() {
         return Math.max(0, tN - uN);
       };
 
+      const formatDisplayVal = (val: number | string | undefined | null) => {
+        if (val === undefined || val === null || String(val).trim() === '' || String(val).trim() === '-') {
+          return '-';
+        }
+        return toBanglaDigits(val);
+      };
+
       const appYear = applicationDate ? applicationDate.split('-')[0] : new Date().getFullYear().toString();
 
       const blob = await generateLeaveDocx({
@@ -216,15 +223,15 @@ export default function LeaveGeneratorPage() {
         delegateOfficerName: delegateEmp?.name,
         delegateOfficerDesig: cleanDesignationForLeave(delegateEmp?.designation || ''),
         appYear: toBanglaDigits(appYear),
-        casualTotal: toBanglaDigits(casualTotal),
-        casualUsed: toBanglaDigits(currentCasualUsed),
-        casualRemaining: toBanglaDigits(currentCasualRemaining),
-        ordinaryTotal: toBanglaDigits(ordinaryTotal),
-        ordinaryUsed: toBanglaDigits(ordinaryUsed),
-        ordinaryRemaining: toBanglaDigits(getRemainingVal(ordinaryTotal, ordinaryUsed)),
-        specialTotal: toBanglaDigits(specialTotal),
-        specialUsed: toBanglaDigits(specialUsed),
-        specialRemaining: toBanglaDigits(getRemainingVal(specialTotal, specialUsed)),
+        casualTotal: formatDisplayVal(casualTotal),
+        casualUsed: formatDisplayVal(currentCasualUsed),
+        casualRemaining: formatDisplayVal(currentCasualRemaining),
+        ordinaryTotal: formatDisplayVal(ordinaryTotal),
+        ordinaryUsed: formatDisplayVal(ordinaryUsed),
+        ordinaryRemaining: formatDisplayVal(getRemainingVal(ordinaryTotal, ordinaryUsed)),
+        specialTotal: formatDisplayVal(specialTotal),
+        specialUsed: formatDisplayVal(specialUsed),
+        specialRemaining: formatDisplayVal(getRemainingVal(specialTotal, specialUsed)),
         daysCount: isSingleDay ? 1 : leaveDetails.actualDeducted,
         daysInBanglaWords: displayDaysWord,
         leaveTypeBangla: leaveType === 'POST_FACTO' ? 'ঘটনাত্তোর নৈমিত্তিক' : leaveType === 'STATION_LEAVE' ? 'কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক' : 'নৈমিত্তিক'

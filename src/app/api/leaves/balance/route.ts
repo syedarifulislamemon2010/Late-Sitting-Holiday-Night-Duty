@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { leaveApplications, holidays } from '@/db/schema';
-import { and, eq, gte, lte } from 'drizzle-orm';
+import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { getCalculatedLeaveDetails } from '@/lib/leave-calculator';
 
 export async function GET(request: Request) {
@@ -22,13 +22,21 @@ export async function GET(request: Request) {
     const startOfYear = `${year}-01-01`;
     const endOfYear = `${year}-12-31`;
 
-    const applications = await db.select().from(leaveApplications).where(
+    // 1. Applications in the current year for Casual Leave calculations
+    const yearApplications = await db.select().from(leaveApplications).where(
       and(
         eq(leaveApplications.bankId, bankId),
         gte(leaveApplications.startDate, startOfYear),
         lte(leaveApplications.startDate, endOfYear)
       )
-    );
+    ).orderBy(desc(leaveApplications.id));
+
+    // 2. Latest recorded application for Service Book balances (Ordinary & Special)
+    const latestApplications = await db.select().from(leaveApplications).where(
+      eq(leaveApplications.bankId, bankId)
+    ).orderBy(desc(leaveApplications.id)).limit(1);
+
+    const latestApp = latestApplications[0] ?? null;
 
     const dbHolidays = await db.select().from(holidays);
     const mappedHolidays = dbHolidays.map(h => ({
@@ -38,19 +46,16 @@ export async function GET(request: Request) {
       isWorkingDay: h.isWorkingDay
     }));
 
-    let appliedCasualDaysSum = 0;
-    let ordinaryUsed = 0;
-    let specialUsed = 0;
+    // Casual leave: 20 days per calendar year
     let casualTotal = 20;
-    let ordinaryTotal = 15;
-    let specialTotal = 5;
+    if (latestApp && latestApp.casualTotal) {
+      casualTotal = Number(latestApp.casualTotal);
+    }
+
+    let appliedCasualDaysSum = 0;
     let maxRecordedCasualUsed = 0;
 
-    for (const app of applications) {
-      if (app.casualTotal) casualTotal = Math.max(casualTotal, Number(app.casualTotal));
-      if (app.ordinaryTotal) ordinaryTotal = Math.max(ordinaryTotal, Number(app.ordinaryTotal));
-      if (app.specialTotal) specialTotal = Math.max(specialTotal, Number(app.specialTotal));
-
+    for (const app of yearApplications) {
       if (app.casualUsed) {
         const recordedVal = Number(app.casualUsed);
         if (recordedVal > maxRecordedCasualUsed) {
@@ -63,19 +68,19 @@ export async function GET(request: Request) {
 
       if (app.leaveType === 'CASUAL' || app.leaveType === 'POST_FACTO' || app.leaveType === 'STATION_LEAVE') {
         appliedCasualDaysSum += leaveDays;
-      } else if (app.leaveType === 'ORDINARY') {
-        ordinaryUsed += leaveDays;
-      } else {
-        specialUsed += leaveDays;
       }
     }
 
-    // Effective casualUsed is baseline recorded prior used + total days from current year applications
-    // Or at least maxRecordedCasualUsed if backlog recorded total used exceeds sum
     const casualUsed = Math.max(maxRecordedCasualUsed, appliedCasualDaysSum);
-
     const casualRemaining = Math.max(0, casualTotal - casualUsed);
+
+    // Ordinary & Special leave: service book balances from latest record, default to 0 (never hardcoded 15 or 5)
+    const ordinaryTotal = latestApp ? Number(latestApp.ordinaryTotal ?? 0) : 0;
+    const ordinaryUsed = latestApp ? Number(latestApp.ordinaryUsed ?? 0) : 0;
     const ordinaryRemaining = Math.max(0, ordinaryTotal - ordinaryUsed);
+
+    const specialTotal = latestApp ? Number(latestApp.specialTotal ?? 0) : 0;
+    const specialUsed = latestApp ? Number(latestApp.specialUsed ?? 0) : 0;
     const specialRemaining = Math.max(0, specialTotal - specialUsed);
 
     return NextResponse.json({

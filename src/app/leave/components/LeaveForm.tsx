@@ -9,7 +9,7 @@ import LeaveHistoryTable from './LeaveHistoryTable';
 import { BANGLADESH_AREAS } from '../bangladesh_areas';
 import { cleanDesignationForLeave } from '../hooks/useLeaveData';
 import { Employee, Cell, UserSession, Leave } from '../types';
-import { toBanglaDigits } from '@/lib/bengali-converter';
+import { toBanglaDigits, toEnglishDigits } from '@/lib/bengali-converter';
 
 interface LeaveFormProps {
   currentUser: UserSession | null;
@@ -157,7 +157,8 @@ export default function LeaveForm({
     currentUsed: number | string,
     setUsed: (val: number | string) => void
   ) => {
-    const cleaned = value.replace(/\D/g, '');
+    const enVal = toEnglishDigits(value);
+    const cleaned = enVal.replace(/\D/g, '');
     if (cleaned === '') {
       setter('');
       return;
@@ -165,7 +166,7 @@ export default function LeaveForm({
     const num = Math.max(0, parseInt(cleaned, 10));
     setter(num);
 
-    const usedValStr = String(currentUsed).trim();
+    const usedValStr = toEnglishDigits(String(currentUsed)).trim();
     if (usedValStr !== '-' && usedValStr !== '') {
       const usedNum = parseInt(usedValStr, 10);
       if (!isNaN(usedNum) && usedNum > num) {
@@ -179,14 +180,15 @@ export default function LeaveForm({
     setter: (val: number | string) => void,
     total: number | string
   ) => {
-    const cleaned = value.replace(/\D/g, '');
+    const enVal = toEnglishDigits(value);
+    const cleaned = enVal.replace(/\D/g, '');
     if (cleaned === '') {
       setter('');
       return;
     }
     const num = Math.max(0, parseInt(cleaned, 10));
 
-    const totalValStr = String(total).trim();
+    const totalValStr = toEnglishDigits(String(total)).trim();
     if (totalValStr !== '-' && totalValStr !== '') {
       const totalNum = parseInt(totalValStr, 10);
       if (!isNaN(totalNum)) {
@@ -758,7 +760,7 @@ export default function LeaveForm({
                   onClick={() => onLoadLeavePreview(latestLeave)}
                   className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all text-center cursor-pointer shadow-sm shadow-indigo-500/10 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  প্রিন্ট প্রিভিউ
+                  আর্কাইভ থেকে প্রিভিউ দেখুন
                 </button>
                 <button
                   type="button"
