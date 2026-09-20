@@ -13,7 +13,7 @@ export interface User {
   id: number;
   name: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
 }
 
 export const STRICT_DESIGNATIONS = [

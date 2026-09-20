@@ -18,7 +18,7 @@ export interface User {
   id: number;
   name: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   cells?: { id: number; name: string }[];
 }
 
@@ -60,6 +60,7 @@ export interface LunchRecord {
   netPayable: number;
   cellId: number;
   isExecutive: boolean;
+  leaveDays?: number;
   remarks?: string;
 }
 

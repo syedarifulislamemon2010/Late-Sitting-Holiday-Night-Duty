@@ -11,7 +11,7 @@ export interface User {
   id: number;
   name: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   cells?: { id: number; name: string }[];
 }
 

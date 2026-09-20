@@ -20,7 +20,7 @@ export interface User {
   id: number;
   name: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   cells?: Cell[];
 }
 
