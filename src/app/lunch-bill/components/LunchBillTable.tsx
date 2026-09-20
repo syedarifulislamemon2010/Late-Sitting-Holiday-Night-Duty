@@ -140,6 +140,14 @@ export default function LunchBillTable({
                             onChange={e => handleAbsenceChange(rec.employeeId, false, e.target.value)}
                             className="w-14 text-center font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-1 text-xs focus:ring-1 focus:ring-indigo-500 focus:bg-white text-slate-800 dark:text-slate-100"
                           />
+                          {rec.leaveDays !== undefined && rec.leaveDays > 0 && (
+                            <span 
+                              title={`অনুমোদিত ছুটি: ${toBanglaDigits(rec.leaveDays)} দিন`}
+                              className="block mt-0.5 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 rounded px-1 py-0.2 select-none"
+                            >
+                              ছুটি: {toBanglaDigits(rec.leaveDays)}
+                            </span>
+                          )}
                         </td>
                         <td className="py-2.5 px-3 text-center font-bold text-slate-700 dark:text-slate-300">
                           {toBanglaDigits(rec.presentDays)}

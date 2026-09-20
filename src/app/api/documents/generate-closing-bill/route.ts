@@ -281,6 +281,13 @@ export async function POST(request: Request) {
   })();
 </script>
 <style>
+  @font-face {
+    font-family: 'Kalpurush';
+    src: url('/fonts/kalpurush.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
   * {
     margin: 0;
     padding: 0;
@@ -294,7 +301,7 @@ export async function POST(request: Request) {
     margin-right: 0.5in;
   }
   body {
-    font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+    font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
     font-size: 12px;
     line-height: 1.25;
     color: #000;

@@ -140,6 +140,13 @@ export async function POST(request: Request) {
   })();
 </script>
 <style>
+  @font-face {
+    font-family: 'Kalpurush';
+    src: url('/fonts/kalpurush.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
   * {
     margin: 0;
     padding: 0;
@@ -166,14 +173,14 @@ export async function POST(request: Request) {
     padding-left: 1.4in !important;
     padding-right: 0.5in !important;
     box-sizing: border-box;
-    font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+    font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
     font-size: 11px;
     line-height: 1.05;
     color: #000;
     background-color: #fff;
   }
   #printable-order-sheet * {
-    font-family: 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
+    font-family: 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', sans-serif !important;
     letter-spacing: normal !important;
     word-spacing: normal !important;
   }

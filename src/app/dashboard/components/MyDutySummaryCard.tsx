@@ -71,7 +71,7 @@ export default function MyDutySummaryCard() {
   useEffect(() => {
     async function loadSummaryData() {
       try {
-        const res = await fetch('/api/my-portal');
+        const res = await fetch('/api/my-portal', { cache: 'no-store' });
         if (!res.ok) {
           setIsEmployee(false);
           setLoading(false);

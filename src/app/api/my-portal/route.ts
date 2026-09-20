@@ -5,8 +5,12 @@ import { db } from '@/lib/db';
 import { employees, duties, leaveApplications, holidays, cells, officeOrders } from '@/db/schema';
 import { eq, and, desc, sql, like, or } from 'drizzle-orm';
 import { getCalculatedLeaveDetails, DEFAULT_CASUAL_LEAVE_ENTITLEMENT } from '@/lib/leave-calculator';
+import { LeaveBalanceService } from '@/services/leave-balance.service';
 import { logActivity } from '@/lib/audit';
 import { headers } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   try {
@@ -96,47 +100,16 @@ export async function GET(request: Request) {
       )
       .orderBy(desc(leaveApplications.startDate));
 
-    // 4. Calculate casual leave balance
-    const dbHolidays = await db.select().from(holidays);
-    const mappedHolidays = dbHolidays.map(h => ({
-      id: h.id,
-      date: h.date,
-      name: h.name,
-      isWorkingDay: h.isWorkingDay
-    }));
+    // 4. Calculate casual leave balance using unified single source of truth
+    const leaveBalances = await LeaveBalanceService.calculateLeaveBalance(
+      employee.bankId || '',
+      new Date().getFullYear()
+    );
 
-    let casualUsed = 0;
-    let entitlementTotal = DEFAULT_CASUAL_LEAVE_ENTITLEMENT;
-
-    // Filter current year (2026) leaves
-    const currentYearStr = new Date().getFullYear().toString();
-    const currentYearLeaves = employeeLeaves.filter(l => l.startDate && l.startDate.startsWith(currentYearStr));
-
-    if (currentYearLeaves.length > 0) {
-      // Find the latest leave application record to get official recorded entitlement & backlog used
-      const latestLeaveRec = currentYearLeaves[0]; // ordered desc by startDate
-      if (latestLeaveRec.casualTotal) {
-        entitlementTotal = Number(latestLeaveRec.casualTotal);
-      }
-      
-      // Calculate total deducted days across all approved/submitted leaves of current year
-      currentYearLeaves.forEach(leave => {
-        const type = leave.leaveType;
-        if (type === 'CASUAL' || type === 'STATION_LEAVE' || type === 'POST_FACTO') {
-          const details = getCalculatedLeaveDetails(leave.startDate, leave.endDate, mappedHolidays);
-          const leaveDays = details.actualDeducted > 0 ? details.actualDeducted : details.totalDays;
-          casualUsed += Math.max(1, leaveDays);
-        }
-      });
-
-      // Also compare with the latest recorded casualUsed in application to ensure no backlog days missed
-      if (latestLeaveRec.casualUsed && Number(latestLeaveRec.casualUsed) > casualUsed) {
-        casualUsed = Number(latestLeaveRec.casualUsed);
-      }
-    }
-
-    const casualTotal = entitlementTotal;
-    const casualRemaining = Math.max(0, casualTotal - casualUsed);
+    const casualTotal = leaveBalances.casualTotal;
+    const casualUsed = leaveBalances.casualUsed;
+    const casualRemaining = leaveBalances.casualRemaining;
+    logger.info(`[MY-PORTAL-BALANCE] bankId: ${employee.bankId}, total: ${casualTotal}, used: ${casualUsed}, remaining: ${casualRemaining}`);
 
     // 5. Aggregate monthly ledger
     // We group employee's duties by month (YYYY-MM) and sum allowances
@@ -206,6 +179,12 @@ export async function GET(request: Request) {
       monthlyLedger,
       coveringOfficers,
       bills: userBills
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
     });
   } catch (error) {
     logger.error('My Portal GET Error:', error);

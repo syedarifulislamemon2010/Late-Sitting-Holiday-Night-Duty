@@ -280,7 +280,8 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
           if (cellRes.ok && orderRes.ok) {
             const localCells = await cellRes.json();
             const orders = await orderRes.json();
-            const matchedOrder = orders.find((o: OfficeOrder) => o.orderRef === targetRef);
+            const cleanRef = (s: string) => (s || '').replace(/\/বিল$/, '').trim().toLowerCase();
+            const matchedOrder = orders.find((o: OfficeOrder) => o.orderRef === targetRef || cleanRef(o.orderRef) === cleanRef(targetRef));
             if (!matchedOrder) {
               alert('রেফারেন্সকৃত অফিস আদেশটি খুঁজে পাওয়া যায়নি।');
               window.location.href = '/documents';
@@ -659,7 +660,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
           grandTotalInWords: getBanglaNumberWords(billing.grandTotalPrintAll),
           signingOfficer: signingOfficer,
           signingDesignation: signingDesignation,
-          representativeDesignation: representativeDesignation,
+          representativeDesignation: (representativeDesignation || '').trim() || 'ও-আইটি',
           subjectText: subjectText,
           backingOrderId: backingOrder ? backingOrder.id : null,
           backingOrderRef: backingOrder ? backingOrder.orderRef : (billing.selectedOrderRef || null),

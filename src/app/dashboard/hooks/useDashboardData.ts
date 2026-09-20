@@ -112,7 +112,7 @@ export function useDashboardData() {
         const holidaysData = await holidayRes.json();
         setHolidays(Array.isArray(holidaysData) ? holidaysData : []);
 
-        const portalRes = await fetch('/api/my-portal');
+        const portalRes = await fetch('/api/my-portal', { cache: 'no-store' });
         if (portalRes.ok) {
           const portalData = await portalRes.json();
           if (portalData.employee) {
@@ -295,7 +295,7 @@ export function useDashboardData() {
       setEntryError(null);
       
       // Refresh local states
-      const portalRes = await fetch('/api/my-portal');
+      const portalRes = await fetch('/api/my-portal', { cache: 'no-store' });
       if (portalRes.ok) {
         const portalData = await portalRes.json();
         if (Array.isArray(portalData.duties)) {

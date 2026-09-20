@@ -300,7 +300,7 @@ export default function RosterPage() {
       {billSuggestion && (
         <div className="fixed bottom-5 right-5 z-50 max-w-[420px] p-4 bg-gradient-to-r from-emerald-50 to-sky-50 dark:from-emerald-950/40 dark:to-sky-950/40 border-emerald-200 dark:border-emerald-800 border rounded-2xl shadow-xl flex flex-col gap-3 animate-in slide-in-from-bottom-5 fade-in duration-300"
              style={{
-               fontFamily: "'SolaimanLipi', 'Nikosh', sans-serif",
+               fontFamily: "'Kalpurush', 'SolaimanLipi', 'Nikosh', sans-serif",
              }}>
           <div className="flex items-start gap-3">
             <CheckCircle className="text-emerald-500 shrink-0 mt-0.5" size={20} />
@@ -326,7 +326,7 @@ export default function RosterPage() {
       {toast && (
         <div className="fixed bottom-5 right-5 z-50 max-w-[400px] p-4 bg-red-50 text-red-900 border border-red-200 rounded-2xl shadow-xl flex items-start gap-3 animate-in slide-in-from-bottom-5 duration-300"
              style={{
-               fontFamily: "'SolaimanLipi', 'Nikosh', sans-serif",
+               fontFamily: "'Kalpurush', 'SolaimanLipi', 'Nikosh', sans-serif",
                fontSize: "14px",
                lineHeight: "1.7",
              }}>

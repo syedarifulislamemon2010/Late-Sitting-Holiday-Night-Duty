@@ -31,7 +31,7 @@ export default function PrintableLedgerLayout({
   setIsLedgerPrintMode,
 }: PrintableLedgerLayoutProps) {
   return (
-    <div className="print-report-layout max-w-4xl mx-auto bg-white p-8 border border-slate-200 shadow-md font-sans text-black" style={{ fontFamily: "'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif", color: '#000', lineHeight: '1.4' }}>
+    <div className="print-report-layout max-w-4xl mx-auto bg-white p-8 border border-slate-200 shadow-md font-sans text-black" style={{ fontFamily: "'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif", color: '#000', lineHeight: '1.4' }}>
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
@@ -42,7 +42,7 @@ export default function PrintableLedgerLayout({
           body {
             background: #fff !important;
             color: #000 !important;
-            font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif !important;
+            font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif !important;
           }
           .print-report-layout {
             border: none !important;

@@ -105,7 +105,7 @@ export default function MyPortalPage() {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch('/api/my-portal');
+      const res = await fetch('/api/my-portal', { cache: 'no-store' });
       if (!res.ok) {
         if (res.status === 404) {
           const data = await res.json();

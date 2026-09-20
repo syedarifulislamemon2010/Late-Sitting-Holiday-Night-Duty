@@ -48,7 +48,7 @@ export default function LunchBillPage() {
 
   const handleWorkingDaysChange = (daysStr: string) => {
     const val = parseInt(daysStr, 10) || 0;
-    data.setWorkingDays(val);
+    data.handleWorkingDaysUpdate(val);
     data.setIsAutoWorkingDays(false);
   };
 
@@ -157,6 +157,8 @@ export default function LunchBillPage() {
           onPrint={data.handlePrintCombinedBill}
           saving={data.saving}
           generating={data.generating}
+          onSyncLeaves={data.handleSyncLeaves}
+          syncingLeaves={data.syncingLeaves}
         />
 
         {/* 2. Filters & Deduction Settings */}

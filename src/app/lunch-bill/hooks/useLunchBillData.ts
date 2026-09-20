@@ -35,6 +35,8 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
 
   const [records, setRecords] = useState<LunchRecord[]>([]);
   const [savedLunchBill, setSavedLunchBill] = useState<LunchBill | null>(null);
+  const [syncingLeaves, setSyncingLeaves] = useState(false);
+  const [leaveDaysSummary, setLeaveDaysSummary] = useState<Record<string, number>>({});
 
   const [deductionMode, setDeductionMode] = useState<'manual' | 'flat' | 'designation'>('manual');
   const [flatDeductionRate, setFlatDeductionRate] = useState<number>(0);
@@ -167,7 +169,20 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
 
     async function fetchCombinedLunchBill() {
       try {
-        const res = await fetch(`/api/lunch-bills?month=${selectedMonth}&cellId=0`);
+        const [res, leaveRes] = await Promise.all([
+          fetch(`/api/lunch-bills?month=${selectedMonth}&cellId=0`),
+          fetch(`/api/lunch-bills/leave-days?month=${selectedMonth}`)
+        ]);
+
+        let leaveDaysMap: Record<string, number> = {};
+        if (leaveRes.ok) {
+          const lData = await leaveRes.json();
+          if (lData && lData.leaveDaysByBankId) {
+            leaveDaysMap = lData.leaveDaysByBankId;
+            setLeaveDaysSummary(leaveDaysMap);
+          }
+        }
+
         if (res.ok) {
           const data = await res.json();
           if (data) {
@@ -184,9 +199,12 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
                   bId = matched?.bankId || null;
                 }
               }
+              const bIdLower = (bId || '').trim().toLowerCase();
+              const detectedLeaveDays = leaveDaysMap[bIdLower] ?? 0;
               return {
                 ...r,
                 bankId: bId,
+                leaveDays: r.leaveDays !== undefined ? r.leaveDays : detectedLeaveDays,
                 additionalDeduction: r.additionalDeduction ?? 0,
                 remarks: r.remarks ?? ''
               };
@@ -196,10 +214,14 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
           }
         }
 
-        // Fallback: build default combined list
+        // Fallback: build default combined list with auto-calculated leave absences
         setSavedLunchBill(null);
         const cellRecords: LunchRecord[] = employees.map(emp => {
-          const total = workingDays * LUNCH_BILL_RATE;
+          const bIdLower = (emp.bankId || '').trim().toLowerCase();
+          const detectedLeaveDays = leaveDaysMap[bIdLower] ?? 0;
+          const absence = Math.min(workingDays, detectedLeaveDays);
+          const present = Math.max(0, workingDays - absence);
+          const total = present * LUNCH_BILL_RATE;
           const stamp = total > 0 ? REVENUE_STAMP : 0;
           return {
             employeeId: emp.id,
@@ -207,8 +229,9 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
             designation: emp.designation,
             bankId: emp.bankId,
             rate: LUNCH_BILL_RATE,
-            presentDays: workingDays,
-            absenceDays: 0,
+            presentDays: present,
+            absenceDays: absence,
+            leaveDays: detectedLeaveDays,
             totalBill: total,
             stampDeduction: stamp,
             additionalDeduction: 0,
@@ -220,7 +243,11 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
         });
 
         const execRecords: LunchRecord[] = executives.map(ex => {
-          const total = workingDays * LUNCH_BILL_RATE;
+          const bIdLower = (ex.bankId || '').trim().toLowerCase();
+          const detectedLeaveDays = leaveDaysMap[bIdLower] ?? 0;
+          const absence = Math.min(workingDays, detectedLeaveDays);
+          const present = Math.max(0, workingDays - absence);
+          const total = present * LUNCH_BILL_RATE;
           const stamp = total > 0 ? REVENUE_STAMP : 0;
           return {
             employeeId: ex.id,
@@ -228,8 +255,9 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
             designation: ex.designation,
             bankId: ex.bankId,
             rate: LUNCH_BILL_RATE,
-            presentDays: workingDays,
-            absenceDays: 0,
+            presentDays: present,
+            absenceDays: absence,
+            leaveDays: detectedLeaveDays,
             totalBill: total,
             stampDeduction: stamp,
             additionalDeduction: 0,
@@ -326,6 +354,62 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
     }));
     setSuccessMessage('সকল কর্মকর্তার অতিরিক্ত কর্তন সফলভাবে আপডেট করা হয়েছে।');
     setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
+  const handleWorkingDaysUpdate = (newDays: number) => {
+    setWorkingDays(newDays);
+    setRecords(prev => prev.map(rec => {
+      const present = Math.max(0, newDays - rec.absenceDays);
+      const total = present * rec.rate;
+      const stamp = total > 0 ? REVENUE_STAMP : 0;
+      return {
+        ...rec,
+        presentDays: present,
+        totalBill: total,
+        stampDeduction: stamp,
+        netPayable: Math.max(0, total - stamp - (rec.additionalDeduction || 0))
+      };
+    }));
+  };
+
+  const handleSyncLeaves = async () => {
+    setSyncingLeaves(true);
+    setSuccessMessage(null);
+    setErrorMessage(null);
+    try {
+      const res = await fetch(`/api/lunch-bills/leave-days?month=${selectedMonth}`);
+      if (!res.ok) throw new Error('ছুটির তথ্য লোড করা সম্ভব হয়নি');
+      const data = await res.json();
+      const map: Record<string, number> = data.leaveDaysByBankId || {};
+      setLeaveDaysSummary(map);
+
+      setRecords(prev => prev.map(rec => {
+        const bIdLower = (rec.bankId || '').trim().toLowerCase();
+        const detected = map[bIdLower] ?? 0;
+        const absence = Math.min(workingDays, detected);
+        const present = Math.max(0, workingDays - absence);
+        const total = present * rec.rate;
+        const stamp = total > 0 ? REVENUE_STAMP : 0;
+        return {
+          ...rec,
+          leaveDays: detected,
+          absenceDays: absence,
+          presentDays: present,
+          totalBill: total,
+          stampDeduction: stamp,
+          netPayable: Math.max(0, total - stamp - (rec.additionalDeduction || 0))
+        };
+      }));
+
+      setSuccessMessage('ছুটির তালিকা অনুযায়ী কর্মকর্তা ও নির্বাহীদের অনুপস্থিতি ও উপস্থিতি সফলভাবে সিঙ্ক করা হয়েছে!');
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } catch (err) {
+      console.error('Error syncing leaves:', err);
+      setErrorMessage('ছুটি সিঙ্ক করতে সমস্যা হয়েছে।');
+      setTimeout(() => setErrorMessage(null), 4000);
+    } finally {
+      setSyncingLeaves(false);
+    }
   };
 
   const handleSaveDraft = async () => {
@@ -445,6 +529,10 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
     setSuccessMessage,
     errorMessage,
     setErrorMessage,
+    syncingLeaves,
+    handleSyncLeaves,
+    leaveDaysSummary,
+    handleWorkingDaysUpdate,
     handlePresentDaysChange,
     handleAbsenceDaysChange,
     handleAdditionalDeductionChange,

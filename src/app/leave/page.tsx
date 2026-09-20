@@ -402,7 +402,7 @@ export default function LeaveGeneratorPage() {
       {/* Dynamic Printing CSS styles */}
       <style>{`
         #printable-leave-sheet, #printable-leave-sheet * {
-          font-family: 'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif !important;
+          font-family: 'Kalpurush', 'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif !important;
           font-size: 15px !important;
           font-style: normal;
           line-height: 1.45 !important;

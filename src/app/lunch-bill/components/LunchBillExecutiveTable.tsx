@@ -116,6 +116,14 @@ export default function LunchBillExecutiveTable({
                       aria-label={`${r.employeeName} এর অনুপস্থিত দিন`}
                       className="w-12 h-7 px-1 text-center bg-blue-50/90 hover:bg-blue-50 dark:bg-blue-950/50 dark:hover:bg-blue-950/70 border border-blue-200 dark:border-blue-800 hover:border-indigo-500 focus:border-indigo-500 rounded font-black font-sans text-xs text-blue-950 dark:text-blue-200 transition-all cursor-text"
                     />
+                    {r.leaveDays !== undefined && r.leaveDays > 0 && (
+                      <span 
+                        title={`অনুমোদিত ছুটি: ${toBanglaDigits(r.leaveDays)} দিন`}
+                        className="block mt-0.5 text-[9.5px] font-bold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 rounded px-1 py-0.2 select-none text-center"
+                      >
+                        ছুটি: {toBanglaDigits(r.leaveDays)}
+                      </span>
+                    )}
                   </td>
 
                   <td className="py-2 px-1 font-semibold font-sans text-slate-700 dark:text-slate-300 tabular-nums text-xs">৳{toBanglaDigits(r.totalBill)}</td>

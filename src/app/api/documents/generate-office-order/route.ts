@@ -89,12 +89,19 @@ export async function POST(request: Request) {
 <link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
 <title>Office Order - ${orderRef}</title>
 <style>
+  @font-face {
+    font-family: 'Kalpurush';
+    src: url('/fonts/kalpurush.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
   @page {
     size: A4 portrait;
     margin: 15mm 15mm 15mm 15mm;
   }
   body {
-    font-family: 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
+    font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
     color: #111827;
     margin: 0;
     padding: 0;

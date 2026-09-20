@@ -21,9 +21,15 @@ export default function OfficeOrderPrintModal({
   const isBill = viewingOrder.category?.startsWith('BILL_');
 
   const repDesig = (() => {
-    if (!viewingOrder) return '';
+    if (!viewingOrder) return 'ও-আইটি';
     if (viewingOrder.content?.representativeDesignation) {
-      return getShortDesignation(viewingOrder.content.representativeDesignation);
+      const d = getShortDesignation(viewingOrder.content.representativeDesignation);
+      if (d) return d;
+    }
+    const bracketMatch = viewingOrder.employeeName.match(/\(([^)]+)\)/);
+    if (bracketMatch) {
+      const d = getShortDesignation(bracketMatch[1]);
+      if (d) return d;
     }
     const clean = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
     let dutiesList: OrderDuty[] = [];
@@ -32,12 +38,13 @@ export default function OfficeOrderPrintModal({
     } catch {
       dutiesList = [];
     }
-    const empDuty = dutiesList.find(d => clean(d.employeeName) === clean(viewingOrder.employeeName) || d.employeeName.includes(viewingOrder.employeeName) || viewingOrder.employeeName.includes(d.employeeName));
+    const empDuty = dutiesList.find(d => clean(d.employeeName) === clean(viewingOrder.employeeName) || (d.employeeName && viewingOrder.employeeName && (d.employeeName.includes(viewingOrder.employeeName) || viewingOrder.employeeName.includes(d.employeeName))));
     if (empDuty?.designation) {
-      return getShortDesignation(empDuty.designation);
+      const d = getShortDesignation(empDuty.designation);
+      if (d) return d;
     }
     return 'ও-আইটি';
-  })();
+  })() || 'ও-আইটি';
 
   const getFormattedNumberWords = (num: number) => {
     if (!num) return '';
@@ -145,27 +152,27 @@ export default function OfficeOrderPrintModal({
             <div 
               id="printable-order-sheet"
               className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-sans leading-none text-[11px] shrink-0"
-              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
+              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
             >
               <div className="flex flex-col h-full justify-between" contentEditable={true} suppressContentEditableWarning={true}>
                 <div>
                   {/* Official Header */}
                   <div className="w-full flex justify-end text-right mb-4">
                     <div className="text-right leading-none" style={{ lineHeight: '0.85' }}>
-                      <h2 className="text-[20px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                      <p className="text-[11px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '4px' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                      <h2 className="text-[20px] font-bold text-black uppercase" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                      <p className="text-[11px] font-bold text-black" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '4px' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                     </div>
                   </div>
 
                   {/* Title and Main Body */}
                   <div className="flex-1 flex flex-col justify-between mt-2">
                     <div>
-                      <h2 className="text-left text-[10px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
+                      <h2 className="text-left text-[10px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.0' }}>
                         বিষয়: {viewingOrder.content?.subjectText || 'যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।'}
                       </h2>
                       
                       <div className="mt-2.5">
-                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', textIndent: '0.5in', textAlign: 'justify' }}>
+                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.0', textIndent: '0.5in', textAlign: 'justify' }}>
                           {viewingOrder.content?.openingParagraph}
                         </p>
                       </div>
@@ -187,9 +194,9 @@ export default function OfficeOrderPrintModal({
                         const apyaonRate = isHoliday ? 250 : isNight ? 600 : 100;
                         const transportRate = isHoliday ? 250 : isNight ? 400 : isLate ? 200 : 0;
                         return (
-                          <table className="w-full border-collapse border border-black text-center mt-3 text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%' }}>
+                          <table className="w-full border-collapse border border-black text-center mt-3 text-[10px]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000', width: '100%' }}>
                             <thead>
-                              <tr className="bg-slate-50 font-bold border-b border-black text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
+                              <tr className="bg-slate-50 font-bold border-b border-black text-[10px]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.0' }}>
                                 <th className="border border-black p-1.5 w-[6%] text-center" style={{ border: '1px solid #000', padding: '3px', width: '6%' }}>ক্রমিক</th>
                                 <th className="border border-black p-1.5 text-left pl-3 w-[32%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '12px', width: '32%' }}>নাম ও পদবী</th>
                                 <th className="border border-black p-1.5 text-center w-[26%]" style={{ border: '1px solid #000', padding: '3px', width: '26%' }}>তারিখ</th>
@@ -200,7 +207,7 @@ export default function OfficeOrderPrintModal({
                             </thead>
                             <tbody>
                               {dutiesList.map((s: OrderDuty, index: number) => (
-                                <tr key={index} className="text-black text-[10px]" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.0' }}>
+                                <tr key={index} className="text-black text-[10px]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.0' }}>
                                   <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3.5px' }}>{toBanglaDigits(index + 1)}</td>
                                   <td className="border border-black p-1.5 text-left pl-3 font-normal whitespace-nowrap" style={{ border: '1px solid #000', padding: '3.5px', textAlign: 'left', paddingLeft: '12px', lineHeight: '1.05', whiteSpace: 'nowrap' }}>
                                     {(() => {
@@ -247,15 +254,15 @@ export default function OfficeOrderPrintModal({
                       })()}
 
                       {/* Words and paragraphs */}
-                      <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.15' }}>
+                      <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.15' }}>
                         <p className="font-bold text-black">কথায়: {(viewingOrder.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
                           ০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                         </p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
                           ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalTransport ? getFormattedNumberWords(viewingOrder.content.totalTransport) : ''})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalApyaon ? getFormattedNumberWords(viewingOrder.content.totalApyaon) : ''})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                         </p>
-                        <p className="text-justify leading-normal text-black" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
+                        <p className="text-justify leading-normal text-black" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
                           ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal ?? 0)}/- ({viewingOrder.content && viewingOrder.content.grandTotal ? getFormattedNumberWords(viewingOrder.content.grandTotal) : ''})</strong> <strong>{viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, {repDesig}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
                         </p>
                       </div>
@@ -264,7 +271,7 @@ export default function OfficeOrderPrintModal({
 
                   {/* Right-aligned payee signature block */}
                   <div className="w-full flex justify-end text-right" style={{ marginTop: '0.25in', marginBottom: '0.1in' }}>
-                    <div className="text-right leading-none" style={{ fontFamily: 'SolaimanLipi', fontSize: '10px', paddingRight: '0.1in', lineHeight: '1.15' }}>
+                    <div className="text-right leading-none" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', paddingRight: '0.1in', lineHeight: '1.15' }}>
                       <p className="font-extrabold text-[10px]" style={{ margin: 0, padding: 0, lineHeight: '1.15' }}>({cleanBracketName(viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, ''))})</p>
                       <p className="text-[10px] font-bold text-slate-800" style={{ margin: 0, padding: 0, marginTop: '3px', lineHeight: '1.15' }}>
                         {repDesig}
@@ -273,24 +280,24 @@ export default function OfficeOrderPrintModal({
                   </div>
 
                   {/* Left-aligned Routing List */}
-                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4' }}>
+                  <div className="w-full text-left mt-4 pl-1" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10.5px', lineHeight: '1.4' }}>
                     <div style={{ marginBottom: '0.5in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
                     <div style={{ marginBottom: '0.5in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
                     <div style={{ marginBottom: '0.5in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
                     <div style={{ marginBottom: '0.5in' }}>
-                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: 'SolaimanLipi', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
+                      <p style={{ display: 'inline-block', borderBottom: '1px solid #000', paddingBottom: '5px', fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10.5px', lineHeight: '1.4', margin: 0 }}>
                         ডিজিএম, (বাজেট অ্যান্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট) সমীপেঃ
                       </p>
                     </div>
@@ -304,7 +311,7 @@ export default function OfficeOrderPrintModal({
             <div 
               id="printable-order-sheet"
               className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg p-[0.8in] flex flex-col justify-between relative text-left font-sans leading-relaxed text-[11px] shrink-0"
-              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', boxSizing: 'border-box' }}
+              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', boxSizing: 'border-box' }}
             >
               <div>
                 {/* Janata Bank PLC Header */}
@@ -324,18 +331,18 @@ export default function OfficeOrderPrintModal({
                       </g>
                     </svg>
                     <div className="font-serif leading-none mt-0.5">
-                      <h2 className="bank-title" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', fontWeight: 'bold', color: '#0b5e9e', lineHeight: '1.15', margin: 0 }}>জনতা ব্যাংক পিএলসি.</h2>
-                      <p style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', fontWeight: 'bold', color: '#555555', marginTop: '2px', lineHeight: '1.0', margin: 0 }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
+                      <h2 className="bank-title" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', fontWeight: 'bold', color: '#0b5e9e', lineHeight: '1.15', margin: 0 }}>জনতা ব্যাংক পিএলসি.</h2>
+                      <p style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', fontWeight: 'bold', color: '#555555', marginTop: '2px', lineHeight: '1.0', margin: 0 }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
                     </div>
                   </div>
 
                   <div className="text-right mt-1">
-                    <h3 className="dept-title" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '5px', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
+                    <h3 className="dept-title" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '5px', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
                   </div>
                 </div>
 
                 {/* Reference and Date */}
-                <div className="w-full flex justify-between items-center text-[11px] pt-1 pb-1 border-b border-black/10 mt-1 memo-line" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', marginBottom: '0.25in' }}>
+                <div className="w-full flex justify-between items-center text-[11px] pt-1 pb-1 border-b border-black/10 mt-1 memo-line" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', marginBottom: '0.25in' }}>
                   <span className="font-bold">সূত্রঃ {viewingOrder.orderRef}</span>
                   <span className="font-bold">
                     তারিখঃ {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং
@@ -343,15 +350,15 @@ export default function OfficeOrderPrintModal({
                 </div>
 
                 {/* Title and Main Body */}
-                <div className="flex-1 flex flex-col justify-start pt-1 text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                <div className="flex-1 flex flex-col justify-start pt-1 text-[11px]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                   <div className="space-y-2">
-                    <h2 className="text-center text-[14px] font-extrabold underline decoration-black underline-offset-4 mt-4 leading-none office-order-title" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', lineHeight: '1.0' }}>
+                    <h2 className="text-center text-[14px] font-extrabold underline decoration-black underline-offset-4 mt-4 leading-none office-order-title" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', lineHeight: '1.0' }}>
                       অফিস নির্দেশ
                     </h2>
                     
                     <p 
                       className="text-justify leading-normal mt-2 text-[11px] text-slate-950 text-indent-8 body-paragraph"
-                      style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.5', textIndent: '0.5in', textAlign: 'justify' }}
+                      style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.5', textIndent: '0.5in', textAlign: 'justify' }}
                       dangerouslySetInnerHTML={{ __html: viewingOrder.content?.orderText || '' }}
                     />
 
@@ -365,9 +372,9 @@ export default function OfficeOrderPrintModal({
                       }
                       if (!dutiesList || dutiesList.length === 0) return null;
                       return (
-                        <table className="w-full border-collapse border border-black text-center mt-2.5 text-[9pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9pt', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                        <table className="w-full border-collapse border border-black text-center mt-2.5 text-[9pt]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '9pt', lineHeight: '1.0', borderCollapse: 'collapse', border: '1px solid #000' }}>
                           <thead>
-                            <tr className="bg-slate-50 font-bold border-b border-black text-[9.5pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9.5pt', lineHeight: '1.0' }}>
+                            <tr className="bg-slate-50 font-bold border-b border-black text-[9.5pt]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '9.5pt', lineHeight: '1.0' }}>
                               <th className="border border-black p-1 w-[8%] text-center" style={{ border: '1px solid #000', padding: '3px', verticalAlign: 'middle' }}>ক্রমিক নং</th>
                               <th className="border border-black p-1 text-left pl-2 w-[25%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle' }}>নির্বাহী/ কর্মকর্তার নাম</th>
                               <th className="border border-black p-1 text-center w-[10%]" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle', fontSize: '11px' }}>পদবী</th>
@@ -377,7 +384,7 @@ export default function OfficeOrderPrintModal({
                           </thead>
                           <tbody>
                             {dutiesList.map((group: OrderDuty, index: number) => (
-                              <tr key={index} className="text-black text-[9pt]" style={{ fontFamily: 'SolaimanLipi', fontSize: '9pt', lineHeight: '1.0' }}>
+                              <tr key={index} className="text-black text-[9pt]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '9pt', lineHeight: '1.0' }}>
                                 <td className="border border-black p-1 text-center font-normal" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle', fontSize: '11px' }}>
                                   {toBanglaDigits(index + 1)}
                                 </td>
@@ -405,7 +412,7 @@ export default function OfficeOrderPrintModal({
                     })()}
 
                     {/* Sign-off Officer block */}
-                    <div className="w-full flex justify-start text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.6', marginTop: '0.6in' }}>
+                    <div className="w-full flex justify-start text-[11px]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.6', marginTop: '0.6in' }}>
                       <div className="text-left pl-2">
                         <p className="font-bold text-black signature-name" style={{ margin: 0, fontWeight: 'bold' }}>({cleanBracketName(viewingOrder.content?.signingOfficer || 'স্বাক্ষরিত')})</p>
                         <p className="text-[11px] text-slate-800 signature-designation" style={{ margin: 0, marginTop: '2px', fontWeight: 'bold', fontSize: '11px' }}>{viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>

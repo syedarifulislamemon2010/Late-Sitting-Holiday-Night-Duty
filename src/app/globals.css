@@ -3,6 +3,14 @@
 @source "../**/*.{js,jsx,ts,tsx}";
 @source "../../src/**/*.{js,jsx,ts,tsx}";
 
+@font-face {
+  font-family: 'Kalpurush';
+  src: url('/fonts/kalpurush.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -72,7 +80,7 @@
   --color-accent: var(--accent);
   --color-success: var(--success);
   --color-indigo-650: #493ee0;
-  --font-sans: var(--font-noto-bengali), var(--font-inter), 'SolaimanLipi', 'Noto Sans Bengali', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Kalpurush', var(--font-noto-bengali), var(--font-inter), 'SolaimanLipi', 'Noto Sans Bengali', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
 
   --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 150ms;
@@ -303,7 +311,7 @@ body {
   html, body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-family: 'SolaimanLipi', 'Noto Sans Bengali', 'Nikosh', sans-serif !important;
+    font-family: 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', 'Nikosh', sans-serif !important;
     padding: 0 !important;
     margin: 0 !important;
     font-size: 11px !important;

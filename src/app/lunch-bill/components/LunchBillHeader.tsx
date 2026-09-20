@@ -11,7 +11,8 @@ import {
   ChevronUp, 
   ChevronLeft, 
   ChevronRight, 
-  Calendar 
+  Calendar,
+  RefreshCw
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
@@ -35,6 +36,8 @@ interface LunchBillHeaderProps {
   onPrint: () => void;
   saving: boolean;
   generating: boolean;
+  onSyncLeaves?: () => void;
+  syncingLeaves?: boolean;
 }
 
 export default function LunchBillHeader({
@@ -56,7 +59,9 @@ export default function LunchBillHeader({
   onSave,
   onPrint,
   saving,
-  generating
+  generating,
+  onSyncLeaves,
+  syncingLeaves = false
 }: LunchBillHeaderProps) {
   const monthNames = [
     'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
@@ -175,6 +180,20 @@ export default function LunchBillHeader({
           <span>কর্তন সেটিংস</span>
           {showAdvancedFilters ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
+
+        {/* Sync Leaves Button */}
+        {onSyncLeaves && (
+          <button
+            type="button"
+            onClick={onSyncLeaves}
+            disabled={syncingLeaves}
+            title="ছুটির আবেদন অনুযায়ী কর্মকর্তা ও নির্বাহীদের অনুপস্থিতির হিসাব অটো সিঙ্ক করুন"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={syncingLeaves ? "animate-spin text-blue-600" : "text-blue-600 dark:text-blue-400"} />
+            <span>ছুটি সিঙ্ক</span>
+          </button>
+        )}
 
         {/* Save Draft Button */}
         <button
