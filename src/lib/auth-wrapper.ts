@@ -5,12 +5,41 @@ import { eq, ilike } from 'drizzle-orm';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth-options';
 
-export async function getCurrentUser() {
+export interface UserSessionData {
+  id: number;
+  username: string;
+  name: string;
+  role: 'USER' | 'ADMIN' | 'EMPLOYEE';
+  mobile: string | null;
+  cells: { id: number; name: string }[];
+}
+
+interface CachedUser {
+  data: UserSessionData;
+  expiresAt: number;
+}
+
+const userCache = new Map<number, CachedUser>();
+
+export function invalidateUserCache(userId?: number) {
+  if (userId) {
+    userCache.delete(userId);
+  } else {
+    userCache.clear();
+  }
+}
+
+export async function getCurrentUser(): Promise<UserSessionData | null> {
   try {
     const session = await getServerSession(authOptions);
     if (session?.user) {
       const nextAuthUserId = (session.user as { id?: number }).id;
       if (nextAuthUserId) {
+        const cached = userCache.get(nextAuthUserId);
+        if (cached && cached.expiresAt > Date.now()) {
+          return cached.data;
+        }
+
         // Query user details with cells
         const userList = await db.select().from(users).where(eq(users.id, nextAuthUserId));
         const user = userList[0];
@@ -44,7 +73,7 @@ export async function getCurrentUser() {
             if (r09Cell[0]) assignedCells.push(r09Cell[0]);
           }
 
-          return {
+          const userData: UserSessionData = {
             id: user.id,
             username: user.username,
             name: user.name,
@@ -52,6 +81,13 @@ export async function getCurrentUser() {
             mobile: user.mobile,
             cells: assignedCells,
           };
+
+          userCache.set(nextAuthUserId, {
+            data: userData,
+            expiresAt: Date.now() + 30000,
+          });
+
+          return userData;
         }
       }
     }

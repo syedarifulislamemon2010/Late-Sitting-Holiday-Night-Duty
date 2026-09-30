@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TableSkeleton } from '@/components/ui/Skeleton';
@@ -51,6 +52,7 @@ export default function BillsTab({
   hasEditPermission,
   hasDeletePermission,
 }: BillsTabProps) {
+  const router = useRouter();
   const uniqueCellsInOrders = Array.from(
     new Set(officeOrders.map(o => o.cellName).filter(Boolean))
   ) as string[];
@@ -214,7 +216,7 @@ export default function BillsTab({
                       {hasEditPermission(order) && (
                         <button 
                           onClick={() => {
-                            window.location.href = `/billing?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                            router.push(`/billing?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`);
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
                           title="বিলিং এ ফিরে এডিট করুন (স্মারক একই থাকবে)"

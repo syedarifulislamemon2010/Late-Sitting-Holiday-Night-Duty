@@ -2,6 +2,7 @@
 import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Database, Download, Upload, History, Shield, AlertTriangle, CheckCircle, Clock, Copy, Info } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 import { useLanguage } from '@/context/LanguageContext';
@@ -9,6 +10,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function BackupPage() {
+  const router = useRouter();
   const { lang } = useLanguage();
   const isEn = lang === 'en';
   
@@ -42,10 +44,10 @@ export default function BackupPage() {
           .catch(err => logger.error('Failed to fetch backup history', err))
           .finally(() => setHistoryLoading(false));
       } else {
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
       }
     }
-  }, []);
+  }, [router]);
 
   const handleBackup = async () => {
     try {

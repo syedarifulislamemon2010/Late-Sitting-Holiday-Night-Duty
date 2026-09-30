@@ -7,6 +7,23 @@ import fs from 'fs';
 import path from 'path';
 import { lunchBillGenerateSchema } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
+import { getBanglaNumberWords } from '@/lib/bengali-converter';
+
+let cachedKalpurushBase64: string | null = null;
+function getKalpurushBase64(): string {
+  if (cachedKalpurushBase64 !== null) return cachedKalpurushBase64;
+  try {
+    const fontPath = path.join(process.cwd(), 'public', 'fonts', 'kalpurush.woff2');
+    if (fs.existsSync(fontPath)) {
+      cachedKalpurushBase64 = fs.readFileSync(fontPath).toString('base64');
+      return cachedKalpurushBase64;
+    }
+  } catch (e) {
+    logger.warn('Failed to read kalpurush.woff2 for embedding:', e);
+  }
+  cachedKalpurushBase64 = '';
+  return cachedKalpurushBase64;
+}
 
 interface LunchBillRecord {
   employeeName: string;
@@ -96,17 +113,67 @@ export async function POST(request: Request) {
     if (!parseResult.success) {
       return handleApiError(parseResult.error);
     }
-    const payload = parseResult.data as unknown as LunchBillPayload;
-    const {
-      monthName,
-      groupedData,
-      executivesData,
-      workingDays,
-      totalClaimAll,
-      grandTotalAll,
-      grandTotalInWords,
-      reportDate
-    } = payload;
+    const payload = (parseResult.data || {}) as Record<string, any>;
+
+    // Normalize monthName
+    const monthName: string = payload.monthName || 
+      (payload.monthBangla ? `${payload.monthBangla} ${toBnDigits(payload.yearBangla || '')}`.trim() : '') ||
+      'বর্তমান মাস';
+
+    const workingDays: number = Number(payload.workingDays) || 17;
+    const reportDate: string = payload.reportDate || new Date().toISOString().split('T')[0];
+
+    // Normalize groupedData / cells
+    let groupedData: LunchBillGroup[] = [];
+    if (Array.isArray(payload.groupedData) && payload.groupedData.length > 0) {
+      groupedData = payload.groupedData;
+    } else if (Array.isArray(payload.cells) && payload.cells.length > 0) {
+      groupedData = payload.cells.map((c: any) => ({
+        cellName: c.name || c.cellName || 'সেল',
+        records: (c.records || []).map((r: any) => ({
+          employeeName: r.employeeName || r.name || '',
+          designation: r.designation || '',
+          bankId: r.bankId || '',
+          presentDays: Number(r.presentDays) || 0,
+          absenceDays: Number(r.absenceDays) || 0,
+          totalBill: Number(r.totalBill) || (Number(r.presentDays || 0) * 400),
+          netPayable: Number(r.netPayable) || Math.max(0, (Number(r.presentDays || 0) * 400) - 15 - (Number(r.additionalDeduction) || 0)),
+          additionalDeduction: Number(r.additionalDeduction) || 0
+        }))
+      })).filter((g: any) => g.records.length > 0);
+    }
+
+    // Normalize executivesData / executives
+    let executivesData: LunchBillPayload['executivesData'] = undefined;
+    if (payload.executivesData && Array.isArray(payload.executivesData.records)) {
+      executivesData = payload.executivesData;
+    } else if (Array.isArray(payload.executives) && payload.executives.length > 0) {
+      const execRecords: LunchBillRecord[] = payload.executives.map((r: any) => ({
+        employeeName: r.employeeName || r.name || '',
+        designation: r.designation || '',
+        bankId: r.bankId || '',
+        presentDays: Number(r.presentDays) || 0,
+        absenceDays: Number(r.absenceDays) || 0,
+        totalBill: Number(r.totalBill) || (Number(r.presentDays || 0) * 400),
+        netPayable: Number(r.netPayable) || Math.max(0, (Number(r.presentDays || 0) * 400) - 15 - (Number(r.additionalDeduction) || 0)),
+        additionalDeduction: Number(r.additionalDeduction) || 0
+      }));
+      executivesData = {
+        records: execRecords
+      };
+    }
+
+    const allRecords: LunchBillRecord[] = [
+      ...groupedData.flatMap(g => g.records),
+      ...(executivesData?.records || [])
+    ];
+
+    const computedTotalClaim = allRecords.reduce((sum, r) => sum + (Number(r.totalBill) || 0), 0);
+    const computedGrandTotal = allRecords.reduce((sum, r) => sum + (Number(r.netPayable) || 0), 0);
+
+    const totalClaimAll: number = typeof payload.totalClaimAll === 'number' ? payload.totalClaimAll : computedTotalClaim;
+    const grandTotalAll: number = typeof payload.grandTotalAll === 'number' ? payload.grandTotalAll : computedGrandTotal;
+    const grandTotalInWords: string = payload.grandTotalInWords || getBanglaNumberWords(grandTotalAll);
 
     let tablesHtml = '';
     let globalIndex = 1;
@@ -322,6 +389,8 @@ export async function POST(request: Request) {
       ? `লাঞ্চ বিল: ${cellDisplayName} (${monthName})`
       : `সমন্বিত লাঞ্চ বিল: ${monthName}`;
 
+    const kalpurushBase64 = getKalpurushBase64();
+
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -353,8 +422,15 @@ export async function POST(request: Request) {
 <style>
   @font-face {
     font-family: 'Kalpurush';
-    src: url('/fonts/kalpurush.woff2') format('woff2');
+    src: local('Kalpurush'), ${kalpurushBase64 ? `url('data:font/woff2;charset=utf-8;base64,${kalpurushBase64}') format('woff2'), ` : ''}url('/fonts/kalpurush.woff2') format('woff2');
     font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Kalpurush';
+    src: local('Kalpurush'), ${kalpurushBase64 ? `url('data:font/woff2;charset=utf-8;base64,${kalpurushBase64}') format('woff2'), ` : ''}url('/fonts/kalpurush.woff2') format('woff2');
+    font-weight: bold;
     font-style: normal;
     font-display: swap;
   }
@@ -362,6 +438,7 @@ export async function POST(request: Request) {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
   }
   @page {
     size: legal portrait;

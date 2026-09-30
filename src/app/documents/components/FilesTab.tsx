@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
@@ -77,6 +78,7 @@ export default function FilesTab({
   onUploadSubmit,
   onDeleteDoc,
 }: FilesTabProps) {
+  const router = useRouter();
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -451,7 +453,7 @@ export default function FilesTab({
 
                         {doc.name.includes('লাঞ্চ বিল') && currentUser?.role !== 'USER' && (
                           <button 
-                            onClick={() => window.location.href = `/lunch-bill`}
+                            onClick={() => router.push(`/lunch-bill`)}
                             className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-extrabold transition-all border border-slate-200 dark:border-slate-700"
                             title="লাঞ্চ বিল শিটে ফিরে এডিট করুন"
                           >

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TableSkeleton } from '@/components/ui/Skeleton';
@@ -55,6 +56,7 @@ export default function OrdersTab({
   hasEditPermission,
   hasDeletePermission,
 }: OrdersTabProps) {
+  const router = useRouter();
   const getNormalizedRef = (ref: string) => {
     if (!ref) return '';
     let clean = ref;
@@ -192,7 +194,7 @@ export default function OrdersTab({
                       <>
                         <button 
                           onClick={() => {
-                            window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                            router.push(`/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`);
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 dark:hover:bg-teal-950/50 text-teal-600 dark:text-teal-400 rounded-lg text-[10px] font-extrabold transition-all border border-teal-100 dark:border-teal-950/30 cursor-pointer"
                           title="বিলটি সম্পাদন করুন"
@@ -222,7 +224,7 @@ export default function OrdersTab({
                     ) : (
                       <button 
                         onClick={() => {
-                          window.location.href = `/billing?orderRef=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                          router.push(`/billing?orderRef=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`);
                         }}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-lg text-[10px] font-extrabold transition-all border border-amber-100 dark:border-amber-950/30 cursor-pointer"
                         title="বিল জেনারেট করুন"
@@ -236,7 +238,7 @@ export default function OrdersTab({
                   {hasEditPermission(order) && (
                     <button 
                       onClick={() => {
-                        window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                        router.push(`/roster?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`);
                       }}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
                       title="রোস্টারে ফিরে এডিট করুন (স্মারক একই থাকবে)"

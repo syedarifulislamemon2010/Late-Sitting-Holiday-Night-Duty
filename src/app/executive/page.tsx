@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useProfile } from '@/context/ProfileContext';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -16,6 +17,7 @@ import { ExecutiveProfileModal } from './components/ExecutiveProfileModal';
 import { ExecutivePrintPreviewModal } from './components/ExecutivePrintPreviewModal';
 
 export default function ExecutivesPage() {
+  const router = useRouter();
   const { currentUser } = useProfile();
   const {
     loading,
@@ -70,10 +72,10 @@ export default function ExecutivesPage() {
   useEffect(() => {
     if (currentUser) {
       if (currentUser.role !== 'ADMIN') {
-        window.location.href = '/';
+        router.push('/');
       }
     }
-  }, [currentUser]);
+  }, [currentUser, router]);
 
   if (!currentUser || currentUser.role !== 'ADMIN') {
     return (

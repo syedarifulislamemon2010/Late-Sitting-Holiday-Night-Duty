@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Calendar, 
   ChevronDown, 
@@ -111,6 +114,7 @@ export default function ReportsTab({
   setIsReportPrintMode,
   getBanglaNumberWords
 }: ReportsTabProps) {
+  const router = useRouter();
 
   // Check if any employee has deductions to conditionally show "কর্তন" column
   const hasAnyDeductions = React.useMemo(() => {
@@ -330,7 +334,7 @@ export default function ReportsTab({
                                           <>
                                             <button 
                                               onClick={() => {
-                                                window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                                                router.push(`/roster?edit_ref=${encodeURIComponent(order.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`);
                                               }}
                                               className="h-6 px-2 rounded bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 text-[10px] text-teal-700 dark:text-teal-300 flex items-center gap-1 font-semibold transition-all cursor-pointer"
                                               title="অফিস আদেশ সম্পাদন করুন"

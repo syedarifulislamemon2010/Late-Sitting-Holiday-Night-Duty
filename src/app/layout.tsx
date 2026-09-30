@@ -50,56 +50,76 @@ export default function RootLayout({
           suppressHydrationWarning={true}
           dangerouslySetInnerHTML={{
             __html: `
-              // Suppress third-party chrome extension errors (e.g. eppiocemhmnlbhjplcgkofciiegomcon, M_ID)
+              // Suppress third-party chrome extension errors (e.g. eppiocemhmnlbhjplcgkofciiegomcon, M_ID, bis_skin_checked)
               window.addEventListener('error', function(e) {
                 if ((e.filename && e.filename.indexOf('chrome-extension://') !== -1) || 
-                    (e.message && (e.message.indexOf('M_ID') !== -1 || e.message.indexOf('chrome-extension') !== -1))) {
+                    (e.message && (e.message.indexOf('M_ID') !== -1 || e.message.indexOf('chrome-extension') !== -1 || e.message.indexOf('bis_skin_checked') !== -1))) {
                   e.stopImmediatePropagation();
                   e.preventDefault();
                   return true;
                 }
               }, true);
               window.addEventListener('unhandledrejection', function(e) {
-                if (e.reason && (String(e.reason).indexOf('chrome-extension://') !== -1 || String(e.reason.stack || '').indexOf('chrome-extension://') !== -1)) {
+                if (e.reason && (String(e.reason).indexOf('chrome-extension://') !== -1 || String(e.reason.stack || '').indexOf('chrome-extension://') !== -1 || String(e.reason).indexOf('bis_skin_checked') !== -1)) {
                   e.stopImmediatePropagation();
                   e.preventDefault();
                 }
               }, true);
+
+              // 1. Prevent scripts/extensions from setting 'bis_skin_checked' attribute
+              try {
+                var origSetAttr = Element.prototype.setAttribute;
+                Element.prototype.setAttribute = function(name, val) {
+                  if (name === 'bis_skin_checked') return;
+                  return origSetAttr.apply(this, arguments);
+                };
+              } catch(e) {}
+
+              // 2. Clean any existing elements that already received it
+              try {
+                var existing = document.querySelectorAll('[bis_skin_checked]');
+                for (var i = 0; i < existing.length; i++) {
+                  existing[i].removeAttribute('bis_skin_checked');
+                }
+              } catch(e) {}
+
+              // 3. Targeted observer ONLY during initial hydration window (stops after 8s, NO childList, NO recursive traversal)
+              try {
+                var bisObserver = new MutationObserver(function(mutations) {
+                  for (var i = 0; i < mutations.length; i++) {
+                    var el = mutations[i].target;
+                    if (el && el.hasAttribute && el.hasAttribute('bis_skin_checked')) {
+                      el.removeAttribute('bis_skin_checked');
+                    }
+                  }
+                });
+                bisObserver.observe(document.documentElement, {
+                  attributes: true,
+                  subtree: true,
+                  attributeFilter: ['bis_skin_checked']
+                });
+                setTimeout(function() {
+                  bisObserver.disconnect();
+                }, 8000);
+              } catch(e) {}
+
+              // 4. Suppress harmless browser extension hydration mismatch warnings in console
+              var _origConsoleError = console.error;
+              console.error = function(...args) {
+                var fullMsg = args.map(function(a) { 
+                  return typeof a === 'string' ? a : (a && (a.message || a.stack)) || ''; 
+                }).join(' ');
+                if (fullMsg.indexOf('bis_skin_checked') !== -1) {
+                  return;
+                }
+                _origConsoleError.apply(console, args);
+              };
 
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').catch(function() {});
                 });
               }
-              (function() {
-                const removeBisSkinChecked = (el) => {
-                  if (el.hasAttribute && el.hasAttribute('bis_skin_checked')) {
-                    el.removeAttribute('bis_skin_checked');
-                  }
-                  for (let i = 0; i < el.children.length; i++) {
-                    removeBisSkinChecked(el.children[i]);
-                  }
-                };
-                const observer = new MutationObserver((mutations) => {
-                  mutations.forEach((mutation) => {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'bis_skin_checked') {
-                      mutation.target.removeAttribute('bis_skin_checked');
-                    } else if (mutation.addedNodes) {
-                      mutation.addedNodes.forEach(node => {
-                        if (node.nodeType === 1) {
-                          removeBisSkinChecked(node);
-                        }
-                      });
-                    }
-                  });
-                });
-                observer.observe(document.documentElement, { 
-                  attributes: true, 
-                  subtree: true, 
-                  childList: true,
-                  attributeFilter: ['bis_skin_checked'] 
-                });
-              })();
             `
           }}
         />
@@ -117,11 +137,11 @@ export default function RootLayout({
                   <SessionExpiryWarning />
                   <div className="flex-1 flex flex-col lg:flex-row min-h-0" suppressHydrationWarning={true}>
                   <Sidebar />
-                  <main id="main-content" className="flex-1 flex flex-col min-w-0" suppressHydrationWarning={true}>
+                  <main id="main-content" className="flex-1 flex flex-col min-w-0 max-w-full overflow-x-hidden" suppressHydrationWarning={true}>
                     <Navbar />
                     <CommandCenter />
                     <CommandPalette />
-                    <div className="flex-1 p-4 lg:p-8 overflow-y-auto flex flex-col justify-between" suppressHydrationWarning={true}>
+                    <div className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 overflow-y-auto max-w-full overflow-x-hidden flex flex-col justify-between" suppressHydrationWarning={true}>
                     <div className="flex-1">
                       <PageTransition>{children}</PageTransition>
                     </div>

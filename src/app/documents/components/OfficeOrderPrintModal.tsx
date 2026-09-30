@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import logger from '@/lib/logger';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
@@ -16,6 +17,7 @@ export default function OfficeOrderPrintModal({
   viewingOrder,
   onClose,
 }: OfficeOrderPrintModalProps) {
+  const router = useRouter();
   if (!viewingOrder) return null;
 
   const isBill = viewingOrder.category?.startsWith('BILL_');
@@ -116,16 +118,27 @@ export default function OfficeOrderPrintModal({
           </div>
 
           <div className="flex items-center gap-2">
-            {isBill && (
+            {isBill ? (
               <button
                 onClick={() => {
-                  window.location.href = `/billing?edit_ref=${encodeURIComponent(viewingOrder.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                  router.push(`/billing?edit_ref=${encodeURIComponent(viewingOrder.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`);
                 }}
                 className="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
                 title="বিল এডিটর ওপেন করুন"
               >
                 <Receipt size={14} />
-                <span>বিল সম্পাদন / প্রস্তুত করুন</span>
+                <span>বিল সম্পাদন</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  router.push(`/billing?orderRef=${encodeURIComponent(viewingOrder.orderRef)}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+                }}
+                className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                title="এই অফিস আদেশের উপর ভিত্তি করে বিল প্রস্তুত করুন"
+              >
+                <Receipt size={14} />
+                <span>বিল প্রস্তুত করুন</span>
               </button>
             )}
             <button

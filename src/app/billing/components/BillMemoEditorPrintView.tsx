@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   ChevronLeft, 
   Loader2, 
@@ -107,6 +110,7 @@ export default function BillMemoEditorPrintView({
   grandTotalPrintAll,
   getBanglaNumberWords
 }: BillMemoEditorPrintViewProps) {
+  const router = useRouter();
   const [existingBillToEdit, setExistingBillToEdit] = React.useState<string | null>(null);
 
   return (
@@ -605,7 +609,7 @@ export default function BillMemoEditorPrintView({
         variant="primary"
         onConfirm={() => {
           if (existingBillToEdit) {
-            window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBillToEdit)}`;
+            router.push(`/billing?edit_ref=${encodeURIComponent(existingBillToEdit)}`);
           }
         }}
         onCancel={() => setExistingBillToEdit(null)}

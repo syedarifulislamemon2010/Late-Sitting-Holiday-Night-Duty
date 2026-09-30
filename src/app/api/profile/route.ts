@@ -1,11 +1,13 @@
 import logger from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth-wrapper';
+import { getCurrentUser, invalidateUserCache } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { users, employees } from '@/db/schema';
 import { eq, ilike } from 'drizzle-orm';
 import { hashPassword, verifyPassword } from '@/lib/password';
 import { logActivity } from '@/lib/audit';
+
+const mustChangePasswordCache = new Map<number, { value: boolean; expiresAt: number }>();
 
 export async function GET() {
   try {
@@ -16,14 +18,23 @@ export async function GET() {
 
     // Check if the user is still on default initial password (123456)
     let mustChangePassword = false;
-    try {
-      const dbUsers = await db.select({ password: users.password }).from(users).where(eq(users.id, user.id)).limit(1);
-      if (dbUsers[0]?.password) {
-        const { isValid } = await verifyPassword('123456', dbUsers[0].password);
-        mustChangePassword = isValid;
+    const cached = mustChangePasswordCache.get(user.id);
+    if (cached && cached.expiresAt > Date.now()) {
+      mustChangePassword = cached.value;
+    } else {
+      try {
+        const dbUsers = await db.select({ password: users.password }).from(users).where(eq(users.id, user.id)).limit(1);
+        if (dbUsers[0]?.password) {
+          const { isValid } = await verifyPassword('123456', dbUsers[0].password);
+          mustChangePassword = isValid;
+          mustChangePasswordCache.set(user.id, {
+            value: isValid,
+            expiresAt: Date.now() + 60000,
+          });
+        }
+      } catch (e) {
+        logger.warn('Failed to check mustChangePassword status:', e);
       }
-    } catch (e) {
-      logger.warn('Failed to check mustChangePassword status:', e);
     }
 
     return NextResponse.json({

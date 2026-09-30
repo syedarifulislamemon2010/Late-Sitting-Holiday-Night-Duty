@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import logger from '@/lib/logger';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { 
@@ -105,6 +106,7 @@ export function useDutyAssignment({
   entryMode,
   setEntryMode
 }: UseDutyAssignmentProps) {
+  const router = useRouter();
   const [editingDuty, setEditingDuty] = useState<Duty | null>(null);
   const [editingDuties, setEditingDuties] = useState<Duty[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -726,7 +728,7 @@ export function useDutyAssignment({
         const params = new URLSearchParams(window.location.search);
         const from = params.get('from') || '/documents';
         const redirectUrl = from.includes('?') ? `${from}&msg=success` : `${from}?msg=success`;
-        window.location.href = redirectUrl;
+        router.push(redirectUrl);
         return;
       }
 

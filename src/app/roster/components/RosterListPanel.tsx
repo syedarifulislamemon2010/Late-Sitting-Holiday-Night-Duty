@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Calendar, 
   ChevronLeft, 
@@ -74,6 +75,7 @@ export default function RosterListPanel({
   handlePreviewOfficeOrder,
   handleDeleteOfficeOrder
 }: RosterListPanelProps) {
+  const router = useRouter();
   const [activeRosterTab, setActiveRosterTab] = useState<'pending' | 'archived'>('pending');
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [currentPickerYear, setCurrentPickerYear] = useState(() => new Date().getFullYear());
@@ -254,7 +256,7 @@ export default function RosterListPanel({
                               <button
                                 onClick={() => {
                                   setOpenActionOrderId(null);
-                                  window.location.href = `/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}`;
+                                  router.push(`/billing?edit_ref=${encodeURIComponent(existingBill.orderRef)}`);
                                 }}
                                 className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-955/30 rounded-lg transition-colors cursor-pointer"
                               >
@@ -265,7 +267,7 @@ export default function RosterListPanel({
                               <button
                                 onClick={() => {
                                   setOpenActionOrderId(null);
-                                  window.location.href = `/billing?orderRef=${encodeURIComponent(order.orderRef)}`;
+                                  router.push(`/billing?orderRef=${encodeURIComponent(order.orderRef)}`);
                                 }}
                                 className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-lg transition-colors cursor-pointer"
                               >
@@ -278,7 +280,7 @@ export default function RosterListPanel({
                             <button
                               onClick={() => {
                                 setOpenActionOrderId(null);
-                                window.location.href = `/roster?edit_ref=${encodeURIComponent(order.orderRef)}`;
+                                router.push(`/roster?edit_ref=${encodeURIComponent(order.orderRef)}`);
                               }}
                               className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                             >

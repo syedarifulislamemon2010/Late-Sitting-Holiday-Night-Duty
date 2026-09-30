@@ -142,8 +142,15 @@ export async function POST(request: Request) {
 <style>
   @font-face {
     font-family: 'Kalpurush';
-    src: url('/fonts/kalpurush.woff2') format('woff2');
+    src: local('Kalpurush'), url('/fonts/kalpurush.woff2') format('woff2');
     font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Kalpurush';
+    src: local('Kalpurush'), url('/fonts/kalpurush.woff2') format('woff2');
+    font-weight: bold;
     font-style: normal;
     font-display: swap;
   }

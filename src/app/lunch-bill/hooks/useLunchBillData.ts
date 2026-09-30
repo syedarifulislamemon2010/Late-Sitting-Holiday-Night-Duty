@@ -12,6 +12,7 @@ import {
   LunchRecord, 
   DEFAULT_2026_HOLIDAYS 
 } from '../types';
+import { getBanglaMonthYearLabel, getBanglaNumberWords } from '@/lib/bengali-converter';
 
 export function useLunchBillData(currentUser: UserProfile | null | undefined) {
   const [activeCellId, setActiveCellId] = useState<number | null>(null);
@@ -53,6 +54,31 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
   const [iframeUrl, setIframeUrl] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    variant: 'danger'
+  });
+
+  const showAlertModal = (title: string, message: string, variant: 'danger' | 'warning' | 'info' = 'danger') => {
+    setAlertModal({
+      isOpen: true,
+      title,
+      message,
+      variant
+    });
+  };
+
+  const closeAlertModal = () => {
+    setAlertModal(prev => ({ ...prev, isOpen: false }));
+  };
 
   // Sync active cell ID from currentUser profile
   useEffect(() => {
@@ -448,29 +474,46 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
   const handlePrintCombinedBill = async () => {
     setGenerating(true);
     try {
-      const [year, month] = selectedMonth.split('-');
-      const dateObj = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
-      const bengaliMonths = [
-        'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
-        'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
-      ];
-      const monthBangla = bengaliMonths[dateObj.getMonth()];
-      const yearBangla = year;
+      const monthName = getBanglaMonthYearLabel(selectedMonth) || selectedMonth;
 
-      const cellsPayload = cells.map(cell => ({
+      const cellGroups = cells.map(cell => ({
         id: cell.id,
+        cellName: cell.name,
         name: cell.name,
         records: records.filter(r => r.cellId === cell.id && !r.isExecutive)
       })).filter(c => c.records.length > 0);
 
-      const executivesPayload = records.filter(r => r.isExecutive);
+      const execRecords = records.filter(r => r.isExecutive);
+      const execsData = execRecords.length > 0 ? {
+        records: execRecords,
+        totalDays: execRecords.reduce((sum, r) => sum + r.presentDays, 0),
+        totalClaim: execRecords.reduce((sum, r) => sum + r.totalBill, 0),
+        totalDeduction: execRecords.reduce((sum, r) => sum + (r.stampDeduction + (r.additionalDeduction || 0)), 0),
+        grandTotal: execRecords.reduce((sum, r) => sum + r.netPayable, 0)
+      } : undefined;
+
+      const effectiveRecords = [
+        ...cellGroups.flatMap(g => g.records),
+        ...execRecords
+      ];
+
+      const totalClaimAll = effectiveRecords.reduce((sum, r) => sum + r.totalBill, 0);
+      const grandTotalAll = effectiveRecords.reduce((sum, r) => sum + r.netPayable, 0);
+      const totalDeductionAll = effectiveRecords.reduce((sum, r) => sum + (r.stampDeduction + (r.additionalDeduction || 0)), 0);
 
       const payload = {
-        monthBangla,
-        yearBangla,
+        monthName,
+        groupedData: cellGroups,
+        executivesData: execsData,
         workingDays,
-        cells: cellsPayload,
-        executives: executivesPayload
+        cells: cellGroups,
+        executives: execRecords,
+        totalDaysAll: effectiveRecords.reduce((sum, r) => sum + r.presentDays, 0),
+        totalClaimAll,
+        totalDeductionAll,
+        grandTotalAll,
+        grandTotalInWords: getBanglaNumberWords(grandTotalAll),
+        reportDate: new Date().toISOString().split('T')[0]
       };
 
       const res = await fetch('/api/documents/generate-lunch-bill', {
@@ -485,11 +528,13 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
           window.open(data.filePath, '_blank');
         }
       } else {
-        alert('পিডিএফ জেনারেট করতে সমস্যা হয়েছে');
+        const errData = await res.json().catch(() => null);
+        const errMsg = errData?.message || errData?.error || 'পিডিএফ / লাঞ্চ বিল প্রস্তুত করতে সমস্যা হয়েছে। অনুগ্রহ করে ডেটা যাচাই করে পুনরায় চেষ্টা করুন।';
+        showAlertModal('পিডিএফ তৈরিতে সমস্যা', errMsg, 'danger');
       }
     } catch (err) {
       console.error('Error generating PDF:', err);
-      alert('সার্ভার এরর');
+      showAlertModal('সার্ভার এরর', 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে অথবা সংযোগে সমস্যা দেখা দিয়েছে।', 'danger');
     } finally {
       setGenerating(false);
     }
@@ -529,6 +574,9 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
     setSuccessMessage,
     errorMessage,
     setErrorMessage,
+    alertModal,
+    showAlertModal,
+    closeAlertModal,
     syncingLeaves,
     handleSyncLeaves,
     leaveDaysSummary,

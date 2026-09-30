@@ -5,6 +5,7 @@ import { useProfile } from '@/context/ProfileContext';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { AlertTriangle, CheckCircle, X } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
+import { Modal } from '@/components/ui/Modal';
 
 import { useLunchBillData } from './hooks/useLunchBillData';
 import LunchBillHeader from './components/LunchBillHeader';
@@ -194,6 +195,31 @@ export default function LunchBillPage() {
           isAdmin={isAdmin}
           executivesList={data.executives}
         />
+
+        {/* Error / Warning Alert Modal */}
+        <Modal
+          isOpen={data.alertModal.isOpen}
+          onClose={data.closeAlertModal}
+          title={
+            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold">
+              <AlertTriangle size={20} />
+              <span>{data.alertModal.title}</span>
+            </div>
+          }
+          footer={
+            <button
+              type="button"
+              onClick={data.closeAlertModal}
+              className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              ঠিক আছে
+            </button>
+          }
+        >
+          <div className="py-2 text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
+            {data.alertModal.message}
+          </div>
+        </Modal>
       </div>
     </AuthGuard>
   );

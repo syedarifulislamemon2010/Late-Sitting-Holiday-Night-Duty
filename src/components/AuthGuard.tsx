@@ -182,7 +182,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // Login Screen
   if (!authenticated) {
     return (
-      <div className="fixed inset-0 h-full w-full flex flex-col items-center justify-between p-2 sm:p-4 overflow-hidden font-sans z-50 select-none" suppressHydrationWarning={true}>
+      <div className="fixed inset-0 h-full w-full flex flex-col items-center justify-between p-2 sm:p-4 overflow-y-auto font-sans z-50 select-none" suppressHydrationWarning={true}>
         {/* Animated Subtle Mesh Background */}
         <div className="absolute inset-0 -z-20 overflow-hidden bg-[#e8f4fd] transition-colors duration-500">
           <div className="absolute -inset-[10px] opacity-60">
@@ -345,10 +345,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
         {/* CSS Keyframe Animations for Fade-In & Shake */}
         <style>{`
-          html, body {
-            overflow: hidden !important;
-            height: 100% !important;
-          }
           .login-box {
             max-width: 420px !important;
             width: 100% !important;

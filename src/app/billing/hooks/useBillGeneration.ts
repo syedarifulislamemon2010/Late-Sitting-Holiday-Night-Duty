@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import logger from '@/lib/logger';
 import { toBanglaDigits, getBanglaNumberWords } from '@/lib/bengali-converter';
 import { getShortDesignation } from '@/lib/print-helpers';
@@ -20,6 +21,7 @@ interface UseBillGenerationProps {
 }
 
 export function useBillGeneration({ billing }: UseBillGenerationProps) {
+  const router = useRouter();
   const isFirstLoadRef = useRef(true);
   const isInitializingArchiveRef = useRef(false);
 
@@ -284,12 +286,12 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
             const matchedOrder = orders.find((o: OfficeOrder) => o.orderRef === targetRef || cleanRef(o.orderRef) === cleanRef(targetRef));
             if (!matchedOrder) {
               alert('রেফারেন্সকৃত অফিস আদেশটি খুঁজে পাওয়া যায়নি।');
-              window.location.href = '/documents';
+              router.push('/documents');
               return;
             }
             if (matchedOrder.status === 'Deleted') {
               alert('এই অফিস আদেশটি মুছে ফেলা হয়েছে। মুছে ফেলা আদেশের বিল তৈরি করা সম্ভব নয়।');
-              window.location.href = '/documents';
+              router.push('/documents');
               return;
             }
 
@@ -717,7 +719,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
             const params = new URLSearchParams(window.location.search);
             const from = params.get('from') || '/documents';
             const redirectUrl = from.includes('?') ? `${from}&msg=success` : `${from}?msg=success`;
-            window.location.assign(redirectUrl);
+            router.push(redirectUrl);
           }
         } else {
           throw new Error('Failed to generate PDF');

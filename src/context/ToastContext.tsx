@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       
       {/* Toast Render Portal Panel */}
-      <div className="no-print fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full px-4 sm:px-0">
+      <div suppressHydrationWarning={true} className="no-print fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full px-4 sm:px-0">
         {toasts.map((toast) => {
           let icon = <Info className="text-blue-500" size={18} />;
           let containerClass = 'bg-white dark:bg-slate-900 border-blue-100 dark:border-blue-900/40 text-slate-800 dark:text-slate-200';
