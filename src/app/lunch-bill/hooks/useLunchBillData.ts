@@ -214,33 +214,48 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
           if (data) {
             setSavedLunchBill(data);
             setWorkingDays(data.workingDays);
-            const parsed = JSON.parse(data.recordsJson).map((r: LunchRecord) => {
-              let bId = r.bankId;
-              if (!bId) {
-                if (r.isExecutive) {
-                  const matched = executives.find(e => e.id === r.employeeId);
-                  bId = matched?.bankId || null;
-                } else {
+            const rawParsed = JSON.parse(data.recordsJson || '[]');
+            const parsed = rawParsed
+              .filter((r: LunchRecord) => !r.isExecutive)
+              .map((r: LunchRecord) => {
+                let bId = r.bankId;
+                if (!bId) {
                   const matched = employees.find(e => e.id === r.employeeId);
                   bId = matched?.bankId || null;
                 }
-              }
-              const bIdLower = (bId || '').trim().toLowerCase();
-              const detectedLeaveDays = leaveDaysMap[bIdLower] ?? 0;
-              return {
-                ...r,
-                bankId: bId,
-                leaveDays: r.leaveDays !== undefined ? r.leaveDays : detectedLeaveDays,
-                additionalDeduction: r.additionalDeduction ?? 0,
-                remarks: r.remarks ?? ''
-              };
+                const bIdLower = (bId || '').trim().toLowerCase();
+                const detectedLeaveDays = leaveDaysMap[bIdLower] ?? 0;
+                
+                // Enforce Md. Shahinur Rahman strictly in R09 (Cell ID 7)
+                const isShahinur = (bId === '018273') || (r.employeeName && r.employeeName.includes('শাহিনুর'));
+                const assignedCellId = isShahinur ? 7 : r.cellId;
+
+                return {
+                  ...r,
+                  bankId: bId,
+                  cellId: assignedCellId,
+                  isExecutive: false,
+                  leaveDays: r.leaveDays !== undefined ? r.leaveDays : detectedLeaveDays,
+                  additionalDeduction: r.additionalDeduction ?? 0,
+                  remarks: r.remarks ?? ''
+                };
+              });
+
+            // Deduplicate if Shahinur or any employee appears multiple times
+            const seenKeys = new Set<string>();
+            const dedupedRecords = parsed.filter((r: LunchRecord) => {
+              const key = `${r.bankId || r.employeeId}`;
+              if (seenKeys.has(key)) return false;
+              seenKeys.add(key);
+              return true;
             });
-            setRecords(parsed);
+
+            setRecords(dedupedRecords);
             return;
           }
         }
 
-        // Fallback: build default combined list with auto-calculated leave absences
+        // Fallback: build default combined list with auto-calculated leave absences (excluding executives)
         setSavedLunchBill(null);
         const cellRecords: LunchRecord[] = employees.map(emp => {
           const bIdLower = (emp.bankId || '').trim().toLowerCase();
@@ -249,6 +264,11 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
           const present = Math.max(0, workingDays - absence);
           const total = present * LUNCH_BILL_RATE;
           const stamp = total > 0 ? REVENUE_STAMP : 0;
+          
+          // Enforce Md. Shahinur Rahman strictly in R09 (Cell ID 7)
+          const isShahinur = (emp.bankId === '018273') || (emp.name && emp.name.includes('শাহিনুর'));
+          const assignedCellId = isShahinur ? 7 : emp.cellId;
+
           return {
             employeeId: emp.id,
             employeeName: emp.name,
@@ -262,39 +282,23 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
             stampDeduction: stamp,
             additionalDeduction: 0,
             netPayable: Math.max(0, total - stamp),
-            cellId: emp.cellId,
+            cellId: assignedCellId,
             isExecutive: false,
             remarks: ''
           };
         });
 
-        const execRecords: LunchRecord[] = executives.map(ex => {
-          const bIdLower = (ex.bankId || '').trim().toLowerCase();
-          const detectedLeaveDays = leaveDaysMap[bIdLower] ?? 0;
-          const absence = Math.min(workingDays, detectedLeaveDays);
-          const present = Math.max(0, workingDays - absence);
-          const total = present * LUNCH_BILL_RATE;
-          const stamp = total > 0 ? REVENUE_STAMP : 0;
-          return {
-            employeeId: ex.id,
-            employeeName: ex.name,
-            designation: ex.designation,
-            bankId: ex.bankId,
-            rate: LUNCH_BILL_RATE,
-            presentDays: present,
-            absenceDays: absence,
-            leaveDays: detectedLeaveDays,
-            totalBill: total,
-            stampDeduction: stamp,
-            additionalDeduction: 0,
-            netPayable: Math.max(0, total - stamp),
-            cellId: 0,
-            isExecutive: true,
-            remarks: ''
-          };
+        // Deduplicate in fallback
+        const seenFallbackKeys = new Set<string>();
+        const dedupedCellRecords = cellRecords.filter(r => {
+          const key = `${r.bankId || r.employeeId}`;
+          if (seenFallbackKeys.has(key)) return false;
+          seenFallbackKeys.add(key);
+          return true;
         });
 
-        setRecords([...execRecords, ...cellRecords]);
+        // In Lunch Bill, only cell officers are included (executives are excluded)
+        setRecords(dedupedCellRecords);
       } catch (err) {
         console.error('Error fetching combined lunch bill:', err);
       }
@@ -472,30 +476,43 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
   };
 
   const handlePrintCombinedBill = async () => {
+    if (records.length === 0) {
+      showAlertModal('তথ্য পাওয়া যায়নি', 'প্রিন্ট বা পিডিএফ তৈরি করার মতো কোনো কর্মকর্তার রেকর্ড পাওয়া যায়নি।', 'warning');
+      return;
+    }
+
     setGenerating(true);
+    const printWindow = typeof window !== 'undefined' ? window.open('', '_blank') : null;
+
     try {
       const monthName = getBanglaMonthYearLabel(selectedMonth) || selectedMonth;
 
-      const cellGroups = cells.map(cell => ({
-        id: cell.id,
-        cellName: cell.name,
-        name: cell.name,
-        records: records.filter(r => r.cellId === cell.id && !r.isExecutive)
-      })).filter(c => c.records.length > 0);
+      // Build cell groups based on available cells and active records
+      const cellMap = new Map<number, string>();
+      cells.forEach(c => cellMap.set(c.id, c.name));
 
-      const execRecords = records.filter(r => r.isExecutive);
-      const execsData = execRecords.length > 0 ? {
-        records: execRecords,
-        totalDays: execRecords.reduce((sum, r) => sum + r.presentDays, 0),
-        totalClaim: execRecords.reduce((sum, r) => sum + r.totalBill, 0),
-        totalDeduction: execRecords.reduce((sum, r) => sum + (r.stampDeduction + (r.additionalDeduction || 0)), 0),
-        grandTotal: execRecords.reduce((sum, r) => sum + r.netPayable, 0)
-      } : undefined;
+      const distinctCellIds = Array.from(new Set(records.map(r => r.cellId)));
+      const cellGroups = distinctCellIds.map(cId => {
+        const cName = cellMap.get(cId) || (cId === 7 ? 'R09 Development & Customization Cell' : cId === 9 ? 'CBS Integrated Development Cell' : `সেল ${cId}`);
+        // Filter out executives, and strictly ensure Md. Shahinur Rahman is only in Cell 7 (never in CBS)
+        const cellRecs = records.filter(r => {
+          if (r.isExecutive) return false;
+          const isShahinur = (r.bankId === '018273') || (r.employeeName && r.employeeName.includes('শাহিনুর'));
+          if (isShahinur) {
+            return cId === 7;
+          }
+          return r.cellId === cId;
+        });
 
-      const effectiveRecords = [
-        ...cellGroups.flatMap(g => g.records),
-        ...execRecords
-      ];
+        return {
+          id: cId,
+          cellName: cName,
+          name: cName,
+          records: cellRecs
+        };
+      }).filter(c => c.records.length > 0);
+
+      const effectiveRecords = cellGroups.flatMap(g => g.records);
 
       const totalClaimAll = effectiveRecords.reduce((sum, r) => sum + r.totalBill, 0);
       const grandTotalAll = effectiveRecords.reduce((sum, r) => sum + r.netPayable, 0);
@@ -504,10 +521,10 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
       const payload = {
         monthName,
         groupedData: cellGroups,
-        executivesData: execsData,
+        executivesData: undefined,
         workingDays,
         cells: cellGroups,
-        executives: execRecords,
+        executives: [],
         totalDaysAll: effectiveRecords.reduce((sum, r) => sum + r.presentDays, 0),
         totalClaimAll,
         totalDeductionAll,
@@ -525,14 +542,22 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
       if (res.ok) {
         const data = await res.json();
         if (data.filePath) {
-          window.open(data.filePath, '_blank');
+          if (printWindow) {
+            printWindow.location.href = data.filePath;
+          } else {
+            window.open(data.filePath, '_blank');
+          }
+        } else if (printWindow) {
+          printWindow.close();
         }
       } else {
+        if (printWindow) printWindow.close();
         const errData = await res.json().catch(() => null);
         const errMsg = errData?.message || errData?.error || 'পিডিএফ / লাঞ্চ বিল প্রস্তুত করতে সমস্যা হয়েছে। অনুগ্রহ করে ডেটা যাচাই করে পুনরায় চেষ্টা করুন।';
         showAlertModal('পিডিএফ তৈরিতে সমস্যা', errMsg, 'danger');
       }
     } catch (err) {
+      if (printWindow) printWindow.close();
       console.error('Error generating PDF:', err);
       showAlertModal('সার্ভার এরর', 'সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে অথবা সংযোগে সমস্যা দেখা দিয়েছে।', 'danger');
     } finally {

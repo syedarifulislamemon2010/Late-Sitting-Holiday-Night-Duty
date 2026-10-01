@@ -79,11 +79,12 @@ export default function LunchBillPage() {
     data.applyBulkDeduction();
   };
 
-  // Filter records by search and role
+  // Filter records: cell officers only, support all user's assigned cells
   const userBaseRecords = data.records.filter(r => {
+    if (r.isExecutive) return false;
     if (isAdmin) return true;
-    const userCellId = currentUser?.cells?.[0]?.id;
-    return !r.isExecutive && r.cellId === userCellId;
+    const userCellIds = currentUser?.cells?.map(c => c.id) || [];
+    return userCellIds.length === 0 || userCellIds.includes(r.cellId);
   });
 
   const activeRecords = userBaseRecords.filter(r => {
@@ -92,13 +93,9 @@ export default function LunchBillPage() {
       r.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (r.bankId || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCell = filterCell === 'ALL' || r.cellId.toString() === filterCell || (filterCell === '0' && r.isExecutive);
+    const matchesCell = filterCell === 'ALL' || r.cellId.toString() === filterCell;
 
-    const matchesType = filterType === 'ALL' || 
-      (filterType === 'officer' && !r.isExecutive) || 
-      (filterType === 'executive' && r.isExecutive);
-
-    return matchesSearch && matchesCell && matchesType;
+    return matchesSearch && matchesCell;
   });
 
   if (data.loading) {

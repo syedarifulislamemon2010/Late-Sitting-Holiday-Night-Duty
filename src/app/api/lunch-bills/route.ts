@@ -56,17 +56,14 @@ export async function GET(request: Request) {
     }
 
     // Standard user cell privacy check
+    let allowedCellIds: number[] = [];
     if (!isAdmin) {
-      const userCellIds = currentUser.cells.map((c: { id: number }) => c.id);
-      if (targetCellId !== 0 && !userCellIds.includes(targetCellId)) {
+      allowedCellIds = currentUser.cells.map((c: { id: number }) => c.id);
+      if (targetCellId !== 0 && !allowedCellIds.includes(targetCellId)) {
         return NextResponse.json({ 
           error: 'forbidden', 
           message: 'এই সেলের লাঞ্চ বিল দেখার অনুমতি আপনার নেই।' 
         }, { status: 403 });
-      }
-      // If no cellId specified, target standard user's first cell
-      if (targetCellId === 0 && userCellIds.length > 0) {
-        targetCellId = userCellIds[0];
       }
     }
 
@@ -83,16 +80,35 @@ export async function GET(request: Request) {
       return NextResponse.json(null);
     }
 
-    // If request is from Admin and querying combined sheet (targetCellId === 0)
-    if (isAdmin && targetCellId === 0) {
-      return NextResponse.json(combinedBill);
+    // Filter records dynamically: exclude executives, ensure Shahinur is only in cell 7
+    const allRecords = JSON.parse(combinedBill.recordsJson);
+    const sanitizedRecords = allRecords
+      .filter((r: any) => !r.isExecutive)
+      .map((r: any) => {
+        const isShahinur = (r.bankId === '018273') || (r.employeeName && r.employeeName.includes('শাহিনুর'));
+        if (isShahinur) {
+          return { ...r, cellId: 7 };
+        }
+        return r;
+      });
+
+    let filteredRecords: any[] = [];
+    if (isAdmin) {
+      if (targetCellId === 0) {
+        filteredRecords = sanitizedRecords;
+      } else {
+        filteredRecords = sanitizedRecords.filter((r: any) => r.cellId === targetCellId);
+      }
+    } else {
+      if (targetCellId === 0) {
+        // Return records for all cells assigned to standard user
+        filteredRecords = sanitizedRecords.filter((r: any) => allowedCellIds.length === 0 || allowedCellIds.includes(r.cellId));
+      } else {
+        filteredRecords = sanitizedRecords.filter((r: any) => r.cellId === targetCellId);
+      }
     }
 
-    // For standard users (or if specific cell is queried), filter records dynamically
-    const allRecords = JSON.parse(combinedBill.recordsJson);
-    const filteredRecords = allRecords.filter((r: LunchBillRecord) => r.cellId === targetCellId && !r.isExecutive);
-
-    // Return synthetic cell-specific LunchBill structure
+    // Return synthetic LunchBill structure
     return NextResponse.json({
       id: combinedBill.id,
       month: combinedBill.month,
@@ -165,12 +181,23 @@ export async function POST(request: Request) {
     } else {
       if (existingBill) {
         const existingRecords = JSON.parse(existingBill.recordsJson);
-        const otherRecords = existingRecords.filter((r: LunchBillRecord) => r && (r.isExecutive || !userCellIds.includes(r.cellId)));
+        const otherRecords = existingRecords.filter((r: LunchBillRecord) => r && (!userCellIds.includes(r.cellId)));
         finalRecords = [...otherRecords, ...recordsToSave];
       } else {
         finalRecords = recordsToSave;
       }
     }
+
+    // Exclude executives and ensure Md. Shahinur Rahman is strictly assigned to R09 (cell 7)
+    finalRecords = finalRecords
+      .filter((r: any) => !r.isExecutive)
+      .map((r: any) => {
+        const isShahinur = (r.bankId === '018273') || (r.employeeName && r.employeeName.includes('শাহিনুর'));
+        if (isShahinur) {
+          return { ...r, cellId: 7 };
+        }
+        return r;
+      });
 
     const recordsJson = JSON.stringify(finalRecords);
 

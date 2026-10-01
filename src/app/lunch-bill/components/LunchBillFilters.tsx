@@ -9,8 +9,8 @@ interface LunchBillFiltersProps {
   setSearchQuery: (q: string) => void;
   filterCell: string;
   setFilterCell: (c: string) => void;
-  filterType: string;
-  setFilterType: (t: string) => void;
+  filterType?: string;
+  setFilterType?: (t: string) => void;
   cells: Cell[];
   showAdvancedFilters: boolean;
   deductionMode: 'manual' | 'flat' | 'designation';
@@ -22,9 +22,9 @@ interface LunchBillFiltersProps {
     PO: number;
     SO_IT: number;
     O_IT: number;
-    EXEC: number;
+    EXEC?: number;
   };
-  applyDesignationRates: (field: keyof { SPO: number; PO: number; SO_IT: number; O_IT: number; EXEC: number }, val: number) => void;
+  applyDesignationRates: (field: any, val: number) => void;
   isAdmin: boolean;
 }
 
@@ -60,7 +60,7 @@ export default function LunchBillFilters({
           />
         </div>
 
-        {isAdmin && (
+        {(isAdmin || cells.length > 1) && (
           <div className="flex items-center gap-2">
             <Filter size={14} className="text-slate-400" />
             <select
@@ -68,26 +68,13 @@ export default function LunchBillFilters({
               onChange={e => setFilterCell(e.target.value)}
               className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
             >
-              <option value="ALL">সকল সেল ও এক্সিকিউটিভ</option>
-              <option value="0">নির্বাহী কর্মকর্তাগণ (DGM/AGM)</option>
+              <option value="ALL">সকল সেল</option>
               {cells.map(c => (
                 <option key={c.id} value={c.id.toString()}>{c.name}</option>
               ))}
             </select>
           </div>
         )}
-
-        <div className="flex items-center gap-2">
-          <select
-            value={filterType}
-            onChange={e => setFilterType(e.target.value)}
-            className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
-          >
-            <option value="ALL">সকল কর্মকর্তা</option>
-            <option value="officer">সেল কর্মকর্তাবৃন্দ</option>
-            <option value="executive">এক্সিকিউটিভবৃন্দ</option>
-          </select>
-        </div>
       </div>
 
       {/* Advanced Deduction Controls Box */}
@@ -146,17 +133,7 @@ export default function LunchBillFilters({
           )}
 
           {deductionMode === 'designation' && (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-1">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Executive (DGM/AGM)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={designationRates.EXEC}
-                  onChange={e => applyDesignationRates('EXEC', parseInt(e.target.value, 10) || 0)}
-                  className="w-full px-2.5 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl"
-                />
-              </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">SPO</label>
                 <input

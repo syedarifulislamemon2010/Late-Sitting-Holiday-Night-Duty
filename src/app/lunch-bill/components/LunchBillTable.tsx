@@ -15,9 +15,9 @@ interface LunchBillTableProps {
   collapsedCells: Record<string, boolean>;
   setCollapsedCells: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   filterCell: string;
-  filterType: string;
-  isAdmin: boolean;
-  executivesList: Array<{ id: number; phone?: string | null }>;
+  filterType?: string;
+  isAdmin?: boolean;
+  executivesList?: Array<{ id: number; phone?: string | null }>;
 }
 
 export default function LunchBillTable({
@@ -29,9 +29,6 @@ export default function LunchBillTable({
   collapsedCells,
   setCollapsedCells,
   filterCell,
-  filterType,
-  isAdmin,
-  executivesList
 }: LunchBillTableProps) {
   const toggleCellCollapse = (cellKey: string) => {
     setCollapsedCells(prev => ({
@@ -40,32 +37,33 @@ export default function LunchBillTable({
     }));
   };
 
-  const execRecords = records.filter(r => r.isExecutive);
   const officerRecords = records.filter(r => !r.isExecutive);
 
-  const totalBillAll = records.reduce((sum, r) => sum + r.totalBill, 0);
-  const totalStampAll = records.reduce((sum, r) => sum + r.stampDeduction, 0);
-  const totalAdditionalAll = records.reduce((sum, r) => sum + (r.additionalDeduction || 0), 0);
-  const grandTotalNetAll = records.reduce((sum, r) => sum + r.netPayable, 0);
+  const totalBillAll = officerRecords.reduce((sum, r) => sum + r.totalBill, 0);
+  const totalStampAll = officerRecords.reduce((sum, r) => sum + r.stampDeduction, 0);
+  const totalAdditionalAll = officerRecords.reduce((sum, r) => sum + (r.additionalDeduction || 0), 0);
+  const grandTotalNetAll = officerRecords.reduce((sum, r) => sum + r.netPayable, 0);
 
   return (
     <div className="space-y-6">
-      {/* 1. Executives Table (if visible by filters) */}
-      {(filterType === 'ALL' || filterType === 'executive') && (filterCell === 'ALL' || filterCell === '0') && (
-        <LunchBillExecutiveTable
-          records={records}
-          executives={executivesList}
-          workingDays={workingDays}
-          onAbsenceChange={handleAbsenceChange}
-          onManualDeductionChange={handleManualDeductionChange}
-        />
+      {/* Empty State */}
+      {officerRecords.length === 0 && (
+        <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">কোনো কর্মকর্তার রেকর্ড পাওয়া যায়নি।</p>
+        </div>
       )}
 
-      {/* 2. Cell-wise Officers Tables */}
-      {(filterType === 'ALL' || filterType === 'officer') && cells.map(cell => {
+      {/* Cell-wise Officers Tables */}
+      {cells.map(cell => {
         if (filterCell !== 'ALL' && filterCell !== cell.id.toString()) return null;
         
-        const cellRecs = officerRecords.filter(r => r.cellId === cell.id);
+        const cellRecs = officerRecords.filter(r => {
+          const isShahinur = (r.bankId === '018273') || (r.employeeName && r.employeeName.includes('শাহিনুর'));
+          if (isShahinur) {
+            return cell.id === 7;
+          }
+          return r.cellId === cell.id;
+        });
         if (cellRecs.length === 0) return null;
 
         const isCollapsed = !!collapsedCells[cell.id.toString()];

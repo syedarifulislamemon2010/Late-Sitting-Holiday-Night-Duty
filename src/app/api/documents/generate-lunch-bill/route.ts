@@ -124,49 +124,45 @@ export async function POST(request: Request) {
     const reportDate: string = payload.reportDate || new Date().toISOString().split('T')[0];
 
     // Normalize groupedData / cells
-    let groupedData: LunchBillGroup[] = [];
+    let rawGroups: any[] = [];
     if (Array.isArray(payload.groupedData) && payload.groupedData.length > 0) {
-      groupedData = payload.groupedData;
+      rawGroups = payload.groupedData;
     } else if (Array.isArray(payload.cells) && payload.cells.length > 0) {
-      groupedData = payload.cells.map((c: any) => ({
-        cellName: c.name || c.cellName || 'সেল',
-        records: (c.records || []).map((r: any) => ({
+      rawGroups = payload.cells;
+    }
+
+    let groupedData: LunchBillGroup[] = rawGroups.map((c: any) => {
+      const cName = c.name || c.cellName || 'সেল';
+      const isCbs = cName.includes('CBS');
+      
+      const records = (c.records || [])
+        .filter((r: any) => !r.isExecutive)
+        .filter((r: any) => {
+          // Strictly exclude Md. Shahinur Rahman from CBS Integrated Development Cell
+          if (isCbs && (r.bankId === '018273' || (r.employeeName && r.employeeName.includes('শাহিনুর')))) {
+            return false;
+          }
+          return true;
+        })
+        .map((r: any) => ({
           employeeName: r.employeeName || r.name || '',
           designation: r.designation || '',
           bankId: r.bankId || '',
           presentDays: Number(r.presentDays) || 0,
           absenceDays: Number(r.absenceDays) || 0,
           totalBill: Number(r.totalBill) || (Number(r.presentDays || 0) * 400),
-          netPayable: Number(r.netPayable) || Math.max(0, (Number(r.presentDays || 0) * 400) - 15 - (Number(r.additionalDeduction) || 0)),
+          netPayable: Number(r.netPayable) || Math.max(0, (Number(r.presentDays || 0) * 400) - (Number(r.presentDays || 0) > 0 ? 15 : 0) - (Number(r.additionalDeduction) || 0)),
           additionalDeduction: Number(r.additionalDeduction) || 0
-        }))
-      })).filter((g: any) => g.records.length > 0);
-    }
+        }));
 
-    // Normalize executivesData / executives
-    let executivesData: LunchBillPayload['executivesData'] = undefined;
-    if (payload.executivesData && Array.isArray(payload.executivesData.records)) {
-      executivesData = payload.executivesData;
-    } else if (Array.isArray(payload.executives) && payload.executives.length > 0) {
-      const execRecords: LunchBillRecord[] = payload.executives.map((r: any) => ({
-        employeeName: r.employeeName || r.name || '',
-        designation: r.designation || '',
-        bankId: r.bankId || '',
-        presentDays: Number(r.presentDays) || 0,
-        absenceDays: Number(r.absenceDays) || 0,
-        totalBill: Number(r.totalBill) || (Number(r.presentDays || 0) * 400),
-        netPayable: Number(r.netPayable) || Math.max(0, (Number(r.presentDays || 0) * 400) - 15 - (Number(r.additionalDeduction) || 0)),
-        additionalDeduction: Number(r.additionalDeduction) || 0
-      }));
-      executivesData = {
-        records: execRecords
+      return {
+        cellName: cName,
+        records
       };
-    }
+    }).filter((g: any) => g.records.length > 0);
 
-    const allRecords: LunchBillRecord[] = [
-      ...groupedData.flatMap(g => g.records),
-      ...(executivesData?.records || [])
-    ];
+    // Executives are excluded from Lunch Bill per requirements
+    const allRecords: LunchBillRecord[] = groupedData.flatMap(g => g.records);
 
     const computedTotalClaim = allRecords.reduce((sum, r) => sum + (Number(r.totalBill) || 0), 0);
     const computedGrandTotal = allRecords.reduce((sum, r) => sum + (Number(r.netPayable) || 0), 0);
@@ -200,99 +196,7 @@ export async function POST(request: Request) {
       </thead>
     `;
 
-    // 1. Render DGM & AGM Executives
-    if (executivesData && executivesData.records && executivesData.records.length > 0) {
-      executivesData.records = [...executivesData.records].sort((a, b) => {
-        const priority = (desig: string | null | undefined) => {
-          if (!desig) return 3;
-          const d = desig.toLowerCase();
-          if (d.includes('উপ-মহাব্যবস্থাপক') || d.includes('ডিজিএম') || d.includes('dgm')) return 1;
-          if (d.includes('সহকারী মহাব্যবস্থাপক') || d.includes('এজিএম') || d.includes('agm')) return 2;
-          return 3;
-        };
-        const pA = priority(a.designation);
-        const pB = priority(b.designation);
-        if (pA !== pB) return pA - pB;
-        return (a.bankId || '').localeCompare(b.bankId || '', undefined, { numeric: true, sensitivity: 'base' });
-      });
-
-      let execStamp = 0;
-      let execExtra = 0;
-      let execClaim = 0;
-      let execGrand = 0;
-      let execRows = '';
-
-      let dgmCount = 0;
-      let agmCount = 0;
-      executivesData.records.forEach((r) => {
-        const lowerDesig = (r.designation || '').toLowerCase();
-        if (lowerDesig.includes('ডিজিএম') || lowerDesig.includes('dgm') || lowerDesig.includes('উপ-মহাব্যবস্থাপক')) {
-          dgmCount++;
-        } else if (lowerDesig.includes('এজিএম') || lowerDesig.includes('agm') || lowerDesig.includes('সহকারী মহাব্যবস্থাপক')) {
-          agmCount++;
-        } else {
-          agmCount++;
-        }
-      });
-      const totalExec = dgmCount + agmCount;
-
-      // Executive Rows
-      executivesData.records.forEach((r) => {
-        totalEmployeesCount++;
-        const stamp = 15;
-        const additional = r.additionalDeduction ?? 0;
-        execStamp += stamp;
-        execExtra += additional;
-        execClaim += r.totalBill;
-        execGrand += r.netPayable;
-
-        totalStampAll += stamp;
-        totalExtraAll += additional;
-
-        const totalDed = stamp + additional;
-
-        execRows += `
-          <tr style="background-color: #fffdfd;">
-            <td style="width: 4%;">${toBnDigits(globalIndex++)}</td>
-            <td class="text-left font-bold" style="color: #c2185b; width: 18%;">${r.employeeName}</td>
-            <td style="color: #c2185b; font-weight: bold; width: 10%;">${abbreviateDesignation(r.designation)}</td>
-            <td style="color: #c2185b; font-family: sans-serif; font-size: 12px; width: 10%;">${r.bankId || '-'}</td>
-            <td style="width: 8%;">${toBnDigits(400)}/-</td>
-            <td style="width: 8%;">${toBnDigits(r.presentDays)}</td>
-            <td style="width: 8%;">${toBnDigits(r.absenceDays)}</td>
-            <td class="font-bold" style="width: 9%;">${toBnDigits(r.totalBill)}/-</td>
-            <td style="width: 8%;">${toBnDigits(stamp)}/-</td>
-            <td style="width: 8%;">${toBnDigits(additional)}/-</td>
-            <td class="font-bold" style="width: 8%;">${toBnDigits(totalDed)}/-</td>
-            <td class="font-bold" style="width: 9%;">${toBnDigits(r.netPayable)}/-</td>
-          </tr>
-        `;
-      });
-
-      tablesHtml += `
-        <div style="margin-bottom: 12px; page-break-inside: avoid;">
-          <div style="background-color: #fdf2f8; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 12px; border: 1px solid #000; border-bottom: none; color: #db2777;">
-            ● নির্বাহী প্যানেল (ডিজিএম ${toBnDigits(dgmCount)} জন + এজিএম ${toBnDigits(agmCount)} জন = মোট ${toBnDigits(totalExec)} জন নির্বাহী)
-          </div>
-          <table style="margin-top: 0; margin-bottom: 0;">
-            ${tableHeaders}
-            <tbody>
-              ${execRows}
-              <tr style="background-color: #ffe4e6; font-weight: bold; font-size: 12px;">
-                <td colspan="7" style="text-align: right; padding-right: 12px; font-weight: 900; color: #db2777; width: 66%;">সর্বমোট (নির্বাহী প্যানেল) =</td>
-                <td class="font-bold" style="color: #db2777; width: 9%;">৳${toBnDigits(execClaim)}/-</td>
-                <td style="color: #b45309; font-weight: bold; width: 8%;">৳${toBnDigits(execStamp)}/-</td>
-                <td style="color: #b45309; font-weight: bold; width: 8%;">৳${toBnDigits(execExtra)}/-</td>
-                <td style="color: #b91c1c; font-weight: 900; width: 8%;">৳${toBnDigits(execStamp + execExtra)}/-</td>
-                <td style="color: #db2777; font-weight: 900; width: 9%;">৳${toBnDigits(execGrand)}/-</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      `;
-    }
-
-    // 2. Render cell groupings
+    // 1. Render cell groupings (Only cell officers are included)
     if (groupedData && Array.isArray(groupedData)) {
       groupedData.forEach((cellGroup) => {
         if (!cellGroup.records || cellGroup.records.length === 0) return;
@@ -363,8 +267,9 @@ export async function POST(request: Request) {
 
     const finalTotalDeduction = totalStampAll + totalExtraAll;
 
-    // 3. Render Departmental/Cell Total Summary at the bottom
-    const summaryLabel = groupedData && groupedData.length === 1 && (!executivesData || !executivesData.records || executivesData.records.length === 0)
+    // 2. Render Departmental/Cell Total Summary at the bottom
+    const isSingleCell = groupedData && groupedData.length === 1;
+    const summaryLabel = isSingleCell
       ? `সেলের দাবীকৃত টাকার পরিমাণ = ৳${toBnDigits(totalClaimAll)}/-`
       : `সেলের মোট দাবীকৃত টাকার পরিমাণ = ৳${toBnDigits(totalClaimAll)}/-`;
 
@@ -380,7 +285,6 @@ export async function POST(request: Request) {
       </div>
     `;
 
-    const isSingleCell = groupedData && groupedData.length === 1 && (!executivesData || !executivesData.records || executivesData.records.length === 0);
     const cellDisplayName = isSingleCell ? groupedData[0].cellName : null;
     const pageReportTitle = isSingleCell 
       ? `${monthName} মাসের লাঞ্চ ভাতা বিল শিট - ${cellDisplayName} (মোট কার্যদিবস: ${toBnDigits(workingDays)} দিন)`
@@ -544,28 +448,6 @@ export async function POST(request: Request) {
     line-height: 1.4;
     font-size: 12px;
   }
-  .signature-container {
-    width: 100%;
-    margin-top: 0.5in;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-  .signature-block {
-    text-align: center;
-    width: 30%;
-  }
-  .signature-line {
-    border-top: 1px solid #000;
-    margin-bottom: 3px;
-    width: 80%;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .signature-title {
-    font-weight: bold;
-    font-size: 12px;
-  }
   @media screen {
     html.dark body {
       background-color: #0b0f19 !important;
@@ -592,12 +474,6 @@ export async function POST(request: Request) {
     }
     html.dark .total-row {
       background-color: #1e293b !important;
-      color: #f8fafc !important;
-    }
-    html.dark .signature-line {
-      border-color: #334155 !important;
-    }
-    html.dark .signature-container * {
       color: #f8fafc !important;
     }
     /* Override inline style colors in dark mode for readable contrast */
@@ -657,21 +533,6 @@ export async function POST(request: Request) {
   <div class="bill-summary-text">
     <p>কথায়: <strong>${grandTotalInWords}</strong>।</p>
   </div>
-
-  <div class="signature-container">
-    <div class="signature-block">
-      <div class="signature-line"></div>
-      <p class="signature-title">প্রস্তুতকারী</p>
-    </div>
-    <div class="signature-block">
-      <div class="signature-line"></div>
-      <p class="signature-title">যাচাইকারী</p>
-    </div>
-    <div class="signature-block">
-      <div class="signature-line"></div>
-      <p class="signature-title">অনুমোদনকারী কর্মকর্তা</p>
-    </div>
-  </div>
   
   <script>
     if (document.fonts) {
@@ -698,8 +559,10 @@ export async function POST(request: Request) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const filePrefix = isSingleCell ? `lunch_bill_${cellDisplayName?.replace(/\s+/g, '_')}` : `lunch_bill_combined`;
-    const filename = `${filePrefix}_${monthName.replace(/\s+/g, '_')}_${Math.floor(Date.now() / 1000)}.html`;
+    const safeCellName = (cellDisplayName || 'cell').replace(/[^a-zA-Z0-9_\-\u0980-\u09FF]/g, '_');
+    const safeMonthName = (monthName || 'month').replace(/[^a-zA-Z0-9_\-\u0980-\u09FF]/g, '_');
+    const filePrefix = isSingleCell ? `lunch_bill_${safeCellName}` : `lunch_bill_combined`;
+    const filename = `${filePrefix}_${safeMonthName}_${Math.floor(Date.now() / 1000)}.html`;
     const filePathDisk = path.join(uploadsDir, filename);
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');
 
