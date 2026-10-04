@@ -13,9 +13,10 @@ describe('LeaveCalculator - Sandwich Rule Calculations', () => {
       expect(isNonWorkingDay('2026-06-14')).toBe(false); // Sunday
     });
 
-    it('should respect default 2026 public holidays', () => {
+    it('should respect default 2026 public holidays including executive order holiday on 2026-10-22', () => {
       expect(isNonWorkingDay('2026-02-21')).toBe(true); // International Mother Language Day
       expect(isNonWorkingDay('2026-03-26')).toBe(true); // Independence Day
+      expect(isNonWorkingDay('2026-10-22')).toBe(true); // Executive Order Public Holiday
     });
 
     it('should NOT treat half-yearly and year-end bank holidays (1st July and 31st December) as holidays/non-working days', () => {

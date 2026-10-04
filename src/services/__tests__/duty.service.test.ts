@@ -77,5 +77,11 @@ describe('DutyService - Allowance & Holiday Calculations', () => {
       const isHoliday = await DutyService.checkIsHoliday('2026-06-15');
       expect(isHoliday).toBe(true); // Overridden to non-working day, so holiday
     });
+
+    it('should identify default public holidays such as 2026-10-22 even without repository override', async () => {
+      vi.mocked(HolidayRepository.findByDate).mockResolvedValue(null as unknown as typeof import('@/db/schema').holidays.$inferSelect);
+      const isHoliday = await DutyService.checkIsHoliday('2026-10-22');
+      expect(isHoliday).toBe(true);
+    });
   });
 });

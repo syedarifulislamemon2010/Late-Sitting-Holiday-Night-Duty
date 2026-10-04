@@ -8,6 +8,7 @@ import { eq, inArray, and, or, isNull, gte, lte, SQL, like } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { AppError, AuthError, ConflictError } from '@/lib/errors';
 import { dutiesBulkCreateSchema, dutyUpdateSchema } from '@/validations/duty.schema';
+import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
 
 export interface UserSession {
   id: number;
@@ -40,6 +41,10 @@ export class DutyService {
     const override = await HolidayRepository.findByDate(dateStr);
     if (override) {
       return !override.isWorkingDay;
+    }
+
+    if (DEFAULT_2026_HOLIDAYS.some(h => h.date === dateStr)) {
+      return true;
     }
 
     return isWeekend;
@@ -291,6 +296,9 @@ export class DutyService {
         const isWorkingDay = holidayOverrideMap.get(dateStr);
         if (isWorkingDay !== undefined) {
           return !isWorkingDay;
+        }
+        if (DEFAULT_2026_HOLIDAYS.some(h => h.date === dateStr)) {
+          return true;
         }
         return isWeekend;
       };

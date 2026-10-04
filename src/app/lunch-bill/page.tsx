@@ -79,10 +79,13 @@ export default function LunchBillPage() {
     data.applyBulkDeduction();
   };
 
-  // Filter records: cell officers only, support all user's assigned cells
+  // Filter records: cell officers only, support user's assigned cells (strictly CBS for 026795)
   const userBaseRecords = data.records.filter(r => {
     if (r.isExecutive) return false;
     if (isAdmin) return true;
+    if (currentUser?.username === '026795') {
+      return r.cellId === 9;
+    }
     const userCellIds = currentUser?.cells?.map(c => c.id) || [];
     return userCellIds.length === 0 || userCellIds.includes(r.cellId);
   });

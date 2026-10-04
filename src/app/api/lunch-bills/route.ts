@@ -58,7 +58,15 @@ export async function GET(request: Request) {
     // Standard user cell privacy check
     let allowedCellIds: number[] = [];
     if (!isAdmin) {
-      allowedCellIds = currentUser.cells.map((c: { id: number }) => c.id);
+      if (currentUser.username === '026795') {
+        // Enforce Syed Ariful Islam Emon (026795) to strictly see CBS Integrated Development Cell
+        const cbsCell = await db.select().from(cells).where(eq(cells.name, 'CBS Integrated Development Cell'));
+        const cbsCellId = cbsCell[0]?.id || 9;
+        allowedCellIds = [cbsCellId];
+      } else {
+        allowedCellIds = currentUser.cells.map((c: { id: number }) => c.id);
+      }
+
       if (targetCellId !== 0 && !allowedCellIds.includes(targetCellId)) {
         return NextResponse.json({ 
           error: 'forbidden', 
@@ -148,7 +156,12 @@ export async function POST(request: Request) {
     }
 
     const isAdmin = currentUser.role === 'ADMIN';
-    const userCellIds = currentUser.cells?.map((c: { id: number }) => c.id) || [];
+    let userCellIds = currentUser.cells?.map((c: { id: number }) => c.id) || [];
+    if (!isAdmin && currentUser.username === '026795') {
+      const cbsCell = await db.select().from(cells).where(eq(cells.name, 'CBS Integrated Development Cell'));
+      const cbsCellId = cbsCell[0]?.id || 9;
+      userCellIds = [cbsCellId];
+    }
 
     if (!isAdmin && userCellIds.length === 0) {
       return NextResponse.json({ 

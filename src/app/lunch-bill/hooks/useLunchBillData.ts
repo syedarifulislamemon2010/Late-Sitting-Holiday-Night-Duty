@@ -102,7 +102,11 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
         const execData = await execRes.json();
         const holidayData = await holidayRes.json();
         
-        setCells(Array.isArray(cellData) ? cellData : []);
+        let loadedCells: Cell[] = Array.isArray(cellData) ? cellData : [];
+        if (currentUser?.role !== 'ADMIN' && currentUser?.username === '026795') {
+          loadedCells = loadedCells.filter(c => c.name.includes('CBS'));
+        }
+        setCells(loadedCells);
         setEmployees(Array.isArray(empData) ? empData : []);
         setHolidays(Array.isArray(holidayData) ? holidayData : []);
         
@@ -129,7 +133,7 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
       }
     }
     loadData();
-  }, []);
+  }, [currentUser]);
 
   // Compute / load working days for selected month
   const calculateWorkingDays = useCallback(async (yearMonth: string) => {
@@ -243,12 +247,16 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
 
             // Deduplicate if Shahinur or any employee appears multiple times
             const seenKeys = new Set<string>();
-            const dedupedRecords = parsed.filter((r: LunchRecord) => {
+            let dedupedRecords = parsed.filter((r: LunchRecord) => {
               const key = `${r.bankId || r.employeeId}`;
               if (seenKeys.has(key)) return false;
               seenKeys.add(key);
               return true;
             });
+
+            if (currentUser?.role !== 'ADMIN' && currentUser?.username === '026795') {
+              dedupedRecords = dedupedRecords.filter((r: LunchRecord) => r.cellId === 9);
+            }
 
             setRecords(dedupedRecords);
             return;
@@ -290,12 +298,16 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
 
         // Deduplicate in fallback
         const seenFallbackKeys = new Set<string>();
-        const dedupedCellRecords = cellRecords.filter(r => {
+        let dedupedCellRecords = cellRecords.filter(r => {
           const key = `${r.bankId || r.employeeId}`;
           if (seenFallbackKeys.has(key)) return false;
           seenFallbackKeys.add(key);
           return true;
         });
+
+        if (currentUser?.role !== 'ADMIN' && currentUser?.username === '026795') {
+          dedupedCellRecords = dedupedCellRecords.filter((r: LunchRecord) => r.cellId === 9);
+        }
 
         // In Lunch Bill, only cell officers are included (executives are excluded)
         setRecords(dedupedCellRecords);
@@ -304,7 +316,7 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
       }
     }
     fetchCombinedLunchBill();
-  }, [selectedMonth, loading, employees, executives, workingDays]);
+  }, [selectedMonth, loading, employees, executives, workingDays, currentUser]);
 
   const handlePresentDaysChange = (index: number, val: number) => {
     setRecords(prev => {
@@ -491,7 +503,10 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
       const cellMap = new Map<number, string>();
       cells.forEach(c => cellMap.set(c.id, c.name));
 
-      const distinctCellIds = Array.from(new Set(records.map(r => r.cellId)));
+      let distinctCellIds = Array.from(new Set(records.map(r => r.cellId)));
+      if (currentUser?.role !== 'ADMIN' && currentUser?.username === '026795') {
+        distinctCellIds = distinctCellIds.filter(cId => cId === 9);
+      }
       const cellGroups = distinctCellIds.map(cId => {
         const cName = cellMap.get(cId) || (cId === 7 ? 'R09 Development & Customization Cell' : cId === 9 ? 'CBS Integrated Development Cell' : `সেল ${cId}`);
         // Filter out executives, and strictly ensure Md. Shahinur Rahman is only in Cell 7 (never in CBS)
