@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import logger from '@/lib/logger';
 import { UserProfile } from '@/context/ProfileContext';
 import { Cell, Employee, Executive, Holiday, OfficeOrder, Duty, LeaveRecord } from '../types';
+import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
 
 interface UseRosterDataProps {
   currentUser: UserProfile | null | undefined;
@@ -59,7 +60,32 @@ export function useRosterData({
 
         if (Array.isArray(empRes)) setEmployees(empRes);
         if (Array.isArray(cellRes)) setCells(cellRes);
-        if (Array.isArray(holRes)) setHolidays(holRes);
+        const combinedHolidays: Holiday[] = DEFAULT_2026_HOLIDAYS.map((h, i) => ({
+          id: -(i + 1),
+          date: h.date,
+          name: h.name,
+          isWorkingDay: false
+        }));
+
+        if (Array.isArray(holRes)) {
+          holRes.forEach((h: Holiday) => {
+            if (h.isWorkingDay) {
+              const idx = combinedHolidays.findIndex(ch => ch.date === h.date);
+              if (idx !== -1) combinedHolidays.splice(idx, 1);
+            } else {
+              const existing = combinedHolidays.find(ch => ch.date === h.date);
+              if (existing) {
+                if (h.name && !/^[A-Za-z\s()]+$/.test(h.name)) {
+                  existing.name = h.name;
+                }
+                existing.id = h.id;
+              } else {
+                combinedHolidays.push(h);
+              }
+            }
+          });
+        }
+        setHolidays(combinedHolidays);
         if (Array.isArray(execRes)) setExecutives(execRes);
         if (Array.isArray(ordersRes)) setOfficeOrders(ordersRes);
         if (Array.isArray(leavesRes)) setLeaves(leavesRes);

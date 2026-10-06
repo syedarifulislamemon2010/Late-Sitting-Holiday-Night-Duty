@@ -4,13 +4,34 @@ import { db } from '@/lib/db';
 import { holidays as holidaysTable } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { holidayBulkCreateSchema } from '@/validations/holiday.schema';
+import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
 
-export const revalidate = 3600; // 1 hour
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   try {
     const holidayList = await db.select().from(holidaysTable).orderBy(holidaysTable.date);
-    return NextResponse.json(holidayList);
+    const dbHolidayMap = new Map(holidayList.map(h => [h.date, h]));
+    const result: (typeof holidaysTable.$inferSelect)[] = [...holidayList];
+
+    DEFAULT_2026_HOLIDAYS.forEach((dh, idx) => {
+      const existing = dbHolidayMap.get(dh.date);
+      if (!existing) {
+        result.push({
+          id: -(idx + 1),
+          date: dh.date,
+          name: dh.name,
+          isWorkingDay: false,
+          createdAt: new Date()
+        });
+      } else if (dh.name && existing.name && /^[A-Za-z\s()]+$/.test(existing.name)) {
+        existing.name = dh.name;
+      }
+    });
+
+    result.sort((a, b) => a.date.localeCompare(b.date));
+    return NextResponse.json(result);
   } catch (error) {
     logger.error('Error fetching holidays:', error);
     return NextResponse.json({ error: 'failed_to_fetch_holidays' }, { status: 500 });

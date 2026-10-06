@@ -7,6 +7,7 @@ export interface CalendarDatePickerProps {
   value: string;
   onChange: (date: string) => void;
   isNonWorkingDay: (dateStr: string) => boolean;
+  getHolidayLabel?: (dateStr: string) => string | undefined;
   toBanglaDigits: (num: number | string) => string;
   minDate?: string;
   maxDate?: string;
@@ -18,6 +19,7 @@ export default function CalendarDatePicker({
   value,
   onChange,
   isNonWorkingDay,
+  getHolidayLabel,
   toBanglaDigits,
   minDate,
   maxDate,
@@ -109,7 +111,7 @@ export default function CalendarDatePicker({
                 ? 'text-slate-300 dark:text-slate-650 bg-slate-50/50 dark:bg-slate-900/20 border-slate-200/30 cursor-not-allowed font-medium'
                 : 'text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border-slate-200/70 dark:border-slate-800 hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/30 shadow-2xs cursor-pointer'
         }`}
-        title={isWeekendOrHoliday ? 'ছুটির দিন' : undefined}
+        title={getHolidayLabel ? getHolidayLabel(dateStr) : isWeekendOrHoliday ? 'ছুটির দিন' : undefined}
       >
         {toBanglaDigits(d)}
       </button>

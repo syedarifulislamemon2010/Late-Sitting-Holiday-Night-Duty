@@ -497,6 +497,10 @@ export default function DutyAssignmentPanel({
                       value={assignmentForm.date}
                       onChange={(d) => setAssignmentForm({ ...assignmentForm, date: d })}
                       isNonWorkingDay={(d) => !checkIsWorkingDay(d, holidays)}
+                      getHolidayLabel={(d) => {
+                        const status = getHolidayStatus(d, holidays);
+                        return status.isWorkingDay ? undefined : status.label;
+                      }}
                       toBanglaDigits={toBanglaDigits}
                       placeholder="ডিউটির তারিখ নির্বাচন..."
                     />

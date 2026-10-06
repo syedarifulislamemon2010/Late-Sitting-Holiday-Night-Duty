@@ -14,6 +14,7 @@ import {
   Executive, 
   Holiday, 
   checkIsWorkingDay, 
+  getHolidayStatus,
   getNormalizedRef 
 } from '../types';
 import CalendarDatePicker from './CalendarDatePicker';
@@ -322,9 +323,19 @@ export default function OfficeOrderPrintPreview({
                 value={orderDate}
                 onChange={(d) => setUserCustomOrderDate(d)}
                 isNonWorkingDay={(d) => !checkIsWorkingDay(d, holidays)}
+                getHolidayLabel={(d) => {
+                  const status = getHolidayStatus(d, holidays);
+                  return status.isWorkingDay ? undefined : status.label;
+                }}
                 toBanglaDigits={toBanglaDigits}
                 placeholder="আদেশের তারিখ নির্বাচন..."
               />
+              {!checkIsWorkingDay(orderDate, holidays) && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1 mt-1">
+                  <AlertCircle size={13} />
+                  <span>সতর্কবার্তা: নির্বাচিত আদেশের তারিখটি {getHolidayStatus(orderDate, holidays).label}</span>
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5 md:col-span-2">

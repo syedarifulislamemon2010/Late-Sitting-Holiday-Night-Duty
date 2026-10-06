@@ -1,6 +1,7 @@
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { getShortDesignation as printGetShortDesignation } from '@/lib/print-helpers';
 import type { UserProfile } from '@/context/ProfileContext';
+import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
 
 export interface Cell {
   id: number;
@@ -215,7 +216,8 @@ export const getHolidayStatus = (dateStr: string, holidaysList: Holiday[]) => {
   const dayOfWeek = dateObj.getDay(); // 0: Sun, 5: Fri, 6: Sat
   const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
-  const dbHoliday = holidaysList.find(h => h.date === dateStr);
+  const dbHoliday = (holidaysList || []).find(h => h.date === dateStr);
+  const defaultHoliday = DEFAULT_2026_HOLIDAYS.find(h => h.date === dateStr);
 
   if (dbHoliday) {
     if (dbHoliday.isWorkingDay) {
@@ -229,12 +231,23 @@ export const getHolidayStatus = (dateStr: string, holidaysList: Holiday[]) => {
     }
 
     // Official DB Government Holiday
+    const name = defaultHoliday?.name || dbHoliday.name;
     return {
       isGovtHoliday: true,
       isWeekend: isWeekend,
       isWorkingDay: false,
-      holidayName: dbHoliday.name,
-      label: `সরকারি ছুটি: ${dbHoliday.name}`
+      holidayName: name,
+      label: `সরকারি ছুটি: ${name}`
+    };
+  }
+
+  if (defaultHoliday) {
+    return {
+      isGovtHoliday: true,
+      isWeekend: isWeekend,
+      isWorkingDay: false,
+      holidayName: defaultHoliday.name,
+      label: `সরকারি ছুটি: ${defaultHoliday.name}`
     };
   }
 
