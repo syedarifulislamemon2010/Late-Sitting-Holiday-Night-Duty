@@ -201,7 +201,7 @@ export const getHolidayStatus = (dateStr: string, holidaysList: Holiday[]) => {
   }
 
   // Hardcoded special working day check
-  if (dateStr === '2026-05-23') {
+  if (dateStr === '2026-05-23' || dateStr === '2026-10-17') {
     return {
       isGovtHoliday: false,
       isWeekend: false,

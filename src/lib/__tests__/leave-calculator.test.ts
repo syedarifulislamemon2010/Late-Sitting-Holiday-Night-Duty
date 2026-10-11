@@ -24,8 +24,9 @@ describe('LeaveCalculator - Sandwich Rule Calculations', () => {
       expect(isNonWorkingDay('2026-12-31')).toBe(false); // Year-End Bank Holiday (Thursday)
     });
 
-    it('should override weekend to working day for specific bank overrides (e.g., 2026-05-23)', () => {
+    it('should override weekend to working day for specific bank overrides (e.g., 2026-05-23 and 2026-10-17)', () => {
       expect(isNonWorkingDay('2026-05-23')).toBe(false); // Saturday, but overridden to working
+      expect(isNonWorkingDay('2026-10-17')).toBe(false); // Saturday, working day for 22 Oct holiday
     });
   });
 

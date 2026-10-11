@@ -266,37 +266,21 @@ export default function BulkBillPrintLayout({
         htmlContent += `
           <div class="page-container bill-page">
             <div class="print-block w-full">
-              <!-- Header -->
-              <div class="w-full flex justify-between items-start border-b-2 border-b-2 pb-2" style="border-bottom: 2px solid #0b5e9e;">
-                <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Janata_Bank_PLC_Logo.svg"
-                  alt="Janata Bank Logo" 
-                  style="height: 32px; flex-shrink: 0;"
-                />
-                <div class="text-right leading-tight">
-                  <h2 style="font-size: 15pt; font-weight: 800; color: #0b5e9e; margin: 0; line-height: 1.15;">জনতা ব্যাংক পিএলসি.</h2>
-                  <p style="font-size: 12pt; font-weight: bold; color: #64748b; margin: 2px 0 0 0; text-transform: uppercase;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
-                  <p style="font-size: 14px; font-weight: 500; color: #94a3b8; margin: 4px 0 0 0;">প্রধান কার্যালয়, ঢাকা</p>
+              <!-- Official Header -->
+              <div class="w-full flex justify-end text-right mb-4">
+                <div class="text-right leading-none" style="line-height: 0.85;">
+                  <h2 style="font-size: 20px; font-weight: bold; color: #000; text-transform: uppercase; margin: 0; padding: 0;">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                  <p style="font-size: 11px; font-weight: bold; color: #000; margin: 0; padding: 0; margin-top: 4px;">তারিখঃ ${toBanglaDigits(new Date(order.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                 </div>
-              </div>
-
-              <!-- Date and Reference -->
-              <div class="w-full flex justify-between items-start mt-4" style="font-size: 12pt;">
-                <p class="font-bold" style="margin: 0;">স্মারক নং: ${order.orderRef}</p>
-                <p class="font-bold" style="margin: 0;">তারিখ: ${toBanglaDigits(new Date(order.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
-              </div>
-
-              <div class="text-center font-bold underline mt-6" style="font-size: 14.5pt; text-decoration: underline; text-underline-offset: 4px;">
-                ব্যক্তিগত যাতায়াত ও আপ্যায়ন ভাতা বিল বিবরণী
               </div>
 
               <!-- Content Subject and Opening -->
               <div class="mt-2" style="display: flex; flex-direction: column;">
-                <h2 style="font-size: 14px; font-weight: bold; text-decoration: underline; text-underline-offset: 2px; margin: 8px 0 0 0;">
+                <h2 style="font-size: 11px; font-weight: bold; text-decoration: underline; text-underline-offset: 2px; margin: 8px 0 0 0; text-align: left;">
                   বিষয়: ${order.content?.subjectText || 'যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।'}
                 </h2>
                 <div class="mt-2.5">
-                  <p style="font-size: 14px; line-height: 1.15; text-indent: 0.5in; text-align: justify; margin: 0;">
+                  <p style="font-size: 11px; line-height: 1.15; text-align: justify; margin: 0;">
                     ${order.content?.openingParagraph || ''}
                   </p>
                 </div>
@@ -355,10 +339,9 @@ export default function BulkBillPrintLayout({
 
                 <!-- Bottom Text Details -->
                 <div class="mt-2 leading-normal" style="font-size: 14px; text-align: justify; line-height: 0.95;">
-                  <p class="font-bold" style="margin: 2px 0;">কথায়: ${(order.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
                   <p style="margin: 2px 0;">০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।</p>
                   <p style="margin: 2px 0;">
-                    ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>${toBanglaDigits(order.content?.totalTransport || 0)}/- (${getBanglaNumberWords(order.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>${toBanglaDigits(order.content?.totalApyaon || 0)}/- (${getBanglaNumberWords(order.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                    ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পণ এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫২১২০২০০০-০০৫) অনুযায়ী প্রকৃত খরচ = <strong>${toBanglaDigits(order.content?.totalTransport || 0)}/- (${getBanglaNumberWords(order.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫২১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>${toBanglaDigits(order.content?.totalApyaon || 0)}/- (${getBanglaNumberWords(order.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                   </p>
                   <p style="margin: 2px 0;">
                     ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBanglaDigits(order.content?.grandTotal || 0)}/- (${getBanglaNumberWords(order.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, ${getShortDesignation(order.content?.representativeDesignation || '') || 'ও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
@@ -548,31 +531,12 @@ export default function BulkBillPrintLayout({
                   >
                     <div className="flex flex-col h-full justify-between">
                       <div>
-                        {/* Header */}
-                        <div className="w-full flex justify-between items-start border-b-2 border-b-2 pb-2" style={{ borderBottom: '2px solid #0b5e9e' }}>
-                          <Image 
-                            src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Janata_Bank_PLC_Logo.svg"
-                            alt="Janata Bank Logo" 
-                            width={120}
-                            height={32}
-                            className="h-8 shrink-0" 
-                            unoptimized
-                          />
-                          <div className="text-right leading-tight">
-                            <h2 className="text-[20px] font-extrabold text-[#0b5e9e]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.15' }}>জনতা ব্যাংক পিএলসি.</h2>
-                            <p className="text-[20px] font-bold text-slate-500 uppercase mt-0.5" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.0', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
-                            <p className="text-[11px] font-medium text-slate-400 leading-none mt-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>প্রধান কার্যালয়, ঢাকা</p>
+                        {/* Official Header */}
+                        <div className="w-full flex justify-end text-right mb-4">
+                          <div className="text-right leading-none" style={{ lineHeight: '0.85' }}>
+                            <h2 className="text-[20px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                            <p className="text-[11px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '4px' }}>তারিখঃ {toBanglaDigits(new Date(order.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                           </div>
-                        </div>
-
-                        {/* Date and Ref */}
-                        <div className="w-full flex justify-between items-start mt-4 text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                          <p className="font-bold">স্মারক নং: {order.orderRef}</p>
-                          <p className="font-bold">তারিখ: {toBanglaDigits(new Date(order.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
-                        </div>
-
-                        <div className="text-center font-bold text-[14px] underline decoration-black underline-offset-4 mt-6 leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '14px', lineHeight: '1.0' }}>
-                          ব্যক্তিগত যাতায়াত ও আপ্যায়ন ভাতা বিল বিবরণী
                         </div>
 
                         <div className="flex-1 flex flex-col justify-between mt-2">
@@ -581,7 +545,7 @@ export default function BulkBillPrintLayout({
                               বিষয়: {order.content?.subjectText || 'যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।'}
                             </h2>
                             <div className="mt-2.5">
-                              <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.15', textIndent: '0.5in', textAlign: 'justify' }}>
+                              <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.15', textAlign: 'justify' }}>
                                 {order.content?.openingParagraph}
                               </p>
                             </div>
@@ -669,12 +633,11 @@ export default function BulkBillPrintLayout({
                             })()}
 
                             <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25' }}>
-                              <p className="font-bold text-black text-[11px]" style={{ fontSize: '11px' }}>কথায়: {(order.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
                               <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25', textAlign: 'justify' }}>
                                 ০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                               </p>
                               <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25', textAlign: 'justify' }}>
-                                ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(order.content?.totalTransport)}/- ({getBanglaNumberWords(order.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(order.content?.totalApyaon)}/- ({getBanglaNumberWords(order.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                                ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পণ এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫২১২০২০০০-০০৫) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(order.content?.totalTransport)}/- ({getBanglaNumberWords(order.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫২১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(order.content?.totalApyaon)}/- ({getBanglaNumberWords(order.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                               </p>
                               <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25', textAlign: 'justify' }}>
                                 ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(order.content?.grandTotal)}/- ({getBanglaNumberWords(order.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{order.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, {getShortDesignation(order.content?.representativeDesignation || '') || 'ও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।

@@ -323,7 +323,7 @@ export default function BillPrintLayout({
                   <div className="w-full flex justify-end text-right mb-4">
                     <div className="text-right leading-none" style={{ lineHeight: '0.85' }}>
                       <h2 className="text-[20px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                      <p className="text-[11px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '4px' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                      <p className="text-[11px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '4px' }}>তারিখঃ {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                     </div>
                   </div>
 
@@ -335,7 +335,7 @@ export default function BillPrintLayout({
                       </h2>
                       
                       <div className="mt-2.5">
-                        <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.15', textIndent: '0.5in', textAlign: 'justify' }}>
+                        <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.15', textAlign: 'justify' }}>
                           {viewingOrder.content?.openingParagraph}
                         </p>
                       </div>
@@ -430,12 +430,11 @@ export default function BillPrintLayout({
 
                       {/* Words and paragraphs */}
                       <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25' }}>
-                        <p className="font-bold text-black text-[11px]" style={{ fontSize: '11px' }}>কথায়: {(viewingOrder.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
                         <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25', textAlign: 'justify' }}>
                           ০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                         </p>
                         <p className="text-justify leading-normal text-black text-[11px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.25', textAlign: 'justify' }}>
-                          ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport)}/- ({getBanglaNumberWords(viewingOrder.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/- ({getBanglaNumberWords(viewingOrder.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                          ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পণ এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫২১২০২০০০-০০৫) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport)}/- ({getBanglaNumberWords(viewingOrder.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫২১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/- ({getBanglaNumberWords(viewingOrder.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                         </p>
                         {(() => {
                           const repDesig = getShortDesignation(viewingOrder.content?.representativeDesignation || '') || 

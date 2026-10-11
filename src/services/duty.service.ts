@@ -38,6 +38,10 @@ export class DutyService {
     const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
     const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
+    if (dateStr === '2026-05-23' || dateStr === '2026-10-17') {
+      return false;
+    }
+
     const override = await HolidayRepository.findByDate(dateStr);
     if (override) {
       return !override.isWorkingDay;
@@ -293,6 +297,9 @@ export class DutyService {
         const dateObj = new Date(dateStr);
         const dayOfWeek = dateObj.getDay();
         const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+        if (dateStr === '2026-05-23' || dateStr === '2026-10-17') {
+          return false;
+        }
         const isWorkingDay = holidayOverrideMap.get(dateStr);
         if (isWorkingDay !== undefined) {
           return !isWorkingDay;

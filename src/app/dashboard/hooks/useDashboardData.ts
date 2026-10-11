@@ -172,8 +172,8 @@ export function useDashboardData() {
     // Default weekends in Bangladesh (Friday and Saturday)
     let isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
     
-    // Override May 23rd (Saturday) to be a working day (not weekend)
-    if (dateStr === '2026-05-23') {
+    // Override May 23rd & Oct 17th (Saturdays) to be working days (not weekend)
+    if (dateStr === '2026-05-23' || dateStr === '2026-10-17') {
       isWeekend = false;
     }
     
@@ -199,7 +199,7 @@ export function useDashboardData() {
     const dateObj = new Date(y, m - 1, d);
     const dayOfWeek = dateObj.getDay();
     let isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
-    if (dateStr === '2026-05-23') {
+    if (dateStr === '2026-05-23' || dateStr === '2026-10-17') {
       isWeekend = false;
     }
     const dbHol = holidays.find(h => h.date === dateStr);

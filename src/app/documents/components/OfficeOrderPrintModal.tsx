@@ -173,7 +173,7 @@ export default function OfficeOrderPrintModal({
                   <div className="w-full flex justify-end text-right mb-4">
                     <div className="text-right leading-none" style={{ lineHeight: '0.85' }}>
                       <h2 className="text-[20px] font-bold text-black uppercase" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                      <p className="text-[11px] font-bold text-black" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '4px' }}>তারিখ: {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                      <p className="text-[11px] font-bold text-black" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '4px' }}>তারিখঃ {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                     </div>
                   </div>
 
@@ -185,7 +185,7 @@ export default function OfficeOrderPrintModal({
                       </h2>
                       
                       <div className="mt-2.5">
-                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.0', textIndent: '0.5in', textAlign: 'justify' }}>
+                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
                           {viewingOrder.content?.openingParagraph}
                         </p>
                       </div>
@@ -268,12 +268,11 @@ export default function OfficeOrderPrintModal({
 
                       {/* Words and paragraphs */}
                       <div className="text-left pt-3 mt-3 space-y-1.5" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.15' }}>
-                        <p className="font-bold text-black">কথায়: {(viewingOrder.content?.grandTotalInWords || '').replace(/\s*মাত্র\s*$/, '')} মাত্র।</p>
                         <p className="text-justify leading-normal text-black" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
                           ০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                         </p>
                         <p className="text-justify leading-normal text-black" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
-                          ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalTransport ? getFormattedNumberWords(viewingOrder.content.totalTransport) : ''})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalApyaon ? getFormattedNumberWords(viewingOrder.content.totalApyaon) : ''})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                          ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পণ এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫২১২০২০০০-০০৫) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalTransport ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalTransport ? getFormattedNumberWords(viewingOrder.content.totalTransport) : ''})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫২১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(viewingOrder.content?.totalApyaon ?? 0)}/- ({viewingOrder.content && viewingOrder.content.totalApyaon ? getFormattedNumberWords(viewingOrder.content.totalApyaon) : ''})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                         </p>
                         <p className="text-justify leading-normal text-black" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.15', textAlign: 'justify' }}>
                           ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(viewingOrder.content?.grandTotal ?? 0)}/- ({viewingOrder.content && viewingOrder.content.grandTotal ? getFormattedNumberWords(viewingOrder.content.grandTotal) : ''})</strong> <strong>{viewingOrder.employeeName.replace(/\s*\([^)]*\)\s*$/, '')}, {repDesig}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।

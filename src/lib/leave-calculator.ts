@@ -19,7 +19,7 @@ export const isNonWorkingDay = (dateStr: string, dbHolidays: Holiday[] = []): bo
   let isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
   // Override specific default weekends
-  if (dateStr === '2026-05-23') {
+  if (dateStr === '2026-05-23' || dateStr === '2026-10-17') {
     isWeekend = false;
   }
 

@@ -26,4 +26,14 @@ describe('Roster & Office Order Holiday Synchronization', () => {
     const orderDate = calculateOrderDate('2026-10-23', [], 1);
     expect(orderDate).toBe('2026-10-19');
   });
+
+  it('correctly recognizes 2026-10-17 Saturday as a working day (office open for 22 Oct holiday)', () => {
+    const status = getHolidayStatus('2026-10-17', []);
+    expect(status.isWorkingDay).toBe(true);
+    expect(status.isWeekend).toBe(false);
+    expect(status.label).toContain('কর্মদিবস');
+    expect(checkIsWorkingDay('2026-10-17', [])).toBe(true);
+    expect(isDateDisabledForType(true, 'LATE_SITTING')).toBe(false);
+    expect(isDateDisabledForType(true, 'HOLIDAY')).toBe(true);
+  });
 });

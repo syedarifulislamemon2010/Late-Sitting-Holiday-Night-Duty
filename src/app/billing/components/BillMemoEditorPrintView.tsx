@@ -453,7 +453,7 @@ export default function BillMemoEditorPrintView({
               <div className="w-full flex justify-end text-right mb-4">
                 <div className="text-right leading-none" style={{ lineHeight: '0.85' }}>
                   <h2 className="text-[18px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', lineHeight: '0.85', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                  <p className="text-[12px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '0.85', margin: 0, padding: 0, marginTop: '2px' }}>তারিখ: {getBanglaDate(billDate)} ইং</p>
+                  <p className="text-[12px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '0.85', margin: 0, padding: 0, marginTop: '2px' }}>তারিখঃ {getBanglaDate(billDate)} ইং</p>
                 </div>
               </div>
 
@@ -528,15 +528,17 @@ export default function BillMemoEditorPrintView({
                         })}
                         
                         <tr className="font-bold bg-slate-50/50 text-[11px] border-t-2 border-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                          <td className="border border-black p-1.5 text-right pr-3" colSpan={3} style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                            <p>মোট দিন = {toBanglaDigits(totalDaysAll)} দিন</p>
-                            <p className="mt-1">মোট টাকা = ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</p>
+                          <td colSpan={2} className="border border-black p-1.5 text-right pr-3 font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                            সর্বমোট:
                           </td>
-                          <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                            ({toBanglaDigits(transportRate)}x{toBanglaDigits(totalDaysAll)}) = {toBanglaDigits(totalTransportAll)}/-
+                          <td className="border border-black p-1.5 text-center font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                            {toBanglaDigits(totalDaysAll)} দিন
                           </td>
-                          <td className="border border-black p-1.5 text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                            ({toBanglaDigits(apyaonRate)}x{toBanglaDigits(totalDaysAll)}) = {toBanglaDigits(totalApyaonAll)}/-
+                          <td className="border border-black p-1.5 text-center font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                            {toBanglaDigits(totalTransportAll)}/-
+                          </td>
+                          <td className="border border-black p-1.5 text-center font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                            {toBanglaDigits(totalApyaonAll)}/-
                           </td>
                           <td className="border border-black p-1.5 font-extrabold text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
                             {toBanglaDigits(grandTotalPrintAll)}/-
@@ -552,7 +554,7 @@ export default function BillMemoEditorPrintView({
                       ০১। যাতায়াত বিলটি সঠিক এবং পূর্বে পরিশোধ করা হয়নি।
                     </p>
                     <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
-                      ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পন এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫৫১২০৫০০০০০০৩) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫৫১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
+                      ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পণ এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫২১২০২০০০-০০৫) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalTransportAll)}/- ({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫২১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>{toBanglaDigits(totalApyaonAll)}/- ({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
                     </p>
                     <p className="text-justify leading-normal text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1' }}>
                       ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>{toBanglaDigits(grandTotalPrintAll)}/- ({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>{(representativeName || 'জনাব আব্দুল্লাহ আল জোবায়ের').replace(/\s*\([^)]*\)\s*$/, '')}, {representativeDesignation || 'ও-আইটি'}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
