@@ -6,7 +6,6 @@ import { ShieldCheck, AlertCircle, Eye, EyeOff, Lock, User, KeyRound } from 'luc
 import { signIn, signOut } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { canAccessRoute } from '@/permissions/rbac';
-import ForcedPasswordChangeModal from '@/components/ForcedPasswordChangeModal';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 
 
@@ -400,14 +399,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-      {userProfile?.mustChangePassword && (
-        <ForcedPasswordChangeModal
-          isOpen={true}
-          onSuccess={() => {
-            setUserProfile((prev) => (prev ? { ...prev, mustChangePassword: false } : prev));
-          }}
-        />
-      )}
     </>
   );
 }

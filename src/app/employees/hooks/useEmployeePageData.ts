@@ -245,7 +245,7 @@ export function useEmployeePageData(currentUser: UserProfile | null | undefined)
       
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || 'Failed to save officer');
+        throw new Error(err.message || err.error || 'Failed to save officer');
       }
 
       setIsEmpModalOpen(false);
@@ -257,7 +257,13 @@ export function useEmployeePageData(currentUser: UserProfile | null | undefined)
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
-      setErrorMessage(msg === 'cell_required' ? 'অনুগ্রহ করে সেল সিলেক্ট করুন।' : 'সার্ভার সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
+      if (msg === 'cell_required') {
+        setErrorMessage('অনুগ্রহ করে সেল সিলেক্ট করুন।');
+      } else if (msg) {
+        setErrorMessage(msg);
+      } else {
+        setErrorMessage('সার্ভার সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
+      }
     }
   };
 

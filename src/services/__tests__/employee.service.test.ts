@@ -2,9 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EmployeeService } from '../employee.service';
 import { EmployeeRepository } from '@/repositories/employee.repository';
 
-vi.mock('@/lib/db', () => ({
-  db: {
-    select: vi.fn().mockReturnThis(),
+vi.mock('@/lib/db', () => {
+  const queryMock: any = {
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
     orderBy: vi.fn().mockReturnThis(),
@@ -14,17 +13,24 @@ vi.mock('@/lib/db', () => ({
     update: vi.fn().mockReturnThis(),
     set: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
-    transaction: vi.fn(async (cb) => cb({
+    then: (resolve: (val: any) => any) => Promise.resolve([{ id: 1, name: 'Cell 1' }]).then(resolve)
+  };
+  queryMock.from.mockReturnValue(queryMock);
+  queryMock.where.mockReturnValue(queryMock);
+
+  return {
+    db: {
+      select: vi.fn(() => queryMock),
       insert: vi.fn().mockReturnThis(),
       values: vi.fn().mockReturnThis(),
       returning: vi.fn().mockResolvedValue([]),
       update: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
-    }))
-  }
-}));
+      transaction: vi.fn(async (cb) => cb(queryMock))
+    }
+  };
+});
 
 vi.mock('@/repositories/employee.repository', () => ({
   EmployeeRepository: {
@@ -34,6 +40,7 @@ vi.mock('@/repositories/employee.repository', () => ({
     update: vi.fn(),
     delete: vi.fn(),
     findByBankId: vi.fn(),
+    findDuplicate: vi.fn(),
     listAllWithCell: vi.fn(),
     listAll: vi.fn()
   }
@@ -112,5 +119,68 @@ describe('EmployeeService', () => {
         { ipAddress: '127.0.0.1', userAgent: 'test' }
       )
     ).rejects.toThrow();
+  });
+
+  it('rejects creating employee if duplicate name or bankId exists', async () => {
+    vi.mocked(EmployeeRepository.findDuplicate).mockResolvedValue({
+      id: 5,
+      name: 'Existing Officer',
+      nameEn: null,
+      bankId: '12345',
+      designation: 'PO',
+      designationEn: null,
+      fileNo: '12',
+      mobile: null,
+      cellId: 1,
+      userId: null,
+      createdAt: new Date()
+    } as unknown as typeof import('@/db/schema').employees.$inferSelect);
+
+    await expect(
+      EmployeeService.createEmployee(
+        adminUser,
+        { name: 'Existing Officer', designation: 'PO', bankId: '12345', fileNo: '12', cellId: 1, mobile: '' },
+        { ipAddress: '127.0.0.1', userAgent: 'test' }
+      )
+    ).rejects.toThrow('ডুপ্লিকেট এন্ট্রি গ্রহণযোগ্য নয়');
+  });
+
+  it('rejects updating employee if duplicate name or bankId exists on another employee', async () => {
+    vi.mocked(EmployeeRepository.findById).mockResolvedValue({
+      id: 1,
+      name: 'Officer One',
+      nameEn: null,
+      bankId: '11111',
+      designation: 'PO',
+      designationEn: null,
+      fileNo: '1',
+      mobile: null,
+      cellId: 1,
+      userId: null,
+      createdAt: new Date()
+    } as unknown as typeof import('@/db/schema').employees.$inferSelect);
+
+    vi.mocked(EmployeeRepository.findDuplicate).mockResolvedValue({
+      id: 2,
+      name: 'Officer Two',
+      nameEn: null,
+      bankId: '22222',
+      designation: 'PO',
+      designationEn: null,
+      fileNo: '2',
+      mobile: null,
+      cellId: 1,
+      userId: null,
+      createdAt: new Date()
+    } as unknown as typeof import('@/db/schema').employees.$inferSelect);
+
+    await expect(
+      EmployeeService.updateEmployee(
+        adminUser,
+        1,
+        { bankId: '22222' },
+        { ipAddress: '127.0.0.1', userAgent: 'test' }
+      )
+    ).rejects.toThrow('ডুপ্লিকেট এন্ট্রি গ্রহণযোগ্য নয়');
   });
 });

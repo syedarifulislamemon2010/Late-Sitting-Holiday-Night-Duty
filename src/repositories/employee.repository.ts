@@ -13,6 +13,30 @@ export class EmployeeRepository {
     return list[0] || null;
   }
 
+  static async findDuplicate(name: string, bankId?: string | null, excludeId?: number) {
+    const trimmedName = name.trim();
+    const cleanName = trimmedName.replace(/^(জনাব|জনাবা)\s+/, '').trim().toLowerCase();
+    const trimmedBankId = bankId ? bankId.trim().toLowerCase() : null;
+
+    const allEmps = await db.select().from(employees);
+    return allEmps.find((emp) => {
+      if (excludeId && emp.id === excludeId) return false;
+
+      // Match 1: Bank ID duplicate (if bankId provided)
+      if (trimmedBankId && emp.bankId && emp.bankId.trim().toLowerCase() === trimmedBankId) {
+        return true;
+      }
+
+      // Match 2: Same Name duplicate
+      const empCleanName = emp.name.trim().replace(/^(জনাব|জনাবা)\s+/, '').trim().toLowerCase();
+      if (empCleanName === cleanName || emp.name.trim().toLowerCase() === trimmedName.toLowerCase()) {
+        return true;
+      }
+
+      return false;
+    }) || null;
+  }
+
   static async listAll(conditions?: SQL | undefined) {
     return db.select().from(employees).where(conditions);
   }

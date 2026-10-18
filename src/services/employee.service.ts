@@ -253,6 +253,15 @@ export class EmployeeService {
 
     const validated = employeeCreateSchema.parse(body);
 
+    // Prevent duplicate entries by name or bankId
+    const existingDuplicate = await EmployeeRepository.findDuplicate(validated.name, validated.bankId);
+    if (existingDuplicate) {
+      if (validated.bankId && existingDuplicate.bankId && existingDuplicate.bankId.trim().toLowerCase() === validated.bankId.trim().toLowerCase()) {
+        throw new AppError(`এই ব্যাংক আইডি (${validated.bankId}) সম্বলিত কর্মকর্তা (${existingDuplicate.name}) ইতিমধ্যে সিস্টেমে বিদ্যমান। ডুপ্লিকেট এন্ট্রি গ্রহণযোগ্য নয়।`, 409, 'duplicate_employee');
+      }
+      throw new AppError(`এই নামের কর্মকর্তা (${existingDuplicate.name}) ইতিমধ্যে সিস্টেমে বিদ্যমান। একই নামে ডুপ্লিকেট এন্ট্রি গ্রহণযোগ্য নয়।`, 409, 'duplicate_employee');
+    }
+
     const newEmp = await EmployeeRepository.create({
       name: validated.name,
       designation: validated.designation,
@@ -346,6 +355,17 @@ export class EmployeeService {
     if (validated.bankId !== undefined) updatedData.bankId = validated.bankId?.trim() || null;
     if (validated.fileNo !== undefined) updatedData.fileNo = validated.fileNo?.trim() || null;
     if (validated.cellId !== undefined) updatedData.cellId = validated.cellId;
+
+    // Check duplicate name or bankId against other employees
+    const targetName = updatedData.name || existingEmployee.name;
+    const targetBankId = updatedData.bankId !== undefined ? updatedData.bankId : existingEmployee.bankId;
+    const existingDuplicate = await EmployeeRepository.findDuplicate(targetName, targetBankId, id);
+    if (existingDuplicate) {
+      if (targetBankId && existingDuplicate.bankId && existingDuplicate.bankId.trim().toLowerCase() === targetBankId.trim().toLowerCase()) {
+        throw new AppError(`এই ব্যাংক আইডি (${targetBankId}) সম্বলিত কর্মকর্তা (${existingDuplicate.name}) ইতিমধ্যে সিস্টেমে বিদ্যমান। ডুপ্লিকেট এন্ট্রি গ্রহণযোগ্য নয়।`, 409, 'duplicate_employee');
+      }
+      throw new AppError(`এই নামের কর্মকর্তা (${existingDuplicate.name}) ইতিমধ্যে সিস্টেমে বিদ্যমান। একই নামে ডুপ্লিকেট এন্ট্রি গ্রহণযোগ্য নয়।`, 409, 'duplicate_employee');
+    }
 
     const updatedEmp = await EmployeeRepository.update(id, updatedData);
 
