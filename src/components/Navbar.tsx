@@ -203,14 +203,14 @@ export default function Navbar() {
   const userDisplayName = (currentUser?.name || '').replace(/^(জনাব|জনাবা)\s+/, '').trim();
 
   return (
-    <header role="banner" className="no-print relative lg:sticky lg:top-0 z-30 lg:z-40 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between px-3 sm:px-4 h-14 font-sans select-none">
+    <header role="banner" className="no-print relative lg:sticky lg:top-0 z-30 lg:z-40 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between px-2.5 sm:px-4 h-14 font-sans select-none gap-2">
       {/* Left section: Breadcrumbs */}
-      <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
         {getBreadcrumbs()}
       </div>
 
       {/* Center section: Search Trigger Button */}
-      <div className="hidden md:flex items-center flex-1 max-w-[200px] lg:max-w-xs justify-center mx-2 lg:mx-4">
+      <div className="hidden md:flex items-center flex-1 max-w-[180px] lg:max-w-xs justify-center mx-1 lg:mx-4">
         <button 
           onClick={() => {
             const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true });
@@ -227,15 +227,15 @@ export default function Navbar() {
       </div>
 
       {/* Right section: Corporate Profile Avatar & Control Buttons */}
-      <div className="flex items-center gap-1.5 sm:gap-2.5 justify-end shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2 justify-end shrink-0">
         {/* Language Switcher Toggle Button */}
         <button 
           onClick={toggleLang}
-          className="px-2.5 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold text-xs transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+          className="px-2 py-1.5 sm:px-2.5 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold text-xs transition-all cursor-pointer shadow-xs flex items-center gap-1"
           title={lang === 'bn' ? "Switch to English" : "বাংলায় সুইচ করুন"}
         >
-          <Languages size={15} className="text-indigo-600 dark:text-indigo-400" />
-          <span className="font-mono text-[11px] uppercase tracking-wider">{lang === 'bn' ? 'BN' : 'EN'}</span>
+          <Languages size={14} className="text-indigo-600 dark:text-indigo-400" />
+          <span className="font-mono text-[10px] sm:text-[11px] uppercase tracking-wider">{lang === 'bn' ? 'BN' : 'EN'}</span>
         </button>
 
         {/* Notification Center Bell Component */}
@@ -244,10 +244,10 @@ export default function Navbar() {
         {/* Theme Toggle Button */}
         <button 
           onClick={toggleTheme}
-          className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all cursor-pointer shadow-xs flex items-center justify-center"
+          className="p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all cursor-pointer shadow-xs flex items-center justify-center"
           title={isDark ? "লাইট মোড" : "ডার্ক মোড"}
         >
-          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          {isDark ? <Sun size={17} /> : <Moon size={17} />}
         </button>
 
         <div className="relative" ref={dropdownRef}>
@@ -256,12 +256,12 @@ export default function Navbar() {
             aria-haspopup="true"
             aria-expanded={isDropdownOpen ? 'true' : 'false'}
             aria-label="User menu"
-            className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-slate-100 dark:border-slate-800/80 shadow-sm"
+            className="flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-slate-100 dark:border-slate-800/80 shadow-xs"
           >
-            <div className="w-8 h-8 rounded-lg bg-blue-50/80 dark:bg-blue-950/20 flex items-center justify-center overflow-hidden shrink-0 border border-blue-100 dark:border-blue-900/30">
-              <Image src="/janata-bank-logo-real.svg" alt="JB Brand Avatar" width={24} height={24} className="object-contain" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50/80 dark:bg-blue-950/20 flex items-center justify-center overflow-hidden shrink-0 border border-blue-100 dark:border-blue-900/30">
+              <Image src="/janata-bank-logo-real.svg" alt="JB Brand Avatar" width={22} height={22} className="object-contain" />
             </div>
-            <span className="hidden md:inline text-xs font-bold text-slate-700 dark:text-slate-200 max-w-[280px] truncate">{userDisplayName}</span>
+            <span className="hidden md:inline text-xs font-bold text-slate-700 dark:text-slate-200 max-w-[200px] lg:max-w-[280px] truncate">{userDisplayName}</span>
           </button>
 
           {/* Premium Dropdown Menu */}

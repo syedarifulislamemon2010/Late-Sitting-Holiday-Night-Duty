@@ -279,24 +279,55 @@ body {
 }
 
 .slim-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 .slim-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .slim-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.35);
+  background: rgba(148, 163, 184, 0.4);
   border-radius: 9999px;
 }
 .slim-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.6);
+  background: rgba(148, 163, 184, 0.7);
 }
 .dark .slim-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
+  background: rgba(100, 116, 139, 0.35);
 }
 .dark .slim-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(100, 116, 139, 0.6);
+}
+
+/* Universal table and container smooth scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+.dark * {
+  scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
+}
+
+/* Interactive Button Tactile Feedback */
+button:not(:disabled):active,
+a[role="button"]:not(:disabled):active {
+  transform: scale(0.98);
+  transition: transform 0.08s ease;
+}
+
+/* Unified Accessible Form Focus Ring */
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  border-color: #0b5e9e !important;
+  box-shadow: 0 0 0 3px rgba(11, 94, 158, 0.18) !important;
+}
+.dark input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+.dark select:focus-visible,
+.dark textarea:focus-visible {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22) !important;
 }
 
 /* Selection highlight */
