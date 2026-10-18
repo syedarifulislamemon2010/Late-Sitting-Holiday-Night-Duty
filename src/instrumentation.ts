@@ -33,7 +33,8 @@ async function triggerBackup(baseUrl: string, cronSecret: string) {
       headers: { 'x-cron-secret': cronSecret }
     });
     if (res.ok) {
-      logger.info(`[AutoBackup] Daily backup completed successfully at ${new Date().toISOString()}`);
+      const data = await res.json().catch(() => ({}));
+      logger.info(`[AutoBackup] Daily backup completed successfully: ${data.fileName || 'saved to disk'} at ${new Date().toISOString()}`);
     } else {
       logger.error(`[AutoBackup] Backup failed with status ${res.status}`);
     }

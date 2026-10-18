@@ -283,9 +283,29 @@ export class DutyService {
 
     return db.transaction(async (tx) => {
       if (validated.originalOrderRef) {
+        if (currentUser.role !== 'ADMIN') {
+          const existingForOrder = await DutyRepository.findByOrderRef(validated.originalOrderRef, tx);
+          const userCellIds = currentUser.cells?.map((c: { id: number }) => c.id) || [];
+          for (const d of existingForOrder) {
+            const dEmp = await EmployeeRepository.findById(d.employeeId);
+            if (dEmp && !userCellIds.includes(dEmp.cellId)) {
+              throw new AuthError('অন্য সেলের অফিস আদেশের ডিউটি পরিবর্তনের অনুমতি নেই।', 403, 'forbidden');
+            }
+          }
+        }
         await DutyRepository.deleteDutiesByOrderRef(validated.originalOrderRef, tx);
       }
       if (validated.orderRef && validated.orderRef !== validated.originalOrderRef) {
+        if (currentUser.role !== 'ADMIN') {
+          const existingForOrder = await DutyRepository.findByOrderRef(validated.orderRef, tx);
+          const userCellIds = currentUser.cells?.map((c: { id: number }) => c.id) || [];
+          for (const d of existingForOrder) {
+            const dEmp = await EmployeeRepository.findById(d.employeeId);
+            if (dEmp && !userCellIds.includes(dEmp.cellId)) {
+              throw new AuthError('অন্য সেলের অফিস আদেশের ডিউটি পরিবর্তনের অনুমতি নেই।', 403, 'forbidden');
+            }
+          }
+        }
         await DutyRepository.deleteDutiesByOrderRef(validated.orderRef, tx);
       }
 
@@ -493,7 +513,7 @@ export class DutyService {
 
     const currentDuty = await DutyRepository.findById(id);
     if (!currentDuty) {
-      throw new AppError('duty_not_found', 444, 'duty_not_found');
+      throw new AppError('duty_not_found', 404, 'duty_not_found');
     }
 
     const emp = await EmployeeRepository.findById(currentDuty.employeeId);
@@ -613,12 +633,23 @@ export class DutyService {
 
 
   static async deleteDuty(currentUser: UserSession | null | undefined, id: number) {
+    if (!currentUser) {
+      throw new AuthError('অনুমতি নেই।', 403, 'unauthorized');
+    }
+
     const dutyRecord = await DutyRepository.findById(id);
     if (!dutyRecord) {
       throw new AppError('duty_not_found', 404, 'duty_not_found');
     }
 
     const emp = await EmployeeRepository.findById(dutyRecord.employeeId);
+    if (currentUser.role !== 'ADMIN') {
+      const userCellIds = currentUser.cells?.map((c: { id: number }) => c.id) || [];
+      if (!emp || !userCellIds.includes(emp.cellId)) {
+        throw new AuthError('অন্য সেলের কর্মকর্তার ডিউটি মুছে ফেলার অনুমতি নেই।', 403, 'forbidden');
+      }
+    }
+
     const duty = {
       ...dutyRecord,
       employee: emp

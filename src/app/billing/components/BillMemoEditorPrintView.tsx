@@ -171,7 +171,7 @@ export default function BillMemoEditorPrintView({
             ফিরে যান (লেজার ভিউ)
           </button>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             {isEditingArchive ? (
               <>
                 <button
@@ -192,36 +192,10 @@ export default function BillMemoEditorPrintView({
                   )}
                 </button>
                 <button
-                  onClick={handleCancelEditBill}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-750 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-250 dark:border-slate-700 cursor-pointer font-sans whitespace-nowrap"
-                >
-                  বাতিল করুন
-                </button>
-              </>
-            ) : !billGenerated ? (
-              <button
-                onClick={() => handleGenerateAndPrint('generate')}
-                disabled={archiving}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {archiving ? (
-                  <>
-                    <Loader2 className="animate-spin" size={14} />
-                    প্রসেস হচ্ছে...
-                  </>
-                ) : (
-                  <>
-                    <FileSignature size={14} />
-                    বিল জেনারেট করুন (Generate Bill)
-                  </>
-                )}
-              </button>
-            ) : (
-              <>
-                <button
                   onClick={() => handleGenerateAndPrint('print')}
                   disabled={archiving}
                   className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  title="প্রিন্ট প্রিভিউ দেখুন"
                 >
                   {archiving ? (
                     <>
@@ -236,9 +210,41 @@ export default function BillMemoEditorPrintView({
                   )}
                 </button>
                 <button
-                  onClick={() => handleGenerateAndPrint('download')}
+                  onClick={handleCancelEditBill}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-750 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-250 dark:border-slate-700 cursor-pointer font-sans whitespace-nowrap"
+                >
+                  বাতিল করুন
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => handleGenerateAndPrint('generate')}
+                  disabled={archiving || billGenerated}
+                  title={billGenerated ? 'এই আদেশটির বিল ইতিমধ্যে জেনারেট করা হয়েছে (একটি বিল একবারই জেনারেট হবে)' : 'বিল জেনারেট করুন'}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors shadow-md font-sans whitespace-nowrap ${
+                    billGenerated
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-60'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                  }`}
+                >
+                  {archiving ? (
+                    <>
+                      <Loader2 className="animate-spin" size={14} />
+                      প্রসেস হচ্ছে...
+                    </>
+                  ) : (
+                    <>
+                      <FileSignature size={14} />
+                      {billGenerated ? 'বিল জেনারেট সম্পন্ন' : 'বিল জেনারেট করুন (Generate Bill)'}
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleGenerateAndPrint('print')}
                   disabled={archiving}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-sans whitespace-nowrap"
+                  title="প্রিন্ট প্রিভিউ দেখুন (বারবার দেখা যাবে)"
                 >
                   {archiving ? (
                     <>
@@ -248,10 +254,29 @@ export default function BillMemoEditorPrintView({
                   ) : (
                     <>
                       <Printer size={14} />
-                      ডাউনলোড
+                      প্রিন্ট প্রিভিউ
                     </>
                   )}
                 </button>
+                {billGenerated && (
+                  <button
+                    onClick={() => handleGenerateAndPrint('download')}
+                    disabled={archiving}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-sans whitespace-nowrap"
+                  >
+                    {archiving ? (
+                      <>
+                        <Loader2 className="animate-spin" size={14} />
+                        প্রসেস হচ্ছে...
+                      </>
+                    ) : (
+                      <>
+                        <Printer size={14} />
+                        ডাউনলোড
+                      </>
+                    )}
+                  </button>
+                )}
               </>
             )}
           </div>

@@ -25,6 +25,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
+    }
+
     const body = await request.json();
 
     const validation = leaveCreateSchema.safeParse(body);
@@ -38,11 +42,18 @@ export async function POST(request: Request) {
 
     const validatedData = validation.data;
 
-    // Dynamically save or update the applicant's mobile number in the database if inputted
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    const userAgent = request.headers.get('user-agent') || 'Unknown';
+
+    const result = await LeaveService.createLeave(user, validatedData, { ipAddress, userAgent });
+
+    // Dynamically save or update the applicant's mobile number ONLY AFTER successful authorization
     if (validatedData.bankId && validatedData.mobileNo) {
       const trimmedBankId = validatedData.bankId.trim().toLowerCase();
       const trimmedMobile = validatedData.mobileNo.trim();
-      if (trimmedBankId && trimmedMobile) {
+      const isOwnerOrAdmin = user.role === 'ADMIN' || user.username.trim().toLowerCase() === trimmedBankId;
+
+      if (isOwnerOrAdmin && trimmedBankId && trimmedMobile) {
         const empList = await db.select().from(employees).where(eq(sql`LOWER(TRIM(${employees.bankId}))`, trimmedBankId));
         const emp = empList[0];
         if (emp && (!emp.mobile || emp.mobile.trim() !== trimmedMobile)) {
@@ -59,10 +70,6 @@ export async function POST(request: Request) {
       }
     }
 
-    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
-    const userAgent = request.headers.get('user-agent') || 'Unknown';
-
-    const result = await LeaveService.createLeave(user, validatedData, { ipAddress, userAgent });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof ConflictError) {

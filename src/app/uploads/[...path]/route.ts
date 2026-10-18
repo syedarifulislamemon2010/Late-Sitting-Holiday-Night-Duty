@@ -10,14 +10,25 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const filePathSegments = resolvedParams.path;
-    const resolvedPath = path.join(process.cwd(), 'public', 'uploads', ...filePathSegments);
+    const uploadsDir = path.resolve(process.cwd(), 'public', 'uploads');
+    const resolvedPath = path.resolve(uploadsDir, ...filePathSegments);
+
+    // Prevent path traversal attack
+    if (!resolvedPath.startsWith(uploadsDir + path.sep) && resolvedPath !== uploadsDir) {
+      return new Response('Forbidden', { status: 403 });
+    }
 
     if (!fs.existsSync(resolvedPath)) {
       return new Response('File not found', { status: 404 });
     }
 
-    const fileBuffer = fs.readFileSync(resolvedPath);
     const ext = path.extname(resolvedPath).toLowerCase();
+    const allowedExtensions = new Set(['.html', '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.zip']);
+    if (!allowedExtensions.has(ext)) {
+      return new Response('Unsupported file type', { status: 415 });
+    }
+
+    const fileBuffer = fs.readFileSync(resolvedPath);
 
     let contentType = 'application/octet-stream';
     if (ext === '.html') {
@@ -32,11 +43,14 @@ export async function GET(
       contentType = 'image/gif';
     } else if (ext === '.svg') {
       contentType = 'image/svg+xml';
+    } else if (ext === '.txt' || ext === '.csv') {
+      contentType = 'text/plain; charset=utf-8';
     }
 
     return new Response(fileBuffer, {
       headers: {
         'Content-Type': contentType,
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {

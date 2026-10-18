@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 // High-performance token bucket rate limiter for single-instance deployment.
 // NOTE FOR FUTURE MULTI-INSTANCE SCALING:
 // In a multi-instance/clustered environment behind a load balancer, migrate this state to a
 // shared distributed store such as Redis (e.g., Upstash Redis / ioredis token bucket).
 const rateLimitMap = new Map<string, { tokens: number; lastRefilled: number }>();
-const BUCKET_CAPACITY = 5000;
-const REFILL_RATE_MS = 10; // Refill 100 tokens per second
+const BUCKET_CAPACITY = 300;
+const REFILL_RATE_MS = 50; // Refill 20 tokens per second
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // Clean stale entries every 5 minutes
 
 // Periodic cleanup to prevent memory leak
@@ -23,7 +24,7 @@ if (typeof globalThis !== 'undefined' && !(globalThis as Record<string, unknown>
   }, CLEANUP_INTERVAL_MS);
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow unrestricted access to public paths and static assets
@@ -35,6 +36,7 @@ export function proxy(request: NextRequest) {
     '/api/ping',
     '/api/backup/cron',
     '/_next', 
+    '/fonts',
     '/favicon.ico', 
     '/manifest.json', 
     '/manifest.webmanifest',
@@ -45,9 +47,13 @@ export function proxy(request: NextRequest) {
   ];
   const isPublic = publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
 
-  // Authentication Check for non-public routes
+  // Cryptographic Authentication Check for non-public routes
   if (!isPublic) {
-    const token = request.cookies.get('next-auth.session-token') || request.cookies.get('__Secure-next-auth.session-token');
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET || 'ci-build-temporary-nextauth-secret-key-2026'
+    });
+
     if (!token) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json(
@@ -66,8 +72,10 @@ export function proxy(request: NextRequest) {
   // Rate Limiting for API routes
   const rateLimitExempt = ['/api/profile', '/api/auth', '/api/notifications', '/api/ping'];
   const isExempt = rateLimitExempt.some(p => pathname === p || pathname.startsWith(p + '/'));
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '127.0.0.1';
-  const isLoopback = ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
+  // Prioritize X-Real-IP set by trusted reverse proxy, fall back to first X-Forwarded-For
+  const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+  // Only exempt loopback in non-production environments to prevent header spoofing bypass
+  const isLoopback = process.env.NODE_ENV !== 'production' && (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost');
 
   if (pathname.startsWith('/api/') && !isExempt && !isLoopback) {
     const now = Date.now();

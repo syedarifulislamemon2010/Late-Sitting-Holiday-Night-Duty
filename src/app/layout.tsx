@@ -50,76 +50,280 @@ export default function RootLayout({
           suppressHydrationWarning={true}
           dangerouslySetInnerHTML={{
             __html: `
-              // Suppress third-party chrome extension errors (e.g. eppiocemhmnlbhjplcgkofciiegomcon, M_ID, bis_skin_checked)
-              window.addEventListener('error', function(e) {
-                if ((e.filename && e.filename.indexOf('chrome-extension://') !== -1) || 
-                    (e.message && (e.message.indexOf('M_ID') !== -1 || e.message.indexOf('chrome-extension') !== -1 || e.message.indexOf('bis_skin_checked') !== -1))) {
-                  e.stopImmediatePropagation();
-                  e.preventDefault();
-                  return true;
-                }
-              }, true);
-              window.addEventListener('unhandledrejection', function(e) {
-                if (e.reason && (String(e.reason).indexOf('chrome-extension://') !== -1 || String(e.reason.stack || '').indexOf('chrome-extension://') !== -1 || String(e.reason).indexOf('bis_skin_checked') !== -1)) {
-                  e.stopImmediatePropagation();
-                  e.preventDefault();
-                }
-              }, true);
-
-              // 1. Prevent scripts/extensions from setting 'bis_skin_checked' attribute
-              try {
+              (function() {
+                // 1. Native DOM method backups
+                var origRemoveAttr = Element.prototype.removeAttribute;
+                var origHasAttr = Element.prototype.hasAttribute;
+                var origGetAttr = Element.prototype.getAttribute;
                 var origSetAttr = Element.prototype.setAttribute;
+
+                // 2. Helper to detect extension noise, bis_skin_checked, and hydration diffs
+                function isExtensionNoise(val) {
+                  if (!val) return false;
+                  var str = '';
+                  try {
+                    if (typeof val === 'string') {
+                      str = val;
+                    } else if (val instanceof Error) {
+                      str = (val.message || '') + ' ' + (val.stack || '') + ' ' + (val.diff || '') + ' ' + (val.details || '') + ' ' + (val.cause ? String(val.cause) : '');
+                    } else if (typeof val === 'object') {
+                      str = JSON.stringify(val) + ' ' + Object.values(val).join(' ');
+                    } else {
+                      str = String(val);
+                    }
+                  } catch(e) {
+                    str = String(val);
+                  }
+                  return str.indexOf('bis_skin_checked') !== -1 || 
+                         str.indexOf('bis_') !== -1 ||
+                         str.indexOf('chrome-extension://') !== -1 || 
+                         str.indexOf('moz-extension://') !== -1 ||
+                         str.indexOf('safari-extension://') !== -1 ||
+                         str.indexOf('M_ID') !== -1;
+                }
+
+                function hasNoise(args) {
+                  if (!args || !args.length) return false;
+                  for (var i = 0; i < args.length; i++) {
+                    if (isExtensionNoise(args[i])) return true;
+                  }
+                  try {
+                    var joined = Array.prototype.slice.call(args).map(function(item) {
+                      if (!item) return '';
+                      if (typeof item === 'string') return item;
+                      if (item instanceof Error) {
+                        return (item.message || '') + ' ' + (item.stack || '') + ' ' + (item.diff || '') + ' ' + (item.details || '');
+                      }
+                      try { return JSON.stringify(item); } catch(_) { return String(item); }
+                    }).join(' ');
+                    if (isExtensionNoise(joined)) return true;
+                  } catch(_) {}
+                  return false;
+                }
+
+                // 3. Intercept console.error & console.warn via defineProperty with getter and setter
+                // This prevents Next.js dev overlay from overriding our suppressor when intercept-console-error loads!
+                var _activeConsoleError = console.error;
+                try {
+                  Object.defineProperty(console, 'error', {
+                    get: function() {
+                      return _activeConsoleError;
+                    },
+                    set: function(newFn) {
+                      if (typeof newFn === 'function') {
+                        _activeConsoleError = function(...args) {
+                          if (hasNoise(args)) return;
+                          return newFn.apply(this, args);
+                        };
+                      } else {
+                        _activeConsoleError = newFn;
+                      }
+                    },
+                    configurable: true,
+                    enumerable: true
+                  });
+                } catch(e) {
+                  var fallbackOrigError = console.error;
+                  console.error = function(...args) {
+                    if (hasNoise(args)) return;
+                    fallbackOrigError.apply(console, args);
+                  };
+                }
+
+                var _activeConsoleWarn = console.warn;
+                try {
+                  Object.defineProperty(console, 'warn', {
+                    get: function() {
+                      return _activeConsoleWarn;
+                    },
+                    set: function(newFn) {
+                      if (typeof newFn === 'function') {
+                        _activeConsoleWarn = function(...args) {
+                          if (hasNoise(args)) return;
+                          return newFn.apply(this, args);
+                        };
+                      } else {
+                        _activeConsoleWarn = newFn;
+                      }
+                    },
+                    configurable: true,
+                    enumerable: true
+                  });
+                } catch(e) {
+                  var fallbackOrigWarn = console.warn;
+                  console.warn = function(...args) {
+                    if (hasNoise(args)) return;
+                    fallbackOrigWarn.apply(console, args);
+                  };
+                }
+
+                // 4. Intercept window.reportError (Next.js client runtime uses this for onRecoverableError)
+                if (typeof window.reportError === 'function') {
+                  var _activeReportError = window.reportError;
+                  try {
+                    Object.defineProperty(window, 'reportError', {
+                      get: function() {
+                        return function(err) {
+                          if (isExtensionNoise(err) || (err && (isExtensionNoise(err.diff) || isExtensionNoise(err.details) || isExtensionNoise(err.cause) || isExtensionNoise(err.message)))) {
+                            return;
+                          }
+                          return _activeReportError.apply(this, arguments);
+                        };
+                      },
+                      set: function(newFn) {
+                        _activeReportError = newFn;
+                      },
+                      configurable: true,
+                      enumerable: true
+                    });
+                  } catch(e) {
+                    window.reportError = function(err) {
+                      if (isExtensionNoise(err) || (err && (isExtensionNoise(err.diff) || isExtensionNoise(err.details) || isExtensionNoise(err.cause) || isExtensionNoise(err.message)))) {
+                        return;
+                      }
+                      return _activeReportError.apply(this, arguments);
+                    };
+                  }
+                }
+
+                // 5. Intercept window.addEventListener to wrap any future error listeners (e.g. Next DevTools)
+                var _origAddEventListener = window.addEventListener;
+                window.addEventListener = function(type, listener, options) {
+                  if ((type === 'error' || type === 'unhandledrejection') && typeof listener === 'function') {
+                    var wrapped = function(event) {
+                      var toCheck = type === 'error' ? (event && (event.error || event.message)) : (event && event.reason);
+                      if (isExtensionNoise(toCheck) || (event && event.error && (isExtensionNoise(event.error.diff) || isExtensionNoise(event.error.details) || isExtensionNoise(event.error.cause)))) {
+                        if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+                        if (event.preventDefault) event.preventDefault();
+                        return;
+                      }
+                      return listener.apply(this, arguments);
+                    };
+                    return _origAddEventListener.call(this, type, wrapped, options);
+                  }
+                  return _origAddEventListener.apply(this, arguments);
+                };
+
+                // 6. Capturing window error events as early shield
+                window.addEventListener('error', function(e) {
+                  if (hasNoise([e.message, e.filename, e.error, e.error && e.error.diff, e.error && e.error.details, e.error && e.error.cause])) {
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                    return true;
+                  }
+                }, true);
+
+                window.addEventListener('unhandledrejection', function(e) {
+                  if (hasNoise([e.reason, e.reason && e.reason.message, e.reason && e.reason.diff])) {
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                  }
+                }, true);
+
+                // 7. Element prototype overrides:
+                // Intercept getAttribute/hasAttribute/setAttribute
+                Element.prototype.hasAttribute = function(name) {
+                  if (name && (name.indexOf('bis_') === 0 || name.indexOf('__bis') === 0)) return false;
+                  return origHasAttr.apply(this, arguments);
+                };
+
+                Element.prototype.getAttribute = function(name) {
+                  if (name && (name.indexOf('bis_') === 0 || name.indexOf('__bis') === 0)) return null;
+                  return origGetAttr.apply(this, arguments);
+                };
+
                 Element.prototype.setAttribute = function(name, val) {
-                  if (name === 'bis_skin_checked') return;
+                  if (name && (name.indexOf('bis_') === 0 || name.indexOf('__bis') === 0)) return;
                   return origSetAttr.apply(this, arguments);
                 };
-              } catch(e) {}
 
-              // 2. Clean any existing elements that already received it
-              try {
-                var existing = document.querySelectorAll('[bis_skin_checked]');
-                for (var i = 0; i < existing.length; i++) {
-                  existing[i].removeAttribute('bis_skin_checked');
-                }
-              } catch(e) {}
-
-              // 3. Targeted observer ONLY during initial hydration window (stops after 8s, NO childList, NO recursive traversal)
-              try {
-                var bisObserver = new MutationObserver(function(mutations) {
-                  for (var i = 0; i < mutations.length; i++) {
-                    var el = mutations[i].target;
-                    if (el && el.hasAttribute && el.hasAttribute('bis_skin_checked')) {
-                      el.removeAttribute('bis_skin_checked');
-                    }
+                // Strip 'bis_skin_checked' and any extension attributes when React accesses Element.prototype.attributes
+                try {
+                  var attrDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'attributes') ||
+                                 Object.getOwnPropertyDescriptor(Node.prototype, 'attributes');
+                  if (attrDesc && attrDesc.get) {
+                    var origAttrGet = attrDesc.get;
+                    Object.defineProperty(Element.prototype, 'attributes', {
+                      get: function() {
+                        try {
+                          var rawAttrs = origAttrGet.call(this);
+                          var toRemove = [];
+                          for (var i = 0; i < rawAttrs.length; i++) {
+                            var aName = rawAttrs[i].name;
+                            if (aName && (aName.indexOf('bis_') === 0 || aName.indexOf('__bis') === 0)) {
+                              toRemove.push(aName);
+                            }
+                          }
+                          for (var j = 0; j < toRemove.length; j++) {
+                            origRemoveAttr.call(this, toRemove[j]);
+                          }
+                        } catch(_) {}
+                        return origAttrGet.call(this);
+                      },
+                      configurable: true,
+                      enumerable: true
+                    });
                   }
-                });
-                bisObserver.observe(document.documentElement, {
-                  attributes: true,
-                  subtree: true,
-                  attributeFilter: ['bis_skin_checked']
-                });
-                setTimeout(function() {
-                  bisObserver.disconnect();
-                }, 8000);
-              } catch(e) {}
+                } catch(e) {}
 
-              // 4. Suppress harmless browser extension hydration mismatch warnings in console
-              var _origConsoleError = console.error;
-              console.error = function(...args) {
-                var fullMsg = args.map(function(a) { 
-                  return typeof a === 'string' ? a : (a && (a.message || a.stack)) || ''; 
-                }).join(' ');
-                if (fullMsg.indexOf('bis_skin_checked') !== -1) {
-                  return;
+                // 8. Dynamic cleaning and MutationObserver
+                function cleanElementTree(node) {
+                  if (!node || node.nodeType !== 1) return;
+                  try {
+                    var rawAttrs = origAttrGet ? origAttrGet.call(node) : node.attributes;
+                    if (rawAttrs) {
+                      for (var i = rawAttrs.length - 1; i >= 0; i--) {
+                        var aName = rawAttrs[i].name;
+                        if (aName && (aName.indexOf('bis_') === 0 || aName.indexOf('__bis') === 0)) {
+                          origRemoveAttr.call(node, aName);
+                        }
+                      }
+                    }
+                  } catch(_) {}
+                  try {
+                    var items = node.querySelectorAll ? node.querySelectorAll('[bis_skin_checked], [class*="bis_"]') : [];
+                    for (var k = 0; k < items.length; k++) {
+                      try {
+                        origRemoveAttr.call(items[k], 'bis_skin_checked');
+                      } catch(_) {}
+                    }
+                  } catch(_) {}
                 }
-                _origConsoleError.apply(console, args);
-              };
 
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').catch(function() {});
-                });
-              }
+                try {
+                  cleanElementTree(document.documentElement);
+                  var bisObserver = new MutationObserver(function(mutations) {
+                    for (var i = 0; i < mutations.length; i++) {
+                      var m = mutations[i];
+                      if (m.type === 'attributes') {
+                        if (m.attributeName && (m.attributeName.indexOf('bis_') === 0 || m.attributeName.indexOf('__bis') === 0)) {
+                          if (m.target) {
+                            try { origRemoveAttr.call(m.target, m.attributeName); } catch(_) {}
+                          }
+                        }
+                      } else if (m.type === 'childList') {
+                        for (var j = 0; j < m.addedNodes.length; j++) {
+                          cleanElementTree(m.addedNodes[j]);
+                        }
+                      }
+                    }
+                  });
+                  bisObserver.observe(document.documentElement, {
+                    attributes: true,
+                    childList: true,
+                    subtree: true
+                  });
+                  setTimeout(function() {
+                    bisObserver.disconnect();
+                  }, 15000);
+                } catch(e) {}
+
+                if ('serviceWorker' in navigator) {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').catch(function() {});
+                  });
+                }
+              })();
             `
           }}
         />

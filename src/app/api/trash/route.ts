@@ -16,43 +16,7 @@ export async function GET() {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    // 1. Find all expired documents so we can delete their physical files
-    const expiredDocs = await db.select().from(trashTable).where(
-      and(
-        or(
-          eq(trashTable.entityType, 'DOCUMENT'),
-          eq(trashTable.entityType, 'MANUAL_DOCUMENT')
-        ),
-        lt(trashTable.deletedAt, thirtyDaysAgo)
-      )
-    );
-
-    for (const dTrash of expiredDocs) {
-      try {
-        const parsed = JSON.parse(dTrash.data);
-        if (parsed.filePath) {
-          const absolutePath = path.join(process.cwd(), 'public', parsed.filePath);
-          if (fs.existsSync(absolutePath)) {
-            fs.unlinkSync(absolutePath);
-          }
-        }
-      } catch (fileErr) {
-        logger.error('Failed to unlink expired trash document file:', fileErr);
-      }
-    }
-
-    // 2. Delete all trash items older than 30 days (excluding OFFICE_ORDER to prevent permanent deletion)
-    await db.delete(trashTable).where(
-      and(
-        lt(trashTable.deletedAt, thirtyDaysAgo),
-        ne(trashTable.entityType, 'OFFICE_ORDER')
-      )
-    );
-
-    // 3. Return active trash items (role-restricted)
+    // Return active trash items (role-restricted) - GET is strictly read-only and idempotent
     const conditions = [];
     if (currentUser.role !== 'ADMIN') {
       conditions.push(eq(trashTable.deletedBy, currentUser.username));
@@ -64,7 +28,7 @@ export async function GET() {
 
     return NextResponse.json(activeTrash);
   } catch (error) {
-    logger.error('Error fetching/cleaning trash:', error);
+    logger.error('Error fetching trash:', error);
     return NextResponse.json({ error: 'failed_to_fetch_trash' }, { status: 500 });
   }
 }
@@ -87,6 +51,51 @@ export async function POST(request: Request) {
     }
 
     const { action, trashId, trashIds } = body;
+
+    // Handle explicit clean-expired action (strictly ADMIN-only)
+    if (action === 'clean-expired') {
+      if (currentUser.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'forbidden', message: 'কেবলমাত্র অ্যাডমিন মেয়াদোত্তীর্ণ ট্র্যাশ পরিষ্কার করতে পারবেন।' }, { status: 403 });
+      }
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const publicDir = path.join(process.cwd(), 'public');
+
+      const expiredDocs = await db.select().from(trashTable).where(
+        and(
+          or(
+            eq(trashTable.entityType, 'DOCUMENT'),
+            eq(trashTable.entityType, 'MANUAL_DOCUMENT')
+          ),
+          lt(trashTable.deletedAt, thirtyDaysAgo)
+        )
+      );
+
+      for (const dTrash of expiredDocs) {
+        try {
+          const parsed = JSON.parse(dTrash.data);
+          if (parsed.filePath && typeof parsed.filePath === 'string') {
+            const cleanRelative = parsed.filePath.replace(/^[/\\]+/, '');
+            const absolutePath = path.resolve(publicDir, cleanRelative);
+            if (absolutePath.startsWith(publicDir + path.sep) && fs.existsSync(absolutePath)) {
+              fs.unlinkSync(absolutePath);
+            }
+          }
+        } catch (fileErr) {
+          logger.error('Failed to unlink expired trash document file:', fileErr);
+        }
+      }
+
+      await db.delete(trashTable).where(
+        and(
+          lt(trashTable.deletedAt, thirtyDaysAgo),
+          ne(trashTable.entityType, 'OFFICE_ORDER')
+        )
+      );
+
+      return NextResponse.json({ success: true, message: 'মেয়াদোত্তীর্ণ ট্র্যাশ রেকর্ড সফলভাবে পরিষ্কার করা হয়েছে।' });
+    }
 
     const idsToProcess: number[] = [];
     if (trashIds && Array.isArray(trashIds)) {

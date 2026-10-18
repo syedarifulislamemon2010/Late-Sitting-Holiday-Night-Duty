@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const trashActionSchema = z.object({
-  action: z.enum(['restore', 'purge', 'purge_all'], {
-    error: 'সঠিক অ্যাকশন নির্বাচন করুন (restore, purge, purge_all)'
+  action: z.enum(['restore', 'purge', 'purge_all', 'clean-expired'], {
+    error: 'সঠিক অ্যাকশন নির্বাচন করুন (restore, purge, purge_all, clean-expired)'
   }),
   trashId: z.union([z.number(), z.string()]).optional(),
   trashIds: z.array(z.union([z.number(), z.string()])).optional(),

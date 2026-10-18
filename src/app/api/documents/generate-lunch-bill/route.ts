@@ -8,6 +8,7 @@ import path from 'path';
 import { lunchBillGenerateSchema } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
 import { getBanglaNumberWords } from '@/lib/bengali-converter';
+import { getCurrentUser } from '@/lib/auth-wrapper';
 
 let cachedKalpurushBase64: string | null = null;
 function getKalpurushBase64(): string {
@@ -108,6 +109,11 @@ function abbreviateDesignation(desig: string | null | undefined): string {
 
 export async function POST(request: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
+    }
+
     const rawPayload = await request.json();
     const parseResult = lunchBillGenerateSchema.safeParse(rawPayload);
     if (!parseResult.success) {

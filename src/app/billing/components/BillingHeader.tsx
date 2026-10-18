@@ -19,7 +19,7 @@ export default function BillingHeader({
   onPrintButtonClick
 }: BillingHeaderProps) {
   return (
-    <div className="space-y-4">
+    <div className="no-print space-y-4">
       {showUrlBanner && (
         <div className="bg-gradient-to-r from-indigo-50 to-indigo-100/50 dark:from-indigo-950/40 dark:to-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 p-3 rounded-xl flex items-center justify-between shadow-sm backdrop-blur-sm">
           <div className="flex items-center gap-2 text-indigo-800 dark:text-indigo-300">

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, invalidateUserCache } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { users, employees } from '@/db/schema';
-import { eq, ilike } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { hashPassword } from '@/lib/password';
 import { logActivity } from '@/lib/audit';
 
@@ -74,7 +74,7 @@ export async function PUT(req: NextRequest) {
       if (Object.keys(empUpdateFields).length > 0) {
         await db.update(employees)
           .set(empUpdateFields)
-          .where(ilike(employees.bankId, currentUser.username))
+          .where(eq(sql`LOWER(TRIM(${employees.bankId}))`, currentUser.username.trim().toLowerCase()))
           .catch((e) => logger.warn('Failed to sync employee profile fields:', e));
       }
     }

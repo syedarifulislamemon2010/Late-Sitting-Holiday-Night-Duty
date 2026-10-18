@@ -19,21 +19,9 @@ out/
 build/
 dist/
 
-# Python Virtual Environments
-venv/
-.venv/
-env/
-.env/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# SQLite Database & Backups
-*.db
-*.db-journal
-*.db-shm
-*.db-wal
+# backups and local dumps
+backups/
+postgres_dump.json
 
 # misc
 .DS_Store

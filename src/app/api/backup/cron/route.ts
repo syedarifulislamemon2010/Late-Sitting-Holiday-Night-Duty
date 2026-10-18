@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { db } from '@/lib/db';
 import * as schema from '@/db/schema';
 import logger from '@/lib/logger';
@@ -8,8 +10,8 @@ export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get('authorization');
     const cronSecretHeader = req.headers.get('x-cron-secret');
-    const url = new URL(req.url);
-    const cronSecretQuery = url.searchParams.get('cron_secret');
+    const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const providedSecret = cronSecretHeader || bearerSecret;
 
     const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -17,10 +19,14 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 });
     }
 
-    const isValid = 
-      authHeader === `Bearer ${CRON_SECRET}` || 
-      cronSecretHeader === CRON_SECRET || 
-      cronSecretQuery === CRON_SECRET;
+    if (!providedSecret || providedSecret.length !== CRON_SECRET.length) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(providedSecret, 'utf-8'),
+      Buffer.from(CRON_SECRET, 'utf-8')
+    );
 
     if (!isValid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -54,22 +60,68 @@ export async function GET(req: Request) {
       recordCounts[key] = Array.isArray(val) ? val.length : 0;
     });
 
-    const manifest = {
+    // Encrypt backup payload with AES-256-GCM
+    const rawKey = process.env.BACKUP_ENCRYPTION_KEY || process.env.NEXTAUTH_SECRET || 'dev-temporary-backup-key-2026';
+    const ENCRYPTION_KEY = crypto.createHash('sha256').update(rawKey).digest();
+
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
+    const encrypted = Buffer.concat([cipher.update(dataString, 'utf8'), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+
+    const backupRecord = {
       version: '1.0',
       timestamp: new Date().toISOString(),
       checksum,
       tablesCount: Object.keys(allData).length,
       recordCounts,
-      data: allData,
+      payload: {
+        encryptedData: encrypted.toString('base64'),
+        iv: iv.toString('base64'),
+        authTag: authTag.toString('base64')
+      }
     };
 
-    // Return the JSON directly, this can be consumed by Vercel cron, Github Action, etc.
-    return new NextResponse(JSON.stringify(manifest), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    // Ensure backups directory exists and persist to disk
+    const BACKUP_DIR = path.join(process.cwd(), 'backups');
+    if (!fs.existsSync(BACKUP_DIR)) {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
+    const dateStr = new Date().toISOString().split('T')[0];
+    const fileName = `backup-${dateStr}-${Date.now()}.json`;
+    const filePath = path.join(BACKUP_DIR, fileName);
+    fs.writeFileSync(filePath, JSON.stringify(backupRecord, null, 2), 'utf-8');
+
+    // Update history.json
+    const historyPath = path.join(BACKUP_DIR, 'history.json');
+    let history: any[] = [];
+    if (fs.existsSync(historyPath)) {
+      try {
+        history = JSON.parse(fs.readFileSync(historyPath, 'utf8'));
+      } catch {}
+    }
+    history.push({
+      id: fileName,
+      date: new Date().toISOString(),
+      size: fs.statSync(filePath).size,
+      status: 'success',
+      tablesCount: Object.keys(allData).length,
     });
+    if (history.length > 100) history = history.slice(-100);
+    fs.writeFileSync(historyPath, JSON.stringify(history, null, 2), 'utf-8');
+
+    logger.info(`[AutoBackup] Successfully written daily backup to disk: ${fileName}`);
+
+    // Return safe confirmation without leaking sensitive database records over HTTP
+    return NextResponse.json({
+      success: true,
+      message: 'স্বয়ংক্রিয় ডাটাবেজ ব্যাকআপ সফলভাবে ডিস্কে সংরক্ষিত হয়েছে।',
+      fileName,
+      timestamp: backupRecord.timestamp,
+      checksum,
+      tablesCount: Object.keys(allData).length,
+      recordCounts
+    }, { status: 200 });
   } catch (error) {
     logger.error('Cron backup generation error:', error);
     return NextResponse.json({ error: 'internal_error', message: 'Internal Server Error' }, { status: 500 });

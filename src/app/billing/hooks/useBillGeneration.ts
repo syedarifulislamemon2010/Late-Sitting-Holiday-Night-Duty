@@ -12,7 +12,8 @@ import {
   Executive,
   Cell,
   DutySummary,
-  getPrintCategoryRates 
+  getPrintCategoryRates,
+  getNormalizedRef
 } from '../types';
 import { useBillingData } from './useBillingData';
 
@@ -468,7 +469,7 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
     }
   };
 
-  // Reset billGenerated to false if inputs change
+  // Sync billGenerated status: an order can only be generated once. If already generated, billGenerated remains true.
   useEffect(() => {
     if (isFirstLoadRef.current) {
       isFirstLoadRef.current = false;
@@ -477,6 +478,21 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
     if (isInitializingArchiveRef.current) {
       return;
     }
+
+    const currentRef = billing.selectedOrderRef || billing.baseOrderRef;
+    if (currentRef) {
+      const currentNorm = getNormalizedRef(currentRef);
+      const isAlreadyBilled = billing.archivedOrders.some((o: OfficeOrder) => {
+        if (!o.category?.startsWith('BILL_') && !o.orderRef?.endsWith('/বিল')) return false;
+        return getNormalizedRef(o.orderRef) === currentNorm;
+      }) || billing.billedOrderRefs.some((r: string) => getNormalizedRef(r) === currentNorm);
+
+      if (isAlreadyBilled) {
+        setBillGenerated(true);
+        return;
+      }
+    }
+
     logger.debug("Billing input changed, resetting billGenerated to false");
     setBillGenerated(false);
   }, [
@@ -484,6 +500,10 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
     billing.selectedCell,
     billing.selectedCategory,
     billing.printCategory,
+    billing.selectedOrderRef,
+    billing.baseOrderRef,
+    billing.archivedOrders,
+    billing.billedOrderRefs,
     openingParagraph,
     subjectText,
     signingOfficer,
@@ -800,12 +820,6 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
 
         setTimeout(() => {
           window.print();
-          setIsPrintMode(false);
-          setIsEditingArchive(false);
-          if (typeof window !== 'undefined') {
-            window.history.pushState({}, '', '/billing');
-          }
-          billing.fetchDutiesForBilling();
         }, 100);
       }
     } catch (err) {

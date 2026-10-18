@@ -2,6 +2,7 @@ import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult, Part } from '@google/generative-ai';
 import { imageParseSchema } from '@/validations/imageParse.schema';
+import { getCurrentUser } from '@/lib/auth-wrapper';
 
 // Helper function to handle API calls with exponential backoff retries
 async function generateContentWithRetry(
@@ -24,6 +25,11 @@ async function generateContentWithRetry(
 
 export async function POST(request: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
+    }
+
     const rawBody = await request.json();
     const validation = imageParseSchema.safeParse({
       image: rawBody.fileData || rawBody.image,

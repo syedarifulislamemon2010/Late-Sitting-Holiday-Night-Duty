@@ -21,6 +21,10 @@ export async function PUT(
     }
 
     const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
+    }
+
     const body = await request.json();
 
     const validation = leaveUpdateSchema.safeParse(body);
@@ -34,11 +38,18 @@ export async function PUT(
 
     const validatedData = validation.data;
 
-    // Dynamically save or update the applicant's mobile number in the database if inputted
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    const userAgent = request.headers.get('user-agent') || 'Unknown';
+
+    const result = await LeaveService.updateLeave(user, leaveId, validatedData as import('@/validations/leave.schema').LeaveCreateInput, { ipAddress, userAgent });
+
+    // Dynamically save or update the applicant's mobile number ONLY AFTER successful authorization
     if (validatedData.bankId && validatedData.mobileNo) {
       const trimmedBankId = validatedData.bankId.trim().toLowerCase();
       const trimmedMobile = validatedData.mobileNo.trim();
-      if (trimmedBankId && trimmedMobile) {
+      const isOwnerOrAdmin = user.role === 'ADMIN' || user.username.trim().toLowerCase() === trimmedBankId;
+
+      if (isOwnerOrAdmin && trimmedBankId && trimmedMobile) {
         const empList = await db.select().from(employees).where(eq(sql`LOWER(TRIM(${employees.bankId}))`, trimmedBankId));
         const emp = empList[0];
         if (emp && (!emp.mobile || emp.mobile.trim() !== trimmedMobile)) {
@@ -55,10 +66,6 @@ export async function PUT(
       }
     }
 
-    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
-    const userAgent = request.headers.get('user-agent') || 'Unknown';
-
-    const result = await LeaveService.updateLeave(user, leaveId, validatedData as import('@/validations/leave.schema').LeaveCreateInput, { ipAddress, userAgent });
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof ConflictError) {

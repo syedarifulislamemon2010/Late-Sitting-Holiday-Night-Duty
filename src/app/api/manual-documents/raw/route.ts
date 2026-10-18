@@ -5,9 +5,15 @@ import { manualDocuments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
+import { getCurrentUser } from '@/lib/auth-wrapper';
 
 export async function GET(request: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const idStr = searchParams.get('id');
     
@@ -23,7 +29,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'not_found', message: 'Document not found in database' }, { status: 404 });
     }
 
-    const absolutePath = path.join(process.cwd(), 'public', doc.filePath);
+    // Role-based visibility check: regular users can only access documents marked visible to users
+    if (user.role === 'USER' && !doc.isVisibleToUsers) {
+      return NextResponse.json({ error: 'forbidden', message: 'এই ডকুমেন্টটি দেখার অনুমতি আপনার নেই।' }, { status: 403 });
+    }
+
+    // Path traversal containment check
+    const publicDir = path.join(process.cwd(), 'public');
+    const cleanRelative = (doc.filePath || '').replace(/^[/\\]+/, '');
+    const absolutePath = path.resolve(publicDir, cleanRelative);
+    if (!absolutePath.startsWith(publicDir + path.sep)) {
+      return NextResponse.json({ error: 'forbidden', message: 'অবৈধ ফাইল পাথ' }, { status: 403 });
+    }
+
     if (!fs.existsSync(absolutePath)) {
       return NextResponse.json({ error: 'file_not_found', message: 'File not found on disk' }, { status: 404 });
     }

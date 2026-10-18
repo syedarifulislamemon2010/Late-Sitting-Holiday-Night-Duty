@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import logger from '@/lib/logger';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
+import { sanitizeOrderHtml } from '@/lib/sanitize';
 import { Printer, X, FileText, Receipt } from 'lucide-react';
 import { OfficeOrder, OrderDuty } from '../types';
 
@@ -371,7 +372,7 @@ export default function OfficeOrderPrintModal({
                     <p 
                       className="text-justify leading-normal mt-2 text-[11px] text-slate-950 text-indent-8 body-paragraph"
                       style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.5', textIndent: '0.5in', textAlign: 'justify' }}
-                      dangerouslySetInnerHTML={{ __html: viewingOrder.content?.orderText || '' }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeOrderHtml(viewingOrder.content?.orderText || '') }}
                     />
 
                     {/* Table Grouped by Employee */}

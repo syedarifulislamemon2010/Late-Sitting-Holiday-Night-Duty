@@ -69,17 +69,17 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-6">
-      <BillingHeader
-        showUrlBanner={billGen.showUrlBanner}
-        setShowUrlBanner={billGen.setShowUrlBanner}
-        msgBanner={billGen.msgBanner}
-        setMsgBanner={billGen.setMsgBanner}
-        pendingBillingCount={billing.pendingBillingOfficeOrders.length}
-        onPrintButtonClick={billGen.handlePrintButtonClick}
-      />
-
       {!billGen.isPrintMode ? (
         <>
+          <BillingHeader
+            showUrlBanner={billGen.showUrlBanner}
+            setShowUrlBanner={billGen.setShowUrlBanner}
+            msgBanner={billGen.msgBanner}
+            setMsgBanner={billGen.setMsgBanner}
+            pendingBillingCount={billing.pendingBillingOfficeOrders.length}
+            onPrintButtonClick={billGen.handlePrintButtonClick}
+          />
+
           <BillingFilters
             currentUser={currentUser}
             cells={billing.cells}

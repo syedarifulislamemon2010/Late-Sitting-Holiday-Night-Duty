@@ -84,6 +84,11 @@ export class DutyRepository {
     return list;
   }
 
+  static async findByOrderRef(orderRef: string, tx?: DbExecutor) {
+    const client = tx || db;
+    return client.select().from(duties).where(eq(duties.orderRef, orderRef));
+  }
+
   static async deleteDutiesByOrderRef(orderRef: string, tx?: DbExecutor) {
     const client = tx || db;
     return client.delete(duties).where(eq(duties.orderRef, orderRef)).returning();

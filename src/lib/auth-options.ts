@@ -3,7 +3,7 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
 import { users, employees, userCells } from '@/db/schema';
-import { eq, ilike } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { logActivity } from '@/lib/audit';
 import { toEnglishDigits } from '@/lib/bengali-converter';
@@ -18,6 +18,15 @@ if (!process.env.NEXTAUTH_SECRET) {
     logger.warn('⚠️ [Security Warning]: NEXTAUTH_SECRET is not set in environment variables. Please set NEXTAUTH_SECRET in your .env file.');
   }
 }
+
+// Track failed login attempts for brute-force lockout (5 attempts -> 15 min lock)
+interface LoginAttempt {
+  count: number;
+  lockedUntil: number;
+}
+const loginAttempts = new Map<string, LoginAttempt>();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -36,16 +45,40 @@ export const authOptions: NextAuthOptions = {
         const username = toEnglishDigits(rawUsername).trim();
         const password = credentials.password;
 
-        // Query user using Drizzle
+        // Resolve client IP and User Agent
+        let ipAddress = '127.0.0.1';
+        let userAgent = 'Unknown';
+        if (req && req.headers) {
+          ipAddress = (req.headers['x-real-ip'] as string) || (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || ipAddress;
+          userAgent = (req.headers['user-agent'] as string) || userAgent;
+        } else {
+          try {
+            const reqHeaders = await headers();
+            ipAddress = reqHeaders.get('x-real-ip') || reqHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || ipAddress;
+            userAgent = reqHeaders.get('user-agent') || userAgent;
+          } catch {}
+        }
+
+        // Check for brute-force account/IP lockout
+        const rateLimitKey = `${ipAddress}:${username.toLowerCase()}`;
+        const now = Date.now();
+        const attempt = loginAttempts.get(rateLimitKey);
+        if (attempt && attempt.lockedUntil > now) {
+          const remainingMin = Math.ceil((attempt.lockedUntil - now) / 60000);
+          logger.warn(`[Auth Lockout] Login blocked for ${username} from ${ipAddress}. Locked for ${remainingMin} more minutes.`);
+          throw new Error(`অতিরিক্ত ব্যর্থ প্রচেষ্টার কারণে সাময়িকভাবে লগইন স্থগিত রয়েছে। ${remainingMin} মিনিট পর পুনরায় চেষ্টা করুন।`);
+        }
+
+        // Query user using exact match or exact case-insensitive match (NO wildcard injection)
         const userList = await db.select().from(users).where(eq(users.username, username));
         let user = userList[0];
 
-        // Case-insensitive fallback if exact match fails
+        // Case-insensitive exact match fallback if exact match fails (avoids % and _ wildcard injection)
         if (!user) {
           const caseInsensitiveUsers = await db
             .select()
             .from(users)
-            .where(ilike(users.username, username))
+            .where(eq(sql`LOWER(TRIM(${users.username}))`, username.toLowerCase()))
             .limit(1);
           user = caseInsensitiveUsers[0];
         }
@@ -59,7 +92,7 @@ export const authOptions: NextAuthOptions = {
             const caseInsensitiveEmps = await db
               .select()
               .from(employees)
-              .where(ilike(employees.bankId, username))
+              .where(eq(sql`LOWER(TRIM(${employees.bankId}))`, username.toLowerCase()))
               .limit(1);
             employee = caseInsensitiveEmps[0];
           }
@@ -93,6 +126,9 @@ export const authOptions: NextAuthOptions = {
           const { isValid, needsMigration } = await verifyPassword(password, user.password);
 
           if (isValid) {
+            // Reset failed login count upon successful authentication
+            loginAttempts.delete(rateLimitKey);
+
             // Lazy migration: if password matched as legacy plaintext, upgrade it to bcrypt in DB
             if (needsMigration) {
               try {
@@ -105,20 +141,6 @@ export const authOptions: NextAuthOptions = {
             }
 
             try {
-              let ipAddress = '127.0.0.1';
-              let userAgent = 'Unknown';
-
-              if (req && req.headers) {
-                ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || (req.headers['x-real-ip'] as string) || ipAddress;
-                userAgent = (req.headers['user-agent'] as string) || userAgent;
-              } else {
-                try {
-                  const reqHeaders = await headers();
-                  ipAddress = reqHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || reqHeaders.get('x-real-ip') || ipAddress;
-                  userAgent = reqHeaders.get('user-agent') || userAgent;
-                } catch {}
-              }
-
               await logActivity({
                 username: user.username,
                 action: 'LOGIN',
@@ -139,6 +161,29 @@ export const authOptions: NextAuthOptions = {
               role: user.role,
             };
           }
+        }
+
+        // Authentication failed - record failed attempt for brute-force protection
+        const currentAttempt = loginAttempts.get(rateLimitKey) || { count: 0, lockedUntil: 0 };
+        currentAttempt.count += 1;
+        if (currentAttempt.count >= MAX_ATTEMPTS) {
+          currentAttempt.lockedUntil = now + LOCKOUT_MS;
+          logger.warn(`[Auth Lockout] Account ${username} locked out from IP ${ipAddress} for 15 minutes after ${currentAttempt.count} failed attempts.`);
+        }
+        loginAttempts.set(rateLimitKey, currentAttempt);
+
+        try {
+          await logActivity({
+            username: username || 'Unknown',
+            action: 'LOGIN_FAILED',
+            entityType: 'USER',
+            entityId: user ? String(user.id) : '0',
+            ipAddress,
+            userAgent,
+            details: `${username} এর জন্য ব্যর্থ লগইন প্রচেষ্টা (ভুল পাসওয়ার্ড অথবা ইউজার নেই)। চেষ্টা: ${currentAttempt.count}/${MAX_ATTEMPTS}`
+          });
+        } catch (e) {
+          logger.error('Failed to log failed login activity in authorize callback:', e);
         }
 
         return null;

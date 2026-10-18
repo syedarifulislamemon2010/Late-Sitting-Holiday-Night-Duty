@@ -5,12 +5,18 @@ import { holidays as holidaysTable } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { holidayBulkCreateSchema } from '@/validations/holiday.schema';
 import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
+import { getCurrentUser } from '@/lib/auth-wrapper';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত এক্সেস।' }, { status: 401 });
+    }
+
     const holidayList = await db.select().from(holidaysTable).orderBy(holidaysTable.date);
     const dbHolidayMap = new Map(holidayList.map(h => [h.date, h]));
     const result: (typeof holidaysTable.$inferSelect)[] = [...holidayList];
@@ -40,6 +46,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'forbidden', message: 'ছুটির তালিকা পরিবর্তন করার ক্ষমতা শুধুমাত্র অ্যাডমিনের রয়েছে।' }, { status: 403 });
+    }
+
     const body = await request.json();
     const validation = holidayBulkCreateSchema.safeParse(body);
 
@@ -91,6 +102,11 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'forbidden', message: 'ছুটি মুছে ফেলার ক্ষমতা শুধুমাত্র অ্যাডমিনের রয়েছে।' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
 

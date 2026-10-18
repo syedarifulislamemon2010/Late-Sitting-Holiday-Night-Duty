@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { closingBillGenerateSchema } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
+import { getCurrentUser } from '@/lib/auth-wrapper';
 
 interface ClosingBillRecord {
   employeeName: string;
@@ -83,6 +84,11 @@ function abbreviateDesignation(desig: string | null | undefined): string {
 
 export async function POST(request: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
+    }
+
     const rawPayload = await request.json();
     const parseResult = closingBillGenerateSchema.safeParse(rawPayload);
     if (!parseResult.success) {

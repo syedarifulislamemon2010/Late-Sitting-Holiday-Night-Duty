@@ -27,6 +27,16 @@ vi.mock('@/lib/db', () => ({
   }
 }));
 
+vi.mock('@/lib/auth-wrapper', () => ({
+  getCurrentUser: vi.fn(() => Promise.resolve({
+    id: 1,
+    username: 'admin',
+    name: 'Admin User',
+    role: 'ADMIN',
+    cells: []
+  }))
+}));
+
 describe('POST /api/documents/generate-lunch-bill', () => {
   let createdFiles: string[] = [];
 

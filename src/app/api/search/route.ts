@@ -34,7 +34,9 @@ export async function GET(request: Request) {
       }
     }
 
-    const searchQuery = `%${query}%`;
+    // Escape SQL LIKE wildcards (% and _) and backslash to prevent wildcard injection
+    const escapedQuery = query.replace(/[%_\\]/g, '\\$&');
+    const searchQuery = `%${escapedQuery}%`;
     const results: Array<{
       type: 'employee' | 'duty' | 'leave' | 'order';
       id: number;

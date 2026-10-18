@@ -20,6 +20,7 @@ import {
 import CalendarDatePicker from './CalendarDatePicker';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { cleanBracketName, renderDatesInPairs } from '@/lib/print-helpers';
+import { sanitizeOrderHtml } from '@/lib/sanitize';
 
 interface OfficeOrderPrintPreviewProps {
   orderGenerated: boolean;
@@ -500,7 +501,7 @@ export default function OfficeOrderPrintPreview({
               <p 
                 className="text-justify leading-normal mt-2 text-[12px] text-slate-950 text-indent-8"
                 style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6' }}
-                dangerouslySetInnerHTML={{ __html: orderText }}
+                dangerouslySetInnerHTML={{ __html: sanitizeOrderHtml(orderText) }}
               />
 
               {/* Redesigned Printed Duty Table */}

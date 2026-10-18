@@ -13,16 +13,24 @@ import { backupRestoreSchema } from '@/validations/backup.schema';
 const BACKUP_DIR = path.join(process.cwd(), 'backups');
 const HISTORY_FILE = path.join(BACKUP_DIR, 'history.json');
 
-// Ensure backup directory exists
-if (!fs.existsSync(BACKUP_DIR)) {
-  fs.mkdirSync(BACKUP_DIR, { recursive: true });
+function ensureBackupStorage() {
+  try {
+    if (!fs.existsSync(BACKUP_DIR)) {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(HISTORY_FILE)) {
+      fs.writeFileSync(HISTORY_FILE, JSON.stringify([]));
+    }
+  } catch (err) {
+    logger.error('Failed to initialize backup directory', err);
+  }
 }
 
-if (!fs.existsSync(HISTORY_FILE)) {
-  fs.writeFileSync(HISTORY_FILE, JSON.stringify([]));
+const rawKey = process.env.BACKUP_ENCRYPTION_KEY || process.env.NEXTAUTH_SECRET;
+if (!rawKey && process.env.NODE_ENV === 'production') {
+  logger.error('🚨 [Security Warning]: BACKUP_ENCRYPTION_KEY or NEXTAUTH_SECRET is required in production.');
 }
-
-const ENCRYPTION_KEY = crypto.createHash('sha256').update(process.env.BACKUP_ENCRYPTION_KEY || 'default-secure-key-12345').digest();
+const ENCRYPTION_KEY = crypto.createHash('sha256').update(rawKey || 'ci-build-temporary-nextauth-secret-key-2026').digest();
 
 function encryptData(data: string) {
   const iv = crypto.randomBytes(12);
@@ -45,8 +53,16 @@ function decryptData(encryptedData: string, ivBase64: string, authTagBase64: str
 
 function addHistoryLog(log: Record<string, unknown>) {
   try {
-    const history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
+    ensureBackupStorage();
+    let history: any[] = [];
+    if (fs.existsSync(HISTORY_FILE)) {
+      history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
+    }
     history.push(log);
+    // Keep maximum 100 recent backup logs to avoid runaway file size
+    if (history.length > 100) {
+      history = history.slice(-100);
+    }
     fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
   } catch (error) {
     logger.error('Failed to write backup history', error);
@@ -56,9 +72,17 @@ function addHistoryLog(log: Record<string, unknown>) {
 export async function GET(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
-    // Allow cron secret bypass
-    const cronSecret = req.headers.get('authorization')?.split(' ')[1] || req.headers.get('cron_secret');
-    const isCron = Boolean(process.env.CRON_SECRET && cronSecret && cronSecret === process.env.CRON_SECRET);
+    // Allow cron secret bypass with constant-time comparison
+    let isCron = false;
+    const CRON_SECRET = process.env.CRON_SECRET;
+    if (CRON_SECRET) {
+      const authHeader = req.headers.get('authorization');
+      const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+      const headerSecret = req.headers.get('x-cron-secret') || req.headers.get('cron_secret') || bearerSecret;
+      if (headerSecret && headerSecret.length === CRON_SECRET.length) {
+        isCron = crypto.timingSafeEqual(Buffer.from(headerSecret, 'utf-8'), Buffer.from(CRON_SECRET, 'utf-8'));
+      }
+    }
     
     if (!isCron && (!currentUser || currentUser.role !== 'ADMIN')) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
@@ -110,8 +134,9 @@ export async function GET(req: NextRequest) {
         checksum,
         tablesCount: Object.keys(allData).length,
         recordCounts,
-        payload: encrypted, // Add encrypted payload
-        data: req.nextUrl.searchParams.get('encryptOnly') === 'true' ? undefined : allData, // Optional raw data based on parameter
+        payload: encrypted, // Encrypted payload
+        // Only include raw unencrypted data if explicitly requested by an authorized ADMIN
+        data: req.nextUrl.searchParams.get('includeRaw') === 'true' && currentUser?.role === 'ADMIN' ? allData : undefined,
       };
 
       // Save locally
