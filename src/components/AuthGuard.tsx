@@ -198,8 +198,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           >
             
             {/* Top: Janata Bank Logo & Header */}
-            <div className="flex items-center justify-center gap-2.5 pt-0.5">
-              <svg viewBox="0 0 512 512" className="h-9 w-9 shrink-0 text-[#00B7DE]" fill="none" aria-hidden="true">
+            <div className="flex items-center justify-center gap-3 pt-1">
+              <svg viewBox="0 0 512 512" className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 text-[#00B7DE]" fill="none" aria-hidden="true">
                 <g>
                   <path fill="currentColor" d="M175.7,351.4c-53.1,0-96.4-43.3-96.4-96.4c0-24.9,9.5-48.6,26.6-66.5l8.2,7.9c-15.1,15.8-23.5,36.7-23.5,58.7c0,46.9,38.1,85.1,85,85.1c46.9,0,85.1-38.2,85.1-85.1v-97.7h11.4v97.7C272.1,308.1,228.9,351.4,175.7,351.4z"/>
                   <path fill="currentColor" d="M175.7,329.1c-41.3,0-74.9-33.6-74.9-74.9c0-19.4,7.3-37.7,20.7-51.7l8.2,7.9c-11.3,11.8-17.5,27.4-17.5,43.9c0,35.1,28.5,63.6,63.5,63.6c35.1,0,63.6-28.5,63.6-63.6v-96.9h11.4v96.9C250.7,295.4,217,329.1,175.7,329.1z"/>
@@ -213,8 +213,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 </g>
               </svg>
               <div className="flex flex-col text-left">
-                <span className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight tracking-wide font-sans">জনতা ব্যাংক পিএলসি.</span>
-                <span className="text-[10px] font-semibold text-[#00B7DE] uppercase tracking-wider">Janata Bank PLC</span>
+                <span className="font-black text-slate-800 dark:text-slate-100 text-xl sm:text-2xl leading-tight tracking-wide font-sans">জনতা ব্যাংক পিএলসি.</span>
+                <span className="text-xs sm:text-sm font-bold text-[#00B7DE] uppercase tracking-wider">Janata Bank PLC</span>
               </div>
             </div>
 
@@ -233,8 +233,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 <span className="text-slate-300 dark:text-slate-600 text-[10px]">•</span>
                 <span className="px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded-full border border-purple-100 dark:border-purple-800">Leave Application</span>
               </div>
-
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#00B7DE]">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
             </div>
 
             {/* Login Form */}
