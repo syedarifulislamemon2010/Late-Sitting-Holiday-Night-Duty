@@ -135,7 +135,11 @@ export default function OfficeOrderPrintPreview({
           }
           .print-a4-layout {
             width: 210mm !important;
-            height: 297mm !important;
+            height: auto !important;
+            min-height: 296mm !important;
+            max-height: none !important;
+            overflow: visible !important;
+            page-break-inside: auto !important;
             padding: 1.0in !important;
             border: none !important;
             box-shadow: none !important;
@@ -144,9 +148,7 @@ export default function OfficeOrderPrintPreview({
             line-height: 1.6 !important;
             box-sizing: border-box !important;
             page-break-after: avoid !important;
-            page-break-inside: avoid !important;
             page-break-before: avoid !important;
-            overflow: hidden !important;
             letter-spacing: normal !important;
             word-spacing: normal !important;
           }
