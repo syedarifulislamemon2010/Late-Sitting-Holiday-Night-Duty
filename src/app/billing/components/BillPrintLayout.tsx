@@ -419,9 +419,18 @@ export default function BillPrintLayout({
                               <tr className="font-bold bg-slate-50/50 text-[12px]" style={{ border: '1px solid #000', fontWeight: 'bold' }}>
                                 <td colSpan={2} className="border border-black p-1.5 text-right pr-3" style={{ border: '1px solid #000', padding: '3px', textAlign: 'right', paddingRight: '12px' }}>সর্বমোট:</td>
                                 <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(viewingOrder.content?.totalDays)} দিন</td>
-                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(viewingOrder.content?.totalTransport)}/-</td>
-                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/-</td>
-                                <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3px', fontWeight: 'bold', fontSize: '11px' }}>{toBanglaDigits(viewingOrder.content?.grandTotal)}/-</td>
+                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>
+                                  <div>{toBanglaDigits(viewingOrder.content?.totalTransport)}/-</div>
+                                  <div style={{ fontSize: '9.5px', fontWeight: 'normal', color: '#374151', lineHeight: '1.2', marginTop: '2px' }}>({getBanglaNumberWords(viewingOrder.content?.totalTransport || 0).replace(' টাকা মাত্র', ' টাকা')})</div>
+                                </td>
+                                <td className="border border-black p-1.5 text-center" style={{ border: '1px solid #000', padding: '3px' }}>
+                                  <div>{toBanglaDigits(viewingOrder.content?.totalApyaon)}/-</div>
+                                  <div style={{ fontSize: '9.5px', fontWeight: 'normal', color: '#374151', lineHeight: '1.2', marginTop: '2px' }}>({getBanglaNumberWords(viewingOrder.content?.totalApyaon || 0).replace(' টাকা মাত্র', ' টাকা')})</div>
+                                </td>
+                                <td className="border border-black p-1.5 text-center font-extrabold" style={{ border: '1px solid #000', padding: '3px', fontWeight: 'bold', fontSize: '11px' }}>
+                                  <div>{toBanglaDigits(viewingOrder.content?.grandTotal)}/-</div>
+                                  <div style={{ fontSize: '9.5px', fontWeight: 'bold', color: '#000000', lineHeight: '1.2', marginTop: '2px' }}>({getBanglaNumberWords(viewingOrder.content?.grandTotal || 0).replace(' টাকা মাত্র', ' টাকা')})</div>
+                                </td>
                               </tr>
                             </tbody>
                           </table>

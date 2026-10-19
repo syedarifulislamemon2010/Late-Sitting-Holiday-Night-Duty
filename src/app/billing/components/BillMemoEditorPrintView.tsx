@@ -552,21 +552,24 @@ export default function BillMemoEditorPrintView({
                           );
                         })}
                         
-                        <tr className="font-bold bg-slate-50/50 text-[11px] border-t-2 border-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                          <td colSpan={2} className="border border-black p-1.5 text-right pr-3 font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                        <tr className="font-bold bg-slate-50/50 text-[11px] border-t-2 border-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.2' }}>
+                          <td colSpan={2} className="border border-black p-1.5 text-right pr-3 font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.2' }}>
                             সর্বমোট:
                           </td>
-                          <td className="border border-black p-1.5 text-center font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
+                          <td className="border border-black p-1.5 text-center font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.2' }}>
                             {toBanglaDigits(totalDaysAll)} দিন
                           </td>
-                          <td className="border border-black p-1.5 text-center font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                            {toBanglaDigits(totalTransportAll)}/-
+                          <td className="border border-black p-1.5 text-center font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.2' }}>
+                            <div>{toBanglaDigits(totalTransportAll)}/-</div>
+                            <div className="text-[9.5px] font-normal text-slate-700 leading-tight mt-0.5">({getBanglaNumberWords(totalTransportAll).replace(' টাকা মাত্র', ' টাকা')})</div>
                           </td>
-                          <td className="border border-black p-1.5 text-center font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                            {toBanglaDigits(totalApyaonAll)}/-
+                          <td className="border border-black p-1.5 text-center font-bold" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.2' }}>
+                            <div>{toBanglaDigits(totalApyaonAll)}/-</div>
+                            <div className="text-[9.5px] font-normal text-slate-700 leading-tight mt-0.5">({getBanglaNumberWords(totalApyaonAll).replace(' টাকা মাত্র', ' টাকা')})</div>
                           </td>
-                          <td className="border border-black p-1.5 font-extrabold text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0' }}>
-                            {toBanglaDigits(grandTotalPrintAll)}/-
+                          <td className="border border-black p-1.5 font-extrabold text-center" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.2' }}>
+                            <div>{toBanglaDigits(grandTotalPrintAll)}/-</div>
+                            <div className="text-[9.5px] font-bold text-slate-900 leading-tight mt-0.5">({getBanglaNumberWords(grandTotalPrintAll).replace(' টাকা মাত্র', ' টাকা')})</div>
                           </td>
                         </tr>
                       </tbody>

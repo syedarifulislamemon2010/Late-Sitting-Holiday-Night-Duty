@@ -8,6 +8,7 @@ import path from 'path';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
+import { getBanglaNumberWords } from '@/lib/bengali-converter';
 import { billMemoGenerateSchema } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
 
@@ -355,9 +356,18 @@ export async function POST(request: Request) {
       <tr class="font-bold">
         <td colspan="2" style="text-align: right; padding-right: 12px; font-weight: bold; border: 1px solid #000; padding: 4px;">সর্বমোট:</td>
         <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(totalDays)} দিন</td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(Math.round(totalTransport))}/-</td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(Math.round(totalApyaon))}/-</td>
-        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">${toBnDigits(Math.round(grandTotal))}/-</td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">
+          <div>${toBnDigits(Math.round(totalTransport))}/-</div>
+          <div style="font-size: 9.5px; font-weight: normal; color: #374151; line-height: 1.2; margin-top: 2px;">(${getBanglaNumberWords(Math.round(totalTransport)).replace(' টাকা মাত্র', ' টাকা')})</div>
+        </td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">
+          <div>${toBnDigits(Math.round(totalApyaon))}/-</div>
+          <div style="font-size: 9.5px; font-weight: normal; color: #374151; line-height: 1.2; margin-top: 2px;">(${getBanglaNumberWords(Math.round(totalApyaon)).replace(' টাকা মাত্র', ' টাকা')})</div>
+        </td>
+        <td style="text-align: center; vertical-align: middle; padding: 4px; font-weight: bold; border: 1px solid #000;">
+          <div>${toBnDigits(Math.round(grandTotal))}/-</div>
+          <div style="font-size: 9.5px; font-weight: bold; color: #000000; line-height: 1.2; margin-top: 2px;">(${getBanglaNumberWords(Math.round(grandTotal)).replace(' টাকা মাত্র', ' টাকা')})</div>
+        </td>
       </tr>
     </tbody>
   </table>
