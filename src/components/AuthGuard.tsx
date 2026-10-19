@@ -307,7 +307,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 ) : (
                   <>
                     <ShieldCheck size={17} />
-                    নিরাপদ লগইন
+                    লগইন
                   </>
                 )}
               </button>
