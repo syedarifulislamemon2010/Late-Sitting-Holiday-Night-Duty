@@ -221,15 +221,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             {/* Portal Branding Title & Tags */}
             <div className="text-center space-y-1">
               <h2 className="text-base sm:text-lg font-black text-[#1565C0] dark:text-sky-400 tracking-wide leading-tight">
-                লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল
+                লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি ছুটির আবেদন পোর্টাল
               </h2>
               
-              <div className="flex items-center justify-center gap-1.5 pt-0.5">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
                 <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold rounded-full border border-indigo-100 dark:border-indigo-800">Late Sitting</span>
                 <span className="text-slate-300 dark:text-slate-600 text-[10px]">•</span>
                 <span className="px-2 py-0.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 text-[10px] font-bold rounded-full border border-sky-100 dark:border-sky-800">Holiday</span>
                 <span className="text-slate-300 dark:text-slate-600 text-[10px]">•</span>
                 <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-100 dark:border-emerald-800">Night Duty</span>
+                <span className="text-slate-300 dark:text-slate-600 text-[10px]">•</span>
+                <span className="px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded-full border border-purple-100 dark:border-purple-800">Leave Application</span>
               </div>
 
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#00B7DE]">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</p>
