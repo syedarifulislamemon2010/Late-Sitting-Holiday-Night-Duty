@@ -9,6 +9,7 @@ import { lunchBillGenerateSchema } from '@/validations/documentGeneration.schema
 import { handleApiError } from '@/lib/errors';
 import { getBanglaNumberWords } from '@/lib/bengali-converter';
 import { getCurrentUser } from '@/lib/auth-wrapper';
+import { escapeHtml } from '@/lib/html-escape';
 
 let cachedKalpurushBase64: string | null = null;
 function getKalpurushBase64(): string {
@@ -231,9 +232,9 @@ export async function POST(request: Request) {
           cellRows += `
             <tr>
               <td style="width: 4%;">${toBnDigits(globalIndex++)}</td>
-              <td class="text-left font-bold" style="width: 18%;">${r.employeeName}</td>
-              <td style="width: 10%;">${abbreviateDesignation(r.designation)}</td>
-              <td style="width: 10%; font-family: sans-serif; font-size: 12px;">${r.bankId || '-'}</td>
+              <td class="text-left font-bold" style="width: 18%;">${escapeHtml(r.employeeName)}</td>
+              <td style="width: 10%;">${escapeHtml(abbreviateDesignation(r.designation))}</td>
+              <td style="width: 10%; font-family: sans-serif; font-size: 12px;">${escapeHtml(r.bankId || '-')}</td>
               <td style="width: 8%;">${toBnDigits(400)}/-</td>
               <td style="width: 8%;">${toBnDigits(r.presentDays)}</td>
               <td style="width: 8%;">${toBnDigits(r.absenceDays)}</td>
@@ -250,7 +251,7 @@ export async function POST(request: Request) {
         tablesHtml += `
           <div style="margin-bottom: 12px; page-break-inside: avoid;">
             <div style="background-color: #f1f5f9; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 12px; border: 1px solid #000; border-bottom: none;">
-              ● সেল: ${cellGroup.cellName} (মোট কার্যদিবস: ${toBnDigits(workingDays)} দিন, ${toBnDigits(cellGroup.records.length)} জন কর্মকর্তা)
+              ● সেল: ${escapeHtml(cellGroup.cellName)} (মোট কার্যদিবস: ${toBnDigits(workingDays)} দিন, ${toBnDigits(cellGroup.records.length)} জন কর্মকর্তা)
             </div>
             <table style="margin-top: 0; margin-bottom: 0;">
               ${tableHeaders}

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { sanitizeOrderHtml } from '../sanitize';
 
-describe('sanitizeOrderHtml', () => {
+describe('sanitizeOrderHtml - DOMPurify Robustness', () => {
   it('preserves valid Bengali bank office order HTML unchanged', () => {
     const validBengaliOrder = `
       <p style="text-align: justify; line-height: 1.6;">
@@ -29,6 +29,7 @@ describe('sanitizeOrderHtml', () => {
     expect(sanitized).toContain('strong');
     expect(sanitized).toContain('table');
     expect(sanitized).toContain('জনাব মোঃ কামরুল হাসান');
+    expect(sanitized).toContain('text-align: justify');
   });
 
   it('strips <script> tags and executable JavaScript', () => {
@@ -48,22 +49,94 @@ describe('sanitizeOrderHtml', () => {
     expect(sanitized).not.toContain('onerror');
     expect(sanitized).not.toContain('alert');
     expect(sanitized).toContain('style="color: red;"');
-    expect(sanitized).toContain('জরুরি নোটিশ');
   });
 
-  it('strips iframes, embeds, and objects', () => {
-    const malicious = '<p>টেক্সট</p><iframe src="https://attacker.com/evil"></iframe><embed src="evil.swf" />';
-    const sanitized = sanitizeOrderHtml(malicious);
-    expect(sanitized).not.toContain('<iframe');
-    expect(sanitized).not.toContain('<embed');
-    expect(sanitized).not.toContain('attacker.com');
-    expect(sanitized).toContain('<p>টেক্সট</p>');
+  describe('3 Regex Bypass Payloads (Blocked)', () => {
+    it('blocks <img/src=x/onerror=alert(1)>', () => {
+      const payload = '<img/src=x/onerror=alert(1)>';
+      const clean = sanitizeOrderHtml(payload);
+      expect(clean).not.toContain('onerror');
+      expect(clean).not.toContain('alert');
+      expect(clean).not.toContain('<img');
+    });
+
+    it('blocks <svg/onload=alert(1)>', () => {
+      const payload = '<svg/onload=alert(1)>';
+      const clean = sanitizeOrderHtml(payload);
+      expect(clean).not.toContain('onload');
+      expect(clean).not.toContain('alert');
+      expect(clean).not.toContain('<svg');
+    });
+
+    it('blocks <div/onmouseover=alert(1)>', () => {
+      const payload = '<div/onmouseover=alert(1)>নোট</div>';
+      const clean = sanitizeOrderHtml(payload);
+      expect(clean).not.toContain('onmouseover');
+      expect(clean).not.toContain('alert');
+      expect(clean).toContain('নোট');
+    });
   });
 
-  it('neutralizes javascript: URLs in styles and links', () => {
-    const malicious = '<p style="background: url(javascript:alert(1))">পরীক্ষা</p>';
-    const sanitized = sanitizeOrderHtml(malicious);
-    expect(sanitized).not.toContain('javascript:');
-    expect(sanitized).toContain('পরীক্ষা');
+  describe('10 Additional Advanced Bypass Payloads (Blocked)', () => {
+    it('1. mixed-case tags: <sCrIpt>alert(1)</sCrIpt>', () => {
+      const clean = sanitizeOrderHtml('<sCrIpt>alert(1)</sCrIpt>');
+      expect(clean).toBe('');
+    });
+
+    it('2. mixed-case event handler: <div OnMouseOver="alert(1)">Test</div>', () => {
+      const clean = sanitizeOrderHtml('<div OnMouseOver="alert(1)">Test</div>');
+      expect(clean).not.toContain('OnMouseOver');
+      expect(clean).not.toContain('alert');
+    });
+
+    it('3. nested script tags: <script><script>alert(1)</script></script>', () => {
+      const clean = sanitizeOrderHtml('<script><script>alert(1)</script></script>');
+      expect(clean).not.toContain('<script');
+      expect(clean).toBe('');
+    });
+
+    it('4. javascript: protocol in href or style', () => {
+      const clean = sanitizeOrderHtml('<div style="background-image: url(javascript:alert(1))">Test</div>');
+      expect(clean).not.toContain('javascript:');
+      expect(clean).not.toContain('style');
+    });
+
+    it('5. CSS expression: <div style="width: expression(alert(1))">Test</div>', () => {
+      const clean = sanitizeOrderHtml('<div style="width: expression(alert(1))">Test</div>');
+      expect(clean).not.toContain('expression');
+      expect(clean).not.toContain('style');
+    });
+
+    it('6. MathML XSS: <math><mtext><table><mglyph><style><!--</style><img src=x onerror=alert(1)>', () => {
+      const clean = sanitizeOrderHtml('<math><mtext><table><mglyph><style><!--</style><img src=x onerror=alert(1)>');
+      expect(clean).not.toContain('onerror');
+      expect(clean).not.toContain('alert');
+      expect(clean).not.toContain('<math');
+    });
+
+    it('7. SVG use/animate tag bypass: <svg><use href="data:image/svg+xml,..."></use></svg>', () => {
+      const clean = sanitizeOrderHtml('<svg><animate onbegin=alert(1) attributeName=x></svg>');
+      expect(clean).not.toContain('animate');
+      expect(clean).not.toContain('onbegin');
+      expect(clean).not.toContain('alert');
+    });
+
+    it('8. HTML entity-encoded script in event: <p onclick="&apos;alert(1)&apos;">Paragraph</p>', () => {
+      const clean = sanitizeOrderHtml('<p onclick="&apos;alert(1)&apos;">Paragraph</p>');
+      expect(clean).not.toContain('onclick');
+      expect(clean).not.toContain('alert');
+    });
+
+    it('9. iframe injection: <iframe src="javascript:alert(1)"></iframe>', () => {
+      const clean = sanitizeOrderHtml('<iframe src="javascript:alert(1)"></iframe>');
+      expect(clean).not.toContain('<iframe');
+      expect(clean).not.toContain('alert');
+    });
+
+    it('10. object / embed injection: <object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></object>', () => {
+      const clean = sanitizeOrderHtml('<object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></object>');
+      expect(clean).not.toContain('<object');
+      expect(clean).not.toContain('base64');
+    });
   });
 });

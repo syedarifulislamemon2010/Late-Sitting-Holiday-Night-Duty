@@ -11,6 +11,8 @@ import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib
 import { getBanglaNumberWords } from '@/lib/bengali-converter';
 import { billMemoGenerateSchema } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
+import { escapeHtml } from '@/lib/html-escape';
+import { sanitizeOrderHtml } from '@/lib/sanitize';
 
 interface BillSummaryItem {
   name: string;
@@ -93,8 +95,8 @@ export async function POST(request: Request) {
         <tr style="line-height: 1.15;">
           <td>${toBnDigits(index + 1)}</td>
           <td class="text-left" style="line-height: 1.1; padding-left: 12px; text-align: left; white-space: nowrap;">
-            <span class="whitespace-nowrap" style="display: block; white-space: nowrap;">${nameWithPrefix}</span>
-            <span style="display: block; font-size: 11px; color: #374151; margin-top: 2px;">(${shortDesignation})</span>
+            <span class="whitespace-nowrap" style="display: block; white-space: nowrap;">${escapeHtml(nameWithPrefix)}</span>
+            <span style="display: block; font-size: 11px; color: #374151; margin-top: 2px;">(${escapeHtml(shortDesignation)})</span>
           </td>
           <td style="font-size: 11px; line-height: 1.15; padding: 4px; text-align: center;">
             ${datesHtml}
@@ -333,11 +335,11 @@ export async function POST(request: Request) {
         </div>
 
         <div class="subject">
-          বিষয়: ${subjectText || ''}
+          বিষয়: ${escapeHtml(subjectText || '')}
         </div>
 
         <div class="body-text">
-          ${openingParagraph}
+          ${sanitizeOrderHtml(openingParagraph)}
         </div>
 
         <table>
@@ -380,7 +382,7 @@ export async function POST(request: Request) {
       ০২। ২০১৭ সালের আর্থিক ক্ষমতা অর্পণ এর পৃষ্ঠা ১৫ এর অনুচ্ছেদ-২৬.০২ মোতাবেক যাতায়াত খাত (কোড-১৩৫২১২০২০০০-০০৫) অনুযায়ী প্রকৃত খরচ = <strong>${toBnDigits(Math.round(totalTransport))}/- (${totalTransportInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> এবং পৃষ্ঠা ১৪ এর অনুচ্ছেদ-২২.০২ মোতাবেক আপ্যায়ন খাত (কোড-১৩৫২১২০১০০০০০০২) অনুযায়ী প্রকৃত খরচ = <strong>${toBnDigits(Math.round(totalApyaon))}/- (${totalApyaonInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> অনুমোদন ক্ষমতা উপ-মহাব্যবস্থাপক মহোদয়ের এখতিয়ারাধীন।
     </div>
     <div class="paragraph-item">
-      ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBnDigits(Math.round(grandTotal))}/- (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${repNameWithDesig}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
+      ০৩। এমতাবস্থায়, বর্ণিত খরচ অনুমোদনপূর্বক যাতায়াত ও আপ্যায়ন খাত (প্রযোজ্য ক্ষেত্রে) বিকলন করতঃ মোট = <strong>${toBnDigits(Math.round(grandTotal))}/- (${grandTotalInWords.replace(' টাকা মাত্র', ' টাকা')})</strong> <strong>${escapeHtml(repNameWithDesig)}</strong> এর নামে প্রদানের নিমিত্ত নিরীক্ষার অনুরোধ জানিয়ে বাজেট এন্ড এক্সপেন্ডিচার কন্ট্রোল ডিপার্টমেন্ট বরাবর এবং নিরীক্ষান্তে নথি একাউন্টস ডিপার্টমেন্ট বরাবর প্রেরণ করা যেতে পারে।
     </div>
   </div>
 
@@ -389,8 +391,8 @@ export async function POST(request: Request) {
       <div>
         <div class="signature-container">
           <div class="signature-block">
-            <p class="font-bold" style="text-align: right !important; line-height: 1.15 !important; margin: 0 !important;">(${cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, '')).trim()})</p>
-            <p style="margin-top: 3px !important; color: #333; font-weight: bold; text-align: right !important; line-height: 1.15 !important;">${finalRepresentativeDesignation.trim()}</p>
+            <p class="font-bold" style="text-align: right !important; line-height: 1.15 !important; margin: 0 !important;">(${escapeHtml(cleanBracketName((representativeName || '').replace(/\s*\([^)]*\)\s*$/, '')).trim())})</p>
+            <p style="margin-top: 3px !important; color: #333; font-weight: bold; text-align: right !important; line-height: 1.15 !important;">${escapeHtml(finalRepresentativeDesignation.trim())}</p>
           </div>
         </div>
 

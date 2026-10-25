@@ -138,7 +138,7 @@ describe('Server Print Routes HTML Snapshot Characterization', () => {
       ],
       signingOfficer: 'মোছাঃ নাসরীন সুলতানা',
       signingDesignation: 'সহকারী মহাব্যবস্থাপক',
-      copies: '১। সংশ্লিষ্ট নথি\n২। অফিস কপি',
+      copies: ['১। সংশ্লিষ্ট নথি', '২। অফিস কপি'],
       headerMode: 'with_header'
     };
 
@@ -160,6 +160,8 @@ describe('Server Print Routes HTML Snapshot Characterization', () => {
     expect(html).toContain('০১-০৮-২০২৬');
     expect(html).toContain('মোছাঃ নাসরীন সুলতানা');
     expect(html).toContain('সহকারী মহাব্যবস্থাপক');
+    expect(html).toContain('১। সংশ্লিষ্ট নথি');
+    expect(html).toContain('২। অফিস কপি');
   });
 
   it('3. documents/generate-bill-memo HTML output structure matches snapshot', async () => {
@@ -300,5 +302,51 @@ describe('Server Print Routes HTML Snapshot Characterization', () => {
     expect(html).toContain('জেবি/আইটিডি/২০২৬-৯৯');
     expect(html).toContain('জনাব আরিফুল ইসলাম');
     expect(html).toContain('মোছাঃ নাসরীন সুলতানা');
+  });
+
+  it('6. safely escapes HTML special characters (<, >, &, \") while preserving Bengali conjuncts', async () => {
+    const { POST } = await import('@/app/api/documents/generate-office-order/route');
+    const payload = {
+      orderRef: 'জেবি/আইটিডি/<টেস্ট>&২০২৬"০১',
+      orderDate: '2026-08-01',
+      orderText: '<p>সফটওয়্যার & ডাটাবেজ <strong>রক্ষণাবেক্ষণ</strong></p>',
+      duties: [
+        {
+          employee: {
+            name: 'জনাব আরিফুল & সহযোগী <অফিসার>',
+            designation: 'প্রিন্সিপাল অফিসার (পিও)',
+            bankId: '026795'
+          },
+          datesFormatted: '01-08-2026',
+          description: 'পরীক্ষা & নিরীক্ষা <script>alert(1)</script>'
+        }
+      ],
+      signingOfficer: 'মোছাঃ নাসরীন সুলতানা & অন্যান্য',
+      signingDesignation: 'সহকারী মহাব্যবস্থাপক (এজিএম)',
+      copies: ['১। নথি & রেকর্ড <কপি>'],
+      headerMode: 'with_header'
+    };
+
+    const req = new Request('http://localhost:3000/api/documents/generate-office-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    const html = trackAndReadFile(data.filePath);
+
+    // Escaped entities verification
+    expect(html).toContain('&lt;টেস্ট&gt;&amp;২০২৬&quot;০১');
+    expect(html).toContain('জনাব আরিফুল &amp; সহযোগী &lt;অফিসার&gt;');
+    expect(html).toContain('পরীক্ষা &amp; নিরীক্ষা &lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(html).toContain('মোছাঃ নাসরীন সুলতানা &amp; অন্যান্য');
+    expect(html).toContain('১। নথি &amp; রেকর্ড &lt;কপি&gt;');
+    // Bengali conjuncts integrity
+    expect(html).toContain('সফটওয়্যার &amp; ডাটাবেজ');
+    expect(html).toContain('<strong>রক্ষণাবেক্ষণ</strong>');
+    expect(html).not.toContain('<script>alert(1)</script>');
   });
 });

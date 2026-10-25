@@ -5,6 +5,8 @@ import { officeOrders } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { getBanglaNumberWords } from '@/lib/bengali-converter';
+import { escapeHtml } from '@/lib/html-escape';
+import { sanitizeOrderHtml } from '@/lib/sanitize';
 
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
@@ -110,8 +112,8 @@ export async function GET(request: Request) {
           <tr style="line-height: 1.15;">
             <td>${toBnDigits(index + 1)}</td>
             <td class="text-left" style="line-height: 1.1; padding-left: 12px; text-align: left; white-space: nowrap;">
-              <span style="display: block; white-space: nowrap;">${nameWithPrefix}</span>
-              <span style="display: block; font-size: 11px; color: #374151; margin-top: 2px;">(${shortDesignation})</span>
+              <span style="display: block; white-space: nowrap;">${escapeHtml(nameWithPrefix)}</span>
+              <span style="display: block; font-size: 11px; color: #374151; margin-top: 2px;">(${escapeHtml(shortDesignation)})</span>
             </td>
             <td style="font-size: 11px; line-height: 1.15; padding: 4px; text-align: center;">
               ${datesHtml}
@@ -405,9 +407,9 @@ export async function GET(request: Request) {
         return `
           <tr>
             <td class="text-center" style="vertical-align: middle;">${toBnDigits(index + 1)}</td>
-            <td class="text-left" style="vertical-align: middle; white-space: nowrap;"><strong>${nameFormatted}</strong></td>
-            <td class="text-center" style="vertical-align: middle;">${designation}</td>
-            <td class="text-left" style="vertical-align: middle; line-height: 1.25;">${d.description || ''}</td>
+            <td class="text-left" style="vertical-align: middle; white-space: nowrap;"><strong>${escapeHtml(nameFormatted)}</strong></td>
+            <td class="text-center" style="vertical-align: middle;">${escapeHtml(designation)}</td>
+            <td class="text-left" style="vertical-align: middle; line-height: 1.25;">${escapeHtml(d.description || '')}</td>
             <td class="text-center" style="vertical-align: middle; line-height: 1.25;">${datesHtml}</td>
           </tr>
         `;
@@ -424,7 +426,7 @@ export async function GET(request: Request) {
           <div class="footer-copy">
             <strong>অনুলিপি সদয় অবগতি ও প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য প্রেরিত হলো:</strong>
             <ol>
-              ${copies.map((copy: string) => `<li>${copy}</li>`).join('')}
+              ${copies.map((copy: string) => `<li>${escapeHtml(copy)}</li>`).join('')}
             </ol>
           </div>
         `
@@ -627,7 +629,7 @@ export async function GET(request: Request) {
   
   <table class="ref-date-table">
     <tr>
-      <td style="text-align: left;">সূত্রঃ ${order.orderRef}</td>
+      <td style="text-align: left;">সূত্রঃ ${escapeHtml(order.orderRef)}</td>
       <td style="text-align: right;">তারিখঃ ${getBnDate(order.orderDate)} ইং</td>
     </tr>
   </table>

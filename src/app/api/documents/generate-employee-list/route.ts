@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { employeeListGenerateSchema } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
+import { escapeHtml } from '@/lib/html-escape';
 
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
@@ -347,10 +348,10 @@ export async function POST(request: Request) {
         rowsHtml += `
           <tr style="color: ${textColor};">
             <td style="font-weight: ${isCellIncharge ? 'bold' : 'normal'};">${toBnDigits(index + 1)}</td>
-            <td class="text-left font-bold" style="color: ${textColor};">${emp.name}${badgeHtml}</td>
-            <td style="font-weight: ${isCellIncharge ? 'bold' : 'normal'};">${emp.designation}</td>
-            <td class="font-mono" style="color: ${textColor};">${emp.bankId || '-'}</td>
-            <td class="font-mono" style="color: ${textColor};">${emp.fileNo || '-'}</td>
+            <td class="text-left font-bold" style="color: ${textColor};">${escapeHtml(emp.name)}${badgeHtml}</td>
+            <td style="font-weight: ${isCellIncharge ? 'bold' : 'normal'};">${escapeHtml(emp.designation)}</td>
+            <td class="font-mono" style="color: ${textColor};">${escapeHtml(emp.bankId || '-')}</td>
+            <td class="font-mono" style="color: ${textColor};">${escapeHtml(emp.fileNo || '-')}</td>
             <td class="font-mono" style="color: ${textColor};">${emp.mobile ? toBnDigits(emp.mobile) : '-'}</td>
           </tr>
         `;
@@ -359,7 +360,7 @@ export async function POST(request: Request) {
       tablesHtml += `
         <div class="cell-block" style="margin-bottom: 20px; page-break-inside: avoid;">
           <div class="cell-header">
-            <span>সেল: ${cell.name} (${toBnDigits(cell.employees.length)} জন কর্মকর্তা)</span>
+            <span>সেল: ${escapeHtml(cell.name)} (${toBnDigits(cell.employees.length)} জন কর্মকর্তা)</span>
           </div>
           <table>
             <thead>

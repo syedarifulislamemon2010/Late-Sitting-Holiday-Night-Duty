@@ -9,6 +9,8 @@ import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
 import { officeOrderGenerateSchema } from '@/validations/documentGeneration.schema';
 import { renderDatesInPairs } from '@/lib/print-helpers';
+import { escapeHtml } from '@/lib/html-escape';
+import { sanitizeOrderHtml } from '@/lib/sanitize';
 
 interface DutyItem {
   employee: {
@@ -58,27 +60,44 @@ export async function POST(request: Request) {
 
     const rowsHtml = duties.map((duty: DutyItem, index: number) => {
       const pairedDates = renderDatesInPairs(duty.datesFormatted || '');
-      const formattedDatesColumn = pairedDates.join('<br>');
-      const displayName = duty.employee.name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+      const formattedDatesColumn = pairedDates.map(pair => escapeHtml(pair)).join('<br>');
+      const rawName = duty.employee.name || '';
+      const displayName = rawName.replace(/\s*\([^)]*\)\s*$/, '').trim();
       const nameWithPrefix = displayName.startsWith('জনাব') ? displayName : `জনাব ${displayName}`;
 
       return `
         <tr>
           <td style="text-align: center; vertical-align: top; padding: 6px 4px;">${toBnDigits(index + 1)}</td>
           <td style="text-align: left; vertical-align: top; padding: 6px 8px; line-height: 1.25;">
-            <span style="font-weight: 600; display: block;">${nameWithPrefix}</span>
-            <span style="color: #4b5563; font-size: 11px; display: block; margin-top: 2px;">${duty.employee.designation}</span>
-            ${duty.employee.bankId ? `<span style="color: #6b7280; font-size: 10px; display: block;">আইডি: ${toBnDigits(duty.employee.bankId)}</span>` : ''}
+            <span style="font-weight: 600; display: block;">${escapeHtml(nameWithPrefix)}</span>
+            <span style="color: #4b5563; font-size: 11px; display: block; margin-top: 2px;">${escapeHtml(duty.employee.designation)}</span>
+            ${duty.employee.bankId ? `<span style="color: #6b7280; font-size: 10px; display: block;">আইডি: ${toBnDigits(escapeHtml(duty.employee.bankId))}</span>` : ''}
           </td>
           <td style="text-align: center; vertical-align: top; padding: 6px 4px; line-height: 1.4; font-size: 11px; white-space: nowrap;">
             ${formattedDatesColumn}
           </td>
           <td style="text-align: left; vertical-align: top; padding: 6px 8px; font-size: 11px; line-height: 1.3;">
-            ${duty.description || '-'}
+            ${escapeHtml(duty.description || '-')}
           </td>
         </tr>
       `;
     }).join('');
+
+    let copiesList: string[] = [];
+    if (Array.isArray(copies)) {
+      copiesList = copies.map(c => String(c).trim()).filter(Boolean);
+    } else if (typeof copies === 'string' && copies.trim()) {
+      copiesList = copies.split('\n').map(c => c.trim()).filter(Boolean);
+    }
+
+    const copiesHtml = copiesList.length > 0 ? `
+  <div style="margin-top: 30px; font-size: 11px; line-height: 1.5; border-top: 1px solid #e5e7eb; padding-top: 10px;">
+    <strong>অনুলিপি সদয় জ্ঞাতার্থে ও কার্যার্থে:</strong>
+    <div style="margin-top: 4px;">
+      ${copiesList.map(c => `<div style="line-height: 1.5;">${escapeHtml(c)}</div>`).join('')}
+    </div>
+  </div>
+    ` : '';
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -87,7 +106,7 @@ export async function POST(request: Request) {
 <meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
-<title>Office Order - ${orderRef}</title>
+<title>Office Order - ${escapeHtml(orderRef)}</title>
 <style>
   @font-face {
     font-family: 'Kalpurush';
@@ -153,7 +172,7 @@ export async function POST(request: Request) {
   ` : '<div style="height: 35mm;"></div>'}
 
   <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 15px;">
-    <div><strong>সূত্র:</strong> ${orderRef}</div>
+    <div><strong>সূত্র:</strong> ${escapeHtml(orderRef)}</div>
     <div><strong>তারিখ:</strong> ${getBnDate(orderDate)}</div>
   </div>
 
@@ -162,7 +181,7 @@ export async function POST(request: Request) {
   </div>
 
   <div style="font-size: 12px; line-height: 1.6; text-align: justify; margin-bottom: 12px;">
-    ${orderText || 'সংশ্লিষ্ট সকলের অবগতির জন্য জানানো যাচ্ছে যে, নিম্নবর্ণিত কর্মকর্তা/কর্মচারীবৃন্দকে নির্দেশিত তারিখ অনুযায়ী দায়িত্ব পালনের জন্য নির্দেশ প্রদান করা হলো:'}
+    ${sanitizeOrderHtml(orderText) || 'সংশ্লিষ্ট সকলের অবগতির জন্য জানানো যাচ্ছে যে, নিম্নবর্ণিত কর্মকর্তা/কর্মচারীবৃন্দকে নির্দেশিত তারিখ অনুযায়ী দায়িত্ব পালনের জন্য নির্দেশ প্রদান করা হলো:'}
   </div>
 
   <table class="order-table">
@@ -183,18 +202,13 @@ export async function POST(request: Request) {
     <div style="text-align: center; min-width: 200px;">
       <div style="height: 40px;"></div>
       <div style="border-top: 1px dashed #374151; padding-top: 5px; font-size: 12px; font-weight: bold;">
-        ${signingOfficer || 'স্বাক্ষরিত'}
+        ${escapeHtml(signingOfficer || 'স্বাক্ষরিত')}
       </div>
-      <div style="font-size: 11px; color: #374151;">${signingDesignation || 'বিভাগীয় প্রধান'}</div>
+      <div style="font-size: 11px; color: #374151;">${escapeHtml(signingDesignation || 'বিভাগীয় প্রধান')}</div>
     </div>
   </div>
 
-  ${copies ? `
-  <div style="margin-top: 30px; font-size: 11px; line-height: 1.5; border-top: 1px solid #e5e7eb; padding-top: 10px;">
-    <strong>অনুলিপি সদয় জ্ঞাতার্থে ও কার্যার্থে:</strong>
-    <div style="margin-top: 4px; white-space: pre-line;">${copies}</div>
-  </div>
-  ` : ''}
+  ${copiesHtml}
 </div>
 </body>
 </html>

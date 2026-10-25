@@ -7,6 +7,7 @@ import path from 'path';
 import { closingBillGenerateSchema } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
 import { getCurrentUser } from '@/lib/auth-wrapper';
+import { escapeHtml } from '@/lib/html-escape';
 
 interface ClosingBillRecord {
   employeeName: string;
@@ -167,9 +168,9 @@ export async function POST(request: Request) {
         execRows += `
           <tr style="background-color: #fffdfd;">
             <td style="width: 5%;">${toBnDigits(globalIndex++)}</td>
-            <td class="text-left font-bold" style="color: #c2185b; width: 25%;">${r.employeeName}</td>
-            <td style="color: #c2185b; font-weight: bold; width: 15%;">${abbreviateDesignation(r.designation)}</td>
-            <td style="color: #c2185b; font-family: sans-serif; font-size: 12px; width: 15%;">${r.bankId || '-'}</td>
+            <td class="text-left font-bold" style="color: #c2185b; width: 25%;">${escapeHtml(r.employeeName)}</td>
+            <td style="color: #c2185b; font-weight: bold; width: 15%;">${escapeHtml(abbreviateDesignation(r.designation))}</td>
+            <td style="color: #c2185b; font-family: sans-serif; font-size: 12px; width: 15%;">${escapeHtml(r.bankId || '-')}</td>
             <td style="width: 13%;">${toBnDigits(2000)}/-</td>
             <td style="width: 13%;">${toBnDigits(15)}/-</td>
             <td class="font-bold" style="width: 14%;">${toBnDigits(1985)}/-</td>
@@ -229,7 +230,7 @@ export async function POST(request: Request) {
         tablesHtml += `
           <div style="margin-bottom: 12px; page-break-inside: avoid;">
             <div style="background-color: #f1f5f9; font-weight: bold; text-align: left; padding: 5px 8px; font-size: 12px; border: 1px solid #000; border-bottom: none;">
-              ● সেল: ${cellGroup.cellName} (${toBnDigits(cellGroup.records.length)} জন কর্মকর্তা)
+              ● সেল: ${escapeHtml(cellGroup.cellName)} (${toBnDigits(cellGroup.records.length)} জন কর্মকর্তা)
             </div>
             <table style="margin-top: 0; margin-bottom: 0;">
               ${tableHeaders}
