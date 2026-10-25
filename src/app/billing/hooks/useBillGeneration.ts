@@ -745,6 +745,9 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
           throw new Error('Failed to generate PDF');
         }
       } else if (action === 'download') {
+        // Open blank popup synchronously to prevent browser popup blockers, then redirect or close
+        const printWindow = typeof window !== 'undefined' ? window.open('', '_blank') : null;
+
         const payload = {
           billingMonth: billingMonthName,
           openingParagraph: openingParagraph,
@@ -768,25 +771,37 @@ export function useBillGeneration({ billing }: UseBillGenerationProps) {
           actionType: 'DOWNLOAD_BILL_PDF'
         };
 
-        const res = await fetch('/api/documents/generate-bill-memo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        try {
+          const res = await fetch('/api/documents/generate-bill-memo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.filePath) {
-            window.open(data.filePath, '_blank');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.filePath) {
+              if (printWindow) {
+                printWindow.location.href = data.filePath;
+              } else {
+                window.open(data.filePath, '_blank');
+              }
+            } else if (printWindow) {
+              printWindow.close();
+            }
+            setIsPrintMode(false);
+            setIsEditingArchive(false);
+            if (typeof window !== 'undefined') {
+              window.history.pushState({}, '', '/billing');
+            }
+            billing.fetchDutiesForBilling();
+          } else {
+            if (printWindow) printWindow.close();
+            throw new Error('Failed to generate PDF');
           }
-          setIsPrintMode(false);
-          setIsEditingArchive(false);
-          if (typeof window !== 'undefined') {
-            window.history.pushState({}, '', '/billing');
-          }
-          billing.fetchDutiesForBilling();
-        } else {
-          throw new Error('Failed to generate PDF');
+        } catch (fetchErr) {
+          if (printWindow) printWindow.close();
+          throw fetchErr;
         }
       } else if (action === 'print') {
         const payload = {

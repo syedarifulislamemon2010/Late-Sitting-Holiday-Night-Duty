@@ -700,6 +700,9 @@ export function useOfficeOrderGeneration({
           alert('অফিস আদেশ প্রস্তুত করতে ব্যর্থ হয়েছে।');
         }
       } else if (action === 'download') {
+        // Open blank popup synchronously to prevent browser popup blockers, then redirect or close
+        const printWindow = typeof window !== 'undefined' ? window.open('', '_blank') : null;
+
         const pdfPayload = {
           orderRef: orderRef,
           orderDate: orderDate,
@@ -729,7 +732,13 @@ export function useOfficeOrderGeneration({
         if (pdfRes.ok) {
           const pdfData = await pdfRes.json();
           if (pdfData.filePath) {
-            window.open(pdfData.filePath, '_blank');
+            if (printWindow) {
+              printWindow.location.href = pdfData.filePath;
+            } else {
+              window.open(pdfData.filePath, '_blank');
+            }
+          } else if (printWindow) {
+            printWindow.close();
           }
           setIsPrintMode(false);
           if (isEditingArchive) {
@@ -738,6 +747,7 @@ export function useOfficeOrderGeneration({
           }
           loadDuties();
         } else {
+          if (printWindow) printWindow.close();
           alert('পিডিএফ ডাউনলোড করতে ব্যর্থ হয়েছে।');
         }
       } else if (action === 'print') {

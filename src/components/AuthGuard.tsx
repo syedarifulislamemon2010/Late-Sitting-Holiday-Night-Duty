@@ -6,6 +6,7 @@ import { ShieldCheck, AlertCircle, Eye, EyeOff, Lock, User, KeyRound } from 'luc
 import { signIn, signOut } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { canAccessRoute } from '@/permissions/rbac';
+import { evaluateAuthResponse } from '@/lib/auth-guard-helper';
 
 
 
@@ -46,27 +47,37 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       try {
         const res = await fetch('/api/profile');
         const contentType = res.headers.get('content-type');
-        if (res.ok && contentType && contentType.includes('application/json')) {
-          const data = await res.json();
-          if (data.authenticated) {
-            setAuthenticated(true);
+        let data = null;
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            data = await res.json();
+          } catch {}
+        }
+
+        const evaluation = evaluateAuthResponse(
+          res.status,
+          contentType,
+          data,
+          authenticated
+        );
+
+        if (evaluation.logWarn) {
+          logger.warn(evaluation.logWarn);
+        }
+
+        if (evaluation.shouldUpdate) {
+          setAuthenticated(evaluation.authenticated);
+          if (evaluation.authenticated && data?.user) {
             setUserProfile(data.user);
-          } else {
-            setAuthenticated(false);
+          } else if (!evaluation.authenticated) {
             setUserProfile(null);
           }
-        } else if (res.status === 429) {
-          // Rate limited — do NOT log out, just skip this cycle
-          logger.warn('Auth check rate limited, skipping cycle');
-        } else {
-          setAuthenticated(false);
-          setUserProfile(null);
         }
       } catch (err) {
         // Transient network error — do NOT log out if already authenticated
         logger.warn('Auth verification failed (transient network error)');
         // Only set unauthenticated if we haven't authenticated yet (initial load)
-        setAuthenticated((prev) => prev === null ? false : prev);
+        setAuthenticated((prev) => (prev === null ? false : prev));
       }
     };
     checkAuth();

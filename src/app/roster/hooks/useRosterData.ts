@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import logger from '@/lib/logger';
 import { UserProfile } from '@/context/ProfileContext';
 import { Cell, Employee, Executive, Holiday, OfficeOrder, Duty, LeaveRecord } from '../types';
+import { useLatestRequest } from '@/hooks/useLatestRequest';
 import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
 
 interface UseRosterDataProps {
@@ -25,6 +26,7 @@ export function useRosterData({
   isEditingArchive,
   editRefParam
 }: UseRosterDataProps) {
+  const { createRequest, isLatest } = useLatestRequest();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [duties, setDuties] = useState<Duty[]>([]);
@@ -138,18 +140,21 @@ export function useRosterData({
         url += `?${queryString}`;
       }
 
-      const res = await fetch(url);
+      const { requestId, signal } = createRequest();
+      const res = await fetch(url, { signal });
       if (!res.ok) return;
       const data = await res.json();
+      if (!isLatest(requestId)) return;
       if (Array.isArray(data)) {
         setDuties(data);
       } else if (data && Array.isArray(data.data)) {
         setDuties(data.data);
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       logger.error('Failed to fetch duties:', err);
     }
-  }, [selectedMonths, selectedCell, selectedCategory, selectedEmployee, isEditingArchive, editRefParam]);
+  }, [selectedMonths, selectedCell, selectedCategory, selectedEmployee, isEditingArchive, editRefParam, createRequest, isLatest]);
 
   useEffect(() => {
     loadDuties();

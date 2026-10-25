@@ -11,6 +11,7 @@ import {
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { Employee, Cell, UserSession, Leave, Holiday } from '../types';
+import { useLatestRequest } from '@/hooks/useLatestRequest';
 
 export const cleanDesignationForLeave = (desig: string): string => {
   if (!desig) return '';
@@ -18,6 +19,7 @@ export const cleanDesignationForLeave = (desig: string): string => {
 };
 
 export function useLeaveData(currentUser: UserSession | null) {
+  const { createRequest, isLatest } = useLatestRequest();
   const [matchedEmp, setMatchedEmp] = useState<Employee | null>(null);
   const [selectedApplicantEmp, setSelectedApplicantEmp] = useState<Employee | null>(null);
   const [isProfileUnresolved, setIsProfileUnresolved] = useState(false);
@@ -117,14 +119,16 @@ export function useLeaveData(currentUser: UserSession | null) {
 
   // Fetch all archived leaves for the current officer
   const fetchArchivedLeaves = async (targetBankId?: string) => {
+    const { requestId, signal } = createRequest();
     try {
       let url = '/api/leaves';
       if (targetBankId) {
         url += `?bankId=${encodeURIComponent(targetBankId)}`;
       }
-      const res = await fetch(url);
+      const res = await fetch(url, { signal });
       if (res.ok) {
         const data = await res.json();
+        if (!isLatest(requestId)) return;
         setArchivedLeaves(data);
         if (data.length > 0) {
           setLatestLeave(data[0]);
@@ -132,7 +136,9 @@ export function useLeaveData(currentUser: UserSession | null) {
           setLatestLeave(null);
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      if (!isLatest(requestId)) return;
       logger.error('Error fetching archived leaves:', err);
     }
   };

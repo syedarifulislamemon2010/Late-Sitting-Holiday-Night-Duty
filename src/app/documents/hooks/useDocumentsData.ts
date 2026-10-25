@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import logger from '@/lib/logger';
 import { DocumentFile, OfficeOrder, ManualDoc, OrderDuty, UserSession } from '../types';
+import { useLatestRequest } from '@/hooks/useLatestRequest';
 
 export function useDocumentsData(currentUser: UserSession | null) {
+  const { createRequest, isLatest } = useLatestRequest();
   const [activeTab, setActiveTab] = useState<'files' | 'manual-docs' | 'orders' | 'bills'>('files');
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [officeOrders, setOfficeOrders] = useState<OfficeOrder[]>([]);
@@ -117,53 +119,74 @@ export function useDocumentsData(currentUser: UserSession | null) {
   };
 
   const fetchDocuments = async () => {
+    const { requestId, signal } = createRequest();
     try {
       setLoading(true);
-      const res = await fetch('/api/documents');
+      const res = await fetch('/api/documents', { signal });
       if (res.ok) {
         const data = await res.json();
+        if (!isLatest(requestId)) return;
         setDocuments(data);
       } else {
+        if (!isLatest(requestId)) return;
         setError('নথিপত্র লোড করতে ব্যর্থ হয়েছে।');
       }
-    } catch {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      if (!isLatest(requestId)) return;
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     } finally {
-      setLoading(false);
+      if (isLatest(requestId)) {
+        setLoading(false);
+      }
     }
   };
 
   const fetchOfficeOrders = async () => {
+    const { requestId, signal } = createRequest();
     try {
       setLoadingOrders(true);
-      const res = await fetch('/api/office-orders');
+      const res = await fetch('/api/office-orders', { signal });
       if (res.ok) {
         const data = await res.json();
+        if (!isLatest(requestId)) return;
         setOfficeOrders(data);
       } else {
+        if (!isLatest(requestId)) return;
         setError('অফিস অর্ডার আর্কাইভ লোড করতে ব্যর্থ হয়েছে।');
       }
-    } catch {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      if (!isLatest(requestId)) return;
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     } finally {
-      setLoadingOrders(false);
+      if (isLatest(requestId)) {
+        setLoadingOrders(false);
+      }
     }
   };
 
   const fetchManualDocs = async () => {
+    const { requestId, signal } = createRequest();
     try {
       setLoadingManualDocs(true);
-      const res = await fetch('/api/manual-documents');
+      const res = await fetch('/api/manual-documents', { signal });
       if (res.ok) {
         const data = await res.json();
+        if (!isLatest(requestId)) return;
         setManualDocs(data);
       } else {
+        if (!isLatest(requestId)) return;
         setError('ম্যানুয়াল নথিপত্র লোড করতে ব্যর্থ হয়েছে।');
       }
-    } catch {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      if (!isLatest(requestId)) return;
       setError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে।');
     } finally {
-      setLoadingManualDocs(false);
+      if (isLatest(requestId)) {
+        setLoadingManualDocs(false);
+      }
     }
   };
 

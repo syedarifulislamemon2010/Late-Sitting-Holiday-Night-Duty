@@ -169,23 +169,26 @@ export default function OfficeOrderPrintPreview({
           {!orderGenerated ? (
             <button
               onClick={() => archiveOrder('generate')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
+              disabled={submitting}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FileText size={14} />
-              অফিস আদেশ তৈরি করুন (Generate Order)
+              {submitting ? 'প্রসেস হচ্ছে...' : 'অফিস আদেশ তৈরি করুন (Generate Order)'}
             </button>
           ) : (
             <>
               <button
                 onClick={() => archiveOrder('print')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
+                disabled={submitting}
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Printer size={14} />
                 প্রিন্ট প্রিভিউ (Print)
               </button>
               <button
                 onClick={() => archiveOrder('download')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer"
+                disabled={submitting}
+                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Printer size={14} />
                 ডাউনলোড পিডিএফ (Download)

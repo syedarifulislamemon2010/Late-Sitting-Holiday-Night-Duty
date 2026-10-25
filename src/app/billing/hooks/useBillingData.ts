@@ -3,6 +3,7 @@ import logger from '@/lib/logger';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { getShortDesignation, sortDatesStringAscending } from '@/lib/print-helpers';
 import { UserProfile, UserCell } from '@/context/ProfileContext';
+import { useLatestRequest } from '@/hooks/useLatestRequest';
 import {
   Cell,
   Employee,
@@ -22,6 +23,7 @@ import {
 } from '../types';
 
 export function useBillingData(currentUser: UserProfile | null | undefined) {
+  const { createRequest, isLatest } = useLatestRequest();
   const [cells, setCells] = useState<Cell[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [executives, setExecutives] = useState<Executive[]>([]);
@@ -117,6 +119,7 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
 
   // Fetch duties based on selected month & filters
   const fetchDutiesForBilling = useCallback(async () => {
+    const { requestId, signal } = createRequest();
     try {
       setLoading(true);
       
@@ -254,13 +257,18 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
         }
       }
 
+      if (!isLatest(requestId)) return;
       setDuties(filteredDuties);
-    } catch (err) {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      if (!isLatest(requestId)) return;
       console.error('Error fetching duties for billing:', err);
     } finally {
-      setLoading(false);
+      if (isLatest(requestId)) {
+        setLoading(false);
+      }
     }
-  }, [selectedMonth, selectedCell, printCategory, selectedOrderRef, userCellNamesString, userRole, userUsername, employees]);
+  }, [selectedMonth, selectedCell, printCategory, selectedOrderRef, userCellNamesString, userRole, userUsername, employees, createRequest, isLatest]);
 
   useEffect(() => {
     setTimeout(() => {
