@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Bengali, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
@@ -15,15 +15,19 @@ import { ToastProvider } from "@/context/ToastContext";
 import PageTransition from "@/components/PageTransition";
 import SessionExpiryWarning from "@/components/SessionExpiryWarning";
 
-const notoSansBengali = Noto_Sans_Bengali({
-  subsets: ["bengali"],
-  weight: ["400", "500", "600", "700"],
+const notoSansBengali = localFont({
+  src: [
+    { path: "../fonts/noto-sans-bengali-400.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/noto-sans-bengali-500.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/noto-sans-bengali-600.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/noto-sans-bengali-700.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-noto-bengali",
   display: "swap",
 });
 
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: "../fonts/inter-variable.woff2",
   variable: "--font-inter",
   display: "swap",
 });
