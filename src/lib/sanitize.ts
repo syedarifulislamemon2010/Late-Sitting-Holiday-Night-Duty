@@ -20,7 +20,7 @@ const ALLOWED_ATTR = [
 ];
 
 // Hook to clean style attributes against expressions, behaviors, and javascript: urls
-DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+DOMPurify.addHook('afterSanitizeAttributes', (node: Element) => {
   if (node.hasAttribute('style')) {
     const style = node.getAttribute('style') || '';
     if (/expression\s*\(|behavior\s*:|javascript\s*:|vbscript\s*:|url\s*\(/i.test(style)) {
