@@ -130,7 +130,7 @@ export interface DutyAssignment {
 
 export const getNormalizedRef = (ref: string | null | undefined): string => {
   if (!ref) return '';
-  let clean = ref.replace(/\/বিল$/, '').trim();
+  const clean = ref.replace(/\/বিল$/, '').trim();
   const parts = clean.split('/');
   if (parts.length >= 3) {
     parts.splice(2, 1); // remove payee name component
@@ -140,7 +140,7 @@ export const getNormalizedRef = (ref: string | null | undefined): string => {
 
 export const isNameMatchingRef = (empName: string, ref: string): boolean => {
   if (!empName || !ref) return false;
-  let cleanEmp = empName
+  const cleanEmp = empName
     .replace(/জনাব/g, '')
     .replace(/জনাবা/g, '')
     .replace(/মোঃ/g, '')

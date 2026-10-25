@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
     }
 
     const text = await file.text();
-    let parsedInput = JSON.parse(text);
+    const parsedInput = JSON.parse(text);
     backupRestoreSchema.safeParse(parsedInput);
     
     let backupData = parsedInput;

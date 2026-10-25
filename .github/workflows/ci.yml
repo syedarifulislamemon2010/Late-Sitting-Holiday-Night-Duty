@@ -13,20 +13,27 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Use Node.js 20
+    - name: Use Node.js from .nvmrc
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version-file: '.nvmrc'
         cache: 'npm'
         
     - name: Install dependencies
       run: npm ci
+      
+    - name: Run linter
+      run: npm run lint
       
     - name: Type check
       run: npx tsc --noEmit
       
     - name: Run unit & integration tests
       run: npx vitest run
+      
+    - name: Run production audit check
+      run: npm audit --omit=dev --audit-level=high
+      continue-on-error: true
       
     - name: Build Next.js
       run: npm run build

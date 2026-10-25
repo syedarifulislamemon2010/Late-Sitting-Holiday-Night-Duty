@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const filterUserId = searchParams.get('userId');
 
-    let conditions = [];
+    const conditions = [];
 
     if (user.role === 'ADMIN') {
       if (filterUserId) {

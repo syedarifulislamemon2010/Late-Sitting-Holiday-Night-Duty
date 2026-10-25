@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     }
 
     // 1. Resolve linked employee record
-    let employeeList = await db.select({
+    const employeeList = await db.select({
       id: employees.id,
       name: employees.name,
       designation: employees.designation,

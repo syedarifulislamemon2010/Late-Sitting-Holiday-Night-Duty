@@ -714,7 +714,7 @@ export default function LedgerTab({
                   let transportRate = 200;
                   let apyaonRate = 100;
                   let apyaonName = 'নাস্তা';
-                  let transportName = 'যাতায়াত';
+                  const transportName = 'যাতায়াত';
                   if (order.category === 'HOLIDAY') {
                     transportRate = 250;
                     apyaonRate = 250;

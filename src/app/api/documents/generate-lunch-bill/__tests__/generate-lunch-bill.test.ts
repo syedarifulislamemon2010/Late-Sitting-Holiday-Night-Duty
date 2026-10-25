@@ -38,7 +38,7 @@ vi.mock('@/lib/auth-wrapper', () => ({
 }));
 
 describe('POST /api/documents/generate-lunch-bill', () => {
-  let createdFiles: string[] = [];
+  const createdFiles: string[] = [];
 
   beforeEach(() => {
     vi.clearAllMocks();

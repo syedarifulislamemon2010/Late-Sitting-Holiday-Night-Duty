@@ -735,7 +735,7 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
       o.status !== 'Deleted'
     );
 
-    let totalBillsCount = targetBills.length;
+    const totalBillsCount = targetBills.length;
     let totalDays = 0;
     let totalTransport = 0;
     let totalApyaon = 0;

@@ -137,7 +137,7 @@ export async function POST(request: Request) {
       rawGroups = payload.cells;
     }
 
-    let groupedData: LunchBillGroup[] = rawGroups.map((c: any) => {
+    const groupedData: LunchBillGroup[] = rawGroups.map((c: any) => {
       const cName = c.name || c.cellName || 'সেল';
       const isCbs = cName.includes('CBS');
       

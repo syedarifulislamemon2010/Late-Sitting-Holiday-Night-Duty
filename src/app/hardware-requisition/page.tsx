@@ -451,7 +451,7 @@ export default function HardwareRequisitionPage() {
         const isRepair = customRequestType.includes('মেরামত');
         
         let hwTextWithModifier = hwName;
-        let actionName = customRequestType || 'সরবরাহ/মেরামত';
+        const actionName = customRequestType || 'সরবরাহ/মেরামত';
         
         if (isSupply) {
           hwTextWithModifier = `নতুন ${hwName}`;
