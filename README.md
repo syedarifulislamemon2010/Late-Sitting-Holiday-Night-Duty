@@ -75,7 +75,7 @@
 - 💾 **ডাটাবেস ব্যাকআপ ও পুনরুদ্ধার (Database Backup & Restore)** — JSON ব্যাকআপ/রিস্টোর UI
 - 🔔 **ইন-অ্যাপ নোটিফিকেশন সেন্টার (Notification Center)** — নেভব্যারে বেল আইকন, আনরিড নোটিফিকেশন রেড পালস কাউন্টার, ক্যাটাগরি ফিল্টার এবং ড্রপডাউন অ্যালার্ট
 - 📊 **সেল-ওয়াইজ কস্ট অ্যানালাইসিস ও সমাপনী সামারি রিপোর্ট (Cost Analytics & Summary Report)** — সেলের নাইট/হলিডে ডিউটি খরচের দৃশ্যমান চার্ট এবং ১-ক্লিকে অফিশিয়াল সমাপনী সামারি প্রিন্ট/PDF রিপোর্ট
-- ✨ **Framer Motion পেজ ট্রানজিশন** — স্মুথ রুট পরিবর্তন অ্যানিমেশন
+- 🎨 **CSS ও Tailwind ট্রানজিশন** — লাইটওয়েট স্মুথ রুট পরিবর্তন ও লোডিং স্টেটস
 - ♥️ **কাস্টম এরর পেজ** (error.tsx, not-found.tsx, loading.tsx)
 
 ---
@@ -91,7 +91,7 @@ CREATE INDEX LeaveApplication_bankId_idx ON "LeaveApplication" ("bankId");
 ```
 
 ### 2. Next.js Server Caching (`unstable_cache`)
-- Frequently read static data (holidays, cells, executive rosters) are cached in memory using `unstable_cache` with revalidation tags. Response time is reduced from ~120ms to **< 5ms**.
+- Frequently read static holiday reference data (`src/repositories/holiday.repository.ts`) is cached in memory using `unstable_cache` with revalidation tags.
 
 ### 3. Dynamic Imports & Code Splitting (`next/dynamic`)
 - Heavy client components like `RosterOCRImport` and PDF/DOCX generators use `dynamic(() => import(...), { ssr: false })` to shrink initial JavaScript bundle size by over 50%.
@@ -394,7 +394,8 @@ paths:
 ## 📖 Operator & User Manual
 
 ### 1. Administrators
-1. **User Management**: Navigate to **Users** -> **Add Operator**. Specify Bank ID, Role (`ADMIN`/`USER`), and assigned operational Cell.
+1. **User Management & Password Reset**: Navigate to **Users** -> **Add Operator**. Specify Bank ID, Role (`ADMIN`/`USER`), and assigned operational Cell. (Note: Self-service forgot-password is intentionally disabled for security; users request password resets from Admins).
+2. **Password Lazy-Migration**: Plaintext passwords migrate automatically to bcrypt salted hashes upon successful user sign-in.
 2. **Cell Management**: Navigate to **Cells (`/cells`)** to create, edit, or remove operational cell units.
 3. **Recycle Bin**: Access **Trash / রিসাইকেল বিন** to restore soft-deleted duty logs, employees, or office orders.
 
@@ -409,7 +410,7 @@ paths:
 ## 🚀 Quick Start & Development
 
 ### 1. Prerequisites
-- Node.js (v18.x or v20.x recommended)
+- Node.js (`>= 20.9.0` LTS required)
 - PostgreSQL (v15+)
 
 ### 2. Setup
@@ -443,65 +444,40 @@ Access the application at `http://localhost:3000`.
 
 ---
 
-## 📂 Production Deployment Guide (RHEL 8/9)
+## 📂 Production Deployment Guide (RHEL 8/9 + PM2 + Nginx)
 
-> [!CAUTION]
-> **PRODUCTION DATA SAFETY WARNING**: Never run `npm run db:seed` on a live production server as it resets database tables. Use `npx drizzle-kit push` to safely update database schemas without deleting data.
+See full step-by-step production instructions in [docs/runbooks/deploy.md](docs/runbooks/deploy.md).
 
-### 1. Install & Configure PostgreSQL
+### 1. Production Deployment Pipeline
 ```bash
-sudo dnf module enable postgresql:15 -y
-sudo dnf install postgresql-server postgresql-contrib -y
-sudo postgresql-setup --initdb
-sudo systemctl enable postgresql --now
+# 1. Pull latest verified main branch
+cd /var/www/duty-portal
+git pull origin main
+
+# 2. Run verification pipeline (typecheck + lint + test + build)
+npm run verify
+
+# 3. Check for database integrity / duplicate records
+psql "$DATABASE_URL" -f scripts/check-duplicates.sql
+
+# 4. Graceful zero-downtime PM2 reload
+pm2 reload ecosystem.config.cjs --update-env
+
+# 5. Diagnostic health check verification
+curl -I http://127.0.0.1:3000/api/health
 ```
 
-### 2. Node.js PM2 Production Build & Launch
-```bash
-sudo npm install -g pm2
-
-# Build production bundle and sync database schema safely
-npm run build
-npx drizzle-kit push
-
-# Launch PM2 process manager
-pm2 start npm --name "lhn-portal" -- run start -- -p 3000
-pm2 save
-pm2 startup systemd
-```
-
-### 3. Live Server Single-Line Safe Update Command
-When pulling updates to a live RHEL production server (ensuring local tree strictly matches `origin/main` without git merge conflict prompts):
-```bash
-git fetch origin && git reset --hard origin/main && npm run build && pm2 restart 2
-```
-* **Explanation:**
-  - `git fetch origin`: Downloads latest commits and refs from GitHub without touching local working tree.
-  - `git reset --hard origin/main`: Resets local branches and working tree to match `origin/main` completely, discarding any accidental local changes.
-  - `npm run build`: Compiles optimized production Next.js bundle with Turbopack/App Router.
-  - `pm2 restart 2`: Gracefully restarts PM2 process ID 2 with zero downtime.
-
+### 2. PM2 Architecture
+The application runs under PM2 in fork mode with `instances: 1` (configured in [ecosystem.config.cjs](ecosystem.config.cjs)) to protect in-memory brute-force authentication lockout tracking without distributed session fragmentation.
 
 ### 3. Nginx Reverse Proxy
-```nginx
-server {
-    listen 80;
-    server_name portal.janatabank.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
+Nginx listens on port 80/443 and reverse proxies traffic to `http://127.0.0.1:3000` with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` and `proxy_set_header X-Real-IP $remote_addr;`. Ensure `TRUST_PROXY_HEADERS=true` is enabled in `.env`.
 
 ---
 
 ## 🔄 Disaster Recovery (DR)
+
+See official pg_dump/pg_restore drill guide in [docs/runbooks/backup-restore-drill.md](docs/runbooks/backup-restore-drill.md).
 
 To restore database from `postgres_dump.json`:
 
@@ -530,7 +506,7 @@ npm run db:seed
 
 ## 🔒 Security Features
 - **Proxy-Level Route Protection**: NextAuth session validation via `src/proxy.ts`
-- **API Rate Limiting**: IP-based token bucket (30 req/min)
+- **API Rate Limiting**: IP-based token bucket (Bucket capacity: 300, Refill rate: 20 tokens/sec via `src/proxy.ts`)
 - **Security Headers**: X-Frame-Options DENY, X-Content-Type-Options nosniff, X-XSS-Protection, Referrer-Policy, Permissions-Policy
 - **WCAG 2.1 AA Accessibility**: Focus traps, ARIA labels, skip-to-content, prefers-reduced-motion
 

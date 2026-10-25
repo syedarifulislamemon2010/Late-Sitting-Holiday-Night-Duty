@@ -1,31 +1,33 @@
 # 🎨 Janata Bank LHN Portal — Design Tokens Reference
 
-This document serves as the single source of truth for design tokens, typography, colors, components, and layout guidelines across the **Janata Bank LHN Portal**.
+This document serves as the single source of truth for design tokens, typography, brand colors, components, and layout guidelines across the **Janata Bank LHN Portal**.
 
 ---
 
 ## 1. Color Tokens
 
-### Primary & Brand Colors (Sovereign Navy & Indigo)
-| Token Name | Light Mode | Dark Mode | Usage |
+### Primary & Brand Colors (Janata Bank Sovereign Blue `#0b5e9e` Family)
+The visual identity of Janata Bank PLC is anchored around the official corporate cyan-blue (`#0b5e9e`).
+
+| Token Name | Hex Code | Tailwind / CSS Variable | Usage |
 | :--- | :--- | :--- | :--- |
-| **`primary-50`** | `#EEF2FF` (`bg-indigo-50`) | `#1E1B4B` (`dark:bg-indigo-950/40`) | Pill backgrounds, subtle card accents |
-| **`primary-100`** | `#E0E7FF` (`bg-indigo-100`) | `#312E81` (`dark:bg-indigo-900/40`) | Badges, borders, subtle highlights |
-| **`primary-500`** | `#6366F1` (`bg-indigo-500`) | `#818CF8` (`dark:bg-indigo-400`) | Focused input borders, ring highlights |
-| **`primary-600`** | `#4F46E5` (`bg-indigo-600`) | `#6366F1` (`dark:bg-indigo-500`) | Primary CTA buttons, active tab indicators |
-| **`primary-700`** | `#4338CA` (`bg-indigo-700`) | `#4F46E5` (`dark:bg-indigo-600`) | Primary button hover states |
+| **`brand-primary`** | `#0b5e9e` | `--primary: #0b5e9e` | Bank header logos, active navigation tabs, primary CTA buttons, document borders |
+| **`brand-hover`** | `#074778` | `hover:bg-[#074778]` | Hover state for primary buttons, active links |
+| **`brand-dark`** | `#053256` | `bg-[#053256]` | Deep navy gradient stops, emphasized modal headers |
+| **`brand-surface`** | `#f0f7fc` | `bg-blue-50 / bg-[#0b5e9e]/10` | Light blue background tints, selection pills, subtle card accents |
+| **`brand-border`** | `#0b5e9e` | `border-2 border-[#0b5e9e]` | Official office order divider line, document header dividers |
 
 ### Category Specific Duty Colors
 | Category | Accent Color | Light Badge Style | Dark Badge Style |
 | :--- | :--- | :--- | :--- |
-| **`LATE_SITTING`** (লেট সিটিং) | Indigo | `bg-indigo-50 text-indigo-700 border-indigo-200` | `dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800` |
+| **`LATE_SITTING`** (লেট সিটিং) | Sky / Indigo | `bg-blue-50 text-[#0b5e9e] border-blue-200` | `dark:bg-blue-950/40 dark:text-sky-300 dark:border-blue-800` |
 | **`HOLIDAY`** (ছুটির দিন) | Rose / Red | `bg-rose-50 text-rose-700 border-rose-200` | `dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800` |
 | **`NIGHT_SHIFT`** (রাত্রীকালীন ডিউটি) | Amber / Orange | `bg-amber-50 text-amber-700 border-amber-200` | `dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800` |
 
 ### Neutral Surface Colors
 | Surface Tier | Light Mode | Dark Mode | Usage |
 | :--- | :--- | :--- | :--- |
-| **Background (Canvas)** | `#F8FAFC` (`bg-slate-50`) | `#090D16` (`dark:bg-slate-950`) | Page background |
+| **Background (Canvas)** | `#F8FAFC` (`bg-slate-50`) | `#090D16` (`dark:bg-slate-950`) | Page canvas |
 | **Card Surface** | `#FFFFFF` (`bg-white`) | `#0F172A` (`dark:bg-slate-900`) | Main containers, modals, cards |
 | **Muted Surface** | `#F1F5F9` (`bg-slate-100`) | `#1E293B` (`dark:bg-slate-800`) | Table headers, secondary input backgrounds |
 | **Borders** | `#E2E8F0` (`border-slate-200`) | `#334155` (`dark:border-slate-800`) | Card dividers, input borders |
@@ -34,17 +36,17 @@ This document serves as the single source of truth for design tokens, typography
 
 ## 2. Typography Scale
 
-- **Primary Font Family**: `'SolaimanLipi'`, `'Nikosh'`, `'Inter'`, `sans-serif`
-- **Monospace Font Family**: `'Consolas'`, `'Monaco'`, `'Courier New'`, `monospace` (used for Bank IDs, Order References, and Numeric Hashes)
+- **Primary UI & Document Font Family**: `'SolaimanLipi'`, `'Nikosh'`, `'Noto Sans Bengali'`, `sans-serif`
+  - Self-hosted local font fallback configured via `next/font/local` (`Noto Sans Bengali`) and `public/fonts/kalpurush.woff2` for server print templates.
+- **Monospace Font Family**: `'Consolas'`, `'Monaco'`, `'Courier New'`, `monospace` (used for Bank IDs, Order References, and Numeric Hashes).
 
 | Scale Level | Tailwind Class | Font Size | Line Height | Usage |
 | :--- | :--- | :--- | :--- | :--- |
-| **Hero Title** | `text-2xl sm:text-3xl` | 24px – 30px | 1.25 | Auth / Landing titles |
-| **Page Title** | `text-xl sm:text-2xl font-extrabold` | 20px – 24px | 1.3 | Top header on pages (`app-page-title`) |
-| **Section Title** | `text-base sm:text-lg font-bold` | 16px – 18px | 1.4 | Card headers, panel titles (`app-section-title`) |
-| **Body Standard** | `text-sm font-semibold` | 14px | 1.5 | General descriptions, form inputs, table data |
-| **Caption / Helper** | `text-xs font-medium` | 12px | 1.4 | Badges, sub-headings, calendar date pills |
-| **Micro / Metadata** | `text-[10px] font-bold` | 10px | 1.3 | Timestamps, serial indicators, pill tags |
+| **Bank Name Title** | `text-[24px] font-bold` | 24px | 1.0 – 1.15 | Official document header (`জনতা ব্যাংক পিএলসি.`) |
+| **Dept / Header** | `text-[18px] font-bold` | 18px | 1.2 | Department name, bill memo main title |
+| **Document Order Title**| `text-[14.5px] font-bold` | 14.5px | 1.3 | Office order category title pill (`অফিস আদেশ`) |
+| **Standard Body Text** | `text-[12px]` | 12px | 1.6 (Order), 1.1 (Memo) | Canonical print body font, official notification text |
+| **Table Data Cells** | `text-[11px]` | 11px | 1.4 | Official roster table cells, duty breakdown grids |
 
 ---
 
