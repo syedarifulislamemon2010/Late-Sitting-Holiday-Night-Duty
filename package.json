@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "sbom": "npx @cyclonedx/cyclonedx-npm --output-file bom.json",
     "db:seed": "npx tsx src/db/seed.ts",
     "db:dump": "npx tsx src/db/dump.ts",
     "db:push": "npx drizzle-kit push",
