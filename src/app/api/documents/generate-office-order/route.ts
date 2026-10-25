@@ -127,7 +127,7 @@ export async function POST(request: Request) {
   }
   @page {
     size: A4 portrait;
-    margin: 15mm 15mm 15mm 15mm;
+    margin: 1.0in;
   }
   body {
     font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
   }
   .order-table th, .order-table td {
     border: 1px solid #374151;
-    font-size: 12px;
+    font-size: 11px;
   }
   .order-table th {
     background-color: #f3f4f6;
