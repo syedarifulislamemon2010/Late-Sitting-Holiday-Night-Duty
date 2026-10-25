@@ -202,19 +202,19 @@ export async function GET(request: Request) {
     line-height: 1.0;
   }
   .header-title {
-    font-size: 24px;
+    font-size: 18px;
     font-weight: bold;
     margin: 0;
     line-height: 1.0;
   }
   .header-date {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     margin-top: 2px;
     line-height: 1.0;
   }
   .subject {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
     text-decoration: underline;
     margin-bottom: 10px;
@@ -224,7 +224,8 @@ export async function GET(request: Request) {
     text-align: justify;
     margin-top: 10px;
     margin-bottom: 10px;
-    line-height: 1.6;
+    font-size: 12px;
+    line-height: 1.1;
   }
   table {
     width: 100%;
@@ -452,7 +453,7 @@ export async function GET(request: Request) {
   }
   @page {
     size: A4;
-    margin: 0.8in;
+    margin: 1.0in;
   }
   body {
     font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
@@ -482,7 +483,7 @@ export async function GET(request: Request) {
     text-align: right;
   }
   .bank-title {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: bold;
     color: #0b5e9e;
     margin: 0;
@@ -496,7 +497,7 @@ export async function GET(request: Request) {
     line-height: 1.0;
   }
   .dept-title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
     color: #000000;
     margin: 5px 0 0 0;
@@ -509,7 +510,7 @@ export async function GET(request: Request) {
     padding-bottom: 4px;
     margin-bottom: 10px;
     margin-top: 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
   }
   .ref-date-table td {
@@ -518,7 +519,7 @@ export async function GET(request: Request) {
   }
   .title-content {
     text-align: center;
-    font-size: 14px;
+    font-size: 14.5px;
     font-weight: bold;
     text-decoration: underline;
     margin-bottom: 8px;
@@ -526,8 +527,8 @@ export async function GET(request: Request) {
   }
   .body-content {
     text-align: justify;
-    font-size: 11px;
-    line-height: 1.5;
+    font-size: 12px;
+    line-height: 1.6;
     margin-bottom: 10px;
     text-indent: 0.5in;
   }
@@ -575,7 +576,7 @@ export async function GET(request: Request) {
     line-height: 1.2;
   }
   .sig-name {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
   }
   .footer-copy {
