@@ -12,7 +12,7 @@ We chose a unified Next.js App Router monolithic full-stack architecture with Re
 ## Consequences
 - **Positive:**
   - Single repository, unified type contracts shared between API routes and UI components.
-  - Simplified CI/CD pipeline and single-container Docker deployment.
+  - Simplified CI/CD pipeline and native PM2 process management on RHEL with reverse proxy (nginx).
   - Zero network hop latency between SSR/Server Components and business logic.
 - **Negative:**
   - Independent scaling of specific sub-modules is tied to the main web process.
