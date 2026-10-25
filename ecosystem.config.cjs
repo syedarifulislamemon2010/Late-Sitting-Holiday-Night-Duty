@@ -7,7 +7,6 @@ module.exports = {
   apps: [
     {
       name: 'duty-portal',
-      cwd: '/var/www/duty-portal', // Adjust to production absolute deployment directory on RHEL
       script: 'npm',
       args: 'start',
 
@@ -38,8 +37,9 @@ module.exports = {
       max_restarts: 10,
 
       // Logging & Diagnostics:
-      output: '/var/log/pm2/duty-portal-out.log',
-      error: '/var/log/pm2/duty-portal-error.log',
+      // Uses PM2 default home directory (~/.pm2/logs) to prevent root permission errors
+      output: './logs/pm2-out.log',
+      error: './logs/pm2-error.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true,
     },
