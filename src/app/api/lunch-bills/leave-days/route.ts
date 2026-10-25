@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   } catch (error) {
     logger.error('Error in LunchBill leave-days GET:', error);
     return NextResponse.json(
-      { error: 'failed_to_calculate_leaves', message: error instanceof Error ? error.message : String(error) },
+      { error: 'failed_to_calculate_leaves', message: 'ছুটির দিনের হিসাব গণনা করতে ব্যর্থ হয়েছে।' },
       { status: 500 }
     );
   }

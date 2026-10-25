@@ -26,11 +26,21 @@ function ensureBackupStorage() {
   }
 }
 
+const isBuildOrTest =
+  process.env.NEXT_PHASE === 'phase-production-build' ||
+  process.env.NODE_ENV === 'test' ||
+  !!process.env.CI ||
+  process.env.npm_lifecycle_event === 'build';
+
 const rawKey = process.env.BACKUP_ENCRYPTION_KEY || process.env.NEXTAUTH_SECRET;
-if (!rawKey && process.env.NODE_ENV === 'production') {
-  logger.error('🚨 [Security Warning]: BACKUP_ENCRYPTION_KEY or NEXTAUTH_SECRET is required in production.');
+if (!rawKey && process.env.NODE_ENV === 'production' && !isBuildOrTest) {
+  throw new Error('🚨 [Critical Security Error]: BACKUP_ENCRYPTION_KEY or NEXTAUTH_SECRET is required in production.');
 }
-const ENCRYPTION_KEY = crypto.createHash('sha256').update(rawKey || 'ci-build-temporary-nextauth-secret-key-2026').digest();
+const effectiveKey = rawKey || (isBuildOrTest || process.env.NODE_ENV !== 'production' ? 'ci-build-temporary-nextauth-secret-key-2026' : undefined);
+if (!effectiveKey) {
+  throw new Error('🚨 [Critical Security Error]: Backup encryption key is missing.');
+}
+const ENCRYPTION_KEY = crypto.createHash('sha256').update(effectiveKey).digest();
 
 function encryptData(data: string) {
   const iv = crypto.randomBytes(12);

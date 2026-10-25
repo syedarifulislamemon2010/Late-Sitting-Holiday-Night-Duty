@@ -46,15 +46,20 @@ export const authOptions: NextAuthOptions = {
         const password = credentials.password;
 
         // Resolve client IP and User Agent
+        const trustProxy = process.env.TRUST_PROXY_HEADERS === 'true';
         let ipAddress = '127.0.0.1';
         let userAgent = 'Unknown';
         if (req && req.headers) {
-          ipAddress = (req.headers['x-real-ip'] as string) || (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || ipAddress;
+          if (trustProxy) {
+            ipAddress = (req.headers['x-real-ip'] as string) || (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || ipAddress;
+          }
           userAgent = (req.headers['user-agent'] as string) || userAgent;
         } else {
           try {
             const reqHeaders = await headers();
-            ipAddress = reqHeaders.get('x-real-ip') || reqHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || ipAddress;
+            if (trustProxy) {
+              ipAddress = reqHeaders.get('x-real-ip') || reqHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || ipAddress;
+            }
             userAgent = reqHeaders.get('user-agent') || userAgent;
           } catch {}
         }

@@ -24,6 +24,16 @@ if (typeof globalThis !== 'undefined' && !(globalThis as Record<string, unknown>
   }, CLEANUP_INTERVAL_MS);
 }
 
+const isBuildOrTest =
+  process.env.NEXT_PHASE === 'phase-production-build' ||
+  process.env.NODE_ENV === 'test' ||
+  !!process.env.CI ||
+  process.env.npm_lifecycle_event === 'build';
+
+if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === 'production' && !isBuildOrTest) {
+  throw new Error('🚨 [Critical Security Error]: NEXTAUTH_SECRET is required in production runtime.');
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -49,9 +59,19 @@ export async function proxy(request: NextRequest) {
 
   // Cryptographic Authentication Check for non-public routes
   if (!isPublic) {
+    const secret =
+      process.env.NEXTAUTH_SECRET ||
+      (isBuildOrTest || process.env.NODE_ENV !== 'production'
+        ? 'ci-build-temporary-nextauth-secret-key-2026'
+        : undefined);
+
+    if (!secret) {
+      throw new Error('🚨 [Critical Security Error]: NEXTAUTH_SECRET is missing.');
+    }
+
     const token = await getToken({
       req: request,
-      secret: process.env.NEXTAUTH_SECRET || 'ci-build-temporary-nextauth-secret-key-2026'
+      secret,
     });
 
     if (!token) {
@@ -72,8 +92,13 @@ export async function proxy(request: NextRequest) {
   // Rate Limiting for API routes
   const rateLimitExempt = ['/api/profile', '/api/auth', '/api/notifications', '/api/ping'];
   const isExempt = rateLimitExempt.some(p => pathname === p || pathname.startsWith(p + '/'));
-  // Prioritize X-Real-IP set by trusted reverse proxy, fall back to first X-Forwarded-For
-  const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+
+  // Proxy IP resolution: only trust forwarded/real-ip headers when behind a configured reverse proxy (TRUST_PROXY_HEADERS=true)
+  const trustProxy = process.env.TRUST_PROXY_HEADERS === 'true';
+  const ip = trustProxy
+    ? (request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1')
+    : '127.0.0.1';
+
   // Only exempt loopback in non-production environments to prevent header spoofing bypass
   const isLoopback = process.env.NODE_ENV !== 'production' && (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost');
 
@@ -118,6 +143,10 @@ export async function proxy(request: NextRequest) {
   // Content Security Policy (allows Next.js inline styles, blob: for PDF/DOCX generation, Google & Maateen webfonts)
   const cspHeader = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.maateen.me https:; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.maateen.me https:; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://fonts.maateen.me https:; connect-src 'self' https: ws: wss:; frame-ancestors 'self'; object-src 'none'; base-uri 'self';";
   response.headers.set('Content-Security-Policy', cspHeader);
+
+  // Content-Security-Policy-Report-Only (candidate strict policy for testing; fonts are now self-hosted locally)
+  const cspReportOnly = "default-src 'self'; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self';";
+  response.headers.set('Content-Security-Policy-Report-Only', cspReportOnly);
 
   // Strict-Transport-Security (enforced in production)
   if (process.env.NODE_ENV === 'production') {

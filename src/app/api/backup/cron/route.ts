@@ -61,8 +61,21 @@ export async function GET(req: Request) {
     });
 
     // Encrypt backup payload with AES-256-GCM
-    const rawKey = process.env.BACKUP_ENCRYPTION_KEY || process.env.NEXTAUTH_SECRET || 'dev-temporary-backup-key-2026';
-    const ENCRYPTION_KEY = crypto.createHash('sha256').update(rawKey).digest();
+    const isBuildOrTest =
+      process.env.NEXT_PHASE === 'phase-production-build' ||
+      process.env.NODE_ENV === 'test' ||
+      !!process.env.CI ||
+      process.env.npm_lifecycle_event === 'build';
+
+    const rawKey = process.env.BACKUP_ENCRYPTION_KEY || process.env.NEXTAUTH_SECRET;
+    if (!rawKey && process.env.NODE_ENV === 'production' && !isBuildOrTest) {
+      throw new Error('🚨 [Critical Security Error]: BACKUP_ENCRYPTION_KEY or NEXTAUTH_SECRET is required in production.');
+    }
+    const effectiveKey = rawKey || (isBuildOrTest || process.env.NODE_ENV !== 'production' ? 'ci-build-temporary-nextauth-secret-key-2026' : undefined);
+    if (!effectiveKey) {
+      throw new Error('🚨 [Critical Security Error]: Backup encryption key is missing.');
+    }
+    const ENCRYPTION_KEY = crypto.createHash('sha256').update(effectiveKey).digest();
 
     const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);

@@ -65,6 +65,6 @@ export async function GET(request: Request) {
     return NextResponse.json(logs);
   } catch (error) {
     logger.error('Error reading audit logs:', error);
-    return NextResponse.json({ error: 'failed_to_read_audit_logs', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_read_audit_logs', message: 'অডিট লগ লোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে কিছুক্ষণ পর পুনরায় চেষ্টা করুন।' }, { status: 500 });
   }
 }

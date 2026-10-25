@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, document: doc });
   } catch (error) {
     logger.error('Manual File Upload Error:', error);
-    return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'internal_error', message: 'ফাইল আপলোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।' }, { status: 500 });
   }
 }
 
@@ -194,7 +194,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: true, message: 'Document updated successfully' });
   } catch (error) {
     logger.error('Error updating manual document:', error);
-    return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'internal_error', message: 'ডকুমেন্ট আপডেট করতে ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।' }, { status: 500 });
   }
 }
 
@@ -255,6 +255,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true, message: 'Document moved to Recycle Bin' });
   } catch (error) {
     logger.error('Error deleting manual document:', error);
-    return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'internal_error', message: 'ডকুমেন্ট মুছে ফেলতে ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।' }, { status: 500 });
   }
 }

@@ -100,7 +100,7 @@ Provide only the JSON array as output, no markdown wrappers, no formatting, just
     logger.error('Error parsing employee image:', error);
     return NextResponse.json({ 
       error: 'failed_to_parse_image', 
-      message: `ইমেজ প্রসেস করতে ব্যর্থ হয়েছে। ছবিটির রেজোলিউশন ঠিক আছে কিনা এবং লেখাগুলো পরিষ্কার কিনা নিশ্চিত করুন। প্রয়োজনে ম্যানুয়ালি ইনপুট দিন। বিস্তারিত ত্রুটি: ${error instanceof Error ? error.message : String(error)}` 
+      message: 'ইমেজ প্রসেস করতে ব্যর্থ হয়েছে। ছবিটির রেজোলিউশন ঠিক আছে কিনা এবং লেখাগুলো পরিষ্কার কিনা নিশ্চিত করুন। প্রয়োজনে ম্যানুয়ালি ইনপুট দিন।' 
     }, { status: 500 });
   }
 }

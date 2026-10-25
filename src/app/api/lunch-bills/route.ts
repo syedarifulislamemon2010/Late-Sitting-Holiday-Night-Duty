@@ -130,7 +130,7 @@ export async function GET(request: Request) {
 
   } catch (error) {
     logger.error('Error in LunchBill GET:', error);
-    return NextResponse.json({ error: 'failed_to_fetch_lunch_bills', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_fetch_lunch_bills', message: 'লাঞ্চ বিল লোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।' }, { status: 500 });
   }
 }
 
@@ -254,6 +254,6 @@ export async function POST(request: Request) {
 
   } catch (error) {
     logger.error('Error in LunchBill POST:', error);
-    return NextResponse.json({ error: 'failed_to_save_lunch_bill', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_save_lunch_bill', message: 'লাঞ্চ বিল সংরক্ষণ করতে ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।' }, { status: 500 });
   }
 }
