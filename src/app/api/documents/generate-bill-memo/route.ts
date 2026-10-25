@@ -184,7 +184,7 @@ export async function POST(request: Request) {
     padding-right: 0.5in !important;
     box-sizing: border-box;
     font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.05;
     color: #000;
     background-color: #fff;
@@ -201,19 +201,19 @@ export async function POST(request: Request) {
     line-height: 0.95 !important;
   }
   .header-title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
     margin: 0;
     line-height: 0.95 !important;
   }
   .header-date {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     margin-top: 0px !important;
     line-height: 0.95 !important;
   }
   .subject {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     text-decoration: underline;
     margin-bottom: 10px;
@@ -224,7 +224,8 @@ export async function POST(request: Request) {
     text-align: justify;
     margin-top: 10px;
     margin-bottom: 10px;
-    line-height: 1.15;
+    font-size: 12px;
+    line-height: 1.1;
     text-indent: 0.5in;
   }
   table {
