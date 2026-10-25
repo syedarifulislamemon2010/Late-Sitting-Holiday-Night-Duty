@@ -56,6 +56,7 @@ export interface OfficeOrder {
     backingOrderDate?: string | null;
     orderText?: string;
     copies?: string[];
+    headerMode?: 'with_header' | 'without_header';
   } | null;
 }
 

@@ -22,6 +22,7 @@ export default function OfficeOrderPrintModal({
   if (!viewingOrder) return null;
 
   const isBill = viewingOrder.category?.startsWith('BILL_');
+  const headerMode = viewingOrder.content?.headerMode || 'with_header';
 
   const repDesig = (() => {
     if (!viewingOrder) return 'ও-আইটি';
@@ -99,8 +100,36 @@ export default function OfficeOrderPrintModal({
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 lg:p-6 animate-fadeIn font-sans">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
         
+        {/* Print Styles */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            .no-print { display: none !important; }
+            body { 
+              margin: 0 !important; 
+              padding: 0 !important; 
+              background: #fff !important; 
+            }
+            .fixed {
+              position: static !important;
+              background: transparent !important;
+              padding: 0 !important;
+            }
+            .max-w-5xl, .h-\\[90vh\\] {
+              max-width: 100% !important;
+              height: auto !important;
+              border: none !important;
+              box-shadow: none !important;
+            }
+            #printable-order-sheet {
+              border: none !important;
+              box-shadow: none !important;
+              margin: 0 !important;
+            }
+          }
+        `}} />
+
         {/* Modal Top Bar */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50 shrink-0">
+        <div className="no-print px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50 shrink-0">
           <div className="flex items-center gap-3">
             {isBill ? (
               <Receipt className="text-emerald-600 dark:text-emerald-400" size={22} />
@@ -165,28 +194,28 @@ export default function OfficeOrderPrintModal({
             /* Simulated Legal-sized Bill Memo sheet */
             <div 
               id="printable-order-sheet"
-              className="w-[215.9mm] min-h-[355.6mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-sans leading-none text-[11px] shrink-0"
-              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', boxSizing: 'border-box', paddingTop: '0.35in', paddingBottom: '0.35in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
+              className="w-[8.5in] min-h-[14.0in] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-sans leading-none text-[12px] shrink-0"
+              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', boxSizing: 'border-box', paddingTop: '0.5in', paddingBottom: '0.5in', paddingLeft: '1.4in', paddingRight: '0.5in' }}
             >
               <div className="flex flex-col h-full justify-between" contentEditable={true} suppressContentEditableWarning={true}>
                 <div>
                   {/* Official Header */}
                   <div className="w-full flex justify-end text-right mb-4">
                     <div className="text-right leading-none" style={{ lineHeight: '0.85' }}>
-                      <h2 className="text-[20px] font-bold text-black uppercase" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                      <p className="text-[11px] font-bold text-black" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.0', letterSpacing: 'normal', margin: 0, padding: 0, marginTop: '4px' }}>তারিখঃ {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
+                      <h2 className="text-[18px] font-bold text-black uppercase" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', lineHeight: '0.85', margin: 0, padding: 0 }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                      <p className="text-[12px] font-bold text-black" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '0.85', margin: 0, padding: 0, marginTop: '2px' }}>তারিখঃ {toBanglaDigits(new Date(viewingOrder.orderDate).toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'))} ইং</p>
                     </div>
                   </div>
 
                   {/* Title and Main Body */}
                   <div className="flex-1 flex flex-col justify-between mt-2">
                     <div>
-                      <h2 className="text-left text-[10px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.0' }}>
+                      <h2 className="text-left text-[12px] font-bold underline decoration-black underline-offset-2 leading-none" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0' }}>
                         বিষয়: {viewingOrder.content?.subjectText || 'যাতায়াত ও আপ্যায়ন ভাতা প্রদান প্রসঙ্গে।'}
                       </h2>
                       
                       <div className="mt-2.5">
-                        <p className="text-justify leading-normal text-black text-[10px]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", sans-serif', fontSize: '10px', lineHeight: '1.0', textAlign: 'justify' }}>
+                        <p className="text-justify leading-normal text-black text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.1', textAlign: 'justify' }}>
                           {viewingOrder.content?.openingParagraph}
                         </p>
                       </div>
@@ -332,8 +361,8 @@ export default function OfficeOrderPrintModal({
             /* Simulated A4 Office Order sheet */
             <div 
               id="printable-order-sheet"
-              className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg p-[0.8in] flex flex-col justify-between relative text-left font-sans leading-relaxed text-[11px] shrink-0"
-              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', boxSizing: 'border-box' }}
+              className="w-[210mm] min-h-[297mm] bg-white border border-slate-200 text-black shadow-lg flex flex-col justify-between relative text-left font-sans leading-relaxed text-[12px] shrink-0"
+              style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.6', padding: '1.0in', boxSizing: 'border-box' }}
             >
               <div>
                 {/* Janata Bank PLC Header */}
@@ -417,7 +446,7 @@ export default function OfficeOrderPrintModal({
                                   {group.designation.match(/\(([^)]+)\)/)?.[1] ?? group.designation}
                                 </td>
                                 <td className="border border-black p-1 text-left pl-2 leading-normal font-normal text-black" style={{ border: '1px solid #000', padding: '3px', textAlign: 'left', paddingLeft: '6px', verticalAlign: 'middle', lineHeight: '1.25', fontSize: '11px' }}>
-                                  {group.description || 'Customization এবং Development সংক্রান্ত'}
+                                  {group.description || ''}
                                 </td>
                                 <td className="border border-black p-1 text-center font-normal font-serif leading-snug tracking-tight" style={{ border: '1px solid #000', padding: '3px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.25' }}>
                                   {renderDatesInPairs(group.dates).map((pair, pIdx) => (
@@ -434,11 +463,12 @@ export default function OfficeOrderPrintModal({
                     })()}
 
                     {/* Sign-off Officer block */}
-                    <div className="w-full flex justify-start text-[11px]" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', lineHeight: '1.6', marginTop: '0.6in' }}>
-                      <div className="text-left pl-2">
-                        <p className="font-bold text-black signature-name" style={{ margin: 0, fontWeight: 'bold' }}>({cleanBracketName(viewingOrder.content?.signingOfficer || 'স্বাক্ষরিত')})</p>
-                        <p className="text-[11px] text-slate-800 signature-designation" style={{ margin: 0, marginTop: '2px', fontWeight: 'bold', fontSize: '11px' }}>{viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>
+                    <div className="flex justify-between items-start text-[12px]" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', marginTop: '1.0in' }}>
+                      <div className="w-[50%] text-left space-y-0.5 pl-2 leading-none">
+                        <p className="font-extrabold text-[12px] text-black">({cleanBracketName(viewingOrder.content?.signingOfficer || 'স্বাক্ষরিত')})</p>
+                        <p className="font-semibold text-slate-800 text-[12px]">{viewingOrder.content?.signingDesignation || 'উপ-মহাব্যবস্থাপক'}</p>
                       </div>
+                      <div className="w-[50%]" />
                     </div>
                   </div>
                 </div>
