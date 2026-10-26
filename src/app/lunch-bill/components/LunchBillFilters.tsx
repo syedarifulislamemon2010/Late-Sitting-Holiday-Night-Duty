@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, Filter, CheckCircle } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { Cell } from '../types';
 
 interface LunchBillFiltersProps {
@@ -24,7 +24,7 @@ interface LunchBillFiltersProps {
     O_IT: number;
     EXEC?: number;
   };
-  applyDesignationRates: (field: any, val: number) => void;
+  applyDesignationRates: (field: 'SPO' | 'PO' | 'SO_IT' | 'O_IT' | 'EXEC', val: number) => void;
   isAdmin: boolean;
 }
 
@@ -33,8 +33,6 @@ export default function LunchBillFilters({
   setSearchQuery,
   filterCell,
   setFilterCell,
-  filterType,
-  setFilterType,
   cells,
   showAdvancedFilters,
   deductionMode,
