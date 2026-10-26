@@ -31,7 +31,7 @@ interface Cell {
 }
 
 export default function CellsPage() {
-  const { currentUser } = useProfile();
+  useProfile();
   const [cells, setCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
