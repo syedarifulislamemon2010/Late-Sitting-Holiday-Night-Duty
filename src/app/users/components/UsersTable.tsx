@@ -4,7 +4,7 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { User, Cell, getPalette, extractNickname } from '../types';
-import { Shield, Building2, Edit3, Trash2, UserPlus, Users as UsersIcon } from 'lucide-react';
+import { Edit3, Trash2, UserPlus, Users as UsersIcon } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 
 interface UsersTableProps {
@@ -17,7 +17,6 @@ interface UsersTableProps {
 
 export default function UsersTable({
   users,
-  cells,
   onOpenAddModal,
   onOpenEditModal,
   onDeleteUser
