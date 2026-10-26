@@ -1,10 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Lock, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { Cell, LunchRecord } from '../types';
-import LunchBillExecutiveTable from './LunchBillExecutiveTable';
 
 interface LunchBillTableProps {
   cells: Cell[];
@@ -39,7 +38,6 @@ export default function LunchBillTable({
 
   const officerRecords = records.filter(r => !r.isExecutive);
 
-  const totalBillAll = officerRecords.reduce((sum, r) => sum + r.totalBill, 0);
   const totalStampAll = officerRecords.reduce((sum, r) => sum + r.stampDeduction, 0);
   const totalAdditionalAll = officerRecords.reduce((sum, r) => sum + (r.additionalDeduction || 0), 0);
   const grandTotalNetAll = officerRecords.reduce((sum, r) => sum + r.netPayable, 0);
