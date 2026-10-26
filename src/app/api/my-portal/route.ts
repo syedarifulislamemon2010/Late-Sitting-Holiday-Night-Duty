@@ -3,9 +3,8 @@ import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { employees, duties, leaveApplications, holidays, cells, officeOrders } from '@/db/schema';
+import { employees, duties, leaveApplications, cells, officeOrders } from '@/db/schema';
 import { eq, and, desc, sql, like, or } from 'drizzle-orm';
-import { getCalculatedLeaveDetails, DEFAULT_CASUAL_LEAVE_ENTITLEMENT } from '@/lib/leave-calculator';
 import { LeaveBalanceService } from '@/services/leave-balance.service';
 import { logActivity } from '@/lib/audit';
 import { headers } from 'next/headers';
@@ -13,7 +12,7 @@ import { headers } from 'next/headers';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const user = await getCurrentUser();
     if (user) auditRbacRequest('GET', '/api/my-portal', user);
