@@ -107,7 +107,7 @@ export async function GET(req: Request) {
 
     // Update history.json
     const historyPath = path.join(BACKUP_DIR, 'history.json');
-    let history: any[] = [];
+    let history: Record<string, unknown>[] = [];
     if (fs.existsSync(historyPath)) {
       try {
         history = JSON.parse(fs.readFileSync(historyPath, 'utf8'));

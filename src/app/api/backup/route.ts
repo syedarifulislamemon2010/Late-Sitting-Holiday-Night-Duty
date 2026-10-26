@@ -22,7 +22,7 @@ function ensureBackupStorage() {
     if (!fs.existsSync(HISTORY_FILE)) {
       fs.writeFileSync(HISTORY_FILE, JSON.stringify([]));
     }
-  } catch (err) {
+  } catch {
     logger.error('Failed to initialize backup directory', err);
   }
 }
@@ -65,7 +65,7 @@ function decryptData(encryptedData: string, ivBase64: string, authTagBase64: str
 function addHistoryLog(log: Record<string, unknown>) {
   try {
     ensureBackupStorage();
-    let history: any[] = [];
+    let history: Record<string, unknown>[] = [];
     if (fs.existsSync(HISTORY_FILE)) {
       history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
     }
@@ -208,7 +208,7 @@ export async function POST(req: NextRequest) {
         try {
           const decryptedStr = decryptData(parsedInput.payload.encryptedData, parsedInput.payload.iv, parsedInput.payload.authTag);
           backupData = JSON.parse(decryptedStr);
-        } catch (err) {
+        } catch {
           return NextResponse.json({ error: 'decryption_failed', message: 'Failed to decrypt backup data. Invalid key or corrupted data.' }, { status: 400 });
         }
       } else if (parsedInput.data) {
