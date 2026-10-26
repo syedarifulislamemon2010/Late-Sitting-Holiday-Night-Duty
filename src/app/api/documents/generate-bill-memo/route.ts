@@ -10,19 +10,19 @@ import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
 import { getBanglaNumberWords } from '@/lib/bengali-converter';
-import { billMemoGenerateSchema } from '@/validations/documentGeneration.schema';
+import { billMemoGenerateSchema, BillMemoGenerateInput } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
 import { escapeHtml } from '@/lib/html-escape';
 import { sanitizeOrderHtml } from '@/lib/sanitize';
 
 interface BillSummaryItem {
-  name: string;
-  designation: string;
-  datesFormatted: string;
-  days: number;
-  totalTransport: number;
-  totalApyaon: number;
-  grandTotal: number;
+  name?: string;
+  designation?: string;
+  datesFormatted?: string;
+  days?: number;
+  totalTransport?: number;
+  totalApyaon?: number;
+  grandTotal?: number;
 }
 
 function toBnDigits(num: number | string | null | undefined): string {
@@ -49,30 +49,30 @@ export async function POST(request: Request) {
     if (!parseResult.success) {
       return handleApiError(parseResult.error);
     }
-    const payload = parseResult.data as unknown as any;
+    const payload = parseResult.data as BillMemoGenerateInput & { actionType?: string };
     const {
       openingParagraph,
-      summaries,
-      totalDays,
-      totalApyaon,
-      totalTransport,
-      grandTotal,
-      grandTotalInWords,
-      representativeName,
-      representativeDesignation,
-      subjectText,
-      billDate,
+      summaries = [],
+      totalDays = 0,
+      totalApyaon = 0,
+      totalTransport = 0,
+      grandTotal = 0,
+      grandTotalInWords = "",
+      representativeName = "",
+      representativeDesignation = "",
+      subjectText = "",
+      billDate = "",
       transportRate = 200.0,
       apyaonRate = 100.0,
       totalTransportInWords = "",
       totalApyaonInWords = "",
-      billRef
+      billRef = ""
     } = payload;
 
     let finalRepresentativeDesignation = representativeDesignation ? getShortDesignation(representativeDesignation) : '';
     if (!finalRepresentativeDesignation && representativeName) {
       const clean = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
-      const matchedSummary = (summaries || []).find((s: BillSummaryItem) => clean(s.name) === clean(representativeName) || s.name.includes(representativeName) || representativeName.includes(s.name));
+      const matchedSummary = (summaries || []).find((s: BillSummaryItem) => clean(s.name || "") === clean(representativeName) || (s.name && s.name.includes(representativeName)) || (s.name && representativeName.includes(s.name)));
       if (matchedSummary?.designation) {
         finalRepresentativeDesignation = getShortDesignation(matchedSummary.designation);
       }
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       const shortDesignation = getShortDesignation(s.designation);
       const pairedDates = renderDatesInPairs(s.datesFormatted || '');
       
-      const datesHtml = pairedDates.map((pair, pIdx) => {
+      const datesHtml = pairedDates.map((pair) => {
         return `<span style="display: block; white-space: nowrap; line-height: 1.2;">${pair}</span>`;
       }).join('');
 
@@ -105,13 +105,13 @@ export async function POST(request: Request) {
           </td>
           <td style="text-align: center; vertical-align: middle; padding: 4px;">
             <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(transportRate))}x${toBnDigits(s.days)}) =</span>
-            <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(s.totalTransport))}/-</span>
+            <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(s.totalTransport || 0))}/-</span>
           </td>
           <td style="text-align: center; vertical-align: middle; padding: 4px;">
             <span style="display: block; white-space: nowrap;">(${toBnDigits(Math.round(apyaonRate))}x${toBnDigits(s.days)}) =</span>
-            <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(s.totalApyaon))}/-</span>
+            <span style="display: block; white-space: nowrap; margin-top: 2px;">${toBnDigits(Math.round(s.totalApyaon || 0))}/-</span>
           </td>
-          <td class="font-bold">${toBnDigits(Math.round(s.grandTotal))}/-</td>
+          <td class="font-bold">${toBnDigits(Math.round(s.grandTotal || 0))}/-</td>
         </tr>
       `;
     }).join('');
@@ -452,7 +452,7 @@ export async function POST(request: Request) {
 
     const relativePath = `/uploads/${filename}`;
     // Transition status to 'Generated & Printed' in OfficeOrder table only if print/download action is requested
-    const logAction = payload.actionType || 'PRINT_BILL';
+    const logAction: string = String(payload.actionType || 'PRINT_BILL');
     if (billRef && (logAction === 'PRINT_BILL' || logAction === 'DOWNLOAD_BILL_PDF')) {
       await db.update(officeOrders)
         .set({ status: 'Generated & Printed' })
