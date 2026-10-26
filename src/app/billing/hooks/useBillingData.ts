@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import logger from '@/lib/logger';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
-import { getShortDesignation, sortDatesStringAscending } from '@/lib/print-helpers';
+import { sortDatesStringAscending } from '@/lib/print-helpers';
 import { UserProfile, UserCell } from '@/context/ProfileContext';
 import { useLatestRequest } from '@/hooks/useLatestRequest';
 import {
@@ -12,15 +11,35 @@ import {
   OrderDuty,
   Duty,
   EmployeeBillingSummary,
-  BillGroup,
   ReportData,
-  DutyListEntry,
   getSlotName,
   getNormalizedRef,
   getSeniorityRank,
   getPrintCategoryRates,
   userHasAccessToOrder
 } from '../types';
+
+interface EmployeeBreakdownRecord {
+  employeeName: string;
+  designation: string;
+  lateSittingDays: number;
+  lateSittingAmount: number;
+  holidayDays: number;
+  holidayAmount: number;
+  nightShiftDays: number;
+  nightShiftAmount: number;
+  totalDays: number;
+  grandTotal: number;
+}
+
+interface PayeeSummaryRecord {
+  payeeName: string;
+  designation: string;
+  billCount: number;
+  transportAllowance: number;
+  apyaonAllowance: number;
+  grandTotal: number;
+}
 
 export function useBillingData(currentUser: UserProfile | null | undefined) {
   const { createRequest, isLatest } = useLatestRequest();
@@ -119,7 +138,7 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
 
   // Fetch duties based on selected month & filters
   const fetchDutiesForBilling = useCallback(async () => {
-    const { requestId, signal } = createRequest();
+    const { requestId } = createRequest();
     try {
       setLoading(true);
       
@@ -744,18 +763,10 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
     );
 
     const totalBillsCount = targetBills.length;
-    let totalDays = 0;
-    let totalTransport = 0;
-    let totalApyaon = 0;
-    let grandTotal = 0;
-
-    let lateSittingAmount = 0;
-    let holidayAmount = 0;
-    let nightShiftAmount = 0;
 
     const cleanName = (n: string) => (n || '').replace(/^(জনাব|জনাবা|ডাঃ|ড\.)\s*/, '').replace(/\s+/g, ' ').trim().toLowerCase();
 
-    const empMap = new Map<string, any>();
+    const empMap = new Map<string, EmployeeBreakdownRecord>();
 
     targetBills.forEach(bill => {
       let dutiesList: OrderDuty[] = (bill.duties as OrderDuty[]) || [];
@@ -779,14 +790,7 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
         const apyaon = Number(duty.totalApyaon || 0);
         const total = Number(duty.grandTotal || (transport + apyaon) || 0);
 
-        totalDays += days;
-        totalTransport += transport;
-        totalApyaon += apyaon;
-        grandTotal += total;
 
-        if (isLateSitting) lateSittingAmount += total;
-        if (isHoliday) holidayAmount += total;
-        if (isNight) nightShiftAmount += total;
 
         const empKey = cleanName(name);
 
@@ -841,7 +845,7 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
     const calculatedApyaon = (totalLateDays * 100) + (totalHolidayDays * 250) + (totalNightDays * 600);
     const calculatedTransport = (totalLateDays * 200) + (totalHolidayDays * 250) + (totalNightDays * 400);
 
-    const payeeMap = new Map<string, any>();
+    const payeeMap = new Map<string, PayeeSummaryRecord>();
 
     targetBills.forEach(bill => {
       const payeeName = bill.employeeName || 'অজ্ঞাত কর্মকর্তা';
