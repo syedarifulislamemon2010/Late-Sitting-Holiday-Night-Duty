@@ -23,8 +23,6 @@ import {
   BarChart3, 
   Users, 
   FileText,
-  Calendar,
-  Sparkles,
   Info
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
@@ -55,7 +53,6 @@ const MONTHS_BN = [
 
 export default function AnalyticsCharts({
   allowanceTrend,
-  personalAllowanceTrend,
   topPerformers,
   cellBudget,
   leavePatterns,
@@ -415,7 +412,7 @@ export default function AnalyticsCharts({
             /* Smart Centered Stat Display for Sparse Data (<= 3 items) */
             <div className="h-full flex flex-col items-center justify-center space-y-4 py-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
-                {billReleases.map((d, i) => (
+                {billReleases.map((d) => (
                   <div 
                     key={d.orderDate}
                     className="p-4 rounded-xl bg-gradient-to-br from-blue-50/50 to-indigo-50/30 dark:from-slate-800/80 dark:to-blue-950/30 border border-blue-100/70 dark:border-slate-700/60 flex items-center gap-3 shadow-xs"
