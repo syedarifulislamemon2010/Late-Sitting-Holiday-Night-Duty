@@ -9,12 +9,9 @@ import {
   Cell, 
   Holiday, 
   Duty, 
-  OfficeOrder, 
-  OrderDuty, 
   LeaveRecord,
   DutyAssignment,
   GroupedDuty,
-  getNormalizedRef,
   getDefaultDescription,
   getShortDesignation,
   getFormattedDateList,
@@ -145,7 +142,7 @@ export function useDutyAssignment({
             if (data.conflicts && data.conflicts.length > 0) {
               conflicts.push(...data.conflicts);
             }
-          } catch (e) {}
+          } catch {}
         }
       } else {
         const entries = Object.entries(opt1Assignments);
@@ -162,7 +159,7 @@ export function useDutyAssignment({
             if (data.conflicts && data.conflicts.length > 0) {
               conflicts.push(...data.conflicts);
             }
-          } catch (e) {}
+          } catch {}
         }
       }
       setPreConflicts(conflicts);
