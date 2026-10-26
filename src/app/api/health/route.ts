@@ -9,7 +9,7 @@ export async function GET() {
   try {
     await db.execute(sql`SELECT 1`);
     dbHealthy = true;
-  } catch (err) {
+  } catch {
     dbHealthy = false;
   }
 
