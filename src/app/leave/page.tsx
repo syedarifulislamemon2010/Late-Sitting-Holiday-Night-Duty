@@ -12,13 +12,11 @@ import LeaveFormHeader from './components/LeaveFormHeader';
 import LeaveForm from './components/LeaveForm';
 import LeavePrintView from './components/LeavePrintView';
 import { useLeaveData, cleanDesignationForLeave } from './hooks/useLeaveData';
-import { Employee, Leave } from './types';
 
 export default function LeaveGeneratorPage() {
   const { currentUser } = useProfile();
   
   const {
-    matchedEmp,
     selectedApplicantEmp,
     setSelectedApplicantEmp,
     isProfileUnresolved,
@@ -36,7 +34,6 @@ export default function LeaveGeneratorPage() {
     durationMode,
     setDurationMode,
     applicationDate,
-    setApplicationDate,
     applicantName,
     setApplicantName,
     designation,
@@ -59,9 +56,7 @@ export default function LeaveGeneratorPage() {
     latestLeave,
     editingLeaveId,
     successMsg,
-    setSuccessMsg,
     errorMsg,
-    setErrorMsg,
     deleteConfirmModal,
     setDeleteConfirmModal,
     selectedDistrict,
