@@ -7,18 +7,15 @@ import {
   CalendarRange, 
   CalendarCheck, 
   Receipt, 
-  MapPin, 
   Phone, 
   Coins, 
   Clock, 
   TrendingUp, 
   Plus, 
-  FileText, 
   AlertCircle, 
   CheckCircle2,
   Calendar,
   Layers,
-  ChevronRight
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { MetricCardsSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
