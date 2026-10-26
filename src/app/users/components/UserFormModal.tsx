@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { User, Cell, Employee, extractNickname } from '../types';
-import { X, Save, Building2, Shield, CheckSquare, Square, AlertCircle } from 'lucide-react';
+import { User, Cell, Employee } from '../types';
+import { X, Save, CheckSquare, Square, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface UserFormModalProps {
@@ -45,7 +45,6 @@ export default function UserFormModal({
   setRole,
   selectedCellIds,
   setSelectedCellIds,
-  cellRoles,
   setCellRoles,
   cells,
   employees,
