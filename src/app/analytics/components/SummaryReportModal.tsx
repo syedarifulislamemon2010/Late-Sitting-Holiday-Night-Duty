@@ -7,9 +7,6 @@ import {
   X, 
   Calendar, 
   Building2, 
-  CheckCircle,
-  FileText,
-  UserCheck
 } from 'lucide-react';
 import { toBanglaDigits, getBanglaNumberWords } from '@/lib/bengali-converter';
 
