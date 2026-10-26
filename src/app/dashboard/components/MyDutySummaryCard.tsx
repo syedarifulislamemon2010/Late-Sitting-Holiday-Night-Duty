@@ -55,8 +55,7 @@ interface Employee {
 }
 
 export default function MyDutySummaryCard() {
-  const { lang, t, formatNumber, formatMonthYear } = useLanguage();
-  const isEn = lang === 'en';
+  useLanguage();
 
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [duties, setDuties] = useState<Duty[]>([]);
