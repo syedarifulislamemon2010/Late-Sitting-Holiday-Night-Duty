@@ -22,7 +22,7 @@ function ensureBackupStorage() {
     if (!fs.existsSync(HISTORY_FILE)) {
       fs.writeFileSync(HISTORY_FILE, JSON.stringify([]));
     }
-  } catch {
+  } catch (err) {
     logger.error('Failed to initialize backup directory', err);
   }
 }
