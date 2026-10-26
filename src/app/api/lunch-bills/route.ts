@@ -9,12 +9,15 @@ import { logActivity } from '@/lib/audit';
 import { lunchBillSaveFormSchema } from '@/validations/lunchBill.schema';
 
 interface LunchBillRecord {
-  employeeId: number;
-  name: string;
-  designation: string;
+  employeeId?: number;
+  name?: string;
+  employeeName?: string;
+  bankId?: string;
+  designation?: string;
   cellId: number;
-  isExecutive: boolean;
+  isExecutive?: boolean;
   dutiesCount?: number;
+  [key: string]: unknown;
 }
 
 async function getOrCreateCombinedCell() {
@@ -91,10 +94,10 @@ export async function GET(request: Request) {
     }
 
     // Filter records dynamically: exclude executives, ensure Shahinur is only in cell 7
-    const allRecords = JSON.parse(combinedBill.recordsJson);
+    const allRecords: LunchBillRecord[] = JSON.parse(combinedBill.recordsJson);
     const sanitizedRecords = allRecords
-      .filter((r: any) => !r.isExecutive)
-      .map((r: any) => {
+      .filter((r: LunchBillRecord) => !r.isExecutive)
+      .map((r: LunchBillRecord) => {
         const isShahinur = (r.bankId === '018273') || (r.employeeName && r.employeeName.includes('শাহিনুর'));
         if (isShahinur) {
           return { ...r, cellId: 7 };
@@ -102,19 +105,19 @@ export async function GET(request: Request) {
         return r;
       });
 
-    let filteredRecords: any[] = [];
+    let filteredRecords: LunchBillRecord[] = [];
     if (isAdmin) {
       if (targetCellId === 0) {
         filteredRecords = sanitizedRecords;
       } else {
-        filteredRecords = sanitizedRecords.filter((r: any) => r.cellId === targetCellId);
+        filteredRecords = sanitizedRecords.filter((r: LunchBillRecord) => r.cellId === targetCellId);
       }
     } else {
       if (targetCellId === 0) {
         // Return records for all cells assigned to standard user
-        filteredRecords = sanitizedRecords.filter((r: any) => allowedCellIds.length === 0 || allowedCellIds.includes(r.cellId));
+        filteredRecords = sanitizedRecords.filter((r: LunchBillRecord) => allowedCellIds.length === 0 || allowedCellIds.includes(r.cellId));
       } else {
-        filteredRecords = sanitizedRecords.filter((r: any) => r.cellId === targetCellId);
+        filteredRecords = sanitizedRecords.filter((r: LunchBillRecord) => r.cellId === targetCellId);
       }
     }
 
@@ -206,8 +209,8 @@ export async function POST(request: Request) {
 
     // Exclude executives and ensure Md. Shahinur Rahman is strictly assigned to R09 (cell 7)
     finalRecords = finalRecords
-      .filter((r: any) => !r.isExecutive)
-      .map((r: any) => {
+      .filter((r: LunchBillRecord) => !r.isExecutive)
+      .map((r: LunchBillRecord) => {
         const isShahinur = (r.bankId === '018273') || (r.employeeName && r.employeeName.includes('শাহিনুর'));
         if (isShahinur) {
           return { ...r, cellId: 7 };
