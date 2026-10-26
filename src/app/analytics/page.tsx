@@ -2,13 +2,11 @@
 import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { 
   BarChart2, 
   TrendingUp, 
   Filter, 
-  Calendar, 
   RefreshCw, 
   AlertCircle,
   ChevronDown,
@@ -35,6 +33,27 @@ const AnalyticsCharts = dynamic(
     )
   }
 );
+
+interface BillRelease {
+  orderDate: string;
+  count: number;
+}
+
+interface EmployeeBillCount {
+  employeeName: string;
+  count: number;
+}
+
+interface AnalyticsSummary {
+  totalReleasedBills: number;
+  totalDutiesCompleted: number;
+  totalApprovedBillAmount?: number;
+}
+
+interface CurrentUserSession {
+  role?: string;
+  [key: string]: unknown;
+}
 
 interface AllowanceTrend {
   month: string;
@@ -208,14 +227,14 @@ export default function AnalyticsDashboardPage() {
   const [topPerformers, setTopPerformers] = useState<TopPerformer[]>([]);
   const [cellBudget, setCellBudget] = useState<CellBudget[]>([]);
   const [leavePatterns, setLeavePatterns] = useState<LeavePattern[]>([]);
-  const [billReleases, setBillReleases] = useState<any[]>([]);
-  const [employeeBillCounts, setEmployeeBillCounts] = useState<any[]>([]);
-  const [summary, setSummary] = useState<any>(null);
+  const [billReleases, setBillReleases] = useState<BillRelease[]>([]);
+  const [employeeBillCounts, setEmployeeBillCounts] = useState<EmployeeBillCount[]>([]);
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [role, setRole] = useState('');
-  const [hasEmployeeProfile, setHasEmployeeProfile] = useState(false);
+  const [, setHasEmployeeProfile] = useState(false);
 
   // Double Check security redirect for client session
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUserSession | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('currentUser');
