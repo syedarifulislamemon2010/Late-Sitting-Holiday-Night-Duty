@@ -4,26 +4,23 @@ import logger from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { 
-  DEFAULT_2026_HOLIDAYS, 
+  Holiday, 
   isNonWorkingDay as libIsNonWorkingDay 
 } from '@/lib/leave-calculator';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { 
   Printer, 
   ArrowLeft, 
-  FileText, 
   User, 
   AlertCircle,
   HardDrive,
   Trash2,
   CalendarCheck,
   CheckCircle,
-  Info
 } from 'lucide-react';
 
 interface CalendarDatePickerProps {
@@ -239,7 +236,7 @@ export default function HardwareRequisitionPage() {
   // Data loading states
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
-  const [dbHolidays, setDbHolidays] = useState<any[]>([]);
+  const [dbHolidays, setDbHolidays] = useState<Holiday[]>([]);
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -427,7 +424,13 @@ export default function HardwareRequisitionPage() {
   const currentItems = getRequisitionItems();
 
   // Text generator
-  const getGeneratedTexts = (req: any) => {
+  const getGeneratedTexts = (req: {
+    cellName?: string;
+    items?: RequisitionItem[];
+    hardwareType?: string;
+    upsAction?: string;
+    subjectLine?: string;
+  }) => {
     const cellName = req.cellName || 'অনুমোদিত সেল';
     const count = req.items?.length || 0;
     const countBn = toBanglaDigits(String(count).padStart(2, '0'));
@@ -495,12 +498,13 @@ export default function HardwareRequisitionPage() {
         createdAt: new Date().toISOString(),
         items: currentItems,
         requester: {
+          id: 0,
           name: selectedApplicantEmp?.name || '',
           username: ''
         }
       };
 
-  const { subjectLine, bodyParagraph, closingParagraph } = getGeneratedTexts(previewReq);
+  const { subjectLine, bodyParagraph } = getGeneratedTexts(previewReq);
 
   if (activeTab === 'NEW' || !printRequisition) {
     previewReq.subjectLine = subjectLine;
@@ -585,8 +589,8 @@ export default function HardwareRequisitionPage() {
       setSuccessMsg('হার্ডওয়্যার রিকুইজিশন সফলভাবে সংরক্ষণ করা হয়েছে!');
       refreshRequisitions();
       setActiveTab('ARCHIVE');
-    } catch (err: any) {
-      setErrorMsg(err.message);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : String(err));
     } finally {
       setSubmitting(false);
     }
