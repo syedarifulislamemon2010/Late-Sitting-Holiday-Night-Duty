@@ -13,7 +13,7 @@ export default function SessionExpiryWarning() {
       try {
         const res = await fetch('/api/profile');
         if (res.ok) {
-          const user = await res.json();
+          await res.json();
           // NextAuth JWT session is 8 hours by default. We check remaining cookie age if present or track active session timestamp
           const lastActivity = Number(localStorage.getItem('last_auth_refresh') || Date.now());
           const maxSessionDurationMs = 8 * 60 * 60 * 1000; // 8 hours
