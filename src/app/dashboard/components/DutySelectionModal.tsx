@@ -14,7 +14,6 @@ interface DutySelectionModalProps {
 }
 
 export function DutySelectionModal({
-  dateStr,
   formattedDate,
   isHoliday,
   existing,
