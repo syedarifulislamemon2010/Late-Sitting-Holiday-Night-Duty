@@ -134,7 +134,7 @@ export function useUsersData(currentUser: UserProfile | null | undefined, refetc
       try {
         const parsed = JSON.parse(user.cellDuties);
         Object.assign(roleMap, parsed);
-      } catch (e) {}
+      } catch {}
     }
     setCellRoles(roleMap);
     setError('');

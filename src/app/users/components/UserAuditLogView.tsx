@@ -4,7 +4,7 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TableSkeleton } from '@/components/SkeletonLoader';
-import { Shield, Search, FileText, Clock } from 'lucide-react';
+import { Shield, Search, FileText } from 'lucide-react';
 import { AuditLog } from '../types';
 
 interface UserAuditLogViewProps {

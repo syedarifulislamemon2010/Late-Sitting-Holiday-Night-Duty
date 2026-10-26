@@ -4,7 +4,7 @@ import React from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Shield, UserCheck, Users, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { Shield, UserCheck, Users, AlertCircle, CheckCircle } from 'lucide-react';
 
 import { useUsersData } from './hooks/useUsersData';
 import UserProfileTab from './components/UserProfileTab';
