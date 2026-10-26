@@ -48,7 +48,7 @@
 ## ✨ Comprehensive Feature List
 
 - 📅 **Automated Duty Roster Management**: Schedule, track, and manage Late-Sitting (৳300/day), Holiday Duty (৳500/day), and Night Duty (৳1000/day).
-- ⚡ **Zero-Latency Database Caching (`< 5ms`)**: Next.js `unstable_cache` and React `cache()` for instant server response on static reference queries.
+- ⚡ **Optimized Database Queries & Connection Pooling**: Optimized indexes and Drizzle connection pooling for rapid server response on relational queries.
 - 🔒 **Zero-Downtime Bcrypt Password Hashing Migration**: Dual-compatibility authentication engine that dynamically lazy-migrates legacy plaintext passwords to standard 60-character bcrypt salted hashes upon user login without breaking existing credentials.
 - 👔 **কর্মকর্তা ও সেল ডিরেক্টরি (Employee & Cell Directory)**: Sovereign Navy-styled officer cards, dynamic cell grouping, senior ranking hierarchy, executive panel with custom rank accents, inline quick-editing with empty-state pill affordances, multi-selection bulk deletion, and modal views.
 - 📊 **সিস্টেম অ্যানালিটিক্স ড্যাশবোর্ড (System Analytics & Financial Auditing)**: Parallel Neon PostgreSQL query pipeline with sub-50ms SWR caching, synchronized billing ledger totals (৳ ৩০,৪০০/- across 9 office orders), cell budget breakdowns, and monthly duty performer tracking.
@@ -90,8 +90,8 @@ CREATE INDEX Duty_orderRef_idx ON "Duty" ("orderRef");
 CREATE INDEX LeaveApplication_bankId_idx ON "LeaveApplication" ("bankId");
 ```
 
-### 2. Next.js Server Caching (`unstable_cache`)
-- Frequently read static holiday reference data (`src/repositories/holiday.repository.ts`) is cached in memory using `unstable_cache` with revalidation tags.
+### 2. In-Memory Reference Lookup & Dynamic Querying
+- Database lookups in `src/repositories/holiday.repository.ts` utilize indexed date queries (`findByDate`, `findHolidaysByDates`) for minimal latency across holiday evaluations.
 
 ### 3. Dynamic Imports & Code Splitting (`next/dynamic`)
 - Heavy client components like `RosterOCRImport` and PDF/DOCX generators use `dynamic(() => import(...), { ssr: false })` to shrink initial JavaScript bundle size by over 50%.
@@ -124,7 +124,7 @@ graph TD
         Logic --> CalendarEngine["Calendar Working Days Engine"]:::server
         Logic --> DocxEngine["Universal DOCX & PDF Engine"]:::server
         Logic --> ConflictEngine["Conflict Auto-Redirect Engine"]:::server
-        Logic --> CacheEngine["unstable_cache Memory Engine (< 5ms)"]:::server
+        Logic --> RepoEngine["Repository Layer Query Engine"]:::server
     end
 
     subgraph Storage["Database Layer"]

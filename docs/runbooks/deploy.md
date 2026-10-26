@@ -11,11 +11,25 @@
 
 ---
 
-## ৩. স্ট্যান্ডার্ড ডেপ্লয়মেন্ট পাইপলাইন (Step-by-Step Pipeline)
+## ৩. আইপি প্রক্সি ও ব্রুট-ফোর্স লকআউট আচরণ (IP Proxy & Lockout Behavior)
+
+### বর্তমান ডিফল্ট আচরণ
+- ডিফল্টভাবে `.env.example`-এ `TRUST_PROXY_HEADERS=false` থাকে।
+- যখন `TRUST_PROXY_HEADERS=false`, তখন সব ইনকামিং ক্লায়েন্টের IP ঠিকানা অভ্যন্তরীণভাবে `127.0.0.1` হিসেবে গণ্য হয়।
+- **প্রভাব**: এর ফলে রেট লিমিটিং সবার জন্য একটি একক বাকেটে হিসাব হয় এবং ব্রুট-ফোর্স লকআউট কার্যত **শুধুমাত্র ইউজারনেম-ভিত্তিক** (Username-based) আচরণ করে। একজন বৈধ কর্মকর্তা ভুল পাসওয়ার্ড দিলে উক্ত ইউজারনেম সাময়িক লক হবে, কিন্তু অন্য কোনো কর্মকর্তার অ্যাকাউন্টে প্রভাব পড়বে না।
+
+### সুপারিশকৃত উৎপাদন সেটআপ (Recommended Architecture)
+১. পোর্টাল যেন সরাসরি পাবলিক নেটওয়ার্কে `:3000` পোর্টে উন্মুক্ত না থাকে; অ্যাপ্লিকেশন সার্ভারটি শুধুমাত্র লোকালহোস্টে বাইন্ড থাকবে (`127.0.0.1:3000`)।
+২. সমস্ত বাইরের ট্রাফিক Nginx রিভার্স প্রক্সি হয়ে `X-Forwarded-For` হেডার সহ সুরক্ষিতভাবে আসবে।
+৩. শুধুমাত্র এই শর্ত নিশ্চিত হওয়ার পর `.env`-এ `TRUST_PROXY_HEADERS=true` সেট করুন।
+
+---
+
+## ৪. স্ট্যান্ডার্ড ডেপ্লয়মেন্ট পাইপলাইন (Step-by-Step Pipeline)
 
 ### ধাপ ১: গিট আপডেট গ্রহণ
 ```bash
-cd /var/www/duty-portal
+cd /home/testfrontend/apps/Late-Sitting-Holiday-Night-Duty
 git fetch origin
 git status
 git checkout main
@@ -39,7 +53,7 @@ psql "$DATABASE_URL" -f scripts/check-duplicates.sql
 
 ### ধাপ ৪: PM2 গ্রেসফুল রিলোড (Zero-Downtime Reload)
 ```bash
-pm2 reload ecosystem.config.cjs --update-env
+pm2 reload office-work
 ```
 
 ### ধাপ ৫: হেলথ চেক ও ভেরিফিকেশন (Health Check)
@@ -56,5 +70,5 @@ curl -I http://127.0.0.1:3000/api/health
 
 ---
 
-## ৪. ফেইলিয়র ও রোলব্যাক হ্যান্ডলিং (Rollback Trigger)
+## ৫. ফেইলিয়র ও রোলব্যাক হ্যান্ডলিং (Rollback Trigger)
 যদি বিল্ড বা রিলোডের পর হেলথ চেক ফেইল করে বা লগইন ব্যাহত হয়, তবে অবিলম্বে [`docs/runbooks/rollback.md`](file:///d:/Late-Sitting-Holiday-Night-Duty/docs/runbooks/rollback.md) অনুসরণ করুন।
