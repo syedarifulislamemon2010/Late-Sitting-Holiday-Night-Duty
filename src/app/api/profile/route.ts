@@ -1,7 +1,7 @@
 import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser, invalidateUserCache } from '@/lib/auth-wrapper';
+import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { users, employees } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
