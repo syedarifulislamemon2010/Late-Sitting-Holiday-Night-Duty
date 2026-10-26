@@ -101,7 +101,7 @@ export default function BackupPage() {
             message: isEn ? 'Legacy format detected. No checksum verification available.' : 'পুরনো ফরম্যাট। কোনো চেকলিস্ট যাচাইকরণ উপলব্ধ নেই।'
           });
         }
-      } catch (err) {
+      } catch {
         setPreviewData(null);
         setMessage({ text: isEn ? 'Invalid JSON file structure.' : 'অবৈধ JSON ফাইল গঠন।', type: 'error' });
       }
