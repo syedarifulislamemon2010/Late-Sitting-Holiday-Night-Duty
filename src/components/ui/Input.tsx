@@ -40,7 +40,7 @@ export function Input({
           error 
             ? 'border-danger-400 focus:ring-danger-500 focus:border-danger-500' 
             : 'border-slate-200 dark:border-slate-800 focus:ring-primary-500 focus:border-primary-500'
-        } rounded-xl shadow-xs transition-all duration-fast ease-premium focus:ring-2 outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 disabled:opacity-50 disabled:cursor-not-allowed`}
+        } rounded-xl shadow-xs transition-all duration-fast ease-premium focus:ring-2 outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 disabled:opacity-50 disabled:cursor-not-allowed ${className}`.trim()}
         style={{ letterSpacing: 'normal' }}
         {...props}
       />
