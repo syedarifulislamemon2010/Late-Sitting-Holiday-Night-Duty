@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { EmployeeService } from '@/services/employee.service';
@@ -11,7 +11,7 @@ export const revalidate = 60; // 1 minute
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/employees');
+    if (user) auditRbacRequest('GET', '/api/employees', user);
     const { searchParams } = new URL(request.url);
     const isDirectory = searchParams.get('directory') === 'true';
     const cellId = searchParams.get('cellId');
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/employees');
+    if (user) auditRbacRequest('POST', '/api/employees', user);
     const body = await request.json();
 
     const validation = employeeCreateSchema.safeParse(body);

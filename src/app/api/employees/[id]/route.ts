@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { EmployeeService } from '@/services/employee.service';
@@ -18,7 +18,7 @@ export async function PUT(
     }
     
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/employees/[id]');
+    if (user) auditRbacRequest('PUT', '/api/employees/[id]', user);
     const body = await request.json();
 
     const validation = employeeUpdateSchema.safeParse(body);
@@ -53,7 +53,7 @@ export async function DELETE(
     }
 
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/employees/[id]');
+    if (user) auditRbacRequest('DELETE', '/api/employees/[id]', user);
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || 'Unknown';
 

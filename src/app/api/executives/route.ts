@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { ExecutiveService } from '@/services/executive.service';
@@ -10,7 +10,7 @@ export const revalidate = 3600; // 1 hour
 export async function GET() {
   try {
     const currentUser = await getCurrentUser();
-    if (currentUser) auditRbac(currentUser, '/api/executives');
+    if (currentUser) auditRbacRequest('GET', '/api/executives', currentUser);
     const execs = await ExecutiveService.listExecutives(currentUser);
     return NextResponse.json(execs);
   } catch (error) {
@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const currentUser = await getCurrentUser();
-    if (currentUser) auditRbac(currentUser, '/api/executives');
+    if (currentUser) auditRbacRequest('POST', '/api/executives', currentUser);
     const body = await request.json();
 
     const validation = executiveCreateSchema.safeParse(body);

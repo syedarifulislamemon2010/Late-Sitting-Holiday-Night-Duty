@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { DutyService } from '@/services/duty.service';
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     const limit = limitParam ? Math.max(1, Math.min(500, parseInt(limitParam, 10))) : undefined;
 
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/duties');
+    if (user) auditRbacRequest('GET', '/api/duties', user);
 
     const result = await DutyService.listDuties(user, {
       cellId,
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/duties');
+    if (user) auditRbacRequest('POST', '/api/duties', user);
     const body = await request.json();
 
     const validation = dutiesBulkCreateSchema.safeParse(body);

@@ -13,16 +13,19 @@ Janata Bank PLC ডিউটি পোর্টালে RBAC (Role-Based Access
 
 RHEL সার্ভারে PM2 লগ ফাইলের মাধ্যমে অডিট ইভেন্ট পর্যবেক্ষণ করুন:
 ```bash
-# PM2 এরর ও আউটপুট লগ থেকে would-deny ফিল্টার করুন (local logs ফোল্ডার বা pm2 logs)
-pm2 logs office-work --lines 100 | grep "[RBAC AUDIT] would-deny"
+# PM2 এরর ও আউটপুট লগ থেকে would-deny ফিল্টার করুন (PM2 প্রসেস office-work)
+pm2 logs office-work --lines 200 | grep "\[RBAC AUDIT\] would-deny"
 
 # অথবা সরাসরি লগ ফাইল থেকে:
-tail -f ./logs/pm2-out.log | grep "[RBAC AUDIT] would-deny"
+tail -f ./logs/pm2-out.log | grep "\[RBAC AUDIT\] would-deny"
+
+# মোট would-deny ইভেন্ট সংখ্যা গণনা:
+grep -c "\[RBAC AUDIT\] would-deny" ./logs/pm2-out.log ~/.pm2/logs/office-work*.log 2>/dev/null
 ```
 
-### লগের ফরম্যাট
+### লগের সঠিক ফরম্যাট
 ```text
-[RBAC AUDIT] would-deny: user='<username>' role='<role>' action='<action>' path='<path>' (mode=audit)
+[RBAC AUDIT] would-deny user='<username>' role='<role>' action='<action>' method='<method>' path='<path>'
 ```
 
 ---
@@ -31,7 +34,7 @@ tail -f ./logs/pm2-out.log | grep "[RBAC AUDIT] would-deny"
 
 উৎপাদন পরিবেশে ২ সপ্তাহ অডিট লগ রান করার পর নিচের স্ক্রিপ্টের মাধ্যমে সারসংক্ষেপ সংগ্রহ করুন:
 ```bash
-grep "would-deny" ./logs/pm2*.log ~/.pm2/logs/office-work*.log 2>/dev/null | awk '{print $7, $8, $9}' | sort | uniq -c | sort -nr > /tmp/rbac-deny-summary.txt
+grep "\[RBAC AUDIT\] would-deny" ./logs/pm2*.log ~/.pm2/logs/office-work*.log 2>/dev/null | awk -F"would-deny " '{print $2}' | sort | uniq -c | sort -nr > /tmp/rbac-deny-summary.txt
 cat /tmp/rbac-deny-summary.txt
 ```
 

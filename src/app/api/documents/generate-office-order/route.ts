@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -228,7 +228,7 @@ export async function POST(request: Request) {
     const relativePath = `/uploads/${filename}`;
 
     const currentUser = await getCurrentUser();
-    if (currentUser) auditRbac(currentUser, '/api/documents/generate-office-order');
+    if (currentUser) auditRbacRequest('POST', '/api/documents/generate-office-order', currentUser);
     if (currentUser) {
       const ipAddress = request.headers.get('x-forwarded-for') || '127.0.0.1';
       const userAgent = request.headers.get('user-agent') || 'Unknown';

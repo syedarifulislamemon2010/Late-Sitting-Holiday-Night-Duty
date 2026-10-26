@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -21,7 +21,7 @@ export async function GET(
     }
 
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/taz-committee-forms/[id]');
+    if (user) auditRbacRequest('GET', '/api/taz-committee-forms/[id]', user);
     if (!user) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
@@ -66,7 +66,7 @@ export async function PUT(
     }
 
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/taz-committee-forms/[id]');
+    if (user) auditRbacRequest('PUT', '/api/taz-committee-forms/[id]', user);
     if (!user) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
@@ -188,7 +188,7 @@ export async function DELETE(
     }
 
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/taz-committee-forms/[id]');
+    if (user) auditRbacRequest('DELETE', '/api/taz-committee-forms/[id]', user);
     if (!user) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }

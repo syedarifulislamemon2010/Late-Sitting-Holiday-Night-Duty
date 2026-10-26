@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { DutyService } from '@/services/duty.service';
@@ -19,7 +19,7 @@ export async function PUT(
     }
 
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/duties/[id]');
+    if (user) auditRbacRequest('PUT', '/api/duties/[id]', user);
     const body = await request.json();
 
     const validation = dutyUpdateSchema.safeParse(body);
@@ -80,7 +80,7 @@ export async function DELETE(
     }
 
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/duties/[id]');
+    if (user) auditRbacRequest('DELETE', '/api/duties/[id]', user);
 
     const result = await DutyService.deleteDuty(user, dutyId);
     return NextResponse.json(result);

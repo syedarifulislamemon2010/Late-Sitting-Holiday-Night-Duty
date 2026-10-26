@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -12,7 +12,7 @@ import { handleApiError } from '@/lib/errors';
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/documents');
+    if (user) auditRbacRequest('GET', '/api/documents', user);
     if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইল দেখতে পারবেন।' }, { status: 403 });
     }
@@ -28,7 +28,7 @@ export async function GET() {
 export async function DELETE(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/documents');
+    if (user) auditRbacRequest('DELETE', '/api/documents', user);
     if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র অ্যাডমিন ফাইল মুছে ফেলতে পারবেন।' }, { status: 403 });
     }

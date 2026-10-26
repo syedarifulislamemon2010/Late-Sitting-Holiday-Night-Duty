@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { LunchBillService } from '@/services/lunch-bill.service';
@@ -7,7 +7,7 @@ import logger from '@/lib/logger';
 export async function GET(request: Request) {
   try {
     const currentUser = await getCurrentUser();
-    if (currentUser) auditRbac(currentUser, '/api/lunch-bills/leave-days');
+    if (currentUser) auditRbacRequest('GET', '/api/lunch-bills/leave-days', currentUser);
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }

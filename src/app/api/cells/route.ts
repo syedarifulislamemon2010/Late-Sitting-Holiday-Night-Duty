@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -14,7 +14,7 @@ export const revalidate = 300; // 5 minutes
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/cells');
+    if (user) auditRbacRequest('GET', '/api/cells', user);
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত এক্সেস। অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     const { name, description } = parseResult.data;
 
     const currentUser = await getCurrentUser();
-    if (currentUser) auditRbac(currentUser, '/api/cells');
+    if (currentUser) auditRbacRequest('POST', '/api/cells', currentUser);
 
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'forbidden', message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন নতুন সেল যোগ করতে পারবেন।' }, { status: 403 });

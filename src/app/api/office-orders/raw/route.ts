@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { db } from '@/lib/db';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
@@ -54,7 +54,7 @@ const getPrintCategoryRates = (printCategory: 'LATE_SITTING' | 'HOLIDAY' | 'NIGH
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/office-orders/raw');
+    if (user) auditRbacRequest('GET', '/api/office-orders/raw', user);
     if (!user) {
       return new Response('Unauthorized', { status: 401 });
     }

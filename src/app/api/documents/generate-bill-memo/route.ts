@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -461,7 +461,7 @@ export async function POST(request: Request) {
 
     // Audit trail
     const currentUser = await getCurrentUser();
-    if (currentUser) auditRbac(currentUser, '/api/documents/generate-bill-memo');
+    if (currentUser) auditRbacRequest('POST', '/api/documents/generate-bill-memo', currentUser);
     if (currentUser) {
       const orderRecordList = billRef ? await db.select().from(officeOrders).where(eq(officeOrders.orderRef, billRef)).limit(1) : [];
       const orderRecord = orderRecordList[0];

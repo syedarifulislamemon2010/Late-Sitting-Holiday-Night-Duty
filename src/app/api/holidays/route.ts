@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -14,7 +14,7 @@ export const revalidate = 0;
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/holidays');
+    if (user) auditRbacRequest('GET', '/api/holidays', user);
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত এক্সেস।' }, { status: 401 });
     }
@@ -49,7 +49,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/holidays');
+    if (user) auditRbacRequest('POST', '/api/holidays', user);
     if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'forbidden', message: 'ছুটির তালিকা পরিবর্তন করার ক্ষমতা শুধুমাত্র অ্যাডমিনের রয়েছে।' }, { status: 403 });
     }
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/holidays');
+    if (user) auditRbacRequest('DELETE', '/api/holidays', user);
     if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'forbidden', message: 'ছুটি মুছে ফেলার ক্ষমতা শুধুমাত্র অ্যাডমিনের রয়েছে।' }, { status: 403 });
     }

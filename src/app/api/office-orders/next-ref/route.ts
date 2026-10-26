@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -8,7 +8,7 @@ import { and, eq, like, desc, notLike } from 'drizzle-orm';
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/office-orders/next-ref');
+    if (user) auditRbacRequest('GET', '/api/office-orders/next-ref', user);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = new URL(request.url);

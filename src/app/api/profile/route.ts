@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, invalidateUserCache } from '@/lib/auth-wrapper';
@@ -11,7 +11,7 @@ import { logActivity } from '@/lib/audit';
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/profile');
+    if (user) auditRbacRequest('GET', '/api/profile', user);
     if (!user) {
       return NextResponse.json({ authenticated: false, user: null });
     }
@@ -32,7 +32,7 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
-    if (currentUser) auditRbac(currentUser, '/api/profile');
+    if (currentUser) auditRbacRequest('PUT', '/api/profile', currentUser);
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ। অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }

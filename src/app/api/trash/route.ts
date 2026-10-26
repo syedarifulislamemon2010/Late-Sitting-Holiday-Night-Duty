@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -13,7 +13,7 @@ import { trashActionSchema } from '@/validations/trash.schema';
 export async function GET() {
   try {
     const currentUser = await getCurrentUser();
-    if (currentUser) auditRbac(currentUser, '/api/trash');
+    if (currentUser) auditRbacRequest('GET', '/api/trash', currentUser);
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }
@@ -38,7 +38,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const currentUser = await getCurrentUser();
-    if (currentUser) auditRbac(currentUser, '/api/trash');
+    if (currentUser) auditRbacRequest('POST', '/api/trash', currentUser);
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }

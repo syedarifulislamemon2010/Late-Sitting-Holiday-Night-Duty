@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -11,7 +11,7 @@ import { getCurrentUser } from '@/lib/auth-wrapper';
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/manual-documents/raw');
+    if (user) auditRbacRequest('GET', '/api/manual-documents/raw', user);
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }

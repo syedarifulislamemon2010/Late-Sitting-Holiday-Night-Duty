@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -9,7 +9,7 @@ import { rosterImageParseFormSchema } from "@/validations/imageParse.schema";
 export async function POST(req: NextRequest) {
   try {
     const session = await getCurrentUser();
-    if (session) auditRbac(session, '/api/duties/parse-roster-image');
+    if (session) auditRbacRequest('POST', '/api/duties/parse-roster-image', session);
     if (!session) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }

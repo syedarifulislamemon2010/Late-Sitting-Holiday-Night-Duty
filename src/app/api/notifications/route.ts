@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -20,7 +20,7 @@ export interface AppNotification {
 export async function GET() {
   try {
     const currentUser = await getCurrentUser();
-    if (currentUser) auditRbac(currentUser, '/api/notifications');
+    if (currentUser) auditRbacRequest('GET', '/api/notifications', currentUser);
     if (!currentUser) {
       return NextResponse.json({ notifications: [] });
     }

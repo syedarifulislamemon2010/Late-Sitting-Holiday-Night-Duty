@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { LeaveService } from '@/services/leave.service';
@@ -12,7 +12,7 @@ import { leaveCreateSchema } from '@/validations/leave.schema';
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/leaves');
+    if (user) auditRbacRequest('GET', '/api/leaves', user);
     const { searchParams } = new URL(request.url);
     const latest = searchParams.get('latest') === 'true';
     const filterBankId = searchParams.get('bankId');
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/leaves');
+    if (user) auditRbacRequest('POST', '/api/leaves', user);
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }

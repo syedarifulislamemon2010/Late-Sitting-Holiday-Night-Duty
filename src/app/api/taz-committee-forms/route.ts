@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/taz-committee-forms');
+    if (user) auditRbacRequest('GET', '/api/taz-committee-forms', user);
     if (!user) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/taz-committee-forms');
+    if (user) auditRbacRequest('POST', '/api/taz-committee-forms', user);
     if (!user) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }

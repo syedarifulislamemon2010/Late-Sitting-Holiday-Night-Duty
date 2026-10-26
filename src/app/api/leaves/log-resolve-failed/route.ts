@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -8,7 +8,7 @@ import { leaveLogResolveSchema } from '@/validations/leave.schema';
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/leaves/log-resolve-failed');
+    if (user) auditRbacRequest('POST', '/api/leaves/log-resolve-failed', user);
     if (!user) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }

@@ -1,4 +1,4 @@
-import { auditRbac } from '@/lib/rbac-audit';
+import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -10,7 +10,7 @@ import { dutyConflictCheckSchema } from '@/validations/duty.schema';
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user) auditRbac(user, '/api/duties/check-conflicts');
+    if (user) auditRbacRequest('POST', '/api/duties/check-conflicts', user);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await request.json();
