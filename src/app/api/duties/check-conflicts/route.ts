@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       hasConflicts: conflicts.length > 0,
       conflicts
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
