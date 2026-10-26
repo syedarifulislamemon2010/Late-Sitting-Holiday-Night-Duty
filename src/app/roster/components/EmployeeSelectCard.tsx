@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Check, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Employee, Holiday, LeaveRecord } from '../types';
 import EmployeeCalendarPicker from './EmployeeCalendarPicker';
 import { toBanglaDigits } from '@/lib/bengali-converter';

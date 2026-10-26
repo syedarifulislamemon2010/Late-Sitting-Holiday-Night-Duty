@@ -22,7 +22,6 @@ export default function OfficeOrderPrintModal({
   if (!viewingOrder) return null;
 
   const isBill = viewingOrder.category?.startsWith('BILL_');
-  const headerMode = viewingOrder.content?.headerMode || 'with_header';
 
   const repDesig = (() => {
     if (!viewingOrder) return 'ও-আইটি';

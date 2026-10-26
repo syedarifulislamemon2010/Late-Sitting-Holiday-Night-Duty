@@ -36,7 +36,6 @@ interface BillsTabProps {
 }
 
 export default function BillsTab({
-  currentUser,
   officeOrders,
   loadingOrders,
   orderSearchQuery,

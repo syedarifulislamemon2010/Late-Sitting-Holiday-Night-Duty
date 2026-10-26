@@ -38,7 +38,6 @@ interface OrdersTabProps {
 }
 
 export default function OrdersTab({
-  currentUser,
   officeOrders,
   loadingOrders,
   orderSearchQuery,

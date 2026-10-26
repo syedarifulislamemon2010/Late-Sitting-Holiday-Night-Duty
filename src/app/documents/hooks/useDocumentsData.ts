@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import logger from '@/lib/logger';
 import { DocumentFile, OfficeOrder, ManualDoc, OrderDuty, UserSession } from '../types';
 import { useLatestRequest } from '@/hooks/useLatestRequest';
 

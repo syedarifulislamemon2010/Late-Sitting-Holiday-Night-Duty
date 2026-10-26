@@ -214,7 +214,7 @@ export default function EmployeeCalendarPicker({
 
           <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pr-1">
             {[...selectedDates].sort().map(d => {
-              const [y, m, dayNum] = d.split('-');
+              const [, m, dayNum] = d.split('-');
               const mIndex = parseInt(m, 10) - 1;
               const formatted = `${toBanglaDigits(parseInt(dayNum, 10).toString())} ${banglaMonths[mIndex]}`;
               return (

@@ -32,7 +32,7 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
   const [workingDays, setWorkingDays] = useState<number>(17);
   const [isAutoWorkingDays, setIsAutoWorkingDays] = useState(true);
   const [workingDaysLoading, setWorkingDaysLoading] = useState(false);
-  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [, setHolidays] = useState<Holiday[]>([]);
 
   const [records, setRecords] = useState<LunchRecord[]>([]);
   const [savedLunchBill, setSavedLunchBill] = useState<LunchBill | null>(null);
