@@ -419,8 +419,8 @@ export default function TazCommitteeFormPage() {
 
       resetForm();
       setActiveTab('ARCHIVE');
-    } catch (err: any) {
-      showToast(err.message || 'Error occurred while saving.', 'error');
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error occurred while saving.', 'error');
     } finally {
       setSaving(false);
     }
@@ -476,8 +476,8 @@ export default function TazCommitteeFormPage() {
       if (editingFormId === formToDelete) {
         resetForm();
       }
-    } catch (err: any) {
-      showToast(err.message, 'error');
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : String(err), 'error');
     } finally {
       setFormToDelete(null);
     }
