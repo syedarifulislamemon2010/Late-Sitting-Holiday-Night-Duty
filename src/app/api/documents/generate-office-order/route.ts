@@ -1,9 +1,6 @@
 import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { officeOrders } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { getCurrentUser } from '@/lib/auth-wrapper';
