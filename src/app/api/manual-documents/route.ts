@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -13,6 +14,7 @@ import { manualDocumentUpdateSchema } from '@/validations/manualDocument.schema'
 export async function GET() {
   try {
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/manual-documents');
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
@@ -42,6 +44,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/manual-documents');
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
@@ -124,6 +127,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/manual-documents');
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }
@@ -202,6 +206,7 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/manual-documents');
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অনুগ্রহ করে লগইন করুন।' }, { status: 401 });
     }

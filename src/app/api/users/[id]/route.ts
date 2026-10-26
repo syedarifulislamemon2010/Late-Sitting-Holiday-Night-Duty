@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -16,6 +17,7 @@ export async function PUT(
 ) {
   try {
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/users/[id]');
 
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'ইউজার সেশন পাওয়া যায়নি।' }, { status: 403 });
@@ -161,6 +163,7 @@ export async function DELETE(
 ) {
   try {
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/users/[id]');
 
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন ইউজার মুছে ফেলতে পারবেন।' }, { status: 403 });

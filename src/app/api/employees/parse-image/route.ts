@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult, Part } from '@google/generative-ai';
@@ -26,6 +27,7 @@ async function generateContentWithRetry(
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/employees/parse-image');
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }

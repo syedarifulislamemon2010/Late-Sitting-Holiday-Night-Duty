@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -82,6 +83,7 @@ function addHistoryLog(log: Record<string, unknown>) {
 export async function GET(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/backup');
     // Allow cron secret bypass with constant-time comparison
     let isCron = false;
     const CRON_SECRET = process.env.CRON_SECRET;
@@ -180,6 +182,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/backup');
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }

@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -15,6 +16,7 @@ export const revalidate = 0;
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/my-portal');
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'ইউজার সেশন পাওয়া যায়নি।' }, { status: 401 });
     }

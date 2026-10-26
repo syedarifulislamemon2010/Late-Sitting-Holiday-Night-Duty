@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
@@ -26,6 +27,7 @@ export async function PUT(
     const { name, description } = parseResult.data;
 
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/cells/[id]');
 
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'forbidden', message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন সেল সংশোধন করতে পারবেন।' }, { status: 403 });
@@ -90,6 +92,7 @@ export async function DELETE(
     }
     
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/cells/[id]');
 
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'forbidden', message: 'অনুমতি নেই। শুধুমাত্র সিস্টেম এডমিন সেল মুছে ফেলতে পারবেন।' }, { status: 403 });

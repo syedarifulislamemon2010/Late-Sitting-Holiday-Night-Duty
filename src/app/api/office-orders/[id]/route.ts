@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { OfficeOrderService } from '@/services/officeOrder.service';
@@ -14,6 +15,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/office-orders/[id]');
     const body = await request.json();
 
     const validation = officeOrderUpdateSchema.safeParse(body);
@@ -45,6 +47,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
 
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/office-orders/[id]');
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || 'Unknown';
 

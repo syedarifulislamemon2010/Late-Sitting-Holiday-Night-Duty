@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -111,6 +112,7 @@ function abbreviateDesignation(desig: string | null | undefined): string {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/documents/generate-lunch-bill');
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }

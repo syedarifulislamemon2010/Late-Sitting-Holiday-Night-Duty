@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { OfficeOrderService } from '@/services/officeOrder.service';
@@ -7,6 +8,7 @@ import { officeOrderCreateSchema } from '@/validations/officeOrder.schema';
 export async function GET() {
   try {
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/office-orders');
     const result = await OfficeOrderService.listOfficeOrders(user);
     return NextResponse.json(result);
   } catch (error) {
@@ -17,6 +19,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/office-orders');
     const body = await request.json();
 
     const validation = officeOrderCreateSchema.safeParse(body);

@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { ExecutiveService } from '@/services/executive.service';
@@ -10,6 +11,7 @@ export async function PUT(
 ) {
   try {
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/executives/[id]');
     const { id } = await params;
     const execId = parseInt(id, 10);
     
@@ -43,6 +45,7 @@ export async function DELETE(
 ) {
   try {
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/executives/[id]');
     const { id } = await params;
     const execId = parseInt(id, 10);
     

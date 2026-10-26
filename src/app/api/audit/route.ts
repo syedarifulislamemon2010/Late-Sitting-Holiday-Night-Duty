@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -7,6 +8,7 @@ import path from 'path';
 export async function GET(request: Request) {
   try {
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/audit');
     if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }

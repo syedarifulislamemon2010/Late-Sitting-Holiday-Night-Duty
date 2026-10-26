@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { LeaveService } from '@/services/leave.service';
@@ -21,6 +22,7 @@ export async function PUT(
     }
 
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/leaves/[id]');
     if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'অননুমোদিত প্রবেশ!' }, { status: 401 });
     }
@@ -107,6 +109,7 @@ export async function DELETE(
     }
 
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/leaves/[id]');
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || 'Unknown';
 

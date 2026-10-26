@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -12,6 +13,7 @@ import { handleApiError } from '@/lib/errors';
 export async function GET() {
   try {
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/users');
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন এই ইউজার তালিকা দেখতে পারবেন।' }, { status: 403 });
     }
@@ -92,6 +94,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const currentUser = await getCurrentUser();
+    if (currentUser) auditRbac(currentUser, '/api/users');
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন নতুন ইউজার তৈরি করতে পারবেন।' }, { status: 403 });
     }

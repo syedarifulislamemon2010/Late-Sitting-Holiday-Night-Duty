@@ -1,3 +1,4 @@
+import { auditRbac } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { employees, duties, leaveApplications, officeOrders, cells } from '@/db/schema';
@@ -8,6 +9,7 @@ import { handleApiError } from '@/lib/errors';
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser();
+    if (user) auditRbac(user, '/api/search');
     if (!user) {
       return NextResponse.json({ error: 'অনুমতি নেই।' }, { status: 401 });
     }
