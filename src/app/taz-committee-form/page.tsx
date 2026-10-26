@@ -961,7 +961,7 @@ export default function TazCommitteeFormPage() {
                                 <label className="text-[9px] font-bold text-slate-500 block">Select Cell:</label>
                                 <select
                                   value={implementerCells[idx] || ''}
-                                  onChange={() => {
+                                  onChange={(e) => {
                                     const newCells = [...implementerCells];
                                     newCells[idx] = e.target.value;
                                     setImplementerCells(newCells);
