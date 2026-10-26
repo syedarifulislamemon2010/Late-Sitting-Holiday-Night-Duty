@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import logger from '@/lib/logger';
 import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
 import { useToast } from '@/context/ToastContext';
-import { Holiday, MONTH_NAMES, DAYS_IN_MONTH, MONTH_START_DAYS, CalendarSlot } from '../types';
+import { Holiday, MONTH_NAMES, DAYS_IN_MONTH, MONTH_START_DAYS, CalendarSlot, DashboardDuty, DashboardEmployee } from '../types';
 
 export function useDashboardData() {
   const { showToast } = useToast();
   
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
-  const [employee, setEmployee] = useState<any>(null);
+  const [employee, setEmployee] = useState<DashboardEmployee | null>(null);
   const [isEmployee, setIsEmployee] = useState(false);
-  const [myDuties, setMyDuties] = useState<any[]>([]);
+  const [myDuties, setMyDuties] = useState<DashboardDuty[]>([]);
 
   const [showHolidayReminder, setShowHolidayReminder] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);

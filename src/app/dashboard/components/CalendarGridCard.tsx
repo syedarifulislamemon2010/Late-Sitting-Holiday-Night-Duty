@@ -2,7 +2,7 @@ import { Calendar } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { toBanglaDigits } from '@/lib/bengali-converter';
-import { Holiday, MONTH_NAMES, CalendarSlot } from '../types';
+import { Holiday, MONTH_NAMES, CalendarSlot, DashboardDuty } from '../types';
 
 interface CalendarGridCardProps {
   selectedMonth: number;
@@ -14,7 +14,7 @@ interface CalendarGridCardProps {
   slots: CalendarSlot[];
   selectedMonthHolidays: Holiday[];
   todayStr: string;
-  myDuties: any[];
+  myDuties: DashboardDuty[];
   selectedDates: string[];
   handleDateClick: (dateStr: string) => void;
 }

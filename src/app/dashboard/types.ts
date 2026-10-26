@@ -25,3 +25,20 @@ export interface CalendarSlot {
   holidayName: string | null;
   isWeekend: boolean;
 }
+
+export interface DashboardDuty {
+  id?: number;
+  date?: string;
+  type?: string;
+  dutyType?: string;
+  [key: string]: unknown;
+}
+
+export interface DashboardEmployee {
+  id: number;
+  name: string;
+  bankId?: string;
+  designation?: string;
+  [key: string]: unknown;
+}
+
