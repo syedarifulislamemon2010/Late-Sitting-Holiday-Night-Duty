@@ -16,12 +16,8 @@ import {
   Holiday, 
   Duty, 
   LeaveRecord,
-  DutyAssignment,
   checkIsWorkingDay, 
   getHolidayStatus,
-  getDefaultDescription,
-  getShortDesignation,
-  getFormattedDateList
 } from '../types';
 import EmployeeSelectCard from './EmployeeSelectCard';
 import CalendarDatePicker from './CalendarDatePicker';
@@ -105,7 +101,6 @@ export default function DutyAssignmentPanel({
   errorMessage,
   preConflicts,
   editingDuty,
-  editingDuties,
   isEditingArchive,
   isRosterDirty,
   isAssignmentPrimary,
