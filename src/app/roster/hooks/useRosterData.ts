@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import logger from '@/lib/logger';
 import { UserProfile } from '@/context/ProfileContext';
 import { Cell, Employee, Executive, Holiday, OfficeOrder, Duty, LeaveRecord } from '../types';
@@ -18,7 +18,6 @@ interface UseRosterDataProps {
 }
 
 export function useRosterData({
-  currentUser,
   selectedMonths,
   selectedCell,
   selectedCategory,
