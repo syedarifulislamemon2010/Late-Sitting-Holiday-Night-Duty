@@ -3,9 +3,9 @@
 # 🏛️ Janata Bank LHN Portal
 ### **Late-Sitting, Holiday, and Night Duty Management & Administrative Automation System**
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-7.0-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.3-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18.6-4169E1?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-1.0-C5F74F?style=for-the-badge&logo=drizzle)](https://orm.drizzle.team/)
@@ -461,7 +461,7 @@ npm run verify
 psql "$DATABASE_URL" -f scripts/check-duplicates.sql
 
 # 4. Graceful zero-downtime PM2 reload
-pm2 reload ecosystem.config.cjs --update-env
+pm2 reload office-work # or: pm2 reload ecosystem.config.cjs --update-env
 
 # 5. Diagnostic health check verification
 curl -I http://127.0.0.1:3000/api/health
