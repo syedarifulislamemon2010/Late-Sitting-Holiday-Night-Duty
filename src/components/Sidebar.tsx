@@ -1,5 +1,4 @@
 'use client';
-import logger from '@/lib/logger';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -25,7 +24,6 @@ import {
   Database,
   HelpCircle
 } from 'lucide-react';
-import { signOut } from 'next-auth/react';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface UserSession {
