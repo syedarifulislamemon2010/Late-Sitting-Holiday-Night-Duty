@@ -15,7 +15,6 @@ import {
   ArrowRight,
   SlidersHorizontal,
   Clock,
-  Database
 } from 'lucide-react';
 
 interface AuditLog {
