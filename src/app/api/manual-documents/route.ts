@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { manualDocuments, trash } from '@/db/schema';
-import { eq, desc, or, and } from 'drizzle-orm';
+import { eq, desc, or } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import fs from 'fs';
 import path from 'path';
