@@ -1,7 +1,9 @@
+import type { Page } from '@playwright/test';
+
 /**
  * E2E Flow 4: Employee Creation & Editing Flow
  */
-export async function testEmployeeManagementFlow(page: any) {
+export async function testEmployeeManagementFlow(page: Page) {
   // 1. Navigate to Employee directory
   await page.goto('/employees');
   

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LunchBillService } from '../lunch-bill.service';
 
-const mockLeaves: any[] = [];
-const mockHolidays: any[] = [];
+const mockLeaves: unknown[] = [];
+const mockHolidays: unknown[] = [];
 const mockEmployees = [
   { id: 10, bankId: '026795', name: 'জনাব সৈয়দ আরিফুল ইসলাম ইমন' },
   { id: 8, bankId: '028166', name: 'আব্দুল্লাহ আল জোবায়ের' },
@@ -14,9 +14,9 @@ const mockExecutives = [
 vi.mock('@/lib/db', () => {
   return {
     db: {
-      select: vi.fn((fields) => {
+      select: vi.fn(() => {
         return {
-          from: vi.fn((table) => {
+          from: vi.fn(() => {
             return {
               where: vi.fn().mockImplementation(() => Promise.resolve(mockLeaves)),
               then: vi.fn().mockImplementation((cb) => Promise.resolve(cb ? cb(mockLeaves) : mockLeaves)),
@@ -37,10 +37,9 @@ describe('LunchBillService', () => {
 
   it('correctly calculates 1 day working leave for September 9, 2026 (Wednesday)', async () => {
     const { db } = await import('@/lib/db');
-    (db.select as any).mockImplementation(() => ({
+    (db.select as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
       from: vi.fn().mockImplementation((table) => {
         // Checking table name or schema
-        const isLeave = table?.leaveType !== undefined;
         const isHoliday = table?.isWorkingDay !== undefined;
         const isExec = table?.phone !== undefined;
         
@@ -79,7 +78,7 @@ describe('LunchBillService', () => {
     // 2026-09-06: Sunday (working day)
     // Total working days should be 2 (Sept 3 and Sept 6)
     const { db } = await import('@/lib/db');
-    (db.select as any).mockImplementation(() => ({
+    (db.select as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
       from: vi.fn().mockImplementation((table) => {
         const isHoliday = table?.isWorkingDay !== undefined;
         const isExec = table?.phone !== undefined;
@@ -117,7 +116,7 @@ describe('LunchBillService', () => {
     // Sept 2 is Wednesday (working day)
     // Should be exactly 2 days for September!
     const { db } = await import('@/lib/db');
-    (db.select as any).mockImplementation(() => ({
+    (db.select as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
       from: vi.fn().mockImplementation((table) => {
         const isHoliday = table?.isWorkingDay !== undefined;
         const isExec = table?.phone !== undefined;

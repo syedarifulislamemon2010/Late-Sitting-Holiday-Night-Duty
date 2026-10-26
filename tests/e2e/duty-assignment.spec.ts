@@ -1,7 +1,9 @@
+import type { Page } from '@playwright/test';
+
 /**
  * E2E Flow 2: Duty Assignment Flow
  */
-export async function testDutyAssignmentFlow(page: any) {
+export async function testDutyAssignmentFlow(page: Page) {
   // 1. Navigate to Roster/Dashboard
   await page.goto('/roster');
   

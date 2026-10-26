@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
 
 // Since backup.service.ts doesn't exist but the route.ts contains the logic,

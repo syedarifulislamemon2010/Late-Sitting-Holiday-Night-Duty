@@ -286,7 +286,7 @@ describe('Server Print Routes HTML Snapshot Characterization', () => {
       status: 'Active'
     };
 
-    (db.select as any).mockReturnValue({
+    (db.select as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockResolvedValue([mockOrder])
       })

@@ -1,7 +1,9 @@
+import type { Page } from '@playwright/test';
+
 /**
  * E2E Flow 5: Leave Application Flow
  */
-export async function testLeaveApplicationFlow(page: any) {
+export async function testLeaveApplicationFlow(page: Page) {
   // 1. Navigate to Leave page
   await page.goto('/leave');
   

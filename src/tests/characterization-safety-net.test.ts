@@ -9,10 +9,8 @@ import {
 import { DUTY_RATES } from '@/constants/billing';
 import {
   isNonWorkingDay,
-  getSucceedingContiguousHolidaysCount,
   getCalculatedLeaveDetails
 } from '@/lib/leave-calculator';
-import { LeaveBalanceService } from '@/services/leave-balance.service';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
 import { DutyService } from '@/services/duty.service';
 import { HolidayRepository } from '@/repositories/holiday.repository';
@@ -173,7 +171,7 @@ describe('Characterization Baseline Safety Net', () => {
 
   describe('4. Duty Conflicts: Duplicates, Late Sitting vs Night Shift, Holidays', () => {
     it('DutyService.checkIsHoliday identifies weekends and specific overrides', async () => {
-      vi.mocked(HolidayRepository.findByDate).mockResolvedValue(null as any);
+      vi.mocked(HolidayRepository.findByDate).mockResolvedValue(null as unknown as Awaited<ReturnType<typeof HolidayRepository.findByDate>>);
       
       // Friday
       expect(await DutyService.checkIsHoliday('2026-06-12')).toBe(true);

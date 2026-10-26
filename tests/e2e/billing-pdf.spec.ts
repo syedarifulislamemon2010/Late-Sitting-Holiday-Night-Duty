@@ -1,7 +1,9 @@
+import type { Page } from '@playwright/test';
+
 /**
  * E2E Flow 3: Bill Generation and PDF Download Flow
  */
-export async function testBillingPdfFlow(page: any) {
+export async function testBillingPdfFlow(page: Page) {
   // 1. Navigate to Billing page
   await page.goto('/billing');
   

@@ -3,7 +3,7 @@ import { EmployeeService } from '../employee.service';
 import { EmployeeRepository } from '@/repositories/employee.repository';
 
 vi.mock('@/lib/db', () => {
-  const queryMock: any = {
+  const queryMock: Record<string, ReturnType<typeof vi.fn>> = {
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
     orderBy: vi.fn().mockReturnThis(),
@@ -13,7 +13,7 @@ vi.mock('@/lib/db', () => {
     update: vi.fn().mockReturnThis(),
     set: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
-    then: (resolve: (val: any) => any) => Promise.resolve([{ id: 1, name: 'Cell 1' }]).then(resolve)
+    then: vi.fn((resolve?: (val: unknown) => unknown) => Promise.resolve([{ id: 1, name: 'Cell 1' }]).then(resolve))
   };
   queryMock.from.mockReturnValue(queryMock);
   queryMock.where.mockReturnValue(queryMock);

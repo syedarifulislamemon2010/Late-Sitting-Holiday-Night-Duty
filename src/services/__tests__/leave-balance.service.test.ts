@@ -55,7 +55,7 @@ describe('LeaveBalanceService', () => {
     ];
 
     let selectCallCount = 0;
-    (db.select as any).mockImplementation(() => ({
+    (db.select as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
       from: vi.fn().mockImplementation(() => {
         selectCallCount++;
         if (selectCallCount === 1) {
@@ -113,10 +113,10 @@ describe('LeaveBalanceService', () => {
     ];
 
     const mockLatestApps = [mockYearApps[0]];
-    const mockHolidays: any[] = [];
+    const mockHolidays: unknown[] = [];
 
     let selectCallCount = 0;
-    (db.select as any).mockImplementation(() => ({
+    (db.select as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
       from: vi.fn().mockImplementation(() => {
         selectCallCount++;
         if (selectCallCount === 1) {

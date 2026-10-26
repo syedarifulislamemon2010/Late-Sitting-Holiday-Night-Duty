@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OfficeOrderService } from '../officeOrder.service';
 import { OfficeOrderRepository } from '@/repositories/officeOrder.repository';
-import { logActivity } from '@/lib/audit';
 
 // Mock repository and other dependency modules
 vi.mock('@/repositories/officeOrder.repository', () => {

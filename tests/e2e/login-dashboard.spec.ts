@@ -1,7 +1,9 @@
+import type { Page } from '@playwright/test';
+
 /**
  * E2E Flow 1: Login -> Dashboard Navigation Flow with Invalid Credential Error Case
  */
-export async function testLoginAndDashboardFlow(page: any) {
+export async function testLoginAndDashboardFlow(page: Page) {
   // 1. Error Case: Try invalid login credentials
   await page.goto('/login');
   await page.fill('input[type="text"]', 'invalid_user');

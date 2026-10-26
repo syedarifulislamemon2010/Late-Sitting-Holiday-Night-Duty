@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { getLoginAttempt, recordFailedAttempt, clearLoginAttempt, MAX_ATTEMPTS } from '@/lib/login-lockout';
 
 describe('Durable Login Lockout with Memory Fallback', () => {
