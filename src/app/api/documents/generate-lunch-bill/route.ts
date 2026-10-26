@@ -44,23 +44,39 @@ interface LunchBillGroup {
   records: LunchBillRecord[];
 }
 
-interface LunchBillPayload {
-  monthName: string;
-  groupedData: LunchBillGroup[];
-  executivesData?: {
-    records: LunchBillRecord[];
-    totalDays?: number;
-    totalClaim?: number;
-    totalDeduction?: number;
-    grandTotal?: number;
-  };
-  workingDays: number;
-  totalDaysAll: number;
-  totalClaimAll: number;
-  totalDeductionAll: number;
-  grandTotalAll: number;
-  grandTotalInWords: string;
-  reportDate: string;
+interface RawRecordInput {
+  employeeName?: string;
+  name?: string;
+  designation?: string | null;
+  bankId?: string | null;
+  presentDays?: number | string;
+  absenceDays?: number | string;
+  totalBill?: number | string;
+  netPayable?: number | string;
+  additionalDeduction?: number | string | null;
+  isExecutive?: boolean;
+  [key: string]: unknown;
+}
+
+interface RawGroupInput {
+  name?: string;
+  cellName?: string;
+  records?: RawRecordInput[];
+  [key: string]: unknown;
+}
+
+interface LunchBillGeneratePayload {
+  monthName?: string;
+  monthBangla?: string;
+  yearBangla?: string;
+  workingDays?: number | string;
+  reportDate?: string;
+  groupedData?: RawGroupInput[];
+  cells?: RawGroupInput[];
+  totalClaimAll?: number;
+  grandTotalAll?: number;
+  grandTotalInWords?: string;
+  [key: string]: unknown;
 }
 
 function toBnDigits(num: number | string | null | undefined): string {
@@ -122,7 +138,7 @@ export async function POST(request: Request) {
     if (!parseResult.success) {
       return handleApiError(parseResult.error);
     }
-    const payload = (parseResult.data || {}) as Record<string, any>;
+    const payload = (parseResult.data || {}) as LunchBillGeneratePayload;
 
     // Normalize monthName
     const monthName: string = payload.monthName || 
@@ -133,27 +149,27 @@ export async function POST(request: Request) {
     const reportDate: string = payload.reportDate || new Date().toISOString().split('T')[0];
 
     // Normalize groupedData / cells
-    let rawGroups: any[] = [];
+    let rawGroups: RawGroupInput[] = [];
     if (Array.isArray(payload.groupedData) && payload.groupedData.length > 0) {
-      rawGroups = payload.groupedData;
+      rawGroups = payload.groupedData as RawGroupInput[];
     } else if (Array.isArray(payload.cells) && payload.cells.length > 0) {
-      rawGroups = payload.cells;
+      rawGroups = payload.cells as RawGroupInput[];
     }
 
-    const groupedData: LunchBillGroup[] = rawGroups.map((c: any) => {
+    const groupedData: LunchBillGroup[] = rawGroups.map((c: RawGroupInput) => {
       const cName = c.name || c.cellName || 'সেল';
       const isCbs = cName.includes('CBS');
       
       const records = (c.records || [])
-        .filter((r: any) => !r.isExecutive)
-        .filter((r: any) => {
+        .filter((r: RawRecordInput) => !r.isExecutive)
+        .filter((r: RawRecordInput) => {
           // Strictly exclude Md. Shahinur Rahman from CBS Integrated Development Cell
           if (isCbs && (r.bankId === '018273' || (r.employeeName && r.employeeName.includes('শাহিনুর')))) {
             return false;
           }
           return true;
         })
-        .map((r: any) => ({
+        .map((r: RawRecordInput) => ({
           employeeName: r.employeeName || r.name || '',
           designation: r.designation || '',
           bankId: r.bankId || '',
@@ -168,7 +184,7 @@ export async function POST(request: Request) {
         cellName: cName,
         records
       };
-    }).filter((g: any) => g.records.length > 0);
+    }).filter((g: LunchBillGroup) => g.records.length > 0);
 
     // Executives are excluded from Lunch Bill per requirements
     const allRecords: LunchBillRecord[] = groupedData.flatMap(g => g.records);
