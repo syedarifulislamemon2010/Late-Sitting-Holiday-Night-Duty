@@ -252,6 +252,6 @@ export async function POST(request: Request) {
 
   } catch (error) {
     logger.error('Error generating office order document:', error);
-    return NextResponse.json({ error: 'failed_to_generate_office_order', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_generate_office_order', message: 'অফিস আদেশ তৈরি করতে ব্যর্থ হয়েছে।' }, { status: 500 });
   }
 }

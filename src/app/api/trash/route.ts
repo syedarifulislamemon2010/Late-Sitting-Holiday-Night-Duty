@@ -335,6 +335,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, message: 'সব রেকর্ড সফলভাবে প্রসেস করা হয়েছে!' });
   } catch (error) {
     logger.error('Error handling trash action:', error);
-    return NextResponse.json({ error: 'trash_action_failed', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'trash_action_failed', message: 'ট্র্যাশ অ্যাকশন সম্পন্ন করতে ব্যর্থ হয়েছে।' }, { status: 500 });
   }
 }

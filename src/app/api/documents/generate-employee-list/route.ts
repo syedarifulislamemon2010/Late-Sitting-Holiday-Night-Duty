@@ -639,6 +639,6 @@ export async function POST(request: Request) {
 
   } catch (error) {
     logger.error('Error generating employee list document:', error);
-    return NextResponse.json({ error: 'failed_to_generate_employee_list', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_generate_employee_list', message: 'কর্মকর্তা তালিকা তৈরি করতে ব্যর্থ হয়েছে।' }, { status: 500 });
   }
 }

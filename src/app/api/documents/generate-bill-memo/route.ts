@@ -487,6 +487,6 @@ export async function POST(request: Request) {
 
   } catch (error) {
     logger.error('Error generating bill memo document:', error);
-    return NextResponse.json({ error: 'failed_to_generate_bill_memo', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'failed_to_generate_bill_memo', message: 'বিল মেমো তৈরি করতে ব্যর্থ হয়েছে।' }, { status: 500 });
   }
 }

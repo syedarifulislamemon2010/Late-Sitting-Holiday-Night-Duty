@@ -77,6 +77,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true, message: 'Document soft-deleted successfully' });
   } catch (error) {
     logger.error('Error deleting document:', error);
-    return NextResponse.json({ error: 'internal_error', message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: 'internal_error', message: 'নথিপত্র প্রসেস করতে অভ্যন্তরীণ ত্রুটি হয়েছে।' }, { status: 500 });
   }
 }
