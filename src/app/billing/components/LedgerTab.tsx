@@ -15,7 +15,7 @@ import {
   Users,
   X
 } from 'lucide-react';
-import { toBanglaDigits, getBanglaDate } from '@/lib/bengali-converter';
+import { toBanglaDigits } from '@/lib/bengali-converter';
 import { renderDatesInPairs } from '@/lib/print-helpers';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { UserProfile, UserCell } from '@/context/ProfileContext';
@@ -34,11 +34,6 @@ interface MetricState {
   grandTotal: number;
 }
 
-interface Cell {
-  id: number;
-  name: string;
-  description: string | null;
-}
 
 interface OfficeOrder {
   id: number;

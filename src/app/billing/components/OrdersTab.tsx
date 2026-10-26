@@ -8,18 +8,12 @@ import {
   Receipt, 
   FileSignature, 
   Trash2, 
-  AlertCircle, 
   Loader2 
 } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { getCategoryConfig } from '@/lib/category-colors';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-interface Cell {
-  id: number;
-  name: string;
-  description: string | null;
-}
 
 import { OrderDuty } from '../types';
 
