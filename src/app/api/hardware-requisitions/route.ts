@@ -2,7 +2,7 @@ import { auditRbacRequest } from '@/lib/rbac-audit';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
-import { hardwareRequisitions, hardwareRequisitionItems, holidays as holidaysTable, users } from '@/db/schema';
+import { hardwareRequisitions, hardwareRequisitionItems, holidays as holidaysTable } from '@/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { handleApiError, AppError } from '@/lib/errors';
 import { isNonWorkingDay } from '@/lib/leave-calculator';
