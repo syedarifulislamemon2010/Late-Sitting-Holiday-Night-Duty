@@ -13,13 +13,10 @@ import {
   Printer, 
   Trash2, 
   Edit2, 
-  FileText,
   PlusCircle,
   MinusCircle,
   Eye,
-  RefreshCw,
   Save,
-  Trash
 } from 'lucide-react';
 
 interface Implementer {
@@ -216,7 +213,7 @@ const cleanDesignation = (desig: string): string => {
 };
 
 export default function TazCommitteeFormPage() {
-  const { currentUser } = useProfile();
+  useProfile();
   const { showToast } = useToast();
 
   const [dbHolidays, setDbHolidays] = useState<Holiday[]>([]);
@@ -455,7 +452,7 @@ export default function TazCommitteeFormPage() {
     setRequesterOrganization(form.requesterOrganization);
     try {
       setImplementers(JSON.parse(form.implementersJson));
-    } catch (e) {
+    } catch {
       setImplementers([]);
     }
     setActiveTab('NEW');
@@ -964,7 +961,7 @@ export default function TazCommitteeFormPage() {
                                 <label className="text-[9px] font-bold text-slate-500 block">Select Cell:</label>
                                 <select
                                   value={implementerCells[idx] || ''}
-                                  onChange={(e) => {
+                                  onChange={() => {
                                     const newCells = [...implementerCells];
                                     newCells[idx] = e.target.value;
                                     setImplementerCells(newCells);
@@ -1107,7 +1104,7 @@ export default function TazCommitteeFormPage() {
                               setRequesterOrganization(form.requesterOrganization);
                               try {
                                 setImplementers(JSON.parse(form.implementersJson));
-                              } catch (e) {}
+                              } catch {}
                               showToast(`Loaded Request #${form.id} in live preview!`, 'success');
                             }}
                             className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-indigo-650 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 dark:hover:bg-indigo-950/20 rounded-lg cursor-pointer"
