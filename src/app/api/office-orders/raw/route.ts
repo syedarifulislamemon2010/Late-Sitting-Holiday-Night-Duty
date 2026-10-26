@@ -7,7 +7,6 @@ import { eq } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { getBanglaNumberWords } from '@/lib/bengali-converter';
 import { escapeHtml } from '@/lib/html-escape';
-import { sanitizeOrderHtml } from '@/lib/sanitize';
 
 function toBnDigits(num: number | string | null | undefined): string {
   if (num === null || num === undefined) return '';
@@ -106,7 +105,7 @@ export async function GET(request: Request) {
         const rawDates = s.datesFormatted || (s.dates ? getFormattedDateList(s.dates) : '');
         const pairedDates = renderDatesInPairs(rawDates);
         
-        const datesHtml = pairedDates.map((pair, pIdx) => {
+        const datesHtml = pairedDates.map((pair) => {
           return `<span style="display: block; white-space: nowrap; line-height: 1.2;">${pair}</span>`;
         }).join('');
 
