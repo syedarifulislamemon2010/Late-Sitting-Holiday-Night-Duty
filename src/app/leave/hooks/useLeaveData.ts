@@ -3,13 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import logger from '@/lib/logger';
 import { 
-  DEFAULT_2026_HOLIDAYS, 
   isNonWorkingDay as libIsNonWorkingDay, 
   getSucceedingContiguousHolidaysCount as libGetSucceedingContiguousHolidaysCount, 
   getCalculatedLeaveDetails as libGetCalculatedLeaveDetails 
 } from '@/lib/leave-calculator';
 import { sortEmployeesBySeniority } from '@/lib/seniority';
-import { toBanglaDigits } from '@/lib/bengali-converter';
 import { Employee, Cell, UserSession, Leave, Holiday } from '../types';
 import { useLatestRequest } from '@/hooks/useLatestRequest';
 
