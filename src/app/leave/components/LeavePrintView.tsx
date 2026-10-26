@@ -5,6 +5,7 @@ import { FileEdit, AlertCircle } from 'lucide-react';
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { cleanDesignationForLeave } from '../hooks/useLeaveData';
 import { Employee } from '../types';
+import { LeaveDetails } from '@/lib/leave-calculator';
 
 interface LeavePrintViewProps {
   applicationDate: string;
@@ -19,7 +20,7 @@ interface LeavePrintViewProps {
   startDate: string;
   endDate: string;
   isSingleDay: boolean;
-  leaveDetails: any;
+  leaveDetails: LeaveDetails;
   delegateId: string;
   eligibleCoveringOfficers: Employee[];
   casualTotal: number | string;
