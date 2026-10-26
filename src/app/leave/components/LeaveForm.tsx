@@ -9,6 +9,7 @@ import LeaveHistoryTable from './LeaveHistoryTable';
 import { BANGLADESH_AREAS } from '../bangladesh_areas';
 import { cleanDesignationForLeave } from '../hooks/useLeaveData';
 import { Employee, Cell, UserSession, Leave } from '../types';
+import { LeaveDetails } from '@/lib/leave-calculator';
 import { toBanglaDigits, toEnglishDigits } from '@/lib/bengali-converter';
 
 interface LeaveFormProps {
@@ -68,7 +69,7 @@ interface LeaveFormProps {
   setSpecialTotal: (val: number | string) => void;
   specialUsed: number | string;
   setSpecialUsed: (val: number | string) => void;
-  leaveDetails: any;
+  leaveDetails: LeaveDetails;
   editingLeaveId: number | null;
   latestLeave: Leave | null;
   archivedLeaves: Leave[];
@@ -101,8 +102,6 @@ export default function LeaveForm({
   setMobileNo,
   cellName,
   setCellName,
-  leaveLocation,
-  setLeaveLocation,
   selectedDistrict,
   setSelectedDistrict,
   showValidationErrors,
@@ -446,7 +445,7 @@ export default function LeaveForm({
                   id="leaveType"
                   value={leaveType}
                   onChange={(e) => {
-                    const newType = e.target.value as any;
+                    const newType = e.target.value as 'CASUAL' | 'POST_FACTO' | 'STATION_LEAVE' | '';
                     setLeaveType(newType);
                     if (newType) {
                       setShowValidationErrors(false);
