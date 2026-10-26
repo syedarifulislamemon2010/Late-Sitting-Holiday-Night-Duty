@@ -46,7 +46,7 @@ interface CellSearchItem {
 }
 
 export default function CommandPalette() {
-  const { lang, t } = useLanguage();
+  const { lang } = useLanguage();
   const isEn = lang === 'en';
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
