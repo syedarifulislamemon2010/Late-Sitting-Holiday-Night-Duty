@@ -104,7 +104,7 @@ const LanguageContext = createContext<LanguageContextType>({
   lang: 'bn',
   setLang: () => {},
   toggleLang: () => {},
-  t: (key: string, fallbackBn?: string, fallbackEn?: string) => fallbackBn || key,
+  t: (key: string, fallbackBn?: string) => fallbackBn || key,
   formatNumber: (num: number | string) => num.toString(),
   formatMonthYear: (m: number, y?: number) => `${MONTH_NAMES_BN[m]} ${y || 2026}`,
   getWeekdays: () => WEEKDAYS_BN,

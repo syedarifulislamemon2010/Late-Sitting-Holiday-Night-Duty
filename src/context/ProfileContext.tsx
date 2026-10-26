@@ -47,7 +47,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       } else {
         setCurrentUser(null);
       }
-    } catch (err) {
+    } catch {
       logger.warn('Profile fetch failed (transient network error)');
       setCurrentUser(null);
     } finally {
