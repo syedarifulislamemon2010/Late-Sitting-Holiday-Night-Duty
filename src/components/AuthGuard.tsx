@@ -2,8 +2,8 @@
 import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
-import { ShieldCheck, AlertCircle, Eye, EyeOff, Lock, User, KeyRound } from 'lucide-react';
-import { signIn, signOut } from 'next-auth/react';
+import { ShieldCheck, AlertCircle, Eye, EyeOff, User, KeyRound } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { canAccessRoute } from '@/permissions/rbac';
 import { evaluateAuthResponse } from '@/lib/auth-guard-helper';
@@ -40,7 +40,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     return { isBlocked: false, timeRemaining: 0 };
   };
 
-  const [attempts, setAttempts] = useState<number>(0);
+  const [, setAttempts] = useState<number>(0);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -73,7 +73,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             setUserProfile(null);
           }
         }
-      } catch (err) {
+      } catch {
         // Transient network error — do NOT log out if already authenticated
         logger.warn('Auth verification failed (transient network error)');
         // Only set unauthenticated if we haven't authenticated yet (initial load)
