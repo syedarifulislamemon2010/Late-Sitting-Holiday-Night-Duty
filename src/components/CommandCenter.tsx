@@ -11,7 +11,6 @@ import {
   Settings, 
   CornerDownLeft, 
   Sparkles,
-  ChevronRight,
   ClipboardList
 } from 'lucide-react';
 
