@@ -1,5 +1,4 @@
 'use client';
-import { CLOSING_BILL_RATE, REVENUE_STAMP } from '@/constants/billing';
 import logger from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
@@ -63,13 +62,6 @@ interface ClosingRecord {
   remarks?: string;
 }
 
-interface UserSession {
-  id: number;
-  name: string;
-  username: string;
-  role: 'ADMIN' | 'USER' | 'EMPLOYEE';
-  cells?: Cell[];
-}
 
 interface SavedBill {
   id: number;
