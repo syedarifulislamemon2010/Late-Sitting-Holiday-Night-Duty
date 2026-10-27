@@ -456,9 +456,9 @@ export default function OfficeOrderPrintPreview({
         <div className="print-a4-layout w-[210mm] h-[297mm] bg-white border border-slate-200 text-black shadow-xl flex flex-col justify-between overflow-hidden relative" style={{ color: '#000000', backgroundColor: '#ffffff', fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', padding: '1.0in', boxSizing: 'border-box' }}>
           
           {/* Header */}
-          {headerMode === 'with_header' ? (
-            <div className="w-full flex justify-between items-start border-b-2 border-[#0b5e9e] pb-2">
-              {/* Left side: Logo & Tagline */}
+          <div className={`w-full flex justify-between items-start pb-2 ${headerMode === 'with_header' ? 'border-b-2 border-[#0b5e9e]' : 'border-b-2 border-transparent'}`}>
+            {/* Left side: Logo & Tagline (vanishes in without_header) */}
+            {headerMode === 'with_header' ? (
               <div className="flex items-start gap-2 text-left">
                 <svg viewBox="0 0 512 512" style={{ width: '64px', height: '64px' }} className="text-[#0b5e9e] shrink-0" fill="none">
                   <g>
@@ -478,15 +478,15 @@ export default function OfficeOrderPrintPreview({
                   <p style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '10px', fontWeight: 'bold', color: '#555555', marginTop: '4px', lineHeight: '1.0' }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
                 </div>
               </div>
+            ) : (
+              <div className="invisible select-none" style={{ width: '64px', height: '64px' }} aria-hidden="true" />
+            )}
 
-              {/* Right side: Department */}
-              <div className="text-right mt-1">
-                <h3 style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '8px' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
-              </div>
+            {/* Right side: Department (always visible in both with_header and without_header) */}
+            <div className="text-right mt-1">
+              <h3 style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '18px', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '8px' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
             </div>
-          ) : (
-            <div className="w-full h-[85px] border-b-2 border-transparent pb-2" />
-          )}
+          </div>
 
           {/* Sub-header line: Reference and Date */}
           <div className="w-full flex justify-between items-center text-[12px] pt-1 pb-1 border-b border-black/10 mt-1" style={{ fontFamily: '"SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '12px', lineHeight: '1.0', marginBottom: '0.4in' }}>

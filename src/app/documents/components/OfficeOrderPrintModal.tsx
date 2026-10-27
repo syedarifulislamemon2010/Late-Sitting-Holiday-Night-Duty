@@ -22,6 +22,7 @@ export default function OfficeOrderPrintModal({
   if (!viewingOrder) return null;
 
   const isBill = viewingOrder.category?.startsWith('BILL_');
+  const headerMode = viewingOrder.content?.headerMode || 'with_header';
 
   const repDesig = (() => {
     if (!viewingOrder) return 'ও-আইটি';
@@ -365,8 +366,9 @@ export default function OfficeOrderPrintModal({
             >
               <div>
                 {/* Janata Bank PLC Header */}
-                <div className="w-full flex justify-between items-start border-b-2 border-[#0b5e9e] pb-1.5">
-                  <div className="flex items-start gap-2 text-left">
+                <div className={`w-full flex justify-between items-start pb-1.5 ${headerMode === 'with_header' ? 'border-b-2 border-[#0b5e9e]' : 'border-b-2 border-transparent'}`}>
+                  {headerMode === 'with_header' ? (
+                    <div className="flex items-start gap-2 text-left">
                     <svg viewBox="0 0 512 512" style={{ width: '44px', height: '44px' }} className="text-[#0b5e9e] shrink-0" fill="none">
                       <g>
                         <path fill="currentColor" d="M175.7,351.4c-53.1,0-96.4-43.3-96.4-96.4c0-24.9,9.5-48.6,26.6-66.5l8.2,7.9c-15.1,15.8-23.5,36.7-23.5,58.7c0,46.9,38.1,85.1,85,85.1c46.9,0,85.1-38.2,85.1-85.1v-97.7h11.4v97.7C272.1,308.1,228.9,351.4,175.7,351.4z"/>
@@ -385,6 +387,9 @@ export default function OfficeOrderPrintModal({
                       <p style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '11px', fontWeight: 'bold', color: '#555555', marginTop: '2px', lineHeight: '1.0', margin: 0 }}>উন্নয়নে আপনার বিশ্বস্ত অংশীদার</p>
                     </div>
                   </div>
+                  ) : (
+                    <div className="invisible select-none" style={{ width: '44px', height: '44px' }} aria-hidden="true" />
+                  )}
 
                   <div className="text-right mt-1">
                     <h3 className="dept-title" style={{ fontFamily: '"Kalpurush", "SolaimanLipi", "Nikosh", "Noto Sans Bengali", sans-serif', fontSize: '20px', fontWeight: 'bold', color: '#000000', lineHeight: '1.0', marginTop: '5px', letterSpacing: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>

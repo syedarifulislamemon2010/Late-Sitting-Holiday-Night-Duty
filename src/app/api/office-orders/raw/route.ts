@@ -596,10 +596,9 @@ export async function GET(request: Request) {
 </head>
 <body>
   <div id="printable-order-sheet">
-  ${headerMode === 'with_header' ? `
-  <table class="header-table">
+  <table class="header-table" style="${headerMode === 'with_header' ? '' : 'border-bottom-color: transparent;'}">
     <tr>
-      <td class="header-left" style="width: 60%;">
+      <td class="header-left" style="width: 60%; ${headerMode === 'with_header' ? '' : 'visibility: hidden;'}">
         <div style="display: inline-block; vertical-align: top; width: 44px; height: 44px;">
           <svg viewBox="0 0 512 512" style="width: 44px; height: 44px; color: #0b5e9e;" fill="none">
             <g>
@@ -625,9 +624,6 @@ export async function GET(request: Request) {
       </td>
     </tr>
   </table>
-  ` : `
-  <div style="height: 60px; border-bottom: 2px solid transparent; padding-bottom: 5px; margin-bottom: 5px;"></div>
-  `}
   
   <table class="ref-date-table">
     <tr>
