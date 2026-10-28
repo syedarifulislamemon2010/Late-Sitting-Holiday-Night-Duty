@@ -69,7 +69,7 @@ export async function GET(request: Request) {
         const cbsCellId = cbsCell[0]?.id || 9;
         allowedCellIds = [cbsCellId];
       } else {
-        allowedCellIds = currentUser.cells.map((c: { id: number }) => c.id);
+        allowedCellIds = currentUser.cells.map((c: { id: number }) => Number(c.id));
       }
 
       if (targetCellId !== 0 && !allowedCellIds.includes(targetCellId)) {
@@ -102,7 +102,7 @@ export async function GET(request: Request) {
         if (isShahinur) {
           return { ...r, cellId: 7 };
         }
-        return r;
+        return { ...r, cellId: Number(r.cellId) };
       });
 
     let filteredRecords: LunchBillRecord[] = [];
@@ -110,14 +110,14 @@ export async function GET(request: Request) {
       if (targetCellId === 0) {
         filteredRecords = sanitizedRecords;
       } else {
-        filteredRecords = sanitizedRecords.filter((r: LunchBillRecord) => r.cellId === targetCellId);
+        filteredRecords = sanitizedRecords.filter((r: LunchBillRecord) => Number(r.cellId) === Number(targetCellId));
       }
     } else {
       if (targetCellId === 0) {
         // Return records for all cells assigned to standard user
-        filteredRecords = sanitizedRecords.filter((r: LunchBillRecord) => allowedCellIds.length === 0 || allowedCellIds.includes(r.cellId));
+        filteredRecords = sanitizedRecords.filter((r: LunchBillRecord) => allowedCellIds.length === 0 || allowedCellIds.includes(Number(r.cellId)));
       } else {
-        filteredRecords = sanitizedRecords.filter((r: LunchBillRecord) => r.cellId === targetCellId);
+        filteredRecords = sanitizedRecords.filter((r: LunchBillRecord) => Number(r.cellId) === Number(targetCellId));
       }
     }
 
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
     }
 
     const isAdmin = currentUser.role === 'ADMIN';
-    let userCellIds = currentUser.cells?.map((c: { id: number }) => c.id) || [];
+    let userCellIds = currentUser.cells?.map((c: { id: number }) => Number(c.id)) || [];
     if (!isAdmin && currentUser.username === '026795') {
       const cbsCell = await db.select().from(cells).where(eq(cells.name, 'CBS Integrated Development Cell'));
       const cbsCellId = cbsCell[0]?.id || 9;
@@ -191,7 +191,7 @@ export async function POST(request: Request) {
     let recordsToSave = Array.isArray(records) ? records : [];
     if (!isAdmin) {
       // Filter out any records that do not belong to the user's assigned cells, and also filter out executives
-      recordsToSave = recordsToSave.filter((r: LunchBillRecord) => r && !r.isExecutive && userCellIds.includes(r.cellId));
+      recordsToSave = recordsToSave.filter((r: LunchBillRecord) => r && !r.isExecutive && userCellIds.includes(Number(r.cellId)));
     }
 
     let finalRecords = [];
@@ -200,7 +200,7 @@ export async function POST(request: Request) {
     } else {
       if (existingBill) {
         const existingRecords = JSON.parse(existingBill.recordsJson);
-        const otherRecords = existingRecords.filter((r: LunchBillRecord) => r && (!userCellIds.includes(r.cellId)));
+        const otherRecords = existingRecords.filter((r: LunchBillRecord) => r && (!userCellIds.includes(Number(r.cellId))));
         finalRecords = [...otherRecords, ...recordsToSave];
       } else {
         finalRecords = recordsToSave;
@@ -215,7 +215,7 @@ export async function POST(request: Request) {
         if (isShahinur) {
           return { ...r, cellId: 7 };
         }
-        return r;
+        return { ...r, cellId: Number(r.cellId) };
       });
 
     const recordsJson = JSON.stringify(finalRecords);

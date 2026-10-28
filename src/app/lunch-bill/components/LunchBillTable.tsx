@@ -38,9 +38,35 @@ export default function LunchBillTable({
 
   const officerRecords = records.filter(r => !r.isExecutive);
 
-  const totalStampAll = officerRecords.reduce((sum, r) => sum + r.stampDeduction, 0);
-  const totalAdditionalAll = officerRecords.reduce((sum, r) => sum + (r.additionalDeduction || 0), 0);
-  const grandTotalNetAll = officerRecords.reduce((sum, r) => sum + r.netPayable, 0);
+  const totalStampAll = officerRecords.reduce((sum, r) => sum + (Number(r.stampDeduction) || 0), 0);
+  const totalAdditionalAll = officerRecords.reduce((sum, r) => sum + (Number(r.additionalDeduction) || 0), 0);
+  const grandTotalNetAll = officerRecords.reduce((sum, r) => sum + (Number(r.netPayable) || 0), 0);
+
+  // Derive cells from passed props and records so a cell table is NEVER missing
+  const displayCells = React.useMemo(() => {
+    const cellMap = new Map<number, Cell>();
+    (cells || []).forEach(c => {
+      cellMap.set(Number(c.id), c);
+    });
+
+    officerRecords.forEach(r => {
+      const cId = Number(r.cellId);
+      if (cId && !cellMap.has(cId)) {
+        const fallbackName = cId === 7 
+          ? 'R09 Development & Customization Cell' 
+          : cId === 9 
+          ? 'CBS Integrated Development Cell' 
+          : cId === 8 
+          ? 'R22 Development & Customization Cell' 
+          : cId === 11 
+          ? 'Business IT (R&D)' 
+          : `সেল ${toBanglaDigits(cId)}`;
+        cellMap.set(cId, { id: cId, name: fallbackName, description: null });
+      }
+    });
+
+    return Array.from(cellMap.values());
+  }, [cells, officerRecords]);
 
   return (
     <div className="space-y-6">
@@ -52,28 +78,28 @@ export default function LunchBillTable({
       )}
 
       {/* Cell-wise Officers Tables */}
-      {cells.map(cell => {
-        if (filterCell !== 'ALL' && filterCell !== cell.id.toString()) return null;
+      {displayCells.map(cell => {
+        if (filterCell !== 'ALL' && filterCell !== String(cell.id)) return null;
         
         const cellRecs = officerRecords.filter(r => {
           const isShahinur = (r.bankId === '018273') || (r.employeeName && r.employeeName.includes('শাহিনুর'));
           if (isShahinur) {
-            return cell.id === 7;
+            return Number(cell.id) === 7;
           }
-          return r.cellId === cell.id;
+          return Number(r.cellId) === Number(cell.id);
         });
         if (cellRecs.length === 0) return null;
 
-        const isCollapsed = !!collapsedCells[cell.id.toString()];
-        const cellClaim = cellRecs.reduce((sum, r) => sum + r.totalBill, 0);
-        const cellStamp = cellRecs.reduce((sum, r) => sum + r.stampDeduction, 0);
-        const cellExtra = cellRecs.reduce((sum, r) => sum + (r.additionalDeduction || 0), 0);
-        const cellGrand = cellRecs.reduce((sum, r) => sum + r.netPayable, 0);
+        const isCollapsed = !!collapsedCells[String(cell.id)];
+        const cellClaim = cellRecs.reduce((sum, r) => sum + (Number(r.totalBill) || 0), 0);
+        const cellStamp = cellRecs.reduce((sum, r) => sum + (Number(r.stampDeduction) || 0), 0);
+        const cellExtra = cellRecs.reduce((sum, r) => sum + (Number(r.additionalDeduction) || 0), 0);
+        const cellGrand = cellRecs.reduce((sum, r) => sum + (Number(r.netPayable) || 0), 0);
 
         return (
           <div key={cell.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
             <div
-              onClick={() => toggleCellCollapse(cell.id.toString())}
+              onClick={() => toggleCellCollapse(String(cell.id))}
               className="p-4 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none"
             >
               <div className="flex items-center gap-2.5">
@@ -89,7 +115,7 @@ export default function LunchBillTable({
               <div className="flex items-center gap-4">
                 <div className="text-right hidden sm:block">
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                    মোট প্রদেয়: ৳{toBanglaDigits(cellGrand.toLocaleString('en-US'))}
+                    মোট প্রদেয়: ৳{toBanglaDigits((cellGrand || 0).toLocaleString('en-US'))}
                   </span>
                 </div>
                 <button type="button" className="text-slate-400">
@@ -149,10 +175,10 @@ export default function LunchBillTable({
                           {toBanglaDigits(rec.presentDays)}
                         </td>
                         <td className="py-2.5 px-3 text-right font-medium text-slate-700 dark:text-slate-300">
-                          {toBanglaDigits(rec.totalBill.toLocaleString('en-US'))}
+                          {toBanglaDigits((rec.totalBill || 0).toLocaleString('en-US'))}
                         </td>
                         <td className="py-2.5 px-3 text-right text-rose-600 dark:text-rose-400 font-medium">
-                          {toBanglaDigits(rec.stampDeduction)}
+                          {toBanglaDigits(rec.stampDeduction || 0)}
                         </td>
                         <td className="py-2.5 px-3 text-right">
                           <input
@@ -164,7 +190,7 @@ export default function LunchBillTable({
                           />
                         </td>
                         <td className="py-2.5 px-3 text-right font-extrabold text-indigo-600 dark:text-indigo-400">
-                          ৳{toBanglaDigits(rec.netPayable.toLocaleString('en-US'))}
+                          ৳{toBanglaDigits((rec.netPayable || 0).toLocaleString('en-US'))}
                         </td>
                       </tr>
                     ))}
@@ -175,16 +201,16 @@ export default function LunchBillTable({
                         {cell.name} এর মোট:
                       </td>
                       <td className="py-2.5 px-3 text-right">
-                        {toBanglaDigits(cellClaim.toLocaleString('en-US'))}
+                        {toBanglaDigits((cellClaim || 0).toLocaleString('en-US'))}
                       </td>
                       <td className="py-2.5 px-3 text-right text-rose-600">
-                        {toBanglaDigits(cellStamp)}
+                        {toBanglaDigits(cellStamp || 0)}
                       </td>
                       <td className="py-2.5 px-3 text-right text-rose-600">
-                        {toBanglaDigits(cellExtra.toLocaleString('en-US'))}
+                        {toBanglaDigits((cellExtra || 0).toLocaleString('en-US'))}
                       </td>
                       <td className="py-2.5 px-3 text-right text-indigo-600 dark:text-indigo-400">
-                        ৳{toBanglaDigits(cellGrand.toLocaleString('en-US'))}
+                        ৳{toBanglaDigits((cellGrand || 0).toLocaleString('en-US'))}
                       </td>
                     </tr>
                   </tfoot>
@@ -209,7 +235,7 @@ export default function LunchBillTable({
         <div className="text-right">
           <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">সর্বমোট নিট প্রদেয়</div>
           <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">
-            ৳{toBanglaDigits(grandTotalNetAll.toLocaleString('en-US'))}
+            ৳{toBanglaDigits((grandTotalNetAll || 0).toLocaleString('en-US'))}
           </div>
         </div>
       </div>

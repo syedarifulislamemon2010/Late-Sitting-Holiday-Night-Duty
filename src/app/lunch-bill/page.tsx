@@ -84,19 +84,19 @@ export default function LunchBillPage() {
     if (r.isExecutive) return false;
     if (isAdmin) return true;
     if (currentUser?.username === '026795') {
-      return r.cellId === 9;
+      return Number(r.cellId) === 9;
     }
-    const userCellIds = currentUser?.cells?.map(c => c.id) || [];
-    return userCellIds.length === 0 || userCellIds.includes(r.cellId);
+    const userCellIds = currentUser?.cells?.map(c => Number(c.id)) || [];
+    return userCellIds.length === 0 || userCellIds.includes(Number(r.cellId));
   });
 
   const activeRecords = userBaseRecords.filter(r => {
     const matchesSearch = searchQuery === '' || 
-      r.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (r.employeeName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (r.designation || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (r.bankId || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCell = filterCell === 'ALL' || r.cellId.toString() === filterCell;
+    const matchesCell = filterCell === 'ALL' || String(r.cellId) === filterCell;
 
     return matchesSearch && matchesCell;
   });
