@@ -60,7 +60,21 @@ export default function LeavePrintView({
     if (!dateStr) return '';
     const parts = dateStr.split('-');
     if (parts.length !== 3) return dateStr;
-    return `${toBanglaDigits(parts[2])}/${toBanglaDigits(parts[1])}/${toBanglaDigits(parts[0])}`;
+    const day = parts[2].padStart(2, '0');
+    const month = parts[1].padStart(2, '0');
+    const year = parts[0];
+    return `${toBanglaDigits(day)}-${toBanglaDigits(month)}-${toBanglaDigits(year)}`;
+  };
+
+  const toBanglaFormattedDate = (dateStr: string): string => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const [y, m, d] = parts;
+    const day = toBanglaDigits(d.padStart(2, '0'));
+    const month = toBanglaDigits(m.padStart(2, '0'));
+    const year = toBanglaDigits(y);
+    return `${day}-${month}-${year} খ্রিঃ`;
   };
 
   const toBanglaFullDateStr = (dateStr: string): string => {
@@ -212,7 +226,7 @@ export default function LeavePrintView({
             {/* Left block */}
             <div className="space-y-4 pt-1 text-xs" contentEditable suppressContentEditableWarning title="ক্লিক করে ঠিকানা এডিট করুন">
               <p className="font-semibold text-black">
-                তারিখ: {toBanglaFullDateStr(applicationDate)} ইং
+                তারিখ: {toBanglaFormattedDate(applicationDate)}
               </p>
               <div className="space-y-0.5 font-bold text-black text-xs font-sans">
                 <p>উপ-মহাব্যবস্থাপক</p>
@@ -283,15 +297,15 @@ export default function LeavePrintView({
                   {isSingleDay ? (
                     <>
                       যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত{' '}
-                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' ইং' : ''} তারিখে{' '}
+                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' খ্রিঃ' : ''} তারিখে{' '}
                       <strong className="italic" style={{ fontStyle: 'italic' }}>০১ (এক)</strong> দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত{' '}
                       <strong className="italic" style={{ fontStyle: 'italic' }}>০১ (এক)</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।
                     </>
                   ) : (
                     <>
                       যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত{' '}
-                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' ইং' : ''} তারিখ হতে{' '}
-                      <strong className="italic" style={{ fontStyle: 'italic' }}>{endDate ? toDisplayDateStr(endDate) : ''}</strong>{endDate ? ' ইং' : ''} তারিখ পর্যন্ত মোট{' '}
+                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' খ্রিঃ' : ''} তারিখ হতে{' '}
+                      <strong className="italic" style={{ fontStyle: 'italic' }}>{endDate ? toDisplayDateStr(endDate) : ''}</strong>{endDate ? ' খ্রিঃ' : ''} তারিখ পর্যন্ত মোট{' '}
                       <strong className="italic" style={{ fontStyle: 'italic' }}>{displayDaysWord}</strong> দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত{' '}
                       <strong className="italic" style={{ fontStyle: 'italic' }}>{displayDaysWord}</strong> দিনের ঘটনাত্তোর নৈমিত্তিক ছুটির জন্য আবেদন করছি।
                     </>
@@ -311,14 +325,14 @@ export default function LeavePrintView({
                   {isSingleDay ? (
                     <>
                       যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী{' '}
-                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' ইং' : ''} তারিখে{' '}
+                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' খ্রিঃ' : ''} তারিখে{' '}
                       <strong className="italic" style={{ fontStyle: 'italic' }}>০১ (এক)</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।
                     </>
                   ) : (
                     <>
                       যথাবিহিত সম্মানপূর্বক বিনীত নিবেদন এই যে, পারিবারিক ও ব্যক্তিগত জরুরি প্রয়োজনে আমি আগামী{' '}
-                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' ইং' : ''} তারিখ হতে{' '}
-                      <strong className="italic" style={{ fontStyle: 'italic' }}>{endDate ? toDisplayDateStr(endDate) : ''}</strong>{endDate ? ' ইং' : ''} তারিখ পর্যন্ত{' '}
+                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' খ্রিঃ' : ''} তারিখ হতে{' '}
+                      <strong className="italic" style={{ fontStyle: 'italic' }}>{endDate ? toDisplayDateStr(endDate) : ''}</strong>{endDate ? ' খ্রিঃ' : ''} তারিখ পর্যন্ত{' '}
                       <strong className="italic" style={{ fontStyle: 'italic' }}>{displayDaysWord}</strong> দিনের কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটির জন্য আবেদন করছি।
                     </>
                   )}
@@ -340,14 +354,14 @@ export default function LeavePrintView({
                   {isSingleDay ? (
                     <>
                       যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী{' '}
-                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' ইং' : ''} তারিখে{' '}
+                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' খ্রিঃ' : ''} তারিখে{' '}
                       <strong className="italic" style={{ fontStyle: 'italic' }}>০১ (এক)</strong> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
                     </>
                   ) : (
                     <>
                       যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমার আগামী{' '}
-                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' ইং' : ''} তারিখ হতে{' '}
-                      <strong className="italic" style={{ fontStyle: 'italic' }}>{endDate ? toDisplayDateStr(endDate) : ''}</strong>{endDate ? ' ইং' : ''} তারিখ পর্যন্ত মোট{' '}
+                      <strong className="italic" style={{ fontStyle: 'italic' }}>{startDate ? toDisplayDateStr(startDate) : ''}</strong>{startDate ? ' খ্রিঃ' : ''} তারিখ হতে{' '}
+                      <strong className="italic" style={{ fontStyle: 'italic' }}>{endDate ? toDisplayDateStr(endDate) : ''}</strong>{endDate ? ' খ্রিঃ' : ''} তারিখ পর্যন্ত মোট{' '}
                       <strong className="italic" style={{ fontStyle: 'italic' }}>{displayDaysWord}</strong> দিনের নৈমিত্তিক ছুটির প্রয়োজন।
                     </>
                   )}

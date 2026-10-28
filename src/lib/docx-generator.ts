@@ -79,7 +79,15 @@ export async function generateLeaveDocx(data: LeaveDocxData): Promise<Blob> {
                     children: [
                       new Paragraph({
                         children: [
-                          new TextRun({ text: `তারিখ: ${data.applicationDateStr} ইং`, font: 'Noto Sans Bengali', bold: true, size: 20 })
+                          new TextRun({
+                            text: `তারিখ: ${(() => {
+                              const s = (data.applicationDateStr || '').replace(/\s*ইং\s*$/, '').trim();
+                              return s.endsWith('খ্রিঃ') ? s : `${s} খ্রিঃ`;
+                            })()}`,
+                            font: 'Noto Sans Bengali',
+                            bold: true,
+                            size: 20
+                          })
                         ]
                       }),
                       new Paragraph({ text: '' }),

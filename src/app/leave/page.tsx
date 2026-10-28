@@ -98,7 +98,21 @@ export default function LeaveGeneratorPage() {
     if (!dateStr) return '';
     const parts = dateStr.split('-');
     if (parts.length !== 3) return dateStr;
-    return `${toBanglaDigits(parts[2])}/${toBanglaDigits(parts[1])}/${toBanglaDigits(parts[0])}`;
+    const day = parts[2].padStart(2, '0');
+    const month = parts[1].padStart(2, '0');
+    const year = parts[0];
+    return `${toBanglaDigits(day)}-${toBanglaDigits(month)}-${toBanglaDigits(year)}`;
+  };
+
+  const toBanglaFormattedDate = (dateStr: string): string => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const [y, m, d] = parts;
+    const day = toBanglaDigits(d.padStart(2, '0'));
+    const month = toBanglaDigits(m.padStart(2, '0'));
+    const year = toBanglaDigits(y);
+    return `${day}-${month}-${year} খ্রিঃ`;
   };
 
   const toBanglaFullDateStr = (dateStr: string): string => {
@@ -167,16 +181,16 @@ export default function LeaveGeneratorPage() {
       let bodyText = '';
       if (leaveType === 'POST_FACTO') {
         bodyText = isSingleDay
-          ? `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত ${startDate ? toDisplayDateStr(startDate) : ''} ইং তারিখে ০১ (এক) দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত ০১ (এক) দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`
-          : `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত ${startDate ? toDisplayDateStr(startDate) : ''} হতে ${endDate ? toDisplayDateStr(endDate) : ''} ইং তারিখ পর্যন্ত মোট ${displayDaysWord} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`;
+          ? `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত ${startDate ? toDisplayDateStr(startDate) : ''} খ্রিঃ তারিখে ০১ (এক) দিন অফিসে উপস্থিত হতে পারিনি বিধায় উক্ত ০১ (এক) দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`
+          : `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত ও পারিবারিক জরুরি প্রয়োজনে আমি গত ${startDate ? toDisplayDateStr(startDate) : ''} খ্রিঃ হতে ${endDate ? toDisplayDateStr(endDate) : ''} খ্রিঃ তারিখ পর্যন্ত মোট ${displayDaysWord} দিনের ঘটনাত্তোর নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`;
       } else if (leaveType === 'STATION_LEAVE') {
         bodyText = isSingleDay
-          ? `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} ইং তারিখে আমার ${selectedDistrict || 'ঢাকার বাইরে'} অবস্থান করা প্রয়োজন। উক্ত ০১ (এক) দিন কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`
-          : `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} হতে ${endDate ? toDisplayDateStr(endDate) : ''} ইং তারিখ পর্যন্ত আমার ${selectedDistrict || 'ঢাকার বাইরে'} অবস্থান করা প্রয়োজন। উক্ত ${displayDaysWord} দিন কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`;
+          ? `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} খ্রিঃ তারিখে আমার ${selectedDistrict || 'ঢাকার বাইরে'} অবস্থান করা প্রয়োজন। উক্ত ০১ (এক) দিন কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`
+          : `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} খ্রিঃ হতে ${endDate ? toDisplayDateStr(endDate) : ''} খ্রিঃ তারিখ পর্যন্ত আমার ${selectedDistrict || 'ঢাকার বাইরে'} অবস্থান করা প্রয়োজন। উক্ত ${displayDaysWord} দিন কর্মস্থল ত্যাগের অনুমতিসহ নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`;
       } else {
         bodyText = isSingleDay
-          ? `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} ইং তারিখে আমার ছুটি প্রয়োজন। উক্ত ০১ (এক) দিনের নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`
-          : `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} হতে ${endDate ? toDisplayDateStr(endDate) : ''} ইং তারিখ পর্যন্ত মোট ${displayDaysWord} দিনের নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`;
+          ? `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} খ্রিঃ তারিখে আমার ছুটি প্রয়োজন। উক্ত ০১ (এক) দিনের নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`
+          : `যথাবিহিত সম্মান প্রদর্শনপূর্বক বিনীত নিবেদন এই যে, ব্যক্তিগত প্রয়োজনে আগামী ${startDate ? toDisplayDateStr(startDate) : ''} খ্রিঃ হতে ${endDate ? toDisplayDateStr(endDate) : ''} খ্রিঃ তারিখ পর্যন্ত মোট ${displayDaysWord} দিনের নৈমিত্তিক ছুটি মঞ্জুরের জন্য বিনীত আবেদন জানাচ্ছি।`;
       }
 
       const currentCasualUsed = parseInt(String(casualUsed || 0), 10) || 0;
@@ -200,7 +214,7 @@ export default function LeaveGeneratorPage() {
       const appYear = applicationDate ? applicationDate.split('-')[0] : new Date().getFullYear().toString();
 
       const blob = await generateLeaveDocx({
-        applicationDateStr: toBanglaFullDateStr(applicationDate),
+        applicationDateStr: toBanglaFormattedDate(applicationDate),
         applicantName,
         designation,
         bankId,
