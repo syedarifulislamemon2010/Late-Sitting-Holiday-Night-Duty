@@ -218,9 +218,11 @@ export default function CellsPage() {
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                    {cell.description || 'অনলাইন ব্যাংকিং ডিপার্টমেন্টের আওতাধীন সেল উইনিট।'}
-                  </p>
+                  {cell.description && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                      {cell.description}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/80">

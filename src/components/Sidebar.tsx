@@ -22,6 +22,7 @@ import {
   HardDrive,
   FileCheck,
   Database,
+  Building2,
   HelpCircle
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
@@ -115,10 +116,11 @@ export default function Sidebar() {
       { name: isEn ? 'Analytics' : 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
     ]
   ] : [
-    // গ্রুপ ১: ড্যাশবোর্ড, অ্যানালিটিক্স, কর্মকর্তাবৃন্দ
+    // গ্রুপ ১: ড্যাশবোর্ড, অ্যানালিটিক্স, (অ্যাডমিন হলে সেলসমূহ), কর্মকর্তাবৃন্দ
     [
       { name: isEn ? 'Dashboard' : 'ড্যাশবোর্ড', href: '/dashboard', icon: LayoutDashboard },
       { name: isEn ? 'Analytics' : 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp },
+      ...(isAdmin ? [{ name: isEn ? 'Cells' : 'সেলসমূহ', href: '/cells', icon: Building2 }] : []),
       { name: isEn ? 'Employees' : 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users }
     ],
     // গ্রুপ ২: ছুটির আবেদন
