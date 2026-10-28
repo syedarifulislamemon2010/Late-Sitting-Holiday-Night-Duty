@@ -114,7 +114,14 @@ export default function PrintableLedgerLayout({
                 transportRate = 400;
                 apyaonRate = 600;
               }
-              const billTotal = totalDays * (apyaonRate + transportRate);
+              let billTotal = 0;
+              dutiesList.forEach((d: OrderDuty) => {
+                const days = Array.isArray(d.dates) ? d.dates.length : (d.days || 0);
+                const itemApyaon = d.totalApyaon !== undefined && d.totalApyaon > 0 ? d.totalApyaon : (days * apyaonRate);
+                const itemTransport = d.totalTransport !== undefined && d.totalTransport > 0 ? d.totalTransport : (days * transportRate);
+                const itemGrand = d.grandTotal !== undefined && d.grandTotal > 0 ? d.grandTotal : (itemApyaon + itemTransport);
+                billTotal += itemGrand;
+              });
               const categoryLabel = order.category === 'LATE_SITTING' ? 'লেট সিটিং' : order.category === 'HOLIDAY' ? 'সরকারি ছুটি' : 'রাত্রীকালীন';
 
               return (

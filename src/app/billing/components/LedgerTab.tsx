@@ -130,9 +130,19 @@ export default function LedgerTab({
         apyaonRate = 600;
       }
 
-      const totalApyaon = totalDays * apyaonRate;
-      const totalTransport = totalDays * transportRate;
-      const totalBill = totalApyaon + totalTransport;
+      let orderApyaon = 0;
+      let orderTransport = 0;
+      let orderTotal = 0;
+
+      dutiesList.forEach((d: OrderDuty) => {
+        const days = Array.isArray(d.dates) ? d.dates.length : (d.days || 0);
+        const itemApyaon = d.totalApyaon !== undefined && d.totalApyaon > 0 ? d.totalApyaon : (days * apyaonRate);
+        const itemTransport = d.totalTransport !== undefined && d.totalTransport > 0 ? d.totalTransport : (days * transportRate);
+        const itemGrand = d.grandTotal !== undefined && d.grandTotal > 0 ? d.grandTotal : (itemApyaon + itemTransport);
+        orderApyaon += itemApyaon;
+        orderTransport += itemTransport;
+        orderTotal += itemGrand;
+      });
 
       const key = `${order.employeeName}_${order.category}_${order.orderRef}`;
       detailMap.set(key, {
@@ -143,9 +153,9 @@ export default function LedgerTab({
         orderRef: order.orderRef,
         orderDate: order.orderDate,
         days: totalDays,
-        apyaon: totalApyaon,
-        transport: totalTransport,
-        total: totalBill
+        apyaon: orderApyaon,
+        transport: orderTransport,
+        total: orderTotal
       });
     });
 
@@ -280,11 +290,34 @@ export default function LedgerTab({
   const visibleEmployees = React.useMemo(() => {
     let list = employees;
     
+    const activeOrderEmpIds = new Set<string>();
+    const activeOrderEmpNames = new Set<string>();
+    allActiveOfficeOrders.forEach(o => {
+      let dutiesList = o.duties || [];
+      if (dutiesList.length === 0 && o.dutiesJson) {
+        try { dutiesList = JSON.parse(o.dutiesJson); } catch (e) { logger.error(e); }
+      }
+      dutiesList.forEach((d: OrderDuty) => {
+        if (d.employeeId) activeOrderEmpIds.add(d.employeeId.toString());
+        if (d.employeeName) activeOrderEmpNames.add(d.employeeName.trim());
+      });
+    });
+
     if (selectedCell !== 'all') {
-      list = list.filter(emp => emp.cellId?.toString() === selectedCell);
+      list = list.filter(emp => 
+        emp.cellId?.toString() === selectedCell ||
+        (emp.id && activeOrderEmpIds.has(emp.id.toString())) ||
+        (emp.bankId && activeOrderEmpIds.has(emp.bankId.toString())) ||
+        (emp.name && activeOrderEmpNames.has(emp.name.trim()))
+      );
     } else if (currentUser && currentUser.role !== 'ADMIN') {
       const userCellNames = currentUser.cells?.map((c: UserCell) => c.name) || [];
-      list = list.filter(emp => emp.cell?.name && userCellNames.includes(emp.cell.name));
+      list = list.filter(emp => 
+        (emp.cell?.name && userCellNames.includes(emp.cell.name)) ||
+        (emp.id && activeOrderEmpIds.has(emp.id.toString())) ||
+        (emp.bankId && activeOrderEmpIds.has(emp.bankId.toString())) ||
+        (emp.name && activeOrderEmpNames.has(emp.name.trim()))
+      );
     }
     
     return [...list].sort((a, b) => {
@@ -719,7 +752,19 @@ export default function LedgerTab({
                     apyaonRate = 600;
                     apyaonName = 'রাতের খাবার';
                   }
-                  const billTotal = totalDays * (apyaonRate + transportRate);
+                  let orderApyaon = 0;
+                  let orderTransport = 0;
+                  let billTotal = 0;
+
+                  dutiesList.forEach((d: OrderDuty) => {
+                    const days = Array.isArray(d.dates) ? d.dates.length : (d.days || 0);
+                    const itemApyaon = d.totalApyaon !== undefined && d.totalApyaon > 0 ? d.totalApyaon : (days * apyaonRate);
+                    const itemTransport = d.totalTransport !== undefined && d.totalTransport > 0 ? d.totalTransport : (days * transportRate);
+                    const itemGrand = d.grandTotal !== undefined && d.grandTotal > 0 ? d.grandTotal : (itemApyaon + itemTransport);
+                    orderApyaon += itemApyaon;
+                    orderTransport += itemTransport;
+                    billTotal += itemGrand;
+                  });
 
                   return (
                     <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 text-slate-600 dark:text-slate-300">
@@ -748,12 +793,12 @@ export default function LedgerTab({
                       </td>
                       <td className="px-4 py-4 font-sans text-center">
                         <div className="font-extrabold text-slate-900 dark:text-slate-100 text-sm tabular-nums">
-                          {toBanglaDigits(totalDays)} দিন (<span className="text-primary dark:text-blue-400 font-black">৳{toBanglaDigits(billTotal)}/-</span>)
+                          {toBanglaDigits(totalDays)} দিন (<span className="text-primary dark:text-blue-400 font-black">৳{toBanglaDigits(billTotal.toLocaleString('en-US'))}/-</span>)
                         </div>
                         <div className="mt-1 text-[10px] text-slate-400 font-sans flex items-center justify-center gap-1.5">
-                          <span>{apyaonName}: ৳{toBanglaDigits(totalDays * apyaonRate)}</span>
+                          <span>{apyaonName}: ৳{toBanglaDigits(orderApyaon.toLocaleString('en-US'))}</span>
                           <span className="text-slate-300 dark:text-slate-600">•</span>
-                          <span>{transportName}: ৳{toBanglaDigits(totalDays * transportRate)}</span>
+                          <span>{transportName}: ৳{toBanglaDigits(orderTransport.toLocaleString('en-US'))}</span>
                         </div>
                       </td>
                       <td className="px-4 py-4 text-right">

@@ -508,30 +508,6 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
       .map(item => item.order);
   }, [allActiveOfficeOrders, archivedOrders]);
 
-  const ledgerGrandTotal = useMemo(() => {
-    return ledgerActiveOfficeOrders.reduce((sum: number, order: OfficeOrder) => {
-      let dutiesList = order.duties || [];
-      if (dutiesList.length === 0 && order.dutiesJson) {
-        try {
-          dutiesList = JSON.parse(order.dutiesJson);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      const totalDays = dutiesList.reduce((dSum: number, d: OrderDuty) => dSum + (Array.isArray(d.dates) ? d.dates.length : (d.days || 0)), 0);
-      let transportRate = 200;
-      let apyaonRate = 100;
-      if (order.category === 'HOLIDAY') {
-        transportRate = 250;
-        apyaonRate = 250;
-      } else if (order.category === 'NIGHT_SHIFT') {
-        transportRate = 400;
-        apyaonRate = 600;
-      }
-      return sum + (totalDays * (apyaonRate + transportRate));
-    }, 0);
-  }, [ledgerActiveOfficeOrders]);
-
   const billGroups = useMemo(() => {
     const groupsMap = new Map<string, OfficeOrder[]>();
     filteredBillMemos.forEach(o => {
@@ -968,8 +944,6 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
     let totalNightAllowance2 = 0; 
     let grandTotal = 0;
 
-    const targetCellObj = selectedCell !== 'all' ? cells.find(c => c.id.toString() === selectedCell) : null;
-
     ledgerActiveOfficeOrders.forEach(order => {
       if (selectedCategory !== 'all' && order.category !== selectedCategory) return;
       let dutiesList: OrderDuty[] = order.duties || [];
@@ -982,21 +956,6 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
       }
       
       dutiesList.forEach((d: OrderDuty) => {
-        if (targetCellObj) {
-          const empIdStr = d.employeeId ? d.employeeId.toString() : '';
-          const empName = d.employeeName || '';
-          const matched = employees.find(e => 
-            (e.id && e.id.toString() === empIdStr) || 
-            (e.bankId && e.bankId.toString() === empIdStr) || 
-            (e.name && e.name === empName)
-          );
-          if (matched) {
-            if (matched.cell?.name !== targetCellObj.name) return;
-          } else if (order.cellName && order.cellName !== 'All Cells' && order.cellName !== 'সকল সেল' && order.cellName !== targetCellObj.name) {
-            return;
-          }
-        }
-
         const days = Array.isArray(d.dates) ? d.dates.length : (d.days || 0);
         let tRate = 200;
         let aRate = 100;
@@ -1041,7 +1000,11 @@ export function useBillingData(currentUser: UserProfile | null | undefined) {
       totalNightAllowance2,
       grandTotal
     };
-  }, [ledgerActiveOfficeOrders, selectedCategory, selectedCell, cells, employees]);
+  }, [ledgerActiveOfficeOrders, selectedCategory]);
+
+  const ledgerGrandTotal = useMemo(() => {
+    return metrics.grandTotal;
+  }, [metrics.grandTotal]);
 
   const toggleSlot = (slotDate: string) => {
     setExpandedSlots(prev => ({
