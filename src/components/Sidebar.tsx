@@ -43,6 +43,7 @@ export default function Sidebar() {
   const [isMounted, setIsMounted] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [targetHref, setTargetHref] = useState('');
+  const [hoveredItem, setHoveredItem] = useState<{ name: string; top: number } | null>(null);
 
   useEffect(() => {
     setTimeout(() => {
@@ -77,7 +78,18 @@ export default function Sidebar() {
     };
   }, []);
 
+  useEffect(() => {
+    const clearTooltip = () => setHoveredItem(null);
+    window.addEventListener('scroll', clearTooltip, true);
+    window.addEventListener('resize', clearTooltip);
+    return () => {
+      window.removeEventListener('scroll', clearTooltip, true);
+      window.removeEventListener('resize', clearTooltip);
+    };
+  }, []);
+
   const toggleCollapse = () => {
+    setHoveredItem(null);
     const nextState = !isCollapsed;
     setIsCollapsed(nextState);
     localStorage.setItem('sidebar-collapsed', String(nextState));
@@ -113,22 +125,28 @@ export default function Sidebar() {
     [
       { name: isEn ? 'Leave Application' : 'ছুটির আবেদন', href: '/leave', icon: CalendarCheck }
     ],
-    // গ্রুপ ৩: লেট হলি নাইট অর্ডার, বিল প্রস্তুতকরণ, লাঞ্চ বিল শিট
+    // গ্রুপ ৩: লেট হলি নাইট অর্ডার, বিল প্রস্তুতকরণ
     [
       { name: isEn ? 'Duty Orders & Roster' : 'লেট হলি নাইট অর্ডার', href: '/roster', icon: CalendarRange },
-      { name: isEn ? 'Bill Preparation' : 'বিল প্রস্তুতকরণ', href: '/billing', icon: Receipt },
+      { name: isEn ? 'Bill Preparation' : 'বিল প্রস্তুতকরণ', href: '/billing', icon: Receipt }
+    ],
+    // গ্রুপ ৪: লাঞ্চ বিল শিট
+    [
       { name: isEn ? 'Lunch Bill Sheet' : 'লাঞ্চ বিল শিট', href: '/lunch-bill', icon: Utensils },
       ...(showClosingBill ? [{ name: isEn ? 'Closing Bill Sheet' : 'ক্লোজিং বিল শিট', href: '/closing-bill', icon: CalendarCheck }] : [])
     ],
-    // গ্রুপ ৪: হার্ডওয়্যার রিকুইজিশন, TAZ কমিটি ফরম, নথিপত্র আর্কাইভ, রিসাইকেল বিন, সাহায্য ও নির্দেশিকা
+    // গ্রুপ ৫: হার্ডওয়্যার রিকুইজিশন, TAZ কমিটি ফরম
     [
       { name: isEn ? 'Hardware Requisition' : 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive },
-      { name: isEn ? 'TAZ Committee Form' : 'TAZ কমিটি ফরম', href: '/taz-committee-form', icon: FileCheck },
+      { name: isEn ? 'TAZ Committee Form' : 'TAZ কমিটি ফরম', href: '/taz-committee-form', icon: FileCheck }
+    ],
+    // গ্রুপ ৬: নথিপত্র আর্কাইভ, রিসাইকেল বিন, সাহায্য ও নির্দেশিকা
+    [
       { name: isEn ? 'Documents Archive' : 'নথিপত্র আর্কাইভ', href: '/documents', icon: FileText },
       { name: isEn ? 'Recycle Bin' : 'রিসাইকেল বিন', href: '/trash', icon: Trash2 },
       { name: isEn ? 'Help & Guide' : 'সাহায্য ও নির্দেশিকা', href: '/help', icon: HelpCircle }
     ],
-    // গ্রুপ ৫: অ্যাডমিন স্পেসিফিক (যদি অ্যাডমিন হন)
+    // গ্রুপ ৭: অ্যাডমিন স্পেসিফিক (যদি অ্যাডমিন হন)
     ...(isAdmin ? [
       [
         { name: isEn ? 'Executive Panel' : 'নির্বাহী প্যানেল', href: '/executive', icon: Users },
@@ -251,6 +269,7 @@ export default function Sidebar() {
         <nav 
           role="navigation" 
           aria-label="Main navigation" 
+          onScroll={() => setHoveredItem(null)}
           className={`flex-1 py-3 overflow-y-auto no-scrollbar space-y-1 ${
           isMounted && isCollapsed ? 'px-2' : 'px-3'
         }`}>
@@ -269,7 +288,21 @@ export default function Sidebar() {
                     <Link 
                       key={item.href}
                       href={item.href}
+                      title={isMounted && isCollapsed ? item.name : undefined}
+                      onMouseEnter={(e) => {
+                        if (isMounted && isCollapsed) {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setHoveredItem({
+                            name: item.name,
+                            top: rect.top + rect.height / 2
+                          });
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredItem(null);
+                      }}
                       onClick={(e) => {
+                        setHoveredItem(null);
                         setIsOpen(false);
                         if (isActive) {
                           e.preventDefault();
@@ -311,13 +344,6 @@ export default function Sidebar() {
                       }`}>
                         {item.name}
                       </span>
-
-                      {/* Hover Tooltip for Collapsed Mode */}
-                      {isMounted && isCollapsed && (
-                        <div className="absolute left-16 opacity-0 pointer-events-none invisible group-hover:opacity-100 group-hover:visible group-hover:left-18 transition-all duration-200 whitespace-nowrap z-50 shadow-xl px-3 py-1.5 bg-slate-950/95 dark:bg-slate-950/95 border border-slate-800 text-white text-[11px] font-bold rounded-xl leading-none">
-                          {item.name}
-                        </div>
-                      )}
                     </Link>
                   );
                 })}
@@ -325,6 +351,17 @@ export default function Sidebar() {
             </div>
           ))}
         </nav>
+
+        {/* Floating Tooltip for Collapsed Sidebar on Desktop */}
+        {isMounted && isCollapsed && hoveredItem && (
+          <div 
+            className="hidden lg:flex fixed left-[84px] -translate-y-1/2 z-[9999] pointer-events-none px-3 py-1.5 bg-slate-900 dark:bg-slate-950 border border-slate-700/80 dark:border-slate-800 text-white text-[12px] font-bold rounded-lg shadow-xl whitespace-nowrap items-center animate-in fade-in duration-100"
+            style={{ top: hoveredItem.top }}
+          >
+            <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 dark:bg-slate-950 border-l border-b border-slate-700/80 dark:border-slate-800 rotate-45" />
+            <span className="relative z-10">{hoveredItem.name}</span>
+          </div>
+        )}
       </aside>
 
       {/* Styled Unsaved Changes Warning Modal */}
