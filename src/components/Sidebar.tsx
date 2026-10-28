@@ -91,66 +91,54 @@ export default function Sidebar() {
   const currentMonth = new Date().getMonth() + 1; // 1-12
   const showClosingBill = isAdmin || currentMonth === 6 || currentMonth === 12;
 
-  const rawSections = isEmployee ? [
-    {
-      title: isEn ? 'My Services' : 'আমার সার্ভিস',
-      items: [
-        { name: isEn ? 'My Portal' : 'আমার পোর্টাল', href: '/my-portal', icon: LayoutDashboard },
-        { name: isEn ? 'Analytics' : 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
-      ]
-    }
+  interface NavItem {
+    name: string;
+    href: string;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+  }
+
+  const rawGroups: NavItem[][] = isEmployee ? [
+    [
+      { name: isEn ? 'My Portal' : 'আমার পোর্টাল', href: '/my-portal', icon: LayoutDashboard },
+      { name: isEn ? 'Analytics' : 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
+    ]
   ] : [
-    {
-      title: isEn ? 'Dashboard' : 'ড্যাশবোর্ড',
-      items: [
-        { name: isEn ? 'Dashboard' : 'ড্যাশবোর্ড', href: '/dashboard', icon: LayoutDashboard },
-        { name: isEn ? 'Analytics' : 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp }
+    // গ্রুপ ১: ড্যাশবোর্ড, অ্যানালিটিক্স, কর্মকর্তাবৃন্দ
+    [
+      { name: isEn ? 'Dashboard' : 'ড্যাশবোর্ড', href: '/dashboard', icon: LayoutDashboard },
+      { name: isEn ? 'Analytics' : 'অ্যানালিটিক্স', href: '/analytics', icon: TrendingUp },
+      { name: isEn ? 'Employees' : 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users }
+    ],
+    // গ্রুপ ২: ছুটির আবেদন
+    [
+      { name: isEn ? 'Leave Application' : 'ছুটির আবেদন', href: '/leave', icon: CalendarCheck }
+    ],
+    // গ্রুপ ৩: লেট হলি নাইট অর্ডার, বিল প্রস্তুতকরণ, লাঞ্চ বিল শিট
+    [
+      { name: isEn ? 'Duty Orders & Roster' : 'লেট হলি নাইট অর্ডার', href: '/roster', icon: CalendarRange },
+      { name: isEn ? 'Bill Preparation' : 'বিল প্রস্তুতকরণ', href: '/billing', icon: Receipt },
+      { name: isEn ? 'Lunch Bill Sheet' : 'লাঞ্চ বিল শিট', href: '/lunch-bill', icon: Utensils },
+      ...(showClosingBill ? [{ name: isEn ? 'Closing Bill Sheet' : 'ক্লোজিং বিল শিট', href: '/closing-bill', icon: CalendarCheck }] : [])
+    ],
+    // গ্রুপ ৪: হার্ডওয়্যার রিকুইজিশন, TAZ কমিটি ফরম, নথিপত্র আর্কাইভ, রিসাইকেল বিন, সাহায্য ও নির্দেশিকা
+    [
+      { name: isEn ? 'Hardware Requisition' : 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive },
+      { name: isEn ? 'TAZ Committee Form' : 'TAZ কমিটি ফরম', href: '/taz-committee-form', icon: FileCheck },
+      { name: isEn ? 'Documents Archive' : 'নথিপত্র আর্কাইভ', href: '/documents', icon: FileText },
+      { name: isEn ? 'Recycle Bin' : 'রিসাইকেল বিন', href: '/trash', icon: Trash2 },
+      { name: isEn ? 'Help & Guide' : 'সাহায্য ও নির্দেশিকা', href: '/help', icon: HelpCircle }
+    ],
+    // গ্রুপ ৫: অ্যাডমিন স্পেসিফিক (যদি অ্যাডমিন হন)
+    ...(isAdmin ? [
+      [
+        { name: isEn ? 'Executive Panel' : 'নির্বাহী প্যানেল', href: '/executive', icon: Users },
+        { name: isEn ? 'Audit Log' : 'অডিট লগ', href: '/audit', icon: ClipboardList },
+        { name: isEn ? 'Backup & Restore' : 'ব্যাকআপ ও পুনরুদ্ধার', href: '/backup', icon: Database }
       ]
-    },
-    {
-      title: isEn ? 'Administration' : 'প্রশাসনিক কার্যক্রম',
-      items: [
-        { name: isEn ? 'Employees' : 'কর্মকর্তাবৃন্দ', href: '/employees', icon: Users },
-        { name: isEn ? 'Duty Orders & Roster' : 'লেট হলি নাইট অর্ডার', href: '/roster', icon: CalendarRange },
-        { name: isEn ? 'Documents Archive' : 'নথিপত্র আর্কাইভ', href: '/documents', icon: FileText }
-      ]
-    },
-    {
-      title: isEn ? 'Bills & Allowances' : 'বিল ও ভাতাসমূহ',
-      items: [
-        { name: isEn ? 'Bill Preparation' : 'বিল প্রস্তুতকরণ', href: '/billing', icon: Receipt },
-        { name: isEn ? 'Lunch Bill Sheet' : 'লাঞ্চ বিল শিট', href: '/lunch-bill', icon: Utensils },
-        ...(showClosingBill ? [{ name: isEn ? 'Closing Bill Sheet' : 'ক্লোজিং বিল শিট', href: '/closing-bill', icon: CalendarCheck }] : [])
-      ]
-    },
-    {
-      title: isEn ? 'Applications' : 'আবেদনপত্র',
-      items: [
-        { name: isEn ? 'Leave Application' : 'ছুটির আবেদন', href: '/leave', icon: CalendarCheck },
-        { name: isEn ? 'Hardware Requisition' : 'হার্ডওয়্যার রিকুইজিশন', href: '/hardware-requisition', icon: HardDrive },
-        { name: isEn ? 'TAZ Committee Form' : 'TAZ কমিটি ফরম', href: '/taz-committee-form', icon: FileCheck }
-      ]
-    },
-    {
-      title: isEn ? 'System & Settings' : 'সিস্টেম/সেটিংস',
-      items: [
-        ...(isAdmin ? [
-          { name: isEn ? 'Executive Panel' : 'নির্বাহী প্যানেল', href: '/executive', icon: Users },
-          { name: isEn ? 'Audit Log' : 'অডিট লগ', href: '/audit', icon: ClipboardList },
-          { name: isEn ? 'Backup & Restore' : 'ব্যাকআপ ও পুনরুদ্ধার', href: '/backup', icon: Database }
-        ] : [])
-      ]
-    },
-    {
-      title: isEn ? 'Other Tools' : 'অন্যান্য',
-      items: [
-        { name: isEn ? 'Recycle Bin' : 'রিসাইকেল বিন', href: '/trash', icon: Trash2 },
-        { name: isEn ? 'Help & Guide' : 'সাহায্য ও নির্দেশিকা', href: '/help', icon: HelpCircle }
-      ]
-    }
+    ] : [])
   ];
 
-  const sections = rawSections.filter(section => section.items.length > 0);
+  const menuGroups = rawGroups.filter(group => group.length > 0);
 
   return (
     <>
@@ -259,42 +247,27 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Sidebar Navigation Links with Enhanced Group Spacing */}
+        {/* Sidebar Navigation Links (No category titles, clean group dividers) */}
         <nav 
           role="navigation" 
           aria-label="Main navigation" 
-          className={`flex-1 py-4 overflow-y-auto no-scrollbar space-y-4 ${
+          className={`flex-1 py-3 overflow-y-auto no-scrollbar space-y-1 ${
           isMounted && isCollapsed ? 'px-2' : 'px-3'
         }`}>
-          {sections.map((section, secIdx) => (
-            <div key={section.title} className="space-y-1">
-              {/* Group Title / Divider */}
-              <div className="transition-all duration-300">
-                {isMounted && isCollapsed ? (
-                  secIdx > 0 ? (
-                    <div className="border-t border-slate-200/60 dark:border-slate-800 my-2 mx-3" />
-                  ) : (
-                    <div className="h-1" />
-                  )
-                ) : (
-                  section.items.length > 0 && (
-                    <div className={secIdx > 0 ? 'pt-3 pb-1' : 'pt-1 pb-1'}>
-                      <h3 className="px-3 text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase whitespace-nowrap flex items-center gap-1.5">
-                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
-                        <span>{section.title}</span>
-                      </h3>
-                    </div>
-                  )
-                )}
-              </div>
+          {menuGroups.map((group, groupIdx) => (
+            <div key={groupIdx} className="space-y-0.5">
+              {/* Subtle divider between item groups */}
+              {groupIdx > 0 && (
+                <div className="my-2 mx-2 border-t border-slate-200/60 dark:border-slate-800/60" />
+              )}
               
               <div className="space-y-0.5" role="group" aria-expanded={!isCollapsed}>
-                {section.items.map((item) => {
+                {group.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
                   return (
                     <Link 
-                      key={item.name}
+                      key={item.href}
                       href={item.href}
                       onClick={(e) => {
                         setIsOpen(false);
