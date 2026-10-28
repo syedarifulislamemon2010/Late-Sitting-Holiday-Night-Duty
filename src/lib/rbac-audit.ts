@@ -8,14 +8,16 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
  * Route-to-Permission mapping for RBAC audit assessment.
  * Maps method + canonical route prefix to the existing PermissionAction.
  */
-const ROUTE_PERMISSION_MAP: Record<string, PermissionAction> = {
+export const ROUTE_PERMISSION_MAP: Record<string, PermissionAction> = {
   // Employee permissions
+  'GET /api/employees': 'VIEW_EMPLOYEES',
   'POST /api/employees': 'CREATE_EMPLOYEE',
   'POST /api/employees/parse-image': 'CREATE_EMPLOYEE',
   'PUT /api/employees': 'UPDATE_EMPLOYEE',
   'DELETE /api/employees': 'DELETE_EMPLOYEE',
 
   // Duty permissions
+  'GET /api/duties': 'VIEW_DUTIES',
   'POST /api/duties': 'CREATE_DUTY',
   'POST /api/duties/check-conflicts': 'CREATE_DUTY',
   'POST /api/duties/parse-roster-image': 'CREATE_DUTY',
@@ -23,14 +25,94 @@ const ROUTE_PERMISSION_MAP: Record<string, PermissionAction> = {
   'DELETE /api/duties': 'DELETE_DUTY',
 
   // Office Order permissions
+  'GET /api/office-orders': 'VIEW_OFFICE_ORDERS',
+  'GET /api/office-orders/next-ref': 'VIEW_OFFICE_ORDERS',
+  'GET /api/office-orders/raw': 'VIEW_OFFICE_ORDERS',
   'POST /api/office-orders': 'CREATE_OFFICE_ORDER',
   'PUT /api/office-orders': 'UPDATE_OFFICE_ORDER',
   'DELETE /api/office-orders': 'DELETE_OFFICE_ORDER',
 
   // User management permissions
+  'GET /api/users': 'VIEW_USERS',
   'POST /api/users': 'MANAGE_USERS',
   'PUT /api/users': 'MANAGE_USERS',
   'DELETE /api/users': 'MANAGE_USERS',
+
+  // Audit and backup
+  'GET /api/audit': 'VIEW_AUDIT',
+  'GET /api/backup': 'VIEW_BACKUP',
+  'POST /api/backup': 'MANAGE_BACKUP',
+
+  // Cells management
+  'GET /api/cells': 'VIEW_CELLS',
+  'POST /api/cells': 'MANAGE_CELLS',
+  'PUT /api/cells': 'MANAGE_CELLS',
+  'DELETE /api/cells': 'MANAGE_CELLS',
+
+  // Executives management
+  'GET /api/executives': 'VIEW_EXECUTIVES',
+  'POST /api/executives': 'MANAGE_EXECUTIVES',
+  'PUT /api/executives': 'MANAGE_EXECUTIVES',
+  'DELETE /api/executives': 'MANAGE_EXECUTIVES',
+
+  // Holidays
+  'GET /api/holidays': 'VIEW_HOLIDAYS',
+  'POST /api/holidays': 'MANAGE_HOLIDAYS',
+  'DELETE /api/holidays': 'MANAGE_HOLIDAYS',
+
+  // Document generation & print preview
+  'POST /api/documents/generate-bill-memo': 'GENERATE_DOCUMENTS',
+  'POST /api/documents/generate-closing-bill': 'GENERATE_DOCUMENTS',
+  'POST /api/documents/generate-employee-list': 'GENERATE_DOCUMENTS',
+  'POST /api/documents/generate-lunch-bill': 'GENERATE_DOCUMENTS',
+  'POST /api/documents/generate-office-order': 'GENERATE_DOCUMENTS',
+
+  // Administrative uploaded documents
+  'GET /api/documents': 'VIEW_DOCUMENTS',
+  'DELETE /api/documents': 'DELETE_DOCUMENTS',
+
+  // Manual documents
+  'GET /api/manual-documents': 'VIEW_MANUAL_DOCUMENTS',
+  'GET /api/manual-documents/raw': 'VIEW_MANUAL_DOCUMENTS',
+  'POST /api/manual-documents': 'MANAGE_MANUAL_DOCUMENTS',
+  'PUT /api/manual-documents': 'MANAGE_MANUAL_DOCUMENTS',
+  'DELETE /api/manual-documents': 'MANAGE_MANUAL_DOCUMENTS',
+
+  // Leaves management
+  'GET /api/leaves': 'VIEW_LEAVES',
+  'GET /api/leaves/balance': 'VIEW_LEAVES',
+  'POST /api/leaves': 'MANAGE_LEAVES',
+  'PUT /api/leaves': 'MANAGE_LEAVES',
+  'DELETE /api/leaves': 'MANAGE_LEAVES',
+  'POST /api/leaves/log-resolve-failed': 'MANAGE_LEAVES',
+
+  // Lunch bills
+  'GET /api/lunch-bills': 'VIEW_LUNCH_BILLS',
+  'GET /api/lunch-bills/leave-days': 'VIEW_LUNCH_BILLS',
+  'POST /api/lunch-bills': 'MANAGE_LUNCH_BILLS',
+
+  // Hardware requisitions
+  'GET /api/hardware-requisitions': 'VIEW_HARDWARE_REQUISITIONS',
+  'POST /api/hardware-requisitions': 'MANAGE_HARDWARE_REQUISITIONS',
+  'DELETE /api/hardware-requisitions': 'MANAGE_HARDWARE_REQUISITIONS',
+
+  // TAZ committee forms
+  'GET /api/taz-committee-forms': 'VIEW_TAZ_COMMITTEE_FORMS',
+  'POST /api/taz-committee-forms': 'MANAGE_TAZ_COMMITTEE_FORMS',
+  'PUT /api/taz-committee-forms': 'MANAGE_TAZ_COMMITTEE_FORMS',
+  'DELETE /api/taz-committee-forms': 'MANAGE_TAZ_COMMITTEE_FORMS',
+
+  // Recycle bin / Trash
+  'GET /api/trash': 'VIEW_TRASH',
+  'POST /api/trash': 'MANAGE_TRASH',
+
+  // Profile & general user features
+  'GET /api/profile': 'VIEW_PROFILE',
+  'PUT /api/profile': 'UPDATE_PROFILE',
+  'GET /api/analytics': 'VIEW_ANALYTICS',
+  'GET /api/my-portal': 'VIEW_MY_PORTAL',
+  'GET /api/notifications': 'VIEW_NOTIFICATIONS',
+  'GET /api/search': 'SEARCH_RECORDS',
 };
 
 // In-memory cache to suppress duplicate audit logs within 1 minute

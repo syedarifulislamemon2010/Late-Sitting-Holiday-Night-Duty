@@ -49,14 +49,14 @@ describe('auditRbacRequest Evaluator & Comprehensive Suite', () => {
 
   it('logs unmapped route once per method+route via logger.info without creating new actions', () => {
     const infoSpy = vi.spyOn(logger, 'info');
-    const res1 = auditRbacRequest('GET', '/api/cells', { role: 'USER', username: 'user1' });
+    const res1 = auditRbacRequest('GET', '/api/unmapped-endpoint-sample', { role: 'USER', username: 'user1' });
     expect(res1.allowed).toBe(true);
     expect(res1.unmapped).toBe(true);
     expect(infoSpy).toHaveBeenCalledTimes(1);
-    expect(infoSpy).toHaveBeenCalledWith("[RBAC AUDIT] unmapped route: method='GET' path='/api/cells'");
+    expect(infoSpy).toHaveBeenCalledWith("[RBAC AUDIT] unmapped route: method='GET' path='/api/unmapped-endpoint-sample'");
 
     // Second call should NOT log again
-    const res2 = auditRbacRequest('GET', '/api/cells', { role: 'USER', username: 'user2' });
+    const res2 = auditRbacRequest('GET', '/api/unmapped-endpoint-sample', { role: 'USER', username: 'user2' });
     expect(res2.allowed).toBe(true);
     expect(infoSpy).toHaveBeenCalledTimes(1);
   });
