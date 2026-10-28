@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useTheme } from 'next-themes';
 
 import NotificationCenter from '@/components/NotificationCenter';
 
@@ -29,7 +30,8 @@ interface UserSession {
 export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
+  const [themeMounted, setThemeMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load user from localStorage
@@ -52,31 +54,23 @@ export default function Navbar() {
     return () => window.removeEventListener('storage', loadUser);
   }, []);
 
-  // Theme Syncing - checks and sets dark mode class
+  // Instantaneous Theme Sync via next-themes
   useEffect(() => {
-    const storedTheme = localStorage.getItem('theme');
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldBeDark = storedTheme === 'dark' || (!storedTheme && systemDark);
-    
-    if (shouldBeDark) {
-      document.documentElement.classList.add('dark');
-      setIsDark(true);
-    } else {
-      document.documentElement.classList.remove('dark');
-      setIsDark(false);
-    }
+    setThemeMounted(true);
   }, []);
 
+  const isDark = themeMounted ? resolvedTheme === 'dark' : false;
+
   const toggleTheme = () => {
-    const nextDark = !isDark;
-    setIsDark(nextDark);
-    if (nextDark) {
+    const isCurrentlyDark = document.documentElement.classList.contains('dark');
+    const nextTheme = isCurrentlyDark ? 'light' : 'dark';
+    // Instant DOM class toggle in 0 nanoseconds (zero transition lag)
+    if (nextTheme === 'dark') {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
     }
+    setTheme(nextTheme);
   };
 
   // Close dropdown on click outside

@@ -11,6 +11,7 @@ import { LayoutProvider } from "@/context/LayoutContext";
 import { TopProgressBar } from "@/components/TopProgressBar";
 
 import { LanguageProvider } from "@/context/LanguageContext";
+import { ThemeProvider } from "@/context/ThemeProvider";
 import { ToastProvider } from "@/context/ToastContext";
 import PageTransition from "@/components/PageTransition";
 import SessionExpiryWarning from "@/components/SessionExpiryWarning";
@@ -33,8 +34,8 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি পোর্টাল",
-  description: "সরকারি অফিস আদেশ ও আপ্যায়ন বিল অটোমেশন পোর্টাল",
+  title: "লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি ছুটির আবেদন পোর্টাল - জনতা ব্যাংক পিএলসি.",
+  description: "জনতা ব্যাংক পিএলসি. - লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি এবং ছুটির আবেদন পোর্টাল",
   icons: {
     icon: "/janata-bank-logo-real.svg",
   }
@@ -55,6 +56,17 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                // 0. Instant 0-nanosecond theme activation before any rendering
+                try {
+                  var t = localStorage.getItem('theme');
+                  var d = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (d) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch(_) {}
+
                 // 1. Native DOM method backups
                 var origRemoveAttr = Element.prototype.removeAttribute;
                 var origHasAttr = Element.prototype.hasAttribute;
@@ -332,11 +344,12 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300" suppressHydrationWarning={true}>
+      <body className="min-h-screen flex flex-col bg-background text-foreground" suppressHydrationWarning={true}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:shadow-lg">
           মূল বিষয়বস্তুতে যান
         </a>
         <TopProgressBar />
+        <ThemeProvider>
         <LanguageProvider>
           <ProfileProvider>
             <LayoutProvider>
@@ -366,6 +379,7 @@ export default function RootLayout({
           </LayoutProvider>
         </ProfileProvider>
       </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -161,9 +161,10 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Top Navigation */}
-      <div className="no-print lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs">
+      <div className="no-print lg:hidden flex items-center justify-between px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs">
         <Link 
           href={isEmployee ? "/my-portal" : "/dashboard"} 
+          prefetch={true}
           onClick={(e) => {
             if (typeof window !== 'undefined' && (window as Window & { __unsavedChanges?: boolean }).__unsavedChanges) {
               e.preventDefault();
@@ -171,16 +172,21 @@ export default function Sidebar() {
               setShowWarningModal(true);
             }
           }}
-          className="flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
+          className="flex items-center gap-2.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded-lg min-w-0"
         >
-          <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={28} height={28} className="shrink-0 object-contain" />
-          <h1 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-tight">
-            {isEn ? 'LHN Duty Portal' : 'লেট সিটিং, ছুটি ও নাইট ডিউটি পোর্টাল'}
-          </h1>
+          <Image src="/janata-bank-logo-real.svg" alt="Janata Bank Logo" width={34} height={34} priority className="shrink-0 object-contain" />
+          <div className="flex flex-col min-w-0">
+            <span className="font-black text-slate-900 dark:text-slate-100 text-[13px] leading-tight truncate font-sans">
+              জনতা ব্যাংক পিএলসি.
+            </span>
+            <span className="font-bold text-[#0B5E9E] dark:text-sky-400 text-[10px] leading-tight truncate">
+              {isEn ? 'Late Sitting, Holiday & Night Duty Leave Portal' : 'লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি ছুটির আবেদন পোর্টাল'}
+            </span>
+          </div>
         </Link>
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer"
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer shrink-0"
           aria-label="Toggle navigation menu"
         >
           {isOpen ? <X size={20} /> : <Menu size={20} />}
@@ -215,54 +221,83 @@ export default function Sidebar() {
           <ChevronLeft size={14} className="shrink-0" />
         </button>
 
-        {/* Sidebar Header Logo — Compact 2-Line Header */}
-        <div className={`flex items-center py-4 border-b border-slate-200/60 dark:border-slate-800/60 ${
-          isMounted && isCollapsed ? 'lg:px-3 lg:justify-center' : 'px-5 justify-between'
+        {/* Sidebar Header Logo — Exactly matching user specification & screenshot */}
+        <div className={`border-b border-slate-200/60 dark:border-slate-800/60 ${
+          isMounted && isCollapsed ? 'py-4 px-2 flex justify-center' : 'py-3.5 px-4'
         }`}>
-          <Link 
-            href={isEmployee ? "/my-portal" : "/"} 
-            onClick={(e) => {
-              const target = isEmployee ? '/my-portal' : '/';
-              if (pathname === target) {
-                e.preventDefault();
-                return;
-              }
-              if (typeof window !== 'undefined' && (window as Window & { __unsavedChanges?: boolean }).__unsavedChanges) {
-                e.preventDefault();
-                setTargetHref(target);
-                setShowWarningModal(true);
-              }
-            }}
-            className="flex items-center group cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg w-full gap-2.5"
-          >
-            <Image 
-              src="/janata-bank-logo-real.svg" 
-              alt="Janata Bank Logo" 
-              width={34}
-              height={34}
-              className="shrink-0 object-contain transition-transform group-hover:scale-105" 
-            />
-            <div className={`transition-all duration-200 overflow-hidden ${
-              isMounted && isCollapsed 
-                ? 'opacity-0 w-0 ml-0 whitespace-nowrap' 
-                : 'opacity-100 w-full whitespace-normal'
-            }`}>
-              <h1 className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-[13px] leading-tight font-sans">
-                {isEn ? 'LHN Duty Portal' : 'লেট সিটিং, ছুটি ও নাইট ডিউটি পোর্টাল'}
-              </h1>
-              <p className="text-[10px] font-extrabold text-primary dark:text-sky-400 uppercase tracking-wider mt-0.5 font-sans">
-                {isEn ? 'Janata Bank PLC.' : 'জনতা ব্যাংক পিএলসি.'}
-              </p>
-            </div>
-          </Link>
-          
-          <button 
-            onClick={() => setIsOpen(false)}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-pointer"
-            aria-label="Close menu"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-start justify-between w-full">
+            <Link 
+              href={isEmployee ? "/my-portal" : "/"} 
+              prefetch={true}
+              onClick={(e) => {
+                const target = isEmployee ? '/my-portal' : '/';
+                if (pathname === target) {
+                  e.preventDefault();
+                  return;
+                }
+                if (typeof window !== 'undefined' && (window as Window & { __unsavedChanges?: boolean }).__unsavedChanges) {
+                  e.preventDefault();
+                  setTargetHref(target);
+                  setShowWarningModal(true);
+                }
+              }}
+              className="group cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-xl w-full"
+            >
+              {isMounted && isCollapsed ? (
+                /* Collapsed View: Large Centered JB Logo */
+                <div className="flex justify-center w-full py-1">
+                  <Image 
+                    src="/janata-bank-logo-real.svg" 
+                    alt="Janata Bank Logo" 
+                    width={40}
+                    height={40}
+                    priority
+                    className="shrink-0 object-contain transition-transform group-hover:scale-105" 
+                  />
+                </div>
+              ) : (
+                /* Expanded View: Exactly matching user screenshot */
+                <div className="flex flex-col gap-2">
+                  {/* Top Row: Large Logo + Janata Bank Name */}
+                  <div className="flex items-center gap-3">
+                    <Image 
+                      src="/janata-bank-logo-real.svg" 
+                      alt="Janata Bank Logo" 
+                      width={44}
+                      height={44}
+                      priority
+                      className="shrink-0 object-contain transition-transform group-hover:scale-105" 
+                    />
+                    <div className="flex flex-col text-left leading-tight">
+                      <span className="font-black text-slate-900 dark:text-slate-50 text-[17px] sm:text-[18px] tracking-tight font-sans">
+                        জনতা ব্যাংক পিএলসি.
+                      </span>
+                      <span className="text-[11px] font-extrabold text-[#00A2E8] dark:text-[#38BDF8] uppercase tracking-wider mt-0.5 font-sans">
+                        JANATA BANK PLC
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Row: Portal Name in Blue Accent (As in screenshot) */}
+                  <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800/50 text-left">
+                    <h1 className="font-extrabold text-[#0B5E9E] dark:text-sky-400 text-[12px] sm:text-[12.5px] leading-snug font-sans">
+                      {isEn ? 'Late Sitting, Holiday & Night Duty Leave Portal' : 'লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি ছুটির আবেদন পোর্টাল'}
+                    </h1>
+                  </div>
+                </div>
+              )}
+            </Link>
+            
+            {!isCollapsed && (
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-pointer ml-1"
+                aria-label="Close menu"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Sidebar Navigation Links (No category titles, clean group dividers) */}
@@ -288,6 +323,7 @@ export default function Sidebar() {
                     <Link 
                       key={item.href}
                       href={item.href}
+                      prefetch={true}
                       title={isMounted && isCollapsed ? item.name : undefined}
                       onMouseEnter={(e) => {
                         if (isMounted && isCollapsed) {

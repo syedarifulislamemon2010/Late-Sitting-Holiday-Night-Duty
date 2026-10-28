@@ -8,7 +8,7 @@ export function TopProgressBar() {
 
   useEffect(() => {
     setLoading(true);
-    const t = setTimeout(() => setLoading(false), 400);
+    const t = setTimeout(() => setLoading(false), 150);
     return () => clearTimeout(t);
   }, [pathname]);
 
