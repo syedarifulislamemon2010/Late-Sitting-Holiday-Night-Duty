@@ -31,8 +31,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'not_found', message: 'Document not found in database' }, { status: 404 });
     }
 
-    // Role-based visibility check: regular users can only access documents marked visible to users
-    if (user.role === 'USER' && !doc.isVisibleToUsers) {
+    // Role-based visibility check: Admin can access all; non-admin users can access documents they uploaded or documents marked visible to users
+    const canAccess = user.role === 'ADMIN' || doc.uploadedBy === user.username || Boolean(doc.isVisibleToUsers);
+    if (!canAccess) {
       return NextResponse.json({ error: 'forbidden', message: 'এই ডকুমেন্টটি দেখার অনুমতি আপনার নেই।' }, { status: 403 });
     }
 
@@ -40,7 +41,8 @@ export async function GET(request: Request) {
     const publicDir = path.join(process.cwd(), 'public');
     const cleanRelative = (doc.filePath || '').replace(/^[/\\]+/, '');
     const absolutePath = path.resolve(publicDir, cleanRelative);
-    if (!absolutePath.startsWith(publicDir + path.sep)) {
+    const rel = path.relative(publicDir, absolutePath);
+    if (rel.startsWith('..') || path.isAbsolute(rel) || (!absolutePath.startsWith(publicDir + path.sep) && absolutePath !== publicDir)) {
       return NextResponse.json({ error: 'forbidden', message: 'অবৈধ ফাইল পাথ' }, { status: 403 });
     }
 

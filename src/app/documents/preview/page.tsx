@@ -85,29 +85,37 @@ function PreviewContent() {
         let bytes: Uint8Array | null = null;
         try {
           if (id) {
-            // Load base64 encoded PDF via JSON endpoint (bypasses IDM completely)
-            const res = await fetch(`/api/manual-documents/raw?id=${id}`);
-            if (!res.ok) throw new Error(`সার্ভার স্ট্যাটাস: ${res.status}`);
-            
-            const json = await res.json();
-            if (!json.success || !json.data) {
-              throw new Error(json.message || 'ফাইল কন্টেন্ট পেতে ব্যর্থ হয়েছে');
+            try {
+              // Load base64 encoded PDF via JSON endpoint (bypasses IDM completely)
+              const res = await fetch(`/api/manual-documents/raw?id=${id}`);
+              if (res.ok) {
+                const json = await res.json();
+                if (json.success && json.data) {
+                  const binaryString = window.atob(json.data);
+                  const len = binaryString.length;
+                  bytes = new Uint8Array(len);
+                  for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                  }
+                }
+              } else {
+                logger.warn(`Failed to fetch raw doc id ${id}: status ${res.status}`);
+              }
+            } catch (rawErr) {
+              logger.warn('Failed to retrieve raw document by id, falling back to file URL:', rawErr);
             }
+          }
 
-            const binaryString = window.atob(json.data);
-            const len = binaryString.length;
-            bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-              bytes[i] = binaryString.charCodeAt(i);
-            }
-          } else if (file) {
+          if (!bytes && file) {
             // Fallback: fetch raw PDF file as arrayBuffer
             const res = await fetch(file);
             if (!res.ok) throw new Error(`সার্ভার স্ট্যাটাস: ${res.status}`);
             const buffer = await res.arrayBuffer();
             bytes = new Uint8Array(buffer);
-          } else {
-            throw new Error('কোনো বৈধ ফাইল লিংক বা আইডি পাওয়া যায়নি');
+          }
+
+          if (!bytes) {
+            throw new Error('নথি লোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে ফাইলটি ডাউনলোড করে প্রিন্ট করুন।');
           }
 
           if (!active) return;
@@ -175,22 +183,31 @@ function PreviewContent() {
       // Handle Image previews
       const loadImage = async () => {
         try {
+          let loaded = false;
           if (id) {
-            const res = await fetch(`/api/manual-documents/raw?id=${id}`);
-            if (!res.ok) throw new Error(`সার্ভার স্ট্যাটাস: ${res.status}`);
-            
-            const json = await res.json();
-            if (!json.success || !json.data) {
-              throw new Error(json.message || 'ছবির কন্টেন্ট পেতে ব্যর্থ হয়েছে');
+            try {
+              const res = await fetch(`/api/manual-documents/raw?id=${id}`);
+              if (res.ok) {
+                const json = await res.json();
+                if (json.success && json.data) {
+                  if (!active) return;
+                  setImgSrc(`data:${json.mimeType || 'image/jpeg'};base64,${json.data}`);
+                  loaded = true;
+                }
+              }
+            } catch (rawErr) {
+              logger.warn('Failed to load raw image by id:', rawErr);
             }
-            
-            if (!active) return;
-            setImgSrc(`data:${json.mimeType || 'image/jpeg'};base64,${json.data}`);
-          } else if (file) {
+          }
+
+          if (!loaded && file) {
             if (!active) return;
             setImgSrc(file);
-          } else {
-            throw new Error('কোনো বৈধ ফাইল লিংক বা আইডি পাওয়া যায়নি');
+            loaded = true;
+          }
+
+          if (!loaded) {
+            throw new Error('ছবিটি লোড করতে ব্যর্থ হয়েছে।');
           }
         } catch (err: any) {
           if (!active) return;
@@ -314,6 +331,43 @@ function PreviewContent() {
         <p style={{ color: '#64748b', fontSize: '14px', marginTop: '12px' }}>
           অনুগ্রহ করে প্রিভিউ উইন্ডোটি বন্ধ করে ডাউনলোড বাটনে ক্লিক করুন।
         </p>
+        {file && (
+          <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '12px' }}>
+            <a
+              href={file}
+              download={`${name}.${type.replace(/^\./, '')}`}
+              style={{
+                background: '#4f46e5',
+                color: '#ffffff',
+                textDecoration: 'none',
+                padding: '8px 18px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '13px',
+                display: 'inline-flex',
+                alignItems: 'center'
+              }}
+            >
+              ডাউনলোড করুন
+            </a>
+            <button
+              type="button"
+              onClick={() => window.close()}
+              style={{
+                background: '#64748b',
+                color: '#ffffff',
+                border: 'none',
+                padding: '8px 18px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '13px'
+              }}
+            >
+              উইন্ডো বন্ধ করুন
+            </button>
+          </div>
+        )}
       </div>
     );
   }

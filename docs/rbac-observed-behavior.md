@@ -55,7 +55,7 @@
 | ৩৫ | `GET` | `/api/lunch-bills/leave-days` | `src/app/api/lunch-bills/leave-days/route.ts:7` | সেশন আবশ্যক; মাসের ছুটির দিনের অনুপস্থিতি গণনা করে | `ADMIN`, `USER` | `VIEW_LUNCH_BILLS` |
 | ৩৬ | `GET` | `/api/lunch-bills` | `src/app/api/lunch-bills/route.ts:36` | সেশন আবশ্যক; নন-অ্যাডমিন অনুমোদিত সেলে সীমাবদ্ধ | `ADMIN`, `USER` | `VIEW_LUNCH_BILLS` |
 | ৩৭ | `POST` | `/api/lunch-bills` | `src/app/api/lunch-bills/route.ts:142` | সেশন আবশ্যক; নন-অ্যাডমিনের সেল না থাকলে ৪০৩ ফরবিডেন | `ADMIN`, `USER` | `MANAGE_LUNCH_BILLS` |
-| ৩৮ | `GET` | `/api/manual-documents/raw` | `src/app/api/manual-documents/raw/route.ts:11` | সেশন আবশ্যক; `user.role === 'USER' && !doc.isVisibleToUsers` হলে ৪০৩ | `ADMIN`, `USER` | `VIEW_MANUAL_DOCUMENTS` |
+| ৩৮ | `GET` | `/api/manual-documents/raw` | `src/app/api/manual-documents/raw/route.ts:11` | সেশন আবশ্যক; `user.role !== 'ADMIN' && doc.uploadedBy !== user.username && !doc.isVisibleToUsers` হলে ৪০৩ | `ADMIN`, `USER` | `VIEW_MANUAL_DOCUMENTS` |
 | ৩৯ | `GET` | `/api/manual-documents` | `src/app/api/manual-documents/route.ts:14` | সেশন আবশ্যক; USER নিজ আপলোড বা দৃশ্যমান ডকুমেন্ট দেখে | `ADMIN`, `USER` | `VIEW_MANUAL_DOCUMENTS` |
 | ৪০ | `POST` | `/api/manual-documents` | `src/app/api/manual-documents/route.ts:44` | সেশন আবশ্যক; ফাইল আপলোড করা যায় | `ADMIN`, `USER` | `MANAGE_MANUAL_DOCUMENTS` |
 | ৪১ | `PUT` | `/api/manual-documents` | `src/app/api/manual-documents/route.ts:127` | সেশন আবশ্যক; `user.role !== 'ADMIN' && doc.uploadedBy !== user.username` হলে ৪০৩ | `ADMIN`, `USER` | `MANAGE_MANUAL_DOCUMENTS` |
