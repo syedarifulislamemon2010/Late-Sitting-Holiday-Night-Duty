@@ -4,6 +4,43 @@ import logger from '@/lib/logger';
 import { Suspense, useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+const loadPdfJs = (): Promise<any> => {
+  if (typeof window === 'undefined') return Promise.reject(new Error('Window unavailable'));
+  if ((window as any).pdfjsLib) {
+    return Promise.resolve((window as any).pdfjsLib);
+  }
+  return new Promise((resolve, reject) => {
+    let script = document.querySelector('script[data-pdfjs="local"]') as HTMLScriptElement;
+    if (script) {
+      if ((window as any).pdfjsLib) {
+        return resolve((window as any).pdfjsLib);
+      }
+      script.addEventListener('load', () => resolve((window as any).pdfjsLib));
+      script.addEventListener('error', (e) => reject(e));
+      return;
+    }
+    script = document.createElement('script');
+    script.setAttribute('data-pdfjs', 'local');
+    script.src = '/vendor/pdfjs/pdf.min.js';
+    script.async = true;
+    script.onload = () => {
+      const pdfjsLib = (window as any).pdfjsLib;
+      if (pdfjsLib) {
+        try {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
+        } catch {
+          // ignore if setting workerSrc throws
+        }
+        resolve(pdfjsLib);
+      } else {
+        reject(new Error('pdfjsLib is undefined'));
+      }
+    };
+    script.onerror = (err) => reject(err);
+    document.head.appendChild(script);
+  });
+};
+
 function PreviewContent() {
   const searchParams = useSearchParams();
   const file = searchParams.get('file');
@@ -18,7 +55,20 @@ function PreviewContent() {
   const [error, setError] = useState<string | null>(null);
   const [pages, setPages] = useState<string[]>([]);
   const [imgSrc, setImgSrc] = useState<string | null>(null);
-  const pdfjsLoaded = useRef(false);
+  const [fallbackPdfUrl, setFallbackPdfUrl] = useState<string | null>(null);
+
+  const fallbackUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    fallbackUrlRef.current = fallbackPdfUrl;
+  }, [fallbackPdfUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (fallbackUrlRef.current) {
+        URL.revokeObjectURL(fallbackUrlRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isOfficeOrderOrBill) {
@@ -26,33 +76,22 @@ function PreviewContent() {
       return;
     }
 
+    let active = true;
     const cleanType = type.trim().toLowerCase().replace(/^\./, '');
     const isPDF = cleanType === 'pdf';
 
     if (isPDF) {
-      if (pdfjsLoaded.current) return;
-      pdfjsLoaded.current = true;
-
-      // Dynamically load PDF.js CDN
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
-      script.async = true;
-      script.onload = async () => {
+      const loadPdf = async () => {
+        let bytes: Uint8Array | null = null;
         try {
-          // @ts-ignore
-          const pdfjsLib = window.pdfjsLib;
-          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-          let bytes: Uint8Array;
-
           if (id) {
             // Load base64 encoded PDF via JSON endpoint (bypasses IDM completely)
             const res = await fetch(`/api/manual-documents/raw?id=${id}`);
-            if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+            if (!res.ok) throw new Error(`সার্ভার স্ট্যাটাস: ${res.status}`);
             
             const json = await res.json();
             if (!json.success || !json.data) {
-              throw new Error(json.message || 'Failed to retrieve file contents');
+              throw new Error(json.message || 'ফাইল কন্টেন্ট পেতে ব্যর্থ হয়েছে');
             }
 
             const binaryString = window.atob(json.data);
@@ -64,90 +103,97 @@ function PreviewContent() {
           } else if (file) {
             // Fallback: fetch raw PDF file as arrayBuffer
             const res = await fetch(file);
-            if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+            if (!res.ok) throw new Error(`সার্ভার স্ট্যাটাস: ${res.status}`);
             const buffer = await res.arrayBuffer();
             bytes = new Uint8Array(buffer);
           } else {
-            throw new Error('No valid file source provided');
+            throw new Error('কোনো বৈধ ফাইল লিংক বা আইডি পাওয়া যায়নি');
           }
 
-          const loadingTask = pdfjsLib.getDocument({
-            data: bytes,
-            disableRange: true,
-            disableStream: true
-          });
-          
-          const pdf = await loadingTask.promise;
-          const renderedPages: string[] = [];
+          if (!active) return;
 
-          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            const page = await pdf.getPage(pageNum);
-            const viewport = page.getViewport({ scale: 1.5 });
+          // Attempt PDF.js rendering using local assets
+          try {
+            const pdfjsLib = await loadPdfJs();
+            const loadingTask = pdfjsLib.getDocument({
+              data: bytes,
+              disableRange: true,
+              disableStream: true
+            });
+            
+            const pdf = await loadingTask.promise;
+            const renderedPages: string[] = [];
 
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            if (!context) continue;
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+              if (!active) return;
+              const page = await pdf.getPage(pageNum);
+              const viewport = page.getViewport({ scale: 1.5 });
 
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
+              const canvas = document.createElement('canvas');
+              const context = canvas.getContext('2d');
+              if (!context) continue;
 
-            const renderContext = {
-              canvasContext: context,
-              viewport: viewport,
-            };
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
 
-            await page.render(renderContext).promise;
+              const renderContext = {
+                canvasContext: context,
+                viewport: viewport,
+              };
 
-            // Convert to base64 image data URL
-            renderedPages.push(canvas.toDataURL('image/png'));
+              await page.render(renderContext).promise;
+              renderedPages.push(canvas.toDataURL('image/png'));
+            }
+
+            if (!active) return;
+            setPages(renderedPages);
+            setLoading(false);
+
+            setTimeout(() => {
+              if (active) window.print();
+            }, 500);
+            return;
+          } catch (pdfErr) {
+            logger.warn('PDF.js rendering could not complete, switching to native PDF viewer:', pdfErr);
+            if (!active) return;
+            const blob = new Blob([bytes as any], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            setFallbackPdfUrl(blobUrl);
+            setLoading(false);
+            return;
           }
-
-          setPages(renderedPages);
-          setLoading(false);
-
-          // Wait for rendering to settle, then open print dialog
-          setTimeout(() => {
-            window.print();
-          }, 500);
-        } catch (err) {
-          logger.error('Error rendering PDF:', err);
-          setError('নথি লোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে ফাইলটি ডাউনলোড করে প্রিন্ট করুন।');
+        } catch (err: any) {
+          if (!active) return;
+          logger.error('Error loading PDF document:', err);
+          setError(err.message || 'নথি লোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে ফাইলটি ডাউনলোড করে প্রিন্ট করুন।');
           setLoading(false);
         }
       };
 
-      script.onerror = () => {
-        setError('PDF.js লাইব্রেরি লোড করতে ব্যর্থ হয়েছে।');
-        setLoading(false);
-      };
-
-      document.head.appendChild(script);
-
-      return () => {
-        if (document.head.contains(script)) {
-          document.head.removeChild(script);
-        }
-      };
+      loadPdf();
     } else {
       // Handle Image previews
       const loadImage = async () => {
         try {
           if (id) {
             const res = await fetch(`/api/manual-documents/raw?id=${id}`);
-            if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+            if (!res.ok) throw new Error(`সার্ভার স্ট্যাটাস: ${res.status}`);
             
             const json = await res.json();
             if (!json.success || !json.data) {
-              throw new Error(json.message || 'Failed to retrieve image contents');
+              throw new Error(json.message || 'ছবির কন্টেন্ট পেতে ব্যর্থ হয়েছে');
             }
             
+            if (!active) return;
             setImgSrc(`data:${json.mimeType || 'image/jpeg'};base64,${json.data}`);
           } else if (file) {
+            if (!active) return;
             setImgSrc(file);
           } else {
-            throw new Error('No valid file source provided');
+            throw new Error('কোনো বৈধ ফাইল লিংক বা আইডি পাওয়া যায়নি');
           }
-        } catch (err) {
+        } catch (err: any) {
+          if (!active) return;
           logger.error('Error loading image:', err);
           setError('ছবিটি লোড করতে ব্যর্থ হয়েছে।');
           setLoading(false);
@@ -156,7 +202,11 @@ function PreviewContent() {
       
       loadImage();
     }
-  }, [file, id, type]);
+
+    return () => {
+      active = false;
+    };
+  }, [file, id, type, isOfficeOrderOrBill]);
 
   if (isOfficeOrderOrBill) {
     return (
@@ -164,6 +214,92 @@ function PreviewContent() {
         <iframe
           src={`/api/office-orders/raw?id=${id}`}
           style={{ width: '100%', height: '100vh', border: 'none' }}
+          title={name}
+        />
+      </div>
+    );
+  }
+
+  // Fallback: Native Browser PDF Viewer
+  if (fallbackPdfUrl) {
+    return (
+      <div style={{ width: '100%', height: '100vh', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', background: '#0f172a' }}>
+        <div className="no-print" style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '10px 18px',
+          background: '#1e293b',
+          color: '#f8fafc',
+          borderBottom: '1px solid #334155'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{name}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                const iframe = document.getElementById('native-pdf-iframe') as HTMLIFrameElement;
+                if (iframe?.contentWindow) {
+                  iframe.contentWindow.focus();
+                  iframe.contentWindow.print();
+                } else {
+                  window.print();
+                }
+              }}
+              style={{
+                background: '#4f46e5',
+                color: '#ffffff',
+                border: 'none',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '12px'
+              }}
+            >
+              প্রিন্ট
+            </button>
+            <a
+              href={fallbackPdfUrl}
+              download={`${name}.pdf`}
+              style={{
+                background: '#334155',
+                color: '#f8fafc',
+                textDecoration: 'none',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                display: 'inline-flex',
+                alignItems: 'center'
+              }}
+            >
+              ডাউনলোড
+            </a>
+            <button
+              type="button"
+              onClick={() => window.close()}
+              style={{
+                background: '#475569',
+                color: '#f8fafc',
+                border: 'none',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '12px'
+              }}
+            >
+              বন্ধ করুন
+            </button>
+          </div>
+        </div>
+        <iframe
+          id="native-pdf-iframe"
+          src={fallbackPdfUrl}
+          style={{ width: '100%', height: 'calc(100vh - 48px)', border: 'none' }}
           title={name}
         />
       </div>
