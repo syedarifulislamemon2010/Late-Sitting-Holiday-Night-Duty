@@ -108,6 +108,7 @@ describe('auditRbacRequest Evaluator & Comprehensive Suite', () => {
 
     const exemptRoutes = [
       'auth' + path.sep + '[...nextauth]',
+      'auth' + path.sep + 'forgot-password',
       'backup' + path.sep + 'cron',
       'health',
       'ping'

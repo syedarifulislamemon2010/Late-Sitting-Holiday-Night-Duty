@@ -3,7 +3,7 @@ import logger from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { ShieldCheck, AlertCircle, Eye, EyeOff, User, KeyRound } from 'lucide-react';
+import { ShieldCheck, AlertCircle, Eye, EyeOff, User, KeyRound, Phone, ArrowLeft, CheckCircle2, RotateCcw, Clock } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { canAccessRoute } from '@/permissions/rbac';
@@ -37,6 +37,123 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // ===== FORGOT PASSWORD / OTP STATE =====
+  const [authView, setAuthView] = useState<'LOGIN' | 'FORGOT_PASSWORD_INPUT' | 'FORGOT_PASSWORD_OTP' | 'RESET_SUCCESS'>('LOGIN');
+  const [resetBankId, setResetBankId] = useState('');
+  const [resetMobile, setResetMobile] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [showResetNewPassword, setShowResetNewPassword] = useState(false);
+  const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  // 60-second countdown timer for resend OTP
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldownSeconds > 0) {
+      timer = setTimeout(() => {
+        setCooldownSeconds((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [cooldownSeconds]);
+
+  const handleSendOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setResetError('');
+    setResetSuccess('');
+
+    if (!resetBankId.trim()) {
+      setResetError('অনুগ্রহ করে ব্যাংক আইডি প্রদান করুন।');
+      return;
+    }
+    if (!resetMobile.trim()) {
+      setResetError('অনুগ্রহ করে মোবাইল নম্বর প্রদান করুন।');
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'SEND_OTP',
+          bankId: resetBankId,
+          mobile: resetMobile
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setResetError(data.message || 'ওটিপি পাঠাতে ব্যর্থ হয়েছে।');
+        if (data.cooldownRemaining) {
+          setCooldownSeconds(data.cooldownRemaining);
+        }
+      } else {
+        setResetSuccess(data.message || 'আপনার মোবাইলে ওটিপি কোড পাঠানো হয়েছে।');
+        setCooldownSeconds(60);
+        setAuthView('FORGOT_PASSWORD_OTP');
+      }
+    } catch (err: any) {
+      logger.error('Error sending OTP:', err);
+      setResetError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে। নেটওয়ার্ক বা কানেকশন চেক করুন।');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleVerifyOtpAndReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setResetSuccess('');
+
+    if (!resetOtp.trim()) {
+      setResetError('৬ ডিজিটের ওটিপি কোড প্রদান করুন।');
+      return;
+    }
+    if (resetNewPassword.length < 6) {
+      setResetError('নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError('উভয় পাসওয়ার্ড হুবহু এক হতে হবে।');
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'VERIFY_OTP',
+          bankId: resetBankId,
+          mobile: resetMobile,
+          otp: resetOtp,
+          newPassword: resetNewPassword
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setResetError(data.message || 'পাসওয়ার্ড রিসেট ব্যর্থ হয়েছে।');
+      } else {
+        setResetSuccess(data.message || 'পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে!');
+        setAuthView('RESET_SUCCESS');
+      }
+    } catch (err: any) {
+      logger.error('Error verifying OTP and resetting password:', err);
+      setResetError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে। নেটওয়ার্ক চেক করুন।');
+    } finally {
+      setResetLoading(false);
+    }
+  };
   const checkBlockStatus = () => {
     return { isBlocked: false, timeRemaining: 0 };
   };
@@ -246,82 +363,372 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            {/* Login Form */}
-            <form onSubmit={handleLogin} className="space-y-3 pt-0.5">
-              {error && (
-                <div role="alert" className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl flex items-center gap-2 text-xs font-semibold animate-shake">
-                  <AlertCircle size={15} className="shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
+            {/* ============================================================== */}
+            {/* VIEW 1: NORMAL LOGIN FORM */}
+            {/* ============================================================== */}
+            {authView === 'LOGIN' && (
+              <form onSubmit={handleLogin} className="space-y-3 pt-0.5">
+                {error && (
+                  <div role="alert" className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl flex items-center gap-2 text-xs font-semibold animate-shake">
+                    <AlertCircle size={15} className="shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
 
-              {/* Bank ID Input */}
-              <div className="space-y-1 text-left group">
-                <label htmlFor="username-input" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">ব্যাংক আইডি</label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
-                    <User size={15} />
-                  </span>
-                  <input 
-                    id="username-input"
-                    type="text" 
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="যেমন: 026799"
-                    className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-xl text-sm font-semibold outline-none transition-all"
-                    required
-                  />
+                {/* Bank ID Input */}
+                <div className="space-y-1 text-left group">
+                  <label htmlFor="username-input" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">ব্যাংক আইডি</label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
+                      <User size={15} />
+                    </span>
+                    <input 
+                      id="username-input"
+                      type="text" 
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="যেমন: 026799"
+                      className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-xl text-sm font-semibold outline-none transition-all"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Password Input */}
-              <div className="space-y-1 text-left relative font-sans group">
-                <label htmlFor="password-input" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
-                    <KeyRound size={15} />
-                  </span>
-                  <input 
-                    id="password-input"
-                    type={showPassword ? "text" : "password"} 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-xl text-sm font-semibold outline-none transition-all font-mono"
-                    required
-                  />
+                {/* Password Input */}
+                <div className="space-y-1 text-left relative font-sans group">
+                  <div className="flex justify-between items-center px-1">
+                    <label htmlFor="password-input" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">পাসওয়ার্ড</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetBankId(username);
+                        setResetError('');
+                        setResetSuccess('');
+                        setAuthView('FORGOT_PASSWORD_INPUT');
+                      }}
+                      className="text-[11px] font-bold text-[#1565C0] dark:text-sky-400 hover:text-blue-800 dark:hover:text-sky-300 transition-colors cursor-pointer hover:underline"
+                    >
+                      পাসওয়ার্ড ভুলে গেছেন?
+                    </button>
+                  </div>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
+                      <KeyRound size={15} />
+                    </span>
+                    <input 
+                      id="password-input"
+                      type={showPassword ? "text" : "password"} 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-10 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-xl text-sm font-semibold outline-none transition-all font-mono"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#1565C0] focus:outline-none focus:text-[#1565C0] focus:ring-2 focus:ring-blue-200 rounded-lg p-1 transition-colors cursor-pointer"
+                      aria-label={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখান"}
+                    >
+                      {showPassword ? (
+                        <EyeOff size={16} />
+                      ) : (
+                        <Eye size={16} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Login Submit Button */}
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full py-2.5 sm:py-3 bg-gradient-to-r from-[#1565C0] via-[#0D47A1] to-[#0A2F6C] hover:from-[#0D47A1] hover:to-[#1565C0] focus:outline-none focus:ring-4 focus:ring-blue-100 text-white font-bold text-sm tracking-wide rounded-xl transition-all shadow-md shadow-blue-700/10 hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <ShieldCheck size={17} />
+                      লগইন
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+
+            {/* ============================================================== */}
+            {/* VIEW 2: FORGOT PASSWORD - STEP 1 (BANK ID & MOBILE NUMBER) */}
+            {/* ============================================================== */}
+            {authView === 'FORGOT_PASSWORD_INPUT' && (
+              <form onSubmit={handleSendOtp} className="space-y-3 pt-0.5 animate-fade-in">
+                <div className="p-2.5 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 rounded-xl text-left space-y-0.5">
+                  <h3 className="text-xs font-black text-[#1565C0] dark:text-sky-400">পাসওয়ার্ড রিসেট (ধাপ ১/২)</h3>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                    আপনার ব্যাংক আইডি ও পোর্টালে নিবন্ধিত মোবাইল নম্বর দিন। নম্বরে ৬-ডিজিটের ওটিপি কোড পাঠানো হবে।
+                  </p>
+                </div>
+
+                {resetError && (
+                  <div role="alert" className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl flex items-center gap-2 text-xs font-semibold animate-shake">
+                    <AlertCircle size={15} className="shrink-0" />
+                    <span>{resetError}</span>
+                  </div>
+                )}
+
+                {/* Bank ID Input */}
+                <div className="space-y-1 text-left group">
+                  <label htmlFor="reset-bankid" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">ব্যাংক আইডি</label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
+                      <User size={15} />
+                    </span>
+                    <input 
+                      id="reset-bankid"
+                      type="text" 
+                      value={resetBankId}
+                      onChange={(e) => setResetBankId(e.target.value)}
+                      placeholder="যেমন: 026795"
+                      className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-xl text-sm font-semibold outline-none transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Mobile Number Input */}
+                <div className="space-y-1 text-left group">
+                  <label htmlFor="reset-mobile" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">নিবন্ধিত মোবাইল নম্বর</label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
+                      <Phone size={15} />
+                    </span>
+                    <input 
+                      id="reset-mobile"
+                      type="text" 
+                      value={resetMobile}
+                      onChange={(e) => setResetMobile(e.target.value)}
+                      placeholder="যেমন: 01674057529"
+                      className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 rounded-xl text-sm font-semibold outline-none transition-all font-mono"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Submit OTP Request Button */}
+                <button 
+                  type="submit" 
+                  disabled={resetLoading}
+                  className="w-full py-2.5 bg-gradient-to-r from-[#1565C0] via-[#0D47A1] to-[#0A2F6C] hover:from-[#0D47A1] hover:to-[#1565C0] text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-blue-700/10 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-50"
+                >
+                  {resetLoading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Phone size={16} />
+                      ওটিপি কোড পাঠান
+                    </>
+                  )}
+                </button>
+
+                {/* Back to Login Link */}
+                <div className="text-center pt-1">
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#1565C0] focus:outline-none focus:text-[#1565C0] focus:ring-2 focus:ring-blue-200 rounded-lg p-1 transition-colors cursor-pointer"
-                    aria-label={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখান"}
+                    onClick={() => {
+                      setAuthView('LOGIN');
+                      setResetError('');
+                      setResetSuccess('');
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-[#1565C0] dark:hover:text-sky-400 transition-colors cursor-pointer"
                   >
-                    {showPassword ? (
-                      <EyeOff size={16} />
-                    ) : (
-                      <Eye size={16} />
-                    )}
+                    <ArrowLeft size={14} />
+                    লগইন পেজে ফিরে যান
                   </button>
                 </div>
-              </div>
+              </form>
+            )}
 
-              {/* Login Submit Button */}
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="w-full py-2.5 sm:py-3 bg-gradient-to-r from-[#1565C0] via-[#0D47A1] to-[#0A2F6C] hover:from-[#0D47A1] hover:to-[#1565C0] focus:outline-none focus:ring-4 focus:ring-blue-100 text-white font-bold text-sm tracking-wide rounded-xl transition-all shadow-md shadow-blue-700/10 hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <ShieldCheck size={17} />
-                    লগইন
-                  </>
+            {/* ============================================================== */}
+            {/* VIEW 3: FORGOT PASSWORD - STEP 2 (OTP VERIFY & NEW PASSWORD) */}
+            {/* ============================================================== */}
+            {authView === 'FORGOT_PASSWORD_OTP' && (
+              <form onSubmit={handleVerifyOtpAndReset} className="space-y-3 pt-0.5 animate-fade-in">
+                <div className="p-2.5 bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 rounded-xl text-left space-y-0.5">
+                  <h3 className="text-xs font-black text-emerald-800 dark:text-emerald-300">নতুন পাসওয়ার্ড সেট করুন (ধাপ ২/২)</h3>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium leading-relaxed">
+                    আপনার মোবাইলে ({resetMobile.slice(0, 3)}****{resetMobile.slice(-4)}) পাঠানো ৬-ডিজিটের ওটিপি দিন।
+                  </p>
+                </div>
+
+                {resetSuccess && (
+                  <div className="p-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-medium text-center">
+                    {resetSuccess}
+                  </div>
                 )}
-              </button>
-            </form>
-          </div>
+
+                {resetError && (
+                  <div role="alert" className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl flex items-center gap-2 text-xs font-semibold animate-shake">
+                    <AlertCircle size={15} className="shrink-0" />
+                    <span>{resetError}</span>
+                  </div>
+                )}
+
+                {/* 6-Digit OTP Input */}
+                <div className="space-y-1 text-left group">
+                  <div className="flex justify-between items-center px-1">
+                    <label htmlFor="reset-otp" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">৬-ডিজিটের ওটিপি</label>
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                      <Clock size={11} />
+                      মেয়াদ ৫ মিনিট
+                    </span>
+                  </div>
+                  <input 
+                    id="reset-otp"
+                    type="text" 
+                    maxLength={6}
+                    value={resetOtp}
+                    onChange={(e) => setResetOtp(e.target.value)}
+                    placeholder="123456"
+                    className="w-full text-center tracking-[0.4em] py-2 border-2 border-indigo-200 dark:border-indigo-900/60 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 rounded-xl text-base font-black outline-none transition-all font-mono"
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                {/* New Password Input */}
+                <div className="space-y-1 text-left relative font-sans group">
+                  <label htmlFor="reset-new-password" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">নতুন পাসওয়ার্ড</label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
+                      <KeyRound size={15} />
+                    </span>
+                    <input 
+                      id="reset-new-password"
+                      type={showResetNewPassword ? "text" : "password"} 
+                      value={resetNewPassword}
+                      onChange={(e) => setResetNewPassword(e.target.value)}
+                      placeholder="কমপক্ষে ৬ অক্ষর"
+                      className="w-full pl-10 pr-10 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 rounded-xl text-sm font-semibold outline-none transition-all font-mono"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetNewPassword(!showResetNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#1565C0] p-1 cursor-pointer"
+                    >
+                      {showResetNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password Input */}
+                <div className="space-y-1 text-left relative font-sans group">
+                  <label htmlFor="reset-confirm-password" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
+                      <KeyRound size={15} />
+                    </span>
+                    <input 
+                      id="reset-confirm-password"
+                      type={showResetConfirmPassword ? "text" : "password"} 
+                      value={resetConfirmPassword}
+                      onChange={(e) => setResetConfirmPassword(e.target.value)}
+                      placeholder="পাসওয়ার্ড পুনরায় লিখুন"
+                      className="w-full pl-10 pr-10 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:border-[#1565C0] focus:ring-4 focus:ring-blue-100 rounded-xl text-sm font-semibold outline-none transition-all font-mono"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetConfirmPassword(!showResetConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#1565C0] p-1 cursor-pointer"
+                    >
+                      {showResetConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Reset Password Button */}
+                <button 
+                  type="submit" 
+                  disabled={resetLoading}
+                  className="w-full py-2.5 bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 hover:from-emerald-700 hover:to-emerald-900 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-emerald-700/10 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-50"
+                >
+                  {resetLoading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <ShieldCheck size={17} />
+                      পাসওয়ার্ড রিসেট করুন
+                    </>
+                  )}
+                </button>
+
+                {/* Resend OTP Bar */}
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthView('FORGOT_PASSWORD_INPUT');
+                      setResetError('');
+                      setResetSuccess('');
+                    }}
+                    className="text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 cursor-pointer"
+                  >
+                    ← বাতিল করুন
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={cooldownSeconds > 0 || resetLoading}
+                    onClick={() => handleSendOtp()}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1565C0] dark:text-sky-400 hover:underline disabled:opacity-50 disabled:no-underline cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    <RotateCcw size={12} className={cooldownSeconds > 0 ? "animate-spin" : ""} />
+                    {cooldownSeconds > 0 ? `পুনরায় পাঠান (${cooldownSeconds} সে.)` : 'পুনরায় ওটিপি পাঠান'}
+                  </button>
+                </div>
+
+                {/* Fallback Support Note */}
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center leading-normal pt-1">
+                  ওটিপি না পেলে ইনবক্স চেক করুন বা ৬০ সে. পর পুনরায় পাঠান। বারবার সমস্যা হলে সিস্টেম অ্যাডমিনের সাথে যোগাযোগ করুন।
+                </p>
+              </form>
+            )}
+
+            {/* ============================================================== */}
+            {/* VIEW 4: RESET SUCCESS */}
+            {/* ============================================================== */}
+            {authView === 'RESET_SUCCESS' && (
+              <div className="py-4 space-y-4 text-center animate-fade-in">
+                <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <CheckCircle2 size={32} />
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100">
+                    পাসওয়ার্ড রিসেট সফল হয়েছে!
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed px-2">
+                    আপনার নতুন পাসওয়ার্ড সফলভাবে সংরক্ষিত হয়েছে। অনুগ্রহ করে এখন নতুন পাসওয়ার্ড দিয়ে সিস্টেমে লগইন করুন।
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsername(resetBankId);
+                    setPassword('');
+                    setResetError('');
+                    setResetSuccess('');
+                    setAuthView('LOGIN');
+                  }}
+                  className="w-full py-2.5 bg-gradient-to-r from-[#1565C0] via-[#0D47A1] to-[#0A2F6C] hover:from-[#0D47A1] hover:to-[#1565C0] text-white font-bold text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                >
+                  <ShieldCheck size={16} />
+                  লগইন পেজে যান
+                </button>
+              </div>
+            )}</div>
         </div>
 
         {/* Footer */}

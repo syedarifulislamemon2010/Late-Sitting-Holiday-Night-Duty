@@ -31,6 +31,7 @@ describe('API Authorization Matrix & Dynamic Route Coverage', () => {
     '/api/ping',
     '/api/health',
     '/api/auth/[...nextauth]',
+    '/api/auth/forgot-password',
     '/api/backup/cron', // Secured via Bearer CRON_SECRET header
   ]);
 
