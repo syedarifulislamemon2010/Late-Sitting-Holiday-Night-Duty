@@ -396,21 +396,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
                 {/* Password Input */}
                 <div className="space-y-1 text-left relative font-sans group">
-                  <div className="flex justify-between items-center px-1">
-                    <label htmlFor="password-input" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">পাসওয়ার্ড</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setResetBankId(username);
-                        setResetError('');
-                        setResetSuccess('');
-                        setAuthView('FORGOT_PASSWORD_INPUT');
-                      }}
-                      className="text-[11px] font-bold text-[#1565C0] dark:text-sky-400 hover:text-blue-800 dark:hover:text-sky-300 transition-colors cursor-pointer hover:underline"
-                    >
-                      পাসওয়ার্ড ভুলে গেছেন?
-                    </button>
-                  </div>
+                  <label htmlFor="password-input" className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">পাসওয়ার্ড</label>
                   <div className="relative flex items-center">
                     <span className="absolute left-3.5 text-slate-400 group-focus-within:text-[#1565C0] transition-colors">
                       <KeyRound size={15} />
@@ -454,6 +440,22 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     </>
                   )}
                 </button>
+
+                {/* Forgot Password Link - Centered below Login Button */}
+                <div className="text-center pt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResetBankId(username);
+                      setResetError('');
+                      setResetSuccess('');
+                      setAuthView('FORGOT_PASSWORD_INPUT');
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1565C0] dark:text-sky-400 hover:text-blue-800 dark:hover:text-sky-300 transition-colors cursor-pointer hover:underline"
+                  >
+                    পাসওয়ার্ড ভুলে গেছেন?
+                  </button>
+                </div>
               </form>
             )}
 
