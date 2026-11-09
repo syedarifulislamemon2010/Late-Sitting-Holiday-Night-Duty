@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { users, employees } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
-import { hashPassword } from '@/lib/password';
+import { hashPassword, verifyPassword } from '@/lib/password';
 import { logActivity } from '@/lib/audit';
 
 export async function GET() {
@@ -16,11 +16,20 @@ export async function GET() {
       return NextResponse.json({ authenticated: false, user: null });
     }
 
+    let mustChangePassword = false;
+    const dbUserList = await db.select({ password: users.password }).from(users).where(eq(users.id, user.id)).limit(1);
+    if (dbUserList[0]?.password) {
+      const { isValid } = await verifyPassword('123456', dbUserList[0].password);
+      if (isValid) {
+        mustChangePassword = true;
+      }
+    }
+
     return NextResponse.json({
       authenticated: true,
       user: {
         ...user,
-        mustChangePassword: false,
+        mustChangePassword,
       },
     });
   } catch (error) {

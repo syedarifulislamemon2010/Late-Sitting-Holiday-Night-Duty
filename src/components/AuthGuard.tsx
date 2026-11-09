@@ -52,6 +52,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [resetSuccess, setResetSuccess] = useState('');
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [idleTimeoutNotice, setIdleTimeoutNotice] = useState(false);
+  const [forceNewPassword, setForceNewPassword] = useState('');
+  const [forceConfirmPassword, setForceConfirmPassword] = useState('');
+  const [forceShowPassword, setForceShowPassword] = useState(false);
+  const [forceError, setForceError] = useState('');
+  const [forceLoading, setForceLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && sessionStorage.getItem('idle_logged_out') === 'true') {
@@ -808,8 +813,143 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const handleForcePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForceError('');
+    const cleanPass = forceNewPassword.trim();
+    if (!cleanPass || cleanPass.length < 6) {
+      setForceError('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
+      return;
+    }
+    if (cleanPass === '123456') {
+      setForceError('ডিফল্ট পাসওয়ার্ড (123456) ব্যবহার করা যাবে না। একটি নতুন শক্তিশালী পাসওয়ার্ড দিন।');
+      return;
+    }
+    if (cleanPass !== forceConfirmPassword.trim()) {
+      setForceError('উভয় পাসওয়ার্ড হুবহু মিলছে না।');
+      return;
+    }
+
+    try {
+      setForceLoading(true);
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: cleanPass }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setForceError(data.error || 'পাসওয়ার্ড পরিবর্তন করতে ব্যর্থ হয়েছে।');
+      } else {
+        if (userProfile) {
+          const updated = { ...userProfile, mustChangePassword: false };
+          setUserProfile(updated);
+          localStorage.setItem('currentUser', JSON.stringify(updated));
+          window.dispatchEvent(new Event('storage'));
+        }
+      }
+    } catch {
+      setForceError('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে। নেটওয়ার্ক চেক করুন।');
+    } finally {
+      setForceLoading(false);
+    }
+  };
+
   return (
     <>
+      {userProfile?.mustChangePassword && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="force-password-title"
+          className="fixed inset-0 z-[9999] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 font-sans select-none animate-fade-in"
+        >
+          <div className="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/80 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center space-y-4">
+            <div className="w-14 h-14 mx-auto rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-inner">
+              <KeyRound size={28} />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 id="force-password-title" className="text-lg font-black text-slate-900 dark:text-slate-100">
+                পাসওয়ার্ড পরিবর্তন আবশ্যক
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                আপনার অ্যাকাউন্টে বর্তমানে সিস্টেমের প্রাথমিক ডিফল্ট পাসওয়ার্ড সংরক্ষিত রয়েছে। ব্যাংকিং নিরাপত্তা বজায় রাখতে পোর্টালে কাজের পূর্বে অবিলম্বে একটি নতুন পাসওয়ার্ড সেট করুন।
+              </p>
+            </div>
+
+            {forceError && (
+              <div role="alert" className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl flex items-center gap-2 text-xs font-semibold text-left animate-shake">
+                <AlertCircle size={15} className="shrink-0" />
+                <span>{forceError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleForcePasswordChange} className="space-y-3 pt-1 text-left">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">
+                  নতুন পাসওয়ার্ড
+                </label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-slate-400">
+                    <KeyRound size={15} />
+                  </span>
+                  <input
+                    type={forceShowPassword ? 'text' : 'password'}
+                    value={forceNewPassword}
+                    onChange={(e) => setForceNewPassword(e.target.value)}
+                    placeholder="কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড"
+                    className="w-full pl-10 pr-10 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl text-sm font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100 font-mono"
+                    required
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForceShowPassword(!forceShowPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                  >
+                    {forceShowPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-1">
+                  নতুন পাসওয়ার্ড নিশ্চিত করুন
+                </label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-slate-400">
+                    <KeyRound size={15} />
+                  </span>
+                  <input
+                    type={forceShowPassword ? 'text' : 'password'}
+                    value={forceConfirmPassword}
+                    onChange={(e) => setForceConfirmPassword(e.target.value)}
+                    placeholder="পাসওয়ার্ডটি আবার লিখুন"
+                    className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl text-sm font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100 font-mono"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={forceLoading}
+                className="w-full mt-2 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {forceLoading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <ShieldCheck size={16} />
+                    <span>পাসওয়ার্ড সংরক্ষণ ও এগিয়ে যান</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
       {children}
     </>
   );

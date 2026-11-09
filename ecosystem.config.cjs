@@ -28,7 +28,8 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3000,
         // Recommended production setup: Bind strictly to localhost so external traffic MUST go through nginx:
-        // HOSTNAME: '127.0.0.1',
+        HOSTNAME: '127.0.0.1',
+        TRUST_PROXY_HEADERS: 'true',
       },
 
       // Process Management & Reliability:

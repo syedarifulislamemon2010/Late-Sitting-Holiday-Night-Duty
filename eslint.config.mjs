@@ -17,6 +17,7 @@ const eslintConfig = defineConfig([
   ]),
   {
     rules: {
+      "prefer-const": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",
       "react-hooks/set-state-in-effect": "warn",

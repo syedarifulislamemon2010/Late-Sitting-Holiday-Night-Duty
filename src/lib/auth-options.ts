@@ -8,6 +8,7 @@ import { headers } from 'next/headers';
 import { logActivity } from '@/lib/audit';
 import { toEnglishDigits } from '@/lib/bengali-converter';
 import { verifyPassword, hashPassword } from '@/lib/password';
+import { getLoginAttempt, recordFailedAttempt, clearLoginAttempt, MAX_ATTEMPTS } from '@/lib/login-lockout';
 
 // Validate NEXTAUTH_SECRET on startup
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || !!process.env.CI || process.env.npm_lifecycle_event === 'build';
@@ -19,14 +20,7 @@ if (!process.env.NEXTAUTH_SECRET) {
   }
 }
 
-// Track failed login attempts for brute-force lockout (5 attempts -> 15 min lock)
-interface LoginAttempt {
-  count: number;
-  lockedUntil: number;
-}
-const loginAttempts = new Map<string, LoginAttempt>();
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+// Brute-force lockout is managed via hybrid DB/memory in @/lib/login-lockout
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -67,7 +61,7 @@ export const authOptions: NextAuthOptions = {
         // Check for brute-force account/IP lockout
         const rateLimitKey = `${ipAddress}:${username.toLowerCase()}`;
         const now = Date.now();
-        const attempt = loginAttempts.get(rateLimitKey);
+        const attempt = await getLoginAttempt(rateLimitKey);
         if (attempt && attempt.lockedUntil > now) {
           const remainingMin = Math.ceil((attempt.lockedUntil - now) / 60000);
           logger.warn(`[Auth Lockout] Login blocked for ${username} from ${ipAddress}. Locked for ${remainingMin} more minutes.`);
@@ -132,7 +126,7 @@ export const authOptions: NextAuthOptions = {
 
           if (isValid) {
             // Reset failed login count upon successful authentication
-            loginAttempts.delete(rateLimitKey);
+            await clearLoginAttempt(rateLimitKey);
 
             // Lazy migration: if password matched as legacy plaintext, upgrade it to bcrypt in DB
             if (needsMigration) {
@@ -169,13 +163,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Authentication failed - record failed attempt for brute-force protection
-        const currentAttempt = loginAttempts.get(rateLimitKey) || { count: 0, lockedUntil: 0 };
-        currentAttempt.count += 1;
-        if (currentAttempt.count >= MAX_ATTEMPTS) {
-          currentAttempt.lockedUntil = now + LOCKOUT_MS;
-          logger.warn(`[Auth Lockout] Account ${username} locked out from IP ${ipAddress} for 15 minutes after ${currentAttempt.count} failed attempts.`);
-        }
-        loginAttempts.set(rateLimitKey, currentAttempt);
+        const currentAttempt = await recordFailedAttempt(rateLimitKey, username, ipAddress);
 
         try {
           await logActivity({
