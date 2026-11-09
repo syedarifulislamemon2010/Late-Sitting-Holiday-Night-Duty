@@ -51,6 +51,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [resetError, setResetError] = useState('');
   const [resetSuccess, setResetSuccess] = useState('');
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [idleTimeoutNotice, setIdleTimeoutNotice] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('idle_logged_out') === 'true') {
+      setIdleTimeoutNotice(true);
+      sessionStorage.removeItem('idle_logged_out');
+    }
+  }, []);
 
   // 60-second countdown timer for resend OTP
   useEffect(() => {
@@ -367,7 +375,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             {/* VIEW 1: NORMAL LOGIN FORM */}
             {/* ============================================================== */}
             {authView === 'LOGIN' && (
-              <form onSubmit={handleLogin} className="space-y-3 pt-0.5">
+              <form onSubmit={(e) => { setIdleTimeoutNotice(false); handleLogin(e); }} className="space-y-3 pt-0.5">
+                {idleTimeoutNotice && (
+                  <div role="status" className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 rounded-xl flex items-center gap-2 text-xs font-semibold animate-fade-in">
+                    <Clock size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                    <span>দীর্ঘক্ষণ নিষ্ক্রিয় থাকার কারণে আপনার সেশনটি স্বয়ংক্রিয়ভাবে বন্ধ হয়েছে। অনুগ্রহ করে পুনরায় লগইন করুন।</span>
+                  </div>
+                )}
                 {error && (
                   <div role="alert" className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl flex items-center gap-2 text-xs font-semibold animate-shake">
                     <AlertCircle size={15} className="shrink-0" />

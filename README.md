@@ -68,6 +68,8 @@
 - 💻 **Hardware Requisition Portal**: Generate, track, and export hardware (UPS, Printer, Scanner, PC) requisitions for department officers.
 - 📋 **TAZ Committee Form Engine**: Standardized bank committee resolution forms with real-time editing and printable formats.
 - 🍱 **Lunch & Closing Allowance Billing**: Compute and format official lunch bills and monthly bill preparation statements.
+- ⏱️ **১৫ মিনিট নিষ্ক্রিয়তা টাইমআউট ও সেশন সুরক্ষা (15-Minute Inactivity Timeout & Session Guard)**: Automatic 15-minute idle inactivity timeout. At 14 minutes of inactivity (60 seconds remaining), a central modal dialog with live countdown alerts the officer to extend their session or log out, with real-time multi-tab synchronization.
+- 📲 **মোবাইল ওটিপি পাসওয়ার্ড রিসেট (SMS OTP Password Reset)**: Automated self-service password recovery via Janata Bank's central intranet SMS Gateway (`http://172.17.20.17/JBSmsApi/Send`), delivering 6-digit cryptographic OTPs with a 60-second cooldown timer and brute-force lockout protection.
 - 🗑️ **Soft-Delete Recycle Bin & 30-Day Retention Alerts**: Restore accidentally deleted records without losing database integrity, complete with automated 30-day Admin warning notifications.
 - 🛡️ **Exhaustive 76-Handler RBAC Audit Pipeline**: Comprehensive fail-open RBAC audit engine logging would-deny warnings across all routes while maintaining operational continuity.
 - 🔔 **ইন-অ্যাপ নোটিফিকেশন সেন্টার (Notification Center)**: Real-time notification bell with unread pulse counters, category filters, and dropdown alerts.
@@ -495,6 +497,8 @@ npm run db:seed
 - 🔒 **SQL Injection Defense**: Parameterized binding via Drizzle ORM.
 - 🛡️ **Cross-Site Scripting (XSS)**: Automatic JSX escaping & DOMPurify sanitization.
 - 🔑 **CSRF & Session Security**: HTTP-only, `SameSite=Strict` cookie policy with NextAuth.
+- ⏱️ **Inactivity / Idle Timeout Defense**: 15-minute inactivity threshold with 60-second warning countdown to protect unattended terminals and mitigate session hijacking in accordance with banking cybersecurity standards.
+- 📲 **SMS OTP Gateway Hardening**: Rate-limited, 5-minute expiring 6-digit OTPs with strict bank ID and registered mobile number validation for secure password resets.
 - 🛡️ **Path Traversal Containment**: Strict boundary checks (`path.resolve` + `path.relative`) on `/api/manual-documents/raw` and `/uploads/[...path]`.
 - 👁️ **Fail-Open RBAC Audit**: Real-time evaluation against 76 mapped actions logged without blocking valid operational workflows.
 - 🔒 **Light-Mode Locked Login**: Corporate authentication screen styled to prevent unexpected dark mode color bleeds.
@@ -520,6 +524,8 @@ npx tsc --noEmit --incremental false
 | Regulatory Guideline | Control Scope | Implementation Mechanism |
 | :--- | :--- | :--- |
 | **Bangladesh Bank ICT Guidelines (Ch 4.2)** | User Authentication | Secured session authentication & salted bcrypt hashing |
+| **Bangladesh Bank ICT Guidelines (Ch 4.3)** | Session Management | 15-minute inactivity timeout with 60s warning countdown & multi-tab synchronization |
+| **Bangladesh Bank ICT Guidelines (Ch 4.5)** | Credential Recovery | Self-service SMS OTP password reset via central bank SMS gateway |
 | **Bangladesh Bank ICT Guidelines (Ch 5.1)** | Audit & Accountability | Database-backed audit trail for all CRUD actions |
 | **ISO/IEC 27001 (A.12.4.1)** | System Event Logging | Centralized audit logging with IP & Browser tracing |
 | **NIST SP 800-53 (AC-3)** | Access Control | Role-based & Cell-restricted access control with 76 mapped RBAC endpoints |
