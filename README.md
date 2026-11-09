@@ -4,13 +4,13 @@
 ### **লেট সিটিং, ছুটির দিনে ও রাত্রীকালীন ডিউটি ছুটির আবেদন পোর্টাল**
 #### **Late-Sitting, Holiday, Night Duty & Leave Application Management System**
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.4-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.3-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18.6-4169E1?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
-[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-1.0-C5F74F?style=for-the-badge&logo=drizzle)](https://orm.drizzle.team/)
-[![Vitest](https://img.shields.io/badge/Vitest-4.1-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4.5-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.3.1-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3.5-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-26.12.1-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45.4-C5F74F?style=for-the-badge&logo=drizzle)](https://orm.drizzle.team/)
+[![Vitest](https://img.shields.io/badge/Vitest-4.1.12-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
 
 ---
 
@@ -41,7 +41,7 @@
 - [📂 Production Deployment Guide (RHEL 8/9 + PM2 + Nginx)](#-production-deployment-guide-rhel-89--pm2--nginx)
 - [🔄 Disaster Recovery (DR)](#-disaster-recovery-dr)
 - [🛡️ Security \& Threat Modeling](#-security--threat-modeling)
-- [🧪 Testing Strategy (444+ Test Cases)](#-testing-strategy-444-test-cases)
+- [🧪 Testing Strategy (445 Test Cases)](#-testing-strategy-444-test-cases)
 - [📜 Compliance Mapping Matrix](#-compliance-mapping-matrix)
 
 ---
@@ -65,6 +65,9 @@
 - 🌐 **Bangla ⇄ English Dual-Language Engine**: Seamless transliteration with manual override fields (`nameEn`, `designationEn`) and a persistent **`BN | EN`** navbar toggle button.
 - 🔒 **Zero-Downtime Bcrypt Password Hashing**: Dual-compatibility authentication engine that lazy-migrates legacy plaintext passwords to standard 60-character bcrypt salted hashes upon login.
 - ⚠️ **Conflict Auto-Redirect & Overwrite Dialog**: Intelligent duplicate entry detection with 1-click options to overwrite or navigate directly to conflicting entries.
+- 🚫 **কর্মকর্তা ডুপ্লিকেট এন্ট্রি প্রতিরোধ গার্ড (Duplicate Employee Entry Guard)**: নতুন কর্মকর্তা যুক্ত করার সময় একই নাম (শ্রদ্ধাবোধক পদবি 'মোঃ', 'মুহাম্মদ', 'Mr.', 'Md.' ইত্যাদি বাদ দিয়ে ট্রিম করে) অথবা একই ব্যাংক আইডি থাকলে স্বয়ংক্রিয়ভাবে ইনপুট রিজেক্ট করে ডুপ্লিকেট এন্ট্রি সম্পূর্ণ ব্লক করে।
+- 🔑 **সহজ ইউজার অনবোর্ডিং (No Default Password Force Reset)**: বাই-ডিফল্ট পাসওয়ার্ড `123456` ব্যবহারকারীদের জন্য অযথা ফোর্সড পাসওয়ার্ড রিসেট ছাড়াই সহজ ও নির্বিঘ্ন লগইন সুবিধা।
+- 🚀 **UI & Performance Micro-Optimizations**: রেসপনসিভ মোবাইল ন্যাভবার লেআউট, অ্যাক্সেসিবল ইউনিভার্সাল ফোকাস রিং এবং স্মুথ স্লিম স্ক্রলবার দিয়ে আল্ট্রা-ফাস্ট ইন্টারেকশন নিশ্চিত।
 - 💻 **Hardware Requisition Portal**: Generate, track, and export hardware (UPS, Printer, Scanner, PC) requisitions for department officers.
 - 📋 **TAZ Committee Form Engine**: Standardized bank committee resolution forms with real-time editing and printable formats.
 - 🍱 **Lunch & Closing Allowance Billing**: Compute and format official lunch bills and monthly bill preparation statements.
@@ -142,17 +145,18 @@ graph TD
 
 | Category | Technology | Rationale & Selection |
 | :--- | :--- | :--- |
-| **Framework** | Next.js 16.4.3 (App Router) | High-performance React framework with hybrid SSR/SSG, standalone output, and API routing. |
-| **UI Engine** | React 19.3 | State-of-the-art React UI library with optimized server actions and reactive hooks. |
-| **Language** | TypeScript 6.0 | Strict compile-time type safety preventing runtime bugs across models and routes. |
+| **Framework** | Next.js 16.4.5 (App Router) | High-performance React framework with hybrid SSR/SSG, standalone output, and API routing. |
+| **UI Engine** | React 19.3.1 | State-of-the-art React UI library with optimized server actions and reactive hooks. |
+| **Language** | TypeScript 6.0.3 | Strict compile-time type safety preventing runtime bugs across models and routes. |
+| **Runtime** | Node.js 26.12.1 (LTS) | High-performance modern JavaScript runtime for server components and build pipelines. |
 | **Authentication** | Auth.js (NextAuth) + bcryptjs | Secure session validation with zero-downtime dual-compatible bcrypt password hashing. |
-| **Database ORM** | Drizzle ORM 1.0 | Type-safe SQL query builder with zero cold-start latency and full PostgreSQL dialect support. |
-| **Styling** | Tailwind CSS 4.3 | Modern utility-first styling with dark mode support and responsive design. |
+| **Database ORM** | Drizzle ORM 0.45.4 | Type-safe SQL query builder with zero cold-start latency and full PostgreSQL dialect support. |
+| **Styling** | Tailwind CSS 4.3.5 | Modern utility-first styling with dark mode support and responsive design. |
 | **Theme Engine** | next-themes | Instant zero-latency theme switching with synchronous `<head>` script injection. |
 | **PDF Engine** | Bundled Local PDF.js 2.16 | Bundled locally in `public/vendor/pdfjs/` for 100% offline, air-gapped intranet readiness. |
-| **DOCX Generator** | docx 9.x | Programmatic Microsoft Word (.docx) generation library for official bank letters and tables. |
-| **Database** | PostgreSQL 18.6 | Enterprise relational database with strict constraints, relations, and indexed queries. |
-| **Testing** | Vitest 4.1 | High-speed ESM-native test runner powering 444+ automated unit and integration tests. |
+| **DOCX Generator** | docx 9.4.1 | Programmatic Microsoft Word (.docx) generation library for official bank letters and tables. |
+| **Database** | PostgreSQL 18.6 / Neon Serverless | Enterprise relational database with strict constraints, relations, and indexed queries. |
+| **Testing** | Vitest 4.1.12 | High-speed ESM-native test runner powering 445 automated unit and integration tests across 32 suites. |
 
 ---
 
@@ -415,7 +419,7 @@ paths:
 ## 🚀 Quick Start & Development
 
 ### 1. Prerequisites
-- Node.js (`>= 20.9.0` LTS required)
+- Node.js (`>= 24.x` or `26.12.x` LTS recommended)
 - PostgreSQL (v15+)
 
 ### 2. Setup
@@ -463,7 +467,7 @@ git checkout package-lock.json && git pull origin main && npm run build && pm2 r
 
 ### 2. Production Verification Pipeline
 ```bash
-# Verify TypeScript, Linting, 444+ Vitest tests, and Next.js Build:
+# Verify TypeScript, Linting, 445 Vitest tests, and Next.js Build:
 npm run verify
 ```
 
@@ -505,9 +509,9 @@ npm run db:seed
 
 ---
 
-## 🧪 Testing Strategy (444+ Test Cases)
+## 🧪 Testing Strategy (445 Test Cases)
 
-The application maintains 100% test pass rates across 32 test suites and 444+ test cases:
+The application maintains 100% test pass rates across 32 test suites and 445 test cases (100% pass rate):
 
 ```bash
 # Execute full Vitest suite

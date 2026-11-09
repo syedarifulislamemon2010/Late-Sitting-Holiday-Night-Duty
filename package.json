@@ -27,32 +27,38 @@
     "@google/generative-ai": "^0.24.1",
     "@next/swc-wasm-nodejs": "^16.4.5",
     "bcryptjs": "^3.0.3",
-    "docx": "9.4.1",
-    "drizzle-orm": "0.45.4",
+    "docx": "^9.15.3",
+    "drizzle-orm": "^0.45.4",
     "exceljs": "^4.4.0",
-    "isomorphic-dompurify": "4.6.0",
-    "lucide-react": "1.45.0",
+    "isomorphic-dompurify": "^4.7.0",
+    "lucide-react": "^1.70.0",
     "next": "^16.4.5",
     "next-auth": "^4.24.15",
     "next-themes": "^0.4.6",
-    "postgres": "3.4.9",
+    "postgres": "^4.1.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "recharts": "^3.10.1",
-    "zod": "4.4.3"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@playwright/test": "1.62.1",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "^4.3.5",
-    "@types/node": "20.19.43",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@typescript/typescript6": "^6.0.2",
     "drizzle-kit": "^0.31.11",
-    "eslint": "9.39.5",
+    "eslint": "^10.14.0",
     "eslint-config-next": "^16.4.5",
     "tailwindcss": "^4.3.5",
-    "typescript": "6.0.3",
-    "vite": "^8.3.6",
-    "vitest": "4.1.12"
+    "typescript": "^7.0.2",
+    "vite": "^8.3.7",
+    "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "typescript-eslint": {
+      "typescript": "npm:@typescript/typescript6@^6.0.2"
+    }
   }
 }

@@ -1,6 +1,22 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import { createRequire } from "node:module";
+
+// Compatibility bridge: typescript-eslint requires the TypeScript 6 programmatic API
+// when TypeScript 7 is installed (see https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0)
+const require = createRequire(import.meta.url);
+const Module = require("node:module");
+const originalLoad = Module._load;
+Module._load = function (request, parent, isMain) {
+  if (request === "typescript") {
+    try {
+      return originalLoad("@typescript/typescript6", parent, isMain);
+    } catch {}
+  }
+  return originalLoad(request, parent, isMain);
+};
+
+const { defineConfig, globalIgnores } = await import("eslint/config");
+const nextVitals = (await import("eslint-config-next/core-web-vitals")).default;
+const nextTs = (await import("eslint-config-next/typescript")).default;
 
 const eslintConfig = defineConfig([
   ...nextVitals,
