@@ -98,7 +98,7 @@ export class EmployeeService {
     let cellIds: number[] = [];
     let isUserRestricted = false;
 
-    if (currentUser.role === 'USER') {
+    if (currentUser.role !== 'ADMIN') {
       isUserRestricted = true;
       if (currentUser.cells && currentUser.cells.length > 0) {
         cellIds = currentUser.cells.map((c) => c.id);

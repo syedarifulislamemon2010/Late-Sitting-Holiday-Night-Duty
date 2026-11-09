@@ -1,12 +1,18 @@
 import logger from '@/lib/logger';
 import fs from 'fs';
 import path from 'path';
+import { getCurrentUser } from '@/lib/auth-wrapper';
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
     const resolvedParams = await params;
     const filePathSegments = resolvedParams.path;
     const uploadsDir = path.resolve(process.cwd(), 'public', 'uploads');
@@ -46,11 +52,18 @@ export async function GET(
       contentType = 'text/plain; charset=utf-8';
     }
 
+    const responseHeaders: Record<string, string> = {
+      'Content-Type': contentType,
+      'X-Content-Type-Options': 'nosniff',
+    };
+
+    if (ext === '.html') {
+      // Sandbox restricts DOM access to parent/cookies while allowing print modals to execute safely
+      responseHeaders['Content-Security-Policy'] = 'sandbox allow-scripts allow-modals allow-popups;';
+    }
+
     return new Response(fileBuffer, {
-      headers: {
-        'Content-Type': contentType,
-        'X-Content-Type-Options': 'nosniff',
-      },
+      headers: responseHeaders,
     });
   } catch (error) {
     logger.error('Error serving uploaded file:', error);

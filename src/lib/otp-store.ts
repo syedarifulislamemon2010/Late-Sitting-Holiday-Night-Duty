@@ -8,16 +8,18 @@ interface OtpRecord {
   attempts: number;
   resendCount: number;
   lastSentAt: number;
+  blockedUntil?: number;
 }
 
 // Global in-memory OTP store (guaranteed single-process in PM2 fork mode with instances: 1)
 const otpMap = new Map<string, OtpRecord>();
 
-// Clean expired records every 2 minutes
+// Clean expired records every 2 minutes (preserving active lockouts)
 setInterval(() => {
   const now = Date.now();
   for (const [key, record] of otpMap.entries()) {
-    if (record.expiresAt < now) {
+    const isBlocked = record.blockedUntil && record.blockedUntil > now;
+    if (!isBlocked && record.expiresAt < now) {
       otpMap.delete(key);
     }
   }
@@ -42,7 +44,16 @@ export function checkCanSendOtp(bankId: string): CheckCanSendResult {
 
   const now = Date.now();
 
-  // If expired, allow sending new OTP
+  // Check if locked due to excessive failed attempts
+  if (existing.blockedUntil && existing.blockedUntil > now) {
+    const remainingMin = Math.ceil((existing.blockedUntil - now) / 60000);
+    return {
+      allowed: false,
+      error: `অতিরিক্ত ভুল ওটিপি প্রবেশের কারণে অ্যাকাউন্টটি সাময়িকভাবে স্থগিত রয়েছে। আরও ${remainingMin} মিনিট পর পুনরায় ওটিপি অনুরোধ করুন।`
+    };
+  }
+
+  // If expired and not blocked, allow sending new OTP
   if (existing.expiresAt < now) {
     return { allowed: true };
   }
@@ -120,6 +131,16 @@ export function verifyAndConsumeOtp(bankId: string, mobile: string, inputOtp: st
   }
 
   const now = Date.now();
+
+  // Check if locked due to excessive failed attempts
+  if (record.blockedUntil && record.blockedUntil > now) {
+    const remainingMin = Math.ceil((record.blockedUntil - now) / 60000);
+    return {
+      valid: false,
+      error: `অতিরিক্ত ভুল ওটিপি প্রবেশের কারণে অ্যাকাউন্টটি সাময়িকভাবে স্থগিত রয়েছে। আরও ${remainingMin} মিনিট পর চেষ্টা করুন।`
+    };
+  }
+
   if (record.expiresAt < now) {
     otpMap.delete(key);
     return {
@@ -136,15 +157,24 @@ export function verifyAndConsumeOtp(bankId: string, mobile: string, inputOtp: st
   }
 
   if (record.attempts >= 5) {
-    otpMap.delete(key);
+    record.blockedUntil = now + 15 * 60 * 1000;
+    record.otp = '';
     return {
       valid: false,
-      error: 'অতিরিক্ত ভুল ওটিপি প্রদানের কারণে কোডটি বাতিল করা হয়েছে। অনুগ্রহ করে নতুন করে ওটিপি অনুরোধ করুন।'
+      error: 'অতিরিক্ত ভুল ওটিপি প্রদানের কারণে অ্যাকাউন্টটি সাময়িকভাবে স্থগিত করা হয়েছে। ১৫ মিনিট পর পুনরায় চেষ্টা করুন।'
     };
   }
 
   if (record.otp !== cleanOtp) {
     record.attempts += 1;
+    if (record.attempts >= 5) {
+      record.blockedUntil = now + 15 * 60 * 1000;
+      record.otp = '';
+      return {
+        valid: false,
+        error: 'অতিরিক্ত ৫ বার ভুল ওটিপি প্রদানের কারণে অ্যাকাউন্টটি ১৫ মিনিটের জন্য সাময়িকভাবে স্থগিত করা হয়েছে।'
+      };
+    }
     const remaining = 5 - record.attempts;
     return {
       valid: false,

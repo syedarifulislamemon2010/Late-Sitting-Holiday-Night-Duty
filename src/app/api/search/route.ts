@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const cellIds: number[] = user.cells.map(c => c.id);
     const cellNames: string[] = user.cells.map(c => c.name);
 
-    if (user.role === 'USER' && cellIds.length === 0) {
+    if (user.role !== 'ADMIN' && cellIds.length === 0) {
       const emp = await db.select().from(employees).where(eq(employees.bankId, user.username));
       if (emp[0]) {
         cellIds.push(emp[0].cellId);
@@ -55,9 +55,9 @@ export async function GET(request: Request) {
         ilike(employees.designation, searchQuery)
       )
     ];
-    if (user.role === 'USER' && cellIds.length > 0) {
+    if (user.role !== 'ADMIN' && cellIds.length > 0) {
       empConditions.push(inArray(employees.cellId, cellIds));
-    } else if (user.role === 'USER') {
+    } else if (user.role !== 'ADMIN') {
       empConditions.push(eq(employees.cellId, -1)); // block if no cell
     }
 
@@ -90,7 +90,7 @@ export async function GET(request: Request) {
         ilike(leaveApplications.leaveLocation, searchQuery)
       )
     ];
-    if (user.role === 'USER') {
+    if (user.role !== 'ADMIN') {
       leaveConditions.push(eq(leaveApplications.userId, user.id));
     }
 
@@ -125,9 +125,9 @@ export async function GET(request: Request) {
         ilike(officeOrders.category, searchQuery)
       )
     ];
-    if (user.role === 'USER' && cellNames.length > 0) {
+    if (user.role !== 'ADMIN' && cellNames.length > 0) {
       orderConditions.push(inArray(officeOrders.cellName, cellNames));
-    } else if (user.role === 'USER') {
+    } else if (user.role !== 'ADMIN') {
       orderConditions.push(eq(officeOrders.id, -1)); // block
     }
 
@@ -159,9 +159,9 @@ export async function GET(request: Request) {
         ilike(duties.type, searchQuery)
       )
     ];
-    if (user.role === 'USER' && cellIds.length > 0) {
+    if (user.role !== 'ADMIN' && cellIds.length > 0) {
       dutyConditions.push(inArray(employees.cellId, cellIds));
-    } else if (user.role === 'USER') {
+    } else if (user.role !== 'ADMIN') {
       dutyConditions.push(eq(employees.cellId, -1)); // block
     }
 

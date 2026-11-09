@@ -291,7 +291,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         window.location.href = '/';
       } else {
         if (res?.error === 'CredentialsSignin' || res?.error) {
-          setError('ভুল ব্যাংক আইডি বা পাসওয়ার্ড! (প্রথমবার লগইনের জন্য ডিফল্ট পাসওয়ার্ড: 123456)');
+          setError('ভুল ব্যাংক আইডি বা পাসওয়ার্ড! অনুগ্রহ করে সঠিক তথ্য প্রদান করুন।');
         } else {
           setError('লগইন ব্যর্থ হয়েছে। অনুগ্রহ করে ব্যাংক আইডি ও পাসওয়ার্ড পরীক্ষা করুন।');
         }

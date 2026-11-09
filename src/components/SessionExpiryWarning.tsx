@@ -17,7 +17,7 @@ export default function SessionExpiryWarning() {
   const isLoggingOutRef = useRef(false);
 
   // Reference to track in-memory last activity timestamp
-  const lastActivityRef = useRef<number>(Date.now());
+  const lastActivityRef = useRef<number>(0);
 
   const handleLogout = async () => {
     if (isLoggingOutRef.current) return;

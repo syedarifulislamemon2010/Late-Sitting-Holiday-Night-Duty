@@ -158,7 +158,7 @@ export async function POST(request: Request) {
 
     const isAdmin = currentUser.role === 'ADMIN';
     const lunchCellIds = await LunchBillService.getUserLunchBillCellIds(currentUser);
-    let userCellIds = lunchCellIds ?? (currentUser.cells?.map((c: { id: number }) => Number(c.id)) || []);
+    const userCellIds = lunchCellIds ?? (currentUser.cells?.map((c: { id: number }) => Number(c.id)) || []);
 
     if (!isAdmin && userCellIds.length === 0) {
       return NextResponse.json({ 
