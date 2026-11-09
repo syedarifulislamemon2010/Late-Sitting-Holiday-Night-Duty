@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
-import { leaveApplications, holidays, employees, executives } from '@/db/schema';
+import { leaveApplications, holidays, employees, executives, cells, users, userCells } from '@/db/schema';
 import { isNonWorkingDay } from '@/lib/leave-calculator';
-import { and, gte, lte } from 'drizzle-orm';
+import { and, gte, lte, eq } from 'drizzle-orm';
 
 export interface MonthlyLeaveSummary {
   month: string;
@@ -17,6 +17,54 @@ export interface MonthlyLeaveSummary {
 }
 
 export class LunchBillService {
+  /**
+   * Resolves the strict single cell allowed for a non-admin user in Lunch Bill.
+   * In Lunch Bill, non-admin officers of R09 and CBS cannot see each other.
+   * Returns null for ADMIN (all cells allowed).
+   */
+  static async getUserLunchBillCellIds(user: { username: string; role: string; cells?: Array<{ id: number; name: string }>; primaryCellId?: number | null }): Promise<number[] | null> {
+    if (user.role === 'ADMIN') {
+      return null;
+    }
+
+    // 1. If primaryCellId is already available, respect it directly
+    if (user.primaryCellId) {
+      return [Number(user.primaryCellId)];
+    }
+
+    // 2. Query employee record by bankId
+    const empList = await db
+      .select({ cellId: employees.cellId })
+      .from(employees)
+      .where(eq(employees.bankId, user.username))
+      .limit(1);
+    
+    if (empList[0]?.cellId) {
+      return [Number(empList[0].cellId)];
+    }
+
+    // 3. Query direct user_cells in DB before synthetic expansion
+    try {
+      const userRecord = await db.select({ id: users.id }).from(users).where(eq(users.username, user.username)).limit(1);
+      if (userRecord[0]) {
+        const rawUserCells = await db.select({ cellId: userCells.A }).from(userCells).where(eq(userCells.B, userRecord[0].id));
+        const rawIds = rawUserCells.map(uc => Number(uc.cellId));
+        if (rawIds.length > 0) {
+          // If user belongs strictly to CBS (9) or R09 (7), return only that
+          if (rawIds.includes(9) && !rawIds.includes(7)) return [9];
+          if (rawIds.includes(7) && !rawIds.includes(9)) return [7];
+          return [rawIds[0]];
+        }
+      }
+    } catch {
+      // fail-soft
+    }
+
+    // 4. Fallback to direct assigned cells in session
+    const cellIds = user.cells?.map(c => Number(c.id)) || [];
+    return cellIds.length > 0 ? [cellIds[0]] : [];
+  }
+
   /**
    * Calculates the working days an employee/executive was on leave during a given month (YYYY-MM).
    * Only official working days (non-weekends and non-holidays) are counted as absent days for lunch billing.

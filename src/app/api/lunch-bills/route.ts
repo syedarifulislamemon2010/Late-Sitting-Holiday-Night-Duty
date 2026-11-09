@@ -7,6 +7,7 @@ import { lunchBills, cells } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { lunchBillSaveFormSchema } from '@/validations/lunchBill.schema';
+import { LunchBillService } from '@/services/lunch-bill.service';
 
 interface LunchBillRecord {
   employeeId?: number;
@@ -60,17 +61,11 @@ export async function GET(request: Request) {
       targetCellId = parseInt(cellIdStr, 10);
     }
 
-    // Standard user cell privacy check
+    // Standard user cell privacy check: non-admin officers of R09 & CBS cannot see each other
     let allowedCellIds: number[] = [];
     if (!isAdmin) {
-      if (currentUser.username === '026795') {
-        // Enforce Syed Ariful Islam Emon (026795) to strictly see CBS Integrated Development Cell
-        const cbsCell = await db.select().from(cells).where(eq(cells.name, 'CBS Integrated Development Cell'));
-        const cbsCellId = cbsCell[0]?.id || 9;
-        allowedCellIds = [cbsCellId];
-      } else {
-        allowedCellIds = currentUser.cells.map((c: { id: number }) => Number(c.id));
-      }
+      const lunchCellIds = await LunchBillService.getUserLunchBillCellIds(currentUser);
+      allowedCellIds = lunchCellIds ?? (currentUser.cells.map((c: { id: number }) => Number(c.id)));
 
       if (targetCellId !== 0 && !allowedCellIds.includes(targetCellId)) {
         return NextResponse.json({ 
@@ -162,12 +157,8 @@ export async function POST(request: Request) {
     }
 
     const isAdmin = currentUser.role === 'ADMIN';
-    let userCellIds = currentUser.cells?.map((c: { id: number }) => Number(c.id)) || [];
-    if (!isAdmin && currentUser.username === '026795') {
-      const cbsCell = await db.select().from(cells).where(eq(cells.name, 'CBS Integrated Development Cell'));
-      const cbsCellId = cbsCell[0]?.id || 9;
-      userCellIds = [cbsCellId];
-    }
+    const lunchCellIds = await LunchBillService.getUserLunchBillCellIds(currentUser);
+    let userCellIds = lunchCellIds ?? (currentUser.cells?.map((c: { id: number }) => Number(c.id)) || []);
 
     if (!isAdmin && userCellIds.length === 0) {
       return NextResponse.json({ 

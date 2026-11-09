@@ -79,12 +79,15 @@ export default function LunchBillPage() {
     data.applyBulkDeduction();
   };
 
-  // Filter records: cell officers only, support user's assigned cells (strictly CBS for 026795)
+  // Filter records: cell officers only, support single cell isolation for non-admin in Lunch Bill
+  const myEmp = data.employees.find(e => e.bankId === currentUser?.username);
+  const myCellId = currentUser?.primaryCellId || myEmp?.cellId || (currentUser?.cells && currentUser.cells.length > 0 ? Number(currentUser.cells[0].id) : null);
+
   const userBaseRecords = data.records.filter(r => {
     if (r.isExecutive) return false;
     if (isAdmin) return true;
-    if (currentUser?.username === '026795') {
-      return Number(r.cellId) === 9;
+    if (myCellId) {
+      return Number(r.cellId) === Number(myCellId);
     }
     const userCellIds = currentUser?.cells?.map(c => Number(c.id)) || [];
     return userCellIds.length === 0 || userCellIds.includes(Number(r.cellId));

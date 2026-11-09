@@ -104,12 +104,19 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
         const holidayData = await holidayRes.json();
         
         let loadedCells: Cell[] = Array.isArray(cellData) ? cellData : [];
-        if (currentUser?.role !== 'ADMIN' && currentUser?.username === '026795') {
-          loadedCells = loadedCells.filter(c => c.name.includes('CBS'));
+        const loadedEmps: Employee[] = Array.isArray(empData) ? empData : [];
+        setEmployees(loadedEmps);
+        setHolidays(Array.isArray(holidayData) ? holidayData : []);
+
+        // Resolve single cell isolation for non-admin in Lunch Bill (R09 & CBS cannot see each other)
+        const myEmp = loadedEmps.find(e => e.bankId === currentUser?.username);
+        const homeCellId = currentUser?.primaryCellId || myEmp?.cellId || (currentUser?.cells && currentUser.cells.length > 0 ? Number(currentUser.cells[0].id) : null);
+
+        if (currentUser?.role !== 'ADMIN' && homeCellId) {
+          loadedCells = loadedCells.filter(c => Number(c.id) === Number(homeCellId));
+          setActiveCellId(Number(homeCellId));
         }
         setCells(loadedCells);
-        setEmployees(Array.isArray(empData) ? empData : []);
-        setHolidays(Array.isArray(holidayData) ? holidayData : []);
         
         const filteredExecs = (Array.isArray(execData) ? execData : []).filter((e: Executive) => {
           const d = e.designation.trim();
@@ -274,8 +281,11 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
               return true;
             });
 
-            if (currentUser?.role !== 'ADMIN' && currentUser?.username === '026795') {
-              dedupedRecords = dedupedRecords.filter((r: LunchRecord) => Number(r.cellId) === 9);
+            const myEmp = employees.find(e => e.bankId === currentUser?.username);
+            const homeCellId = currentUser?.primaryCellId || myEmp?.cellId || (currentUser?.cells && currentUser.cells.length > 0 ? Number(currentUser.cells[0].id) : null);
+
+            if (currentUser?.role !== 'ADMIN' && homeCellId) {
+              dedupedRecords = dedupedRecords.filter((r: LunchRecord) => Number(r.cellId) === Number(homeCellId));
             }
 
             // If we have saved records, display them (and for ADMIN, supplement any missing employees)
@@ -365,8 +375,11 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
           return true;
         });
 
-        if (currentUser?.role !== 'ADMIN' && currentUser?.username === '026795') {
-          dedupedCellRecords = dedupedCellRecords.filter((r: LunchRecord) => Number(r.cellId) === 9);
+        const myEmp = employees.find(e => e.bankId === currentUser?.username);
+        const homeCellId = currentUser?.primaryCellId || myEmp?.cellId || (currentUser?.cells && currentUser.cells.length > 0 ? Number(currentUser.cells[0].id) : null);
+
+        if (currentUser?.role !== 'ADMIN' && homeCellId) {
+          dedupedCellRecords = dedupedCellRecords.filter((r: LunchRecord) => Number(r.cellId) === Number(homeCellId));
         }
 
         // In Lunch Bill, only cell officers are included (executives are excluded)
@@ -566,8 +579,11 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
       cells.forEach(c => cellMap.set(Number(c.id), c.name));
 
       let distinctCellIds = Array.from(new Set(records.map(r => Number(r.cellId))));
-      if (currentUser?.role !== 'ADMIN' && currentUser?.username === '026795') {
-        distinctCellIds = distinctCellIds.filter(cId => Number(cId) === 9);
+      const myEmp = employees.find(e => e.bankId === currentUser?.username);
+      const homeCellId = currentUser?.primaryCellId || myEmp?.cellId || (currentUser?.cells && currentUser.cells.length > 0 ? Number(currentUser.cells[0].id) : null);
+
+      if (currentUser?.role !== 'ADMIN' && homeCellId) {
+        distinctCellIds = distinctCellIds.filter(cId => Number(cId) === Number(homeCellId));
       }
       const cellGroups = distinctCellIds.map(cId => {
         const cName = cellMap.get(cId) || (cId === 7 ? 'R09 Development & Customization Cell' : cId === 9 ? 'CBS Integrated Development Cell' : cId === 8 ? 'R22 Development & Customization Cell' : cId === 11 ? 'Business IT (R&D)' : `সেল ${cId}`);

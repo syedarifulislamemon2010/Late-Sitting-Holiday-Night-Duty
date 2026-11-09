@@ -1,6 +1,6 @@
 import logger from '@/lib/logger';
 import { db } from './db';
-import { users, cells, userCells } from '../db/schema';
+import { users, cells, userCells, employees } from '../db/schema';
 import { eq, ilike } from 'drizzle-orm';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth-options';
@@ -12,6 +12,7 @@ export interface UserSessionData {
   role: 'USER' | 'ADMIN' | 'EMPLOYEE';
   mobile: string | null;
   cells: { id: number; name: string }[];
+  primaryCellId?: number | null;
 }
 
 interface CachedUser {
@@ -54,6 +55,24 @@ export async function getCurrentUser(): Promise<UserSessionData | null> {
             .innerJoin(cells, eq(userCells.A, cells.id))
             .where(eq(userCells.B, user.id));
 
+          // Lookup actual primary cell from employees table
+          let primaryCellId: number | null = null;
+          try {
+            const empList = await db
+              .select({ cellId: employees.cellId })
+              .from(employees)
+              .where(eq(employees.bankId, user.username))
+              .limit(1);
+            if (empList[0]?.cellId) {
+              primaryCellId = Number(empList[0].cellId);
+            }
+          } catch {
+            // fail-soft
+          }
+          if (!primaryCellId && assignedCells.length > 0) {
+            primaryCellId = Number(assignedCells[0].id);
+          }
+
           const hasR09 = assignedCells.some(c => c.name.includes('R09'));
           const hasCBS = assignedCells.some(c => c.name.includes('CBS Integrated'));
 
@@ -80,6 +99,7 @@ export async function getCurrentUser(): Promise<UserSessionData | null> {
             role: user.role as 'USER' | 'ADMIN' | 'EMPLOYEE',
             mobile: user.mobile,
             cells: assignedCells,
+            primaryCellId,
           };
 
           userCache.set(nextAuthUserId, {

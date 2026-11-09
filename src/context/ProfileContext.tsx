@@ -15,6 +15,7 @@ export interface UserProfile {
   role: 'ADMIN' | 'USER' | 'EMPLOYEE';
   mobile?: string | null;
   cells?: UserCell[];
+  primaryCellId?: number | null;
   mustChangePassword?: boolean;
 }
 

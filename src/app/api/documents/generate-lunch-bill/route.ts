@@ -2,7 +2,8 @@ import { auditRbacRequest } from '@/lib/rbac-audit';
 import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { documents } from '@/db/schema';
+import { LunchBillService } from '@/services/lunch-bill.service';
+import { documents, cells } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
@@ -154,6 +155,19 @@ export async function POST(request: Request) {
       rawGroups = payload.groupedData as RawGroupInput[];
     } else if (Array.isArray(payload.cells) && payload.cells.length > 0) {
       rawGroups = payload.cells as RawGroupInput[];
+    }
+
+    // Non-admin single cell isolation for Lunch Bill
+    if (user.role !== 'ADMIN') {
+      const lunchCellIds = await LunchBillService.getUserLunchBillCellIds(user);
+      if (lunchCellIds && lunchCellIds.length > 0) {
+        const dbCells = await db.select({ id: cells.id, name: cells.name }).from(cells);
+        const allowedCellNames = dbCells.filter(c => lunchCellIds.includes(c.id)).map(c => c.name.toLowerCase());
+        rawGroups = rawGroups.filter((g: RawGroupInput) => {
+          const gName = (g.name || g.cellName || '').toLowerCase();
+          return allowedCellNames.some(name => gName.includes(name) || name.includes(gName));
+        });
+      }
     }
 
     const groupedData: LunchBillGroup[] = rawGroups.map((c: RawGroupInput) => {
