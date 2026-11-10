@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { holidays as holidaysTable } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { holidayBulkCreateSchema } from '@/validations/holiday.schema';
-import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
+import { DEFAULT_2026_HOLIDAYS, ALL_DEFAULT_HOLIDAYS } from '@/constants/holidays';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 
 export const dynamic = 'force-dynamic';
@@ -23,7 +23,7 @@ export async function GET() {
     const dbHolidayMap = new Map(holidayList.map(h => [h.date, h]));
     const result: (typeof holidaysTable.$inferSelect)[] = [...holidayList];
 
-    DEFAULT_2026_HOLIDAYS.forEach((dh, idx) => {
+    ALL_DEFAULT_HOLIDAYS.forEach((dh, idx) => {
       const existing = dbHolidayMap.get(dh.date);
       if (!existing) {
         result.push({

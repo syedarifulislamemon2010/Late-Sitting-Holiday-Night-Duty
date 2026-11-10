@@ -9,9 +9,9 @@ import {
   Executive, 
   Holiday, 
   LunchBill, 
-  LunchRecord, 
-  DEFAULT_2026_HOLIDAYS 
+  LunchRecord 
 } from '../types';
+import { ALL_DEFAULT_HOLIDAYS } from '@/constants/holidays';
 import { getBanglaMonthYearLabel, getBanglaNumberWords } from '@/lib/bengali-converter';
 
 export function useLunchBillData(currentUser: UserProfile | null | undefined) {
@@ -163,11 +163,11 @@ export function useLunchBillData(currentUser: UserProfile | null | undefined) {
           }
         }
       } catch {
-        resHolidays = DEFAULT_2026_HOLIDAYS.filter(h => h.date.startsWith(yearMonth));
+        resHolidays = ALL_DEFAULT_HOLIDAYS.filter(h => h.date.startsWith(yearMonth));
       }
 
       if (resHolidays.length === 0) {
-        resHolidays = DEFAULT_2026_HOLIDAYS.filter(h => h.date.startsWith(yearMonth));
+        resHolidays = ALL_DEFAULT_HOLIDAYS.filter(h => h.date.startsWith(yearMonth));
       }
 
       let count = 0;

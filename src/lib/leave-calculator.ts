@@ -7,8 +7,8 @@ export interface Holiday {
   isWorkingDay: boolean;
 }
 
-import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
-export { DEFAULT_2026_HOLIDAYS };
+import { DEFAULT_2026_HOLIDAYS, ALL_DEFAULT_HOLIDAYS } from '@/constants/holidays';
+export { DEFAULT_2026_HOLIDAYS, ALL_DEFAULT_HOLIDAYS };
 
 export const isNonWorkingDay = (dateStr: string, dbHolidays: Holiday[] = []): boolean => {
   const dateObj = new Date(dateStr);
@@ -30,7 +30,7 @@ export const isNonWorkingDay = (dateStr: string, dbHolidays: Holiday[] = []): bo
   }
 
   // Check if in default holiday list or db holidays list with isWorkingDay === false
-  const isPublicHoliday = DEFAULT_2026_HOLIDAYS.some(h => h.date === dateStr) || 
+  const isPublicHoliday = ALL_DEFAULT_HOLIDAYS.some(h => h.date === dateStr) || 
     dbHolidays.some(h => h.date === dateStr && !h.isWorkingDay);
 
   return isWeekend || isPublicHoliday;

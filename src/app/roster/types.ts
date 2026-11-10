@@ -1,7 +1,7 @@
 import { toBanglaDigits } from '@/lib/bengali-converter';
 import { getShortDesignation as printGetShortDesignation } from '@/lib/print-helpers';
 import type { UserProfile } from '@/context/ProfileContext';
-import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
+import { DEFAULT_2026_HOLIDAYS, ALL_DEFAULT_HOLIDAYS } from '@/constants/holidays';
 
 export interface Cell {
   id: number;
@@ -217,7 +217,7 @@ export const getHolidayStatus = (dateStr: string, holidaysList: Holiday[]) => {
   const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
   const dbHoliday = (holidaysList || []).find(h => h.date === dateStr);
-  const defaultHoliday = DEFAULT_2026_HOLIDAYS.find(h => h.date === dateStr);
+  const defaultHoliday = ALL_DEFAULT_HOLIDAYS.find(h => h.date === dateStr);
 
   if (dbHoliday) {
     if (dbHoliday.isWorkingDay) {

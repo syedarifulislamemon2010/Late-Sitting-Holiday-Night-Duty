@@ -5,7 +5,7 @@ import logger from '@/lib/logger';
 import { UserProfile } from '@/context/ProfileContext';
 import { Cell, Employee, Executive, Holiday, OfficeOrder, Duty, LeaveRecord } from '../types';
 import { useLatestRequest } from '@/hooks/useLatestRequest';
-import { DEFAULT_2026_HOLIDAYS } from '@/constants/holidays';
+import { DEFAULT_2026_HOLIDAYS, ALL_DEFAULT_HOLIDAYS } from '@/constants/holidays';
 
 interface UseRosterDataProps {
   currentUser: UserProfile | null | undefined;
@@ -61,7 +61,7 @@ export function useRosterData({
 
         if (Array.isArray(empRes)) setEmployees(empRes);
         if (Array.isArray(cellRes)) setCells(cellRes);
-        const combinedHolidays: Holiday[] = DEFAULT_2026_HOLIDAYS.map((h, i) => ({
+        const combinedHolidays: Holiday[] = ALL_DEFAULT_HOLIDAYS.map((h, i) => ({
           id: -(i + 1),
           date: h.date,
           name: h.name,
