@@ -33,11 +33,37 @@ export async function GET(request: Request) {
     const lines = fileContent.split('\n');
     const logs = [];
 
+    let lineIndex = 0;
     for (const line of lines) {
       const trimmed = line.trim();
       if (trimmed) {
         try {
-          logs.push(JSON.parse(trimmed));
+          const raw = JSON.parse(trimmed);
+          lineIndex++;
+          
+          // Unified normalized audit log object compatible with both /audit and /users
+          const timestamp = raw.timestamp || raw.createdAt || new Date().toISOString();
+          const username = raw.username || raw.bankId || raw.userId || 'Unknown';
+          const action = raw.action || raw.actionType || 'ACTIVITY';
+          const recordId = raw.recordId || raw.entityId || 'N/A';
+          const id = raw.id || `${timestamp}-${lineIndex}`;
+
+          logs.push({
+            id,
+            timestamp,
+            createdAt: timestamp,
+            userId: raw.userId || username,
+            bankId: raw.bankId || username,
+            username,
+            cell: raw.cell || 'N/A',
+            recordId,
+            entityId: recordId,
+            action,
+            actionType: action,
+            ipAddress: raw.ipAddress || '127.0.0.1',
+            userAgent: raw.userAgent || 'Unknown',
+            details: raw.details || ''
+          });
         } catch {
           // Ignore malformed lines
         }

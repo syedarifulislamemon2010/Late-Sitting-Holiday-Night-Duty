@@ -26,12 +26,19 @@ export interface Employee {
 }
 
 export interface AuditLog {
-  id: number;
-  createdAt: string;
-  username: string;
-  action: string;
+  id: number | string;
+  createdAt?: string;
+  timestamp?: string;
+  username?: string;
+  bankId?: string;
+  userId?: string | number;
+  action?: string;
+  actionType?: string;
   details: string;
+  cell?: string;
+  recordId?: string | number;
   ipAddress?: string | null;
+  userAgent?: string | null;
   macAddress?: string | null;
 }
 
