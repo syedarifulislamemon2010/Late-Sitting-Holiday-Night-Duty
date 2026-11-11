@@ -636,8 +636,7 @@ export default function ReportsTab({
                   <thead>
                     <tr className="bg-slate-100/50 dark:bg-slate-900/80 text-[10px] font-bold text-slate-600 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
                       <th className="p-3 text-center w-10">#</th>
-                      <th className="p-3 w-48">কর্মকর্তার নাম</th>
-                      <th className="p-3 w-40">পদবী</th>
+                      <th className="p-3 w-72">কর্মকর্তার নাম ও পদবী (Payee Name & Designation)</th>
                       <th className="p-3 text-center">লেট-সিটিং দিন (টাকা)</th>
                       <th className="p-3 text-center">ছুটির দিন (টাকা)</th>
                       <th className="p-3 text-center">নাইট শিফট দিন (টাকা)</th>
@@ -650,8 +649,9 @@ export default function ReportsTab({
                     {reportData.employeesBreakdown.map((record, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 text-slate-600 dark:text-slate-300">
                         <td className="p-3 text-center font-mono text-[10px] text-slate-400">{toBanglaDigits(idx + 1)}</td>
-                        <td className="p-3 text-slate-800 dark:text-slate-100 font-bold">{record.employeeName}</td>
-                        <td className="p-3 text-slate-400 text-[10px]">{record.designation}</td>
+                        <td className="p-3 text-slate-800 dark:text-slate-100 font-bold">
+                          {record.employeeName} {record.designation ? `(${record.designation})` : ''}
+                        </td>
                         <td className="p-3 text-center tabular-nums">
                           {record.lateSittingDays > 0 ? (
                             <span>{toBanglaDigits(record.lateSittingDays)} দিন (৳{toBanglaDigits(record.lateSittingAmount)}/-)</span>
@@ -684,7 +684,7 @@ export default function ReportsTab({
                     ))}
                     <tr className="bg-slate-100/60 dark:bg-slate-900/60 font-bold text-slate-900 dark:text-slate-100 border-t-2 border-slate-300 dark:border-slate-700">
                       <td className="p-3 text-center"></td>
-                      <td className="p-3 text-left font-black font-sans" colSpan={2}>সর্বমোট</td>
+                      <td className="p-3 text-left font-black font-sans" colSpan={1}>সর্বমোট</td>
                       <td className="p-3 text-center font-black tabular-nums">
                         {reportData.totalLateDays > 0 ? (
                           <span>{toBanglaDigits(reportData.totalLateDays)} দিন (৳{toBanglaDigits(reportData.totalLateAmount)}/-)</span>

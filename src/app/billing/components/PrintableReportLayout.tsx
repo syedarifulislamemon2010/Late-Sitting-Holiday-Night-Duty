@@ -201,11 +201,11 @@ export default function PrintableReportLayout({
           <thead>
             <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
               <th className="text-center font-bold" style={{ border: '1px solid #000', width: '5%', padding: '4px 2px' }}>ক্রমিক</th>
-              <th className="text-left font-bold" style={{ border: '1px solid #000', width: '39%', padding: '4px 6px' }}>কর্মকর্তার নাম ও পদবী (Payee Name & Designation)</th>
+              <th className="text-left font-bold" style={{ border: '1px solid #000', width: '38%', padding: '4px 6px' }}>কর্মকর্তার নাম ও পদবী (Payee Name & Designation)</th>
               <th className="text-center font-bold" style={{ border: '1px solid #000', width: '12%', padding: '4px 2px' }}>বিলের সংখ্যা</th>
               <th className="text-right font-bold" style={{ border: '1px solid #000', width: '14%', padding: '4px 6px' }}>যাতায়াত ভাতা</th>
               <th className="text-right font-bold" style={{ border: '1px solid #000', width: '14%', padding: '4px 6px' }}>আপ্যায়ন ভাতা</th>
-              <th className="text-right font-bold" style={{ border: '1px solid #000', width: '16%', padding: '4px 6px' }}>মোট বিলের পরিমাণ (টাকা)</th>
+              <th className="text-right font-bold" style={{ border: '1px solid #000', width: '17%', padding: '4px 6px' }}>মোট বিলের পরিমাণ (টাকা)</th>
             </tr>
           </thead>
           <tbody>
@@ -249,9 +249,8 @@ export default function PrintableReportLayout({
         <table className="w-full border-collapse" style={{ border: '1px solid #000', tableLayout: 'fixed', fontSize: '10pt', width: '100%' }}>
           <thead>
             <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
-              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '4%', padding: '3px 2px' }}>#</th>
-              <th className="text-left font-bold" style={{ border: '1px solid #000', width: '19%', padding: '3px 4px' }}>কর্মকর্তার নাম</th>
-              <th className="text-left font-bold" style={{ border: '1px solid #000', width: '17%', padding: '3px 4px' }}>পদবী</th>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '4.5%', padding: '3px 2px' }}>#</th>
+              <th className="text-left font-bold" style={{ border: '1px solid #000', width: '37%', padding: '3px 6px' }}>কর্মকর্তার নাম ও পদবী (Payee Name & Designation)</th>
               <th className="text-center font-bold" style={{ border: '1px solid #000', width: '12%', padding: '3px 2px' }}>
                 <div>লেট-সিটিং</div>
                 <div style={{ fontSize: '8pt', fontWeight: 'normal' }}>(দিন/টাকা)</div>
@@ -264,20 +263,21 @@ export default function PrintableReportLayout({
                 <div>নাইট শিফট</div>
                 <div style={{ fontSize: '8pt', fontWeight: 'normal' }}>(দিন/টাকা)</div>
               </th>
-              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '7%', padding: '3px 2px' }}>মোট দিন</th>
-              <th className="text-right font-bold" style={{ border: '1px solid #000', width: '10.5%', padding: '3px 4px' }}>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '6.5%', padding: '3px 2px' }}>মোট দিন</th>
+              <th className="text-right font-bold" style={{ border: '1px solid #000', width: '10%', padding: '3px 4px' }}>
                 <div>সর্বমোট</div>
                 <div style={{ fontSize: '8pt', fontWeight: 'normal' }}>(টাকা)</div>
               </th>
-              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '6.5%', padding: '3px 2px', whiteSpace: 'nowrap' }}>কর্তন</th>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '6%', padding: '3px 2px', whiteSpace: 'nowrap' }}>কর্তন</th>
             </tr>
           </thead>
           <tbody>
             {employeesBreakdown.map((record: EmployeeBreakdownItem, idx: number) => (
               <tr key={idx} style={{ borderTop: '1px solid #000' }}>
                 <td className="text-center" style={{ border: '1px solid #000', padding: '3px 2px' }}>{toBanglaDigits(idx + 1)}</td>
-                <td className="font-bold text-left" style={{ border: '1px solid #000', padding: '3px 4px' }}>{record.employeeName}</td>
-                <td className="text-left" style={{ border: '1px solid #000', padding: '3px 4px' }}>{record.designation}</td>
+                <td className="font-bold text-left" style={{ border: '1px solid #000', padding: '3px 6px' }}>
+                  {record.employeeName} {record.designation ? `(${record.designation})` : ''}
+                </td>
                 <td className="text-center" style={{ border: '1px solid #000', padding: '3px 2px' }}>
                   {record.lateSittingDays > 0 ? `${toBanglaDigits(record.lateSittingDays)} (${toBanglaDigits(record.lateSittingAmount)}/-)` : '-'}
                 </td>
@@ -299,7 +299,7 @@ export default function PrintableReportLayout({
               </tr>
             ))}
             <tr style={{ borderTop: '2px solid #000', fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
-              <td colSpan={3} className="text-right pr-2 font-bold" style={{ border: '1px solid #000', padding: '3px 6px' }}>মোট যোগফল:</td>
+              <td colSpan={2} className="text-right pr-2 font-bold" style={{ border: '1px solid #000', padding: '3px 6px' }}>মোট যোগফল:</td>
               <td className="text-center font-bold" style={{ border: '1px solid #000', padding: '3px 2px' }}>
                 {toBanglaDigits(totalLateDays)} ({toBanglaDigits(totalLateAmount)}/-)
               </td>
