@@ -81,43 +81,59 @@ export default function PrintableReportLayout({
 
   return (
     <div
-      className="print-report-layout max-w-5xl mx-auto bg-white p-8 border border-slate-200 shadow-md font-sans text-black"
+      className="print-report-layout max-w-5xl mx-auto bg-white p-6 sm:p-8 border border-slate-200 shadow-md font-sans text-black"
       style={{
         fontFamily: "'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif",
         color: '#000',
-        fontSize: '12pt',
-        lineHeight: '1.4'
+        fontSize: '11.5pt',
+        lineHeight: '1.35',
+        boxSizing: 'border-box',
+        width: '100%'
       }}
     >
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
-            size: A4;
-            margin: 12mm 15mm !important;
+            size: auto;
+            margin: 8mm 8mm !important;
+          }
+          *, *::before, *::after {
+            box-sizing: border-box !important;
           }
           .no-print { display: none !important; }
-          body {
+          html, body {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
             background: #fff !important;
             color: #000 !important;
             font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif !important;
-            font-size: 12pt !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           .print-report-layout {
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
             max-width: 100% !important;
-            font-size: 12pt !important;
-            line-height: 1.35 !important;
+            box-sizing: border-box !important;
           }
           table {
-            font-size: 12pt !important;
-            border-collapse: collapse !important;
             width: 100% !important;
+            max-width: 100% !important;
+            table-layout: fixed !important;
+            border-collapse: collapse !important;
+            box-sizing: border-box !important;
           }
           th, td {
-            font-size: 12pt !important;
+            box-sizing: border-box !important;
             border: 1px solid #000 !important;
+            padding: 3px 4px !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
           }
         }
       `}} />
@@ -141,31 +157,31 @@ export default function PrintableReportLayout({
       </div>
 
       {/* Header Statement */}
-      <div className="text-center space-y-1 mb-5">
-        <h2 className="font-bold tracking-tight" style={{ fontSize: '18pt' }}>জনতা ব্যাংক পিএলসি.</h2>
-        <h3 className="font-bold" style={{ fontSize: '14pt' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
-        <p className="text-slate-700" style={{ fontSize: '12pt' }}>প্রধান কার্যালয়, ঢাকা</p>
-        <div className="pt-2">
-          <h4 className="font-bold underline inline-block" style={{ fontSize: '14pt' }}>
+      <div className="text-center space-y-1 mb-4">
+        <h2 className="font-bold tracking-tight" style={{ fontSize: '16pt' }}>জনতা ব্যাংক পিএলসি.</h2>
+        <h3 className="font-bold" style={{ fontSize: '13.5pt' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h3>
+        <p className="text-slate-700" style={{ fontSize: '11pt' }}>প্রধান কার্যালয়, ঢাকা</p>
+        <div className="pt-1.5">
+          <h4 className="font-bold underline inline-block" style={{ fontSize: '13pt' }}>
             ডিউটি বিল সারসংক্ষেপ ও প্রাপক বিবরণী
           </h4>
         </div>
-        <p className="text-slate-700 mt-1 font-semibold" style={{ fontSize: '12pt' }}>
+        <p className="text-slate-700 mt-1 font-semibold" style={{ fontSize: '11pt' }}>
           তারিখ: {getBanglaDate(reportDate)}
         </p>
       </div>
 
       {/* Summary Box */}
-      <div className="mb-5 p-4 border border-black rounded-lg bg-slate-50/50" style={{ fontSize: '12pt' }}>
-        <h5 className="font-bold mb-2 border-b border-black/30 pb-1" style={{ fontSize: '12pt' }}>সারসংক্ষেপ তথ্য (Overview):</h5>
-        <div className="grid grid-cols-2 gap-4" style={{ fontSize: '12pt' }}>
-          <div className="space-y-1">
+      <div className="mb-4 p-3.5 border border-black rounded-lg bg-slate-50/50" style={{ fontSize: '11pt' }}>
+        <h5 className="font-bold mb-1.5 border-b border-black/30 pb-1" style={{ fontSize: '11.5pt' }}>সারসংক্ষেপ তথ্য (Overview):</h5>
+        <div className="grid grid-cols-2 gap-3" style={{ fontSize: '11pt' }}>
+          <div className="space-y-0.5">
             <p><strong>মোট প্রস্তুতকৃত বিল:</strong> {toBanglaDigits(totalBillsCount)} টি</p>
             <p><strong>মোট কার্যকর দিন:</strong> {toBanglaDigits(totalDays)} দিন</p>
             <p><strong>মোট যাতায়াত ভাতা:</strong> {toBanglaDigits(totalTransport)}/- টাকা</p>
             <p><strong>মোট আপ্যায়ন ভাতা:</strong> {toBanglaDigits(totalApyaon)}/- টাকা</p>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <p><strong>লেট-সিটিং ভাতা:</strong> {toBanglaDigits(lateSittingAmount)}/- টাকা</p>
             <p><strong>ছুটির দিন ভাতা:</strong> {toBanglaDigits(holidayAmount)}/- টাকা</p>
             <p><strong>নাইট শিফট ভাতা:</strong> {toBanglaDigits(nightShiftAmount)}/- টাকা</p>
@@ -174,53 +190,53 @@ export default function PrintableReportLayout({
             </p>
           </div>
         </div>
-        <div className="mt-2 pt-2 border-t border-black/30 font-bold" style={{ fontSize: '12pt' }}>
+        <div className="mt-1.5 pt-1.5 border-t border-black/30 font-bold" style={{ fontSize: '11pt' }}>
           কথায়: {getBanglaNumberWords(grandTotal)} মাত্র।
         </div>
       </div>
 
       {/* Table 1: Payee Wise Summary for Accounts */}
-      <div className="mb-5">
-        <h3 className="font-bold mb-2" style={{ fontSize: '13pt' }}>১. প্রাপক অনুযায়ী বিল বিবরণী (Payee-wise Summary for Accounts):</h3>
-        <table className="w-full border-collapse" style={{ border: '1px solid #000', fontSize: '12pt' }}>
+      <div className="mb-4">
+        <h3 className="font-bold mb-1.5" style={{ fontSize: '12pt' }}>১. প্রাপক অনুযায়ী বিল বিবরণী (Payee-wise Summary for Accounts):</h3>
+        <table className="w-full border-collapse" style={{ border: '1px solid #000', tableLayout: 'fixed', fontSize: '11pt', width: '100%' }}>
           <thead>
             <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
-              <th className="p-2 border-r border-black w-12 text-center" style={{ border: '1px solid #000' }}>ক্রমিক</th>
-              <th className="p-2 border-r border-black text-left pl-3" style={{ border: '1px solid #000' }}>কর্মকর্তার নাম ও পদবী (Payee Name & Designation)</th>
-              <th className="p-2 border-r border-black w-28 text-center" style={{ border: '1px solid #000' }}>বিলের সংখ্যা</th>
-              <th className="p-2 border-r border-black w-32 text-right pr-3" style={{ border: '1px solid #000' }}>যাতায়াত ভাতা</th>
-              <th className="p-2 border-r border-black w-32 text-right pr-3" style={{ border: '1px solid #000' }}>আপ্যায়ন ভাতা</th>
-              <th className="p-2 text-right pr-3 w-40" style={{ border: '1px solid #000' }}>মোট বিলের পরিমাণ (টাকা)</th>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '6%', padding: '4px 2px' }}>ক্রমিক</th>
+              <th className="text-left font-bold" style={{ border: '1px solid #000', width: '38%', padding: '4px 6px' }}>কর্মকর্তার নাম ও পদবী (Payee Name & Designation)</th>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '12%', padding: '4px 2px' }}>বিলের সংখ্যা</th>
+              <th className="text-right font-bold" style={{ border: '1px solid #000', width: '14%', padding: '4px 6px' }}>যাতায়াত ভাতা</th>
+              <th className="text-right font-bold" style={{ border: '1px solid #000', width: '14%', padding: '4px 6px' }}>আপ্যায়ন ভাতা</th>
+              <th className="text-right font-bold" style={{ border: '1px solid #000', width: '16%', padding: '4px 6px' }}>মোট বিলের পরিমাণ (টাকা)</th>
             </tr>
           </thead>
           <tbody>
             {payeesSummary.map((payee: PayeeSummaryItem, idx: number) => {
               return (
                 <tr key={idx} style={{ borderTop: '1px solid #000' }}>
-                  <td className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>{toBanglaDigits(idx + 1)}</td>
-                  <td className="p-2 border-r border-black text-left pl-3 font-bold" style={{ border: '1px solid #000' }}>
+                  <td className="text-center" style={{ border: '1px solid #000', padding: '3px 2px' }}>{toBanglaDigits(idx + 1)}</td>
+                  <td className="text-left font-bold" style={{ border: '1px solid #000', padding: '3px 6px' }}>
                     {payee.payeeName} {payee.designation ? `(${payee.designation})` : ''}
                   </td>
-                  <td className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>{toBanglaDigits(payee.billCount)} টি</td>
-                  <td className="p-2 border-r border-black text-right pr-3 font-bold" style={{ border: '1px solid #000' }}>{toBanglaDigits(payee.transportAllowance || 0)}/-</td>
-                  <td className="p-2 border-r border-black text-right pr-3 font-bold" style={{ border: '1px solid #000' }}>{toBanglaDigits(payee.apyaonAllowance || 0)}/-</td>
-                  <td className="p-2 text-right pr-3 font-bold" style={{ border: '1px solid #000' }}>{toBanglaDigits(payee.grandTotal)}/-</td>
+                  <td className="text-center" style={{ border: '1px solid #000', padding: '3px 2px' }}>{toBanglaDigits(payee.billCount)} টি</td>
+                  <td className="text-right font-bold" style={{ border: '1px solid #000', padding: '3px 6px' }}>{toBanglaDigits(payee.transportAllowance || 0)}/-</td>
+                  <td className="text-right font-bold" style={{ border: '1px solid #000', padding: '3px 6px' }}>{toBanglaDigits(payee.apyaonAllowance || 0)}/-</td>
+                  <td className="text-right font-bold" style={{ border: '1px solid #000', padding: '3px 6px' }}>{toBanglaDigits(payee.grandTotal)}/-</td>
                 </tr>
               );
             })}
             <tr style={{ borderTop: '2px solid #000', fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
-              <td className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}></td>
-              <td className="p-2 border-r border-black text-left pl-3 font-bold" style={{ border: '1px solid #000' }}>সর্বমোট</td>
-              <td className="p-2 border-r border-black text-center font-bold" style={{ border: '1px solid #000' }}>
+              <td className="text-center" style={{ border: '1px solid #000', padding: '4px 2px' }}></td>
+              <td className="text-left font-bold" style={{ border: '1px solid #000', padding: '4px 6px' }}>সর্বমোট</td>
+              <td className="text-center font-bold" style={{ border: '1px solid #000', padding: '4px 2px' }}>
                 {toBanglaDigits(payeesSummary.reduce((sum: number, p: PayeeSummaryItem) => sum + p.billCount, 0))} টি
               </td>
-              <td className="p-2 border-r border-black text-right pr-3 font-bold" style={{ border: '1px solid #000' }}>
+              <td className="text-right font-bold" style={{ border: '1px solid #000', padding: '4px 6px' }}>
                 {toBanglaDigits(payeesSummary.reduce((sum: number, p: PayeeSummaryItem) => sum + (p.transportAllowance || 0), 0))}/-
               </td>
-              <td className="p-2 border-r border-black text-right pr-3 font-bold" style={{ border: '1px solid #000' }}>
+              <td className="text-right font-bold" style={{ border: '1px solid #000', padding: '4px 6px' }}>
                 {toBanglaDigits(payeesSummary.reduce((sum: number, p: PayeeSummaryItem) => sum + (p.apyaonAllowance || 0), 0))}/-
               </td>
-              <td className="p-2 text-right pr-3 font-bold" style={{ border: '1px solid #000' }}>
+              <td className="text-right font-bold" style={{ border: '1px solid #000', padding: '4px 6px' }}>
                 {toBanglaDigits(payeesSummary.reduce((sum: number, p: PayeeSummaryItem) => sum + p.grandTotal, 0))}/-
               </td>
             </tr>
@@ -229,66 +245,66 @@ export default function PrintableReportLayout({
       </div>
 
       {/* Table 2: Employee Breakdown for Print */}
-      <div className="mb-6">
-        <h3 className="font-bold mb-2" style={{ fontSize: '13pt' }}>২. কর্মকর্তা ভিত্তিক সমন্বিত প্রাপ্তির বিবরণী (Payee Detailed Statement):</h3>
-        <table className="w-full border-collapse" style={{ border: '1px solid #000', fontSize: '12pt' }}>
+      <div className="mb-4">
+        <h3 className="font-bold mb-1.5" style={{ fontSize: '12pt' }}>২. কর্মকর্তা ভিত্তিক সমন্বিত প্রাপ্তির বিবরণী (Payee Detailed Statement):</h3>
+        <table className="w-full border-collapse" style={{ border: '1px solid #000', tableLayout: 'fixed', fontSize: '10.5pt', width: '100%' }}>
           <thead>
             <tr className="bg-slate-50 text-center font-bold" style={{ borderBottom: '1px solid #000' }}>
-              <th className="p-2 border-r border-black w-8 text-center" style={{ border: '1px solid #000' }}>#</th>
-              <th className="p-2 border-r border-black text-left pl-2" style={{ border: '1px solid #000' }}>কর্মকর্তার নাম</th>
-              <th className="p-2 border-r border-black text-left pl-2" style={{ border: '1px solid #000' }}>পদবী</th>
-              <th className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>লেট-সিটিং (দিন/টাকা)</th>
-              <th className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>ছুটির দিন (দিন/টাকা)</th>
-              <th className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>নাইট শিফট (দিন/টাকা)</th>
-              <th className="p-2 border-r border-black w-16 text-center" style={{ border: '1px solid #000' }}>মোট দিন</th>
-              <th className="p-2 border-r border-black text-right pr-2 w-28" style={{ border: '1px solid #000' }}>সর্বমোট (টাকা)</th>
-              <th className="p-2 text-center w-16" style={{ border: '1px solid #000' }}>কর্তন</th>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '4%', padding: '4px 2px' }}>#</th>
+              <th className="text-left font-bold" style={{ border: '1px solid #000', width: '21%', padding: '4px 4px' }}>কর্মকর্তার নাম</th>
+              <th className="text-left font-bold" style={{ border: '1px solid #000', width: '19%', padding: '4px 4px' }}>পদবী</th>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '12%', padding: '4px 2px' }}>লেট-সিটিং (দিন/টাকা)</th>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '12%', padding: '4px 2px' }}>ছুটির দিন (দিন/টাকা)</th>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '12%', padding: '4px 2px' }}>নাইট শিফট (দিন/টাকা)</th>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '7%', padding: '4px 2px' }}>মোট দিন</th>
+              <th className="text-right font-bold" style={{ border: '1px solid #000', width: '9%', padding: '4px 4px' }}>সর্বমোট (টাকা)</th>
+              <th className="text-center font-bold" style={{ border: '1px solid #000', width: '4%', padding: '4px 2px' }}>কর্তন</th>
             </tr>
           </thead>
           <tbody>
             {employeesBreakdown.map((record: EmployeeBreakdownItem, idx: number) => (
               <tr key={idx} style={{ borderTop: '1px solid #000' }}>
-                <td className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>{toBanglaDigits(idx + 1)}</td>
-                <td className="p-2 border-r border-black font-bold text-left pl-2" style={{ border: '1px solid #000' }}>{record.employeeName}</td>
-                <td className="p-2 border-r border-black text-left pl-2" style={{ border: '1px solid #000' }}>{record.designation}</td>
-                <td className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>
+                <td className="text-center" style={{ border: '1px solid #000', padding: '3px 2px' }}>{toBanglaDigits(idx + 1)}</td>
+                <td className="font-bold text-left" style={{ border: '1px solid #000', padding: '3px 4px' }}>{record.employeeName}</td>
+                <td className="text-left" style={{ border: '1px solid #000', padding: '3px 4px' }}>{record.designation}</td>
+                <td className="text-center" style={{ border: '1px solid #000', padding: '3px 2px' }}>
                   {record.lateSittingDays > 0 ? `${toBanglaDigits(record.lateSittingDays)} (${toBanglaDigits(record.lateSittingAmount)}/-)` : '-'}
                 </td>
-                <td className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>
+                <td className="text-center" style={{ border: '1px solid #000', padding: '3px 2px' }}>
                   {record.holidayDays > 0 ? `${toBanglaDigits(record.holidayDays)} (${toBanglaDigits(record.holidayAmount)}/-)` : '-'}
                 </td>
-                <td className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>
+                <td className="text-center" style={{ border: '1px solid #000', padding: '3px 2px' }}>
                   {record.nightShiftDays > 0 ? `${toBanglaDigits(record.nightShiftDays)} (${toBanglaDigits(record.nightShiftAmount)}/-)` : '-'}
                 </td>
-                <td className="p-2 border-r border-black text-center font-bold" style={{ border: '1px solid #000' }}>
+                <td className="text-center font-bold" style={{ border: '1px solid #000', padding: '3px 2px' }}>
                   {toBanglaDigits(record.totalDays)}
                 </td>
-                <td className="p-2 border-r border-black text-right pr-2 font-bold" style={{ border: '1px solid #000' }}>
+                <td className="text-right font-bold" style={{ border: '1px solid #000', padding: '3px 4px' }}>
                   {toBanglaDigits(record.grandTotal)}/-
                 </td>
-                <td className="p-2 text-center font-medium" style={{ border: '1px solid #000' }}>
+                <td className="text-center font-medium" style={{ border: '1px solid #000', padding: '3px 2px' }}>
                   {record.deduction || record.deductions ? `${toBanglaDigits(record.deduction || record.deductions || 0)}/-` : ''}
                 </td>
               </tr>
             ))}
             <tr style={{ borderTop: '2px solid #000', fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
-              <td colSpan={3} className="p-2 border-r border-black text-right pr-2" style={{ border: '1px solid #000' }}>মোট যোগফল:</td>
-              <td className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>
+              <td colSpan={3} className="text-right pr-2 font-bold" style={{ border: '1px solid #000', padding: '4px 6px' }}>মোট যোগফল:</td>
+              <td className="text-center font-bold" style={{ border: '1px solid #000', padding: '4px 2px' }}>
                 {toBanglaDigits(totalLateDays)} ({toBanglaDigits(totalLateAmount)}/-)
               </td>
-              <td className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>
+              <td className="text-center font-bold" style={{ border: '1px solid #000', padding: '4px 2px' }}>
                 {toBanglaDigits(totalHolidayDays)} ({toBanglaDigits(totalHolidayAmount)}/-)
               </td>
-              <td className="p-2 border-r border-black text-center" style={{ border: '1px solid #000' }}>
+              <td className="text-center font-bold" style={{ border: '1px solid #000', padding: '4px 2px' }}>
                 {toBanglaDigits(totalNightDays)} ({toBanglaDigits(totalNightAmount)}/-)
               </td>
-              <td className="p-2 border-r border-black text-center font-bold" style={{ border: '1px solid #000' }}>
+              <td className="text-center font-bold" style={{ border: '1px solid #000', padding: '4px 2px' }}>
                 {toBanglaDigits(totalDaysSum)} দিন
               </td>
-              <td className="p-2 border-r border-black text-right pr-2 font-bold" style={{ border: '1px solid #000' }}>
+              <td className="text-right font-bold" style={{ border: '1px solid #000', padding: '4px 4px' }}>
                 {toBanglaDigits(grandTotalSum)}/-
               </td>
-              <td className="p-2 text-center" style={{ border: '1px solid #000' }}></td>
+              <td className="text-center" style={{ border: '1px solid #000', padding: '4px 2px' }}></td>
             </tr>
           </tbody>
         </table>
