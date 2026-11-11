@@ -2,6 +2,9 @@ import logger from '@/lib/logger';
 import fs from 'fs';
 import path from 'path';
 import { getCurrentUser } from '@/lib/auth-wrapper';
+import { db } from '@/lib/db';
+import { manualDocuments } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET(
   request: Request,
@@ -31,6 +34,23 @@ export async function GET(
     const allowedExtensions = new Set(['.html', '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.zip']);
     if (!allowedExtensions.has(ext)) {
       return new Response('Unsupported file type', { status: 415 });
+    }
+
+    // Check file-level permission if this file is tracked in manualDocuments
+    const relativeUrl = '/uploads/' + filePathSegments.join('/');
+    try {
+      const manualDocList = await db
+        .select({ isVisibleToUsers: manualDocuments.isVisibleToUsers })
+        .from(manualDocuments)
+        .where(eq(manualDocuments.filePath, relativeUrl))
+        .limit(1);
+
+      if (manualDocList.length > 0 && !manualDocList[0].isVisibleToUsers && user.role !== 'ADMIN') {
+        logger.warn(`[Uploads Access Denied] user=${user.username} role=${user.role} attempted to access private document: ${relativeUrl}`);
+        return new Response('Forbidden', { status: 403 });
+      }
+    } catch (dbErr) {
+      logger.warn('[Uploads] Optional manual document permission check skipped:', dbErr);
     }
 
     const fileBuffer = fs.readFileSync(resolvedPath);

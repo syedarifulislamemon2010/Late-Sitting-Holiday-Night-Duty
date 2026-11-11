@@ -675,7 +675,11 @@ export default function ReportsTab({
                         </td>
                         <td className="p-3 text-center font-bold tabular-nums">{toBanglaDigits(record.totalDays)}</td>
                         <td className="p-3 text-right pr-4 font-black text-primary dark:text-blue-400 tabular-nums">৳{toBanglaDigits(record.grandTotal)}/-</td>
-                        {hasAnyDeductions && <td className="p-3 text-center text-slate-400 font-bold">-</td>}
+                        {hasAnyDeductions && (
+                          <td className="p-3 text-center text-slate-700 dark:text-slate-300 font-medium">
+                            {record.deduction || record.deductions ? `৳${toBanglaDigits(record.deduction || record.deductions || 0)}/-` : ''}
+                          </td>
+                        )}
                       </tr>
                     ))}
                     <tr className="bg-slate-100/60 dark:bg-slate-900/60 font-bold text-slate-900 dark:text-slate-100 border-t-2 border-slate-300 dark:border-slate-700">
@@ -704,7 +708,7 @@ export default function ReportsTab({
                       </td>
                       <td className="p-3 text-center font-black tabular-nums">{toBanglaDigits(reportData.totalDaysSum)}</td>
                       <td className="p-3 text-right pr-4 font-black text-primary dark:text-blue-400 text-sm tabular-nums">৳{toBanglaDigits(reportData.grandTotalSum)}/-</td>
-                      {hasAnyDeductions && <td className="p-3 text-center text-slate-400 font-bold">-</td>}
+                      {hasAnyDeductions && <td className="p-3 text-center"></td>}
                     </tr>
                   </tbody>
                 </table>

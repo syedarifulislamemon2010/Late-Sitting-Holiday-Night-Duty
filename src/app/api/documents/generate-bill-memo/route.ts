@@ -6,6 +6,7 @@ import { officeOrders } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
 import { getShortDesignation, renderDatesInPairs, cleanBracketName } from '@/lib/print-helpers';
@@ -442,10 +443,11 @@ export async function POST(request: Request) {
     }
 
     // Save to HTML file
-    let filename = `bill_memo_${Math.floor(Date.now() / 1000)}.html`;
+    const randomToken = crypto.randomBytes(12).toString('hex');
+    let filename = `bill_memo_${Date.now()}_${randomToken}.html`;
     if (billRef) {
       const safeRef = billRef.replace(/\//g, "_").replace(/[^a-zA-Z0-9_\-\u0980-\u09FF]/g, "");
-      filename = `bill_memo_${safeRef}.html`;
+      filename = `bill_memo_${safeRef}_${Date.now()}_${randomToken}.html`;
     }
     const filePathDisk = path.join(uploadsDir, filename);
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');

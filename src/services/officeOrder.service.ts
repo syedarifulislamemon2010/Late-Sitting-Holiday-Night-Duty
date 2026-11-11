@@ -660,9 +660,6 @@ export class OfficeOrderService {
 }
 
 // Helpers for schema referencing
-function officeOrdersCellNameHelper() {
-  return officeOrders.cellName;
-}
 function dutiesTableHelper() {
   return duties;
 }

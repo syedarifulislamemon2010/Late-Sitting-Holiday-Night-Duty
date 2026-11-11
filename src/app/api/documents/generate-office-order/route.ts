@@ -3,6 +3,7 @@ import logger from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { logActivity } from '@/lib/audit';
 import { officeOrderGenerateSchema } from '@/validations/documentGeneration.schema';
@@ -218,7 +219,8 @@ export async function POST(request: Request) {
     }
 
     const safeRef = orderRef.replace(/\//g, '_').replace(/[^a-zA-Z0-9_\-\u0980-\u09FF]/g, '');
-    const filename = `office_order_${safeRef}_${Date.now()}.html`;
+    const randomToken = crypto.randomBytes(12).toString('hex');
+    const filename = `office_order_${safeRef}_${Date.now()}_${randomToken}.html`;
     const filePathDisk = path.join(uploadsDir, filename);
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');
 

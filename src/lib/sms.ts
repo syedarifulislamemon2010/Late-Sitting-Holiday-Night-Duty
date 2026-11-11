@@ -105,11 +105,11 @@ export async function sendJanataSms(recipientMobile: string, message: string): P
 
       req.write(payload);
       req.end();
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('[SMS] Unexpected error in sendJanataSms:', err);
       resolve({
         success: false,
-        error: err.message || 'অভ্যন্তরীণ ত্রুটি ঘটেছে।'
+        error: (err as Error).message || 'অভ্যন্তরীণ ত্রুটি ঘটেছে।'
       });
     }
   });

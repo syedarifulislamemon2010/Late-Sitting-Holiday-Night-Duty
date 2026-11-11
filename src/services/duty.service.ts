@@ -8,7 +8,7 @@ import { eq, inArray, and, or, isNull, gte, lte, SQL, like } from 'drizzle-orm';
 import { logActivity } from '@/lib/audit';
 import { AppError, AuthError, ConflictError } from '@/lib/errors';
 import { dutiesBulkCreateSchema, dutyUpdateSchema } from '@/validations/duty.schema';
-import { DEFAULT_2026_HOLIDAYS, ALL_DEFAULT_HOLIDAYS } from '@/constants/holidays';
+import { ALL_DEFAULT_HOLIDAYS } from '@/constants/holidays';
 
 export interface UserSession {
   id: number;
@@ -140,7 +140,7 @@ export class DutyService {
         }
       }
     } else {
-      const refs = [filters.orderRef];
+      // filtered by orderRef below
       const isBill = filters.orderRef.endsWith('/বিল');
       let likePattern = '';
 

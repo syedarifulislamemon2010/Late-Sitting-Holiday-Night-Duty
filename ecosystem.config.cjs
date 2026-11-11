@@ -6,7 +6,7 @@
 module.exports = {
   apps: [
     {
-      name: 'duty-portal',
+      name: 'office-work',
       script: 'npm',
       args: 'start',
 

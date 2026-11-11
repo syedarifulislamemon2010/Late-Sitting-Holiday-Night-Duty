@@ -7,6 +7,7 @@ import { eq, and, ne, inArray, asc, SQL } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { employeeListGenerateSchema } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
 import { escapeHtml } from '@/lib/html-escape';
@@ -618,7 +619,8 @@ export async function POST(request: Request) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const filename = `employee_directory_${Math.floor(Date.now() / 1000)}.html`;
+    const randomToken = crypto.randomBytes(12).toString('hex');
+    const filename = `employee_directory_${Date.now()}_${randomToken}.html`;
     const filePathDisk = path.join(uploadsDir, filename);
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');
 

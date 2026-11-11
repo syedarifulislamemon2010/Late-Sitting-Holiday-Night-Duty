@@ -419,7 +419,7 @@ paths:
 ## 🚀 Quick Start & Development
 
 ### 1. Prerequisites
-- Node.js (`>= 24.x` or `26.12.x` LTS recommended)
+- Node.js (`>= 26.13.0` LTS)
 - PostgreSQL (v15+)
 
 ### 2. Setup

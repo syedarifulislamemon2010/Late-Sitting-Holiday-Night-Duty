@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { documents } from '@/db/schema';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { closingBillGenerateSchema } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
 import { getCurrentUser } from '@/lib/auth-wrapper';
@@ -522,7 +523,8 @@ export async function POST(request: Request) {
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
-    const filename = `closing_bill_combined_${monthName.replace(/\s+/g, '_')}_${Math.floor(Date.now() / 1000)}.html`;
+    const randomToken = crypto.randomBytes(12).toString('hex');
+    const filename = `closing_bill_combined_${monthName.replace(/\s+/g, '_')}_${Date.now()}_${randomToken}.html`;
     const filePathDisk = path.join(uploadsDir, filename);
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');
 

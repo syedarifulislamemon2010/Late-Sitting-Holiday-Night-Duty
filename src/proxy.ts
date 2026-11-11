@@ -44,6 +44,7 @@ export async function proxy(request: NextRequest) {
     '/api/auth', 
     '/api/profile', 
     '/api/ping',
+    '/api/health',
     '/api/backup/cron',
     '/_next', 
     '/fonts',
@@ -90,7 +91,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Rate Limiting for API routes
-  const rateLimitExempt = ['/api/profile', '/api/auth', '/api/notifications', '/api/ping'];
+  const rateLimitExempt = ['/api/profile', '/api/auth', '/api/notifications', '/api/ping', '/api/health'];
   const isExempt = rateLimitExempt.some(p => pathname === p || pathname.startsWith(p + '/'));
 
   // Proxy IP resolution: only trust forwarded/real-ip headers when behind a configured reverse proxy (TRUST_PROXY_HEADERS=true)

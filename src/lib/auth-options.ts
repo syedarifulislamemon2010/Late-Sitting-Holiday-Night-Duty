@@ -11,10 +11,13 @@ import { verifyPassword, hashPassword } from '@/lib/password';
 import { getLoginAttempt, recordFailedAttempt, clearLoginAttempt, MAX_ATTEMPTS } from '@/lib/login-lockout';
 
 // Validate NEXTAUTH_SECRET on startup
-const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || !!process.env.CI || process.env.npm_lifecycle_event === 'build';
+// STRICT SECURITY CHECK: Detect compile-time build phases only, never trust CI flag at runtime
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || process.env.npm_lifecycle_event === 'build';
 if (!process.env.NEXTAUTH_SECRET) {
-  if (process.env.NODE_ENV === 'production' && !isBuildPhase) {
-    throw new Error('🚨 [Critical Security Error]: NEXTAUTH_SECRET is required in production. Please set NEXTAUTH_SECRET in your environment.');
+  if (process.env.NODE_ENV === 'production') {
+    if (!isBuildPhase) {
+      throw new Error('🚨 [Critical Security Error]: NEXTAUTH_SECRET is required in production. Please set NEXTAUTH_SECRET in your environment.');
+    }
   } else {
     logger.warn('⚠️ [Security Warning]: NEXTAUTH_SECRET is not set in environment variables. Please set NEXTAUTH_SECRET in your .env file.');
   }
@@ -227,7 +230,7 @@ export const authOptions: NextAuthOptions = {
     signIn: '/',
     error: '/',
   },
-  secret: process.env.NEXTAUTH_SECRET || (isBuildPhase || process.env.NODE_ENV !== 'production' ? 'ci-build-temporary-nextauth-secret-key-2026' : undefined),
+  secret: process.env.NEXTAUTH_SECRET || (isBuildPhase ? 'ci-build-temporary-nextauth-secret-key-2026' : (process.env.NODE_ENV !== 'production' ? 'dev-local-temporary-nextauth-secret-key-2026' : undefined)),
   logger: {
     error(code, ...metadata) {
       if (code === 'JWT_SESSION_ERROR' && metadata.some(m => String(m).includes('decryption operation failed'))) {

@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { leaveApplications, holidays, employees, executives, cells, users, userCells } from '@/db/schema';
+import { leaveApplications, holidays, employees, executives, users, userCells } from '@/db/schema';
 import { isNonWorkingDay } from '@/lib/leave-calculator';
 import { and, gte, lte, eq } from 'drizzle-orm';
 

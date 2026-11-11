@@ -7,6 +7,7 @@ import { documents, cells } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { lunchBillGenerateSchema } from '@/validations/documentGeneration.schema';
 import { handleApiError } from '@/lib/errors';
 import { getBanglaNumberWords } from '@/lib/bengali-converter';
@@ -601,7 +602,8 @@ export async function POST(request: Request) {
     const safeCellName = (cellDisplayName || 'cell').replace(/[^a-zA-Z0-9_\-\u0980-\u09FF]/g, '_');
     const safeMonthName = (monthName || 'month').replace(/[^a-zA-Z0-9_\-\u0980-\u09FF]/g, '_');
     const filePrefix = isSingleCell ? `lunch_bill_${safeCellName}` : `lunch_bill_combined`;
-    const filename = `${filePrefix}_${safeMonthName}_${Math.floor(Date.now() / 1000)}.html`;
+    const randomToken = crypto.randomBytes(12).toString('hex');
+    const filename = `${filePrefix}_${safeMonthName}_${Date.now()}_${randomToken}.html`;
     const filePathDisk = path.join(uploadsDir, filename);
     fs.writeFileSync(filePathDisk, htmlContent, 'utf-8');
 
