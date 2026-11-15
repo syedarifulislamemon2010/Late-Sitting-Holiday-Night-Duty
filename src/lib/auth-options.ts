@@ -3,12 +3,13 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
 import { users, employees, userCells } from '@/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { logActivity } from '@/lib/audit';
 import { toEnglishDigits } from '@/lib/bengali-converter';
 import { verifyPassword, hashPassword } from '@/lib/password';
 import { getLoginAttempt, recordFailedAttempt, clearLoginAttempt, MAX_ATTEMPTS } from '@/lib/login-lockout';
+import { getBankIdSearchCandidates, normalizeBankId, normalizeMobile } from '@/lib/bank-id-helper';
 
 // Validate NEXTAUTH_SECRET on startup
 // STRICT SECURITY CHECK: Detect compile-time build phases only, never trust CI flag at runtime
@@ -71,42 +72,49 @@ export const authOptions: NextAuthOptions = {
           throw new Error(`অতিরিক্ত ব্যর্থ প্রচেষ্টার কারণে সাময়িকভাবে লগইন স্থগিত রয়েছে। ${remainingMin} মিনিট পর পুনরায় চেষ্টা করুন।`);
         }
 
-        // Query user using exact match or exact case-insensitive match (NO wildcard injection)
-        const userList = await db.select().from(users).where(eq(users.username, username));
+        // Query user using candidates (supports both 6-digit padded '034269' and unpadded '34269')
+        const candidates = getBankIdSearchCandidates(username);
+        const candidateLower = candidates.map((c) => c.toLowerCase());
+
+        const userList = await db.select().from(users).where(inArray(users.username, candidates));
         let user = userList[0];
 
-        // Case-insensitive exact match fallback if exact match fails (avoids % and _ wildcard injection)
+        // Case-insensitive exact match fallback if exact match fails
         if (!user) {
           const caseInsensitiveUsers = await db
             .select()
             .from(users)
-            .where(eq(sql`LOWER(TRIM(${users.username}))`, username.toLowerCase()))
+            .where(inArray(sql`LOWER(TRIM(${users.username}))`, candidateLower))
             .limit(1);
           user = caseInsensitiveUsers[0];
         }
 
         // Auto-provision user if missing, but employee with this bankId exists
         if (!user) {
-          const empList = await db.select().from(employees).where(eq(employees.bankId, username));
+          const empList = await db.select().from(employees).where(inArray(employees.bankId, candidates));
           let employee = empList[0];
 
           if (!employee) {
             const caseInsensitiveEmps = await db
               .select()
               .from(employees)
-              .where(eq(sql`LOWER(TRIM(${employees.bankId}))`, username.toLowerCase()))
+              .where(inArray(sql`LOWER(TRIM(${employees.bankId}))`, candidateLower))
               .limit(1);
             employee = caseInsensitiveEmps[0];
           }
 
           if (employee && employee.bankId) {
+            const finalBankId = normalizeBankId(employee.bankId) || employee.bankId.trim();
+            const finalMobile = normalizeMobile(employee.mobile) || (employee.mobile ? employee.mobile.trim() : null);
+
             // Create user in the database with secure hashed default password
             const hashedDefaultPassword = await hashPassword('123456');
             const newUsers = await db.insert(users).values({
-              username: employee.bankId.trim(),
+              username: finalBankId,
               password: hashedDefaultPassword, // default password hashed
               name: employee.name.trim(),
               role: 'USER',
+              mobile: finalMobile,
             }).returning();
             
             user = newUsers[0];
@@ -119,7 +127,7 @@ export const authOptions: NextAuthOptions = {
               }).catch((e) => logger.error('Failed to attach user cell mapping:', e));
             }
 
-            logger.info(`Auto-provisioned User record with hashed password for Employee: ${employee.name} (${employee.bankId})`);
+            logger.info(`Auto-provisioned User record with hashed password for Employee: ${employee.name} (${finalBankId})`);
           }
         }
 
@@ -130,6 +138,32 @@ export const authOptions: NextAuthOptions = {
           if (isValid) {
             // Reset failed login count upon successful authentication
             await clearLoginAttempt(rateLimitKey);
+
+            // Self-heal: ensure 6-digit padded bankId and 11-digit mobile for user and employee records
+            const normalizedBankId = normalizeBankId(user.username);
+            const normalizedUserMobile = normalizeMobile(user.mobile);
+            if ((normalizedBankId && normalizedBankId !== user.username) || (normalizedUserMobile && normalizedUserMobile !== user.mobile)) {
+              try {
+                const patch: { username?: string; mobile?: string } = {};
+                if (normalizedBankId && normalizedBankId !== user.username) {
+                  patch.username = normalizedBankId;
+                }
+                if (normalizedUserMobile && normalizedUserMobile !== user.mobile) {
+                  patch.mobile = normalizedUserMobile;
+                }
+                await db.update(users).set(patch).where(eq(users.id, user.id));
+                if (patch.username) {
+                  await db.update(employees)
+                    .set({ bankId: patch.username, ...(patch.mobile ? { mobile: patch.mobile } : {}) })
+                    .where(eq(sql`LOWER(TRIM(${employees.bankId}))`, user.username.toLowerCase()));
+                  user.username = patch.username;
+                }
+                if (patch.mobile) user.mobile = patch.mobile;
+                logger.info(`[Auth] Auto-healed bankId/mobile for user: ${user.username} (ID: ${user.id})`);
+              } catch (healErr) {
+                logger.warn('[Auth] Could not auto-heal user record:', healErr);
+              }
+            }
 
             // Lazy migration: if password matched as legacy plaintext, upgrade it to bcrypt in DB
             if (needsMigration) {

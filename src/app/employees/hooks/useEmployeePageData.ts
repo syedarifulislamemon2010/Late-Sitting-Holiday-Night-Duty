@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import logger from '@/lib/logger';
 import { UserProfile } from '@/context/ProfileContext';
 import { Cell, Employee, Executive, BulkEmployeeInput } from '../types';
+import { normalizeBankId, normalizeMobile } from '@/lib/bank-id-helper';
 
 export const STRICT_DESIGNATIONS = [
   'সিনিয়র প্রিন্সিপাল অফিসার (এসপিও)',
@@ -471,9 +472,9 @@ export function useEmployeePageData(currentUser: UserProfile | null | undefined)
       parsed.push({
         name,
         designation: mapDesignation(designation),
-        bankId: bankId || null,
+        bankId: normalizeBankId(bankId) || null,
         fileNo: fileNo || null,
-        mobile: mobile || null,
+        mobile: normalizeMobile(mobile) || null,
         cellName
       });
     }

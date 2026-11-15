@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import { normalizeBankId } from '@/lib/bank-id-helper';
 
 export const userRoleSchema = z.enum(['ADMIN', 'USER'], {
   message: 'ইউজার রোল অবশ্যই ADMIN অথবা USER হতে হবে।'
 });
 
 export const userCreateSchema = z.object({
-  username: z.string().min(2, { message: 'ইউজারনেম কমপক্ষে ২ অক্ষরের হতে হবে।' }).trim(),
+  username: z.string().min(2, { message: 'ইউজারনেম কমপক্ষে ২ অক্ষরের হতে হবে।' }).trim().transform(val => normalizeBankId(val) || val),
   name: z.string().min(2, { message: 'নাম কমপক্ষে ২ অক্ষরের হতে হবে।' }).trim(),
   password: z.string().min(6, { message: 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' }),
   role: userRoleSchema.default('USER'),
@@ -13,7 +14,7 @@ export const userCreateSchema = z.object({
 });
 
 export const userUpdateSchema = z.object({
-  username: z.string().min(2, { message: 'ইউজারনেম কমপক্ষে ২ অক্ষরের হতে হবে।' }).trim().optional(),
+  username: z.string().min(2, { message: 'ইউজারনেম কমপক্ষে ২ অক্ষরের হতে হবে।' }).trim().optional().transform(val => val ? (normalizeBankId(val) || val) : val),
   name: z.string().min(2, { message: 'নাম কমপক্ষে ২ অক্ষরের হতে হবে।' }).trim().optional(),
   password: z.string().min(6, { message: 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' }).optional(),
   role: userRoleSchema.optional(),

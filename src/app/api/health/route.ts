@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
+import { repairBankIdsAndMobilesInDb } from "@/lib/bank-id-helper";
 
 export async function GET() {
   const startTime = Date.now();
@@ -9,6 +10,7 @@ export async function GET() {
   try {
     await db.execute(sql`SELECT 1`);
     dbHealthy = true;
+    repairBankIdsAndMobilesInDb(db).catch(() => {});
   } catch {
     dbHealthy = false;
   }

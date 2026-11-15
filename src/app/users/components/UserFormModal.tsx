@@ -4,6 +4,7 @@ import React from 'react';
 import { User, Cell, Employee } from '../types';
 import { X, Save, CheckSquare, Square, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { normalizeBankId, normalizeMobile } from '@/lib/bank-id-helper';
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -75,10 +76,10 @@ export default function UserFormModal({
     if (emp) {
       setName(emp.name);
       if (emp.bankId) {
-        setUsername(emp.bankId);
+        setUsername(normalizeBankId(emp.bankId) || emp.bankId);
       }
       if (emp.mobile) {
-        setMobile(emp.mobile);
+        setMobile(normalizeMobile(emp.mobile) || emp.mobile);
       }
       if (emp.cellId) {
         setSelectedCellIds([emp.cellId]);
@@ -118,7 +119,7 @@ export default function UserFormModal({
                 <option value="">-- কর্মকর্তা নির্বাচন করুন --</option>
                 {employees.map(emp => (
                   <option key={emp.id} value={emp.id.toString()}>
-                    {emp.name} ({emp.designation}) {emp.bankId ? `- ID: ${emp.bankId}` : ''}
+                    {emp.name} ({emp.designation}) {emp.bankId ? `- ID: ${normalizeBankId(emp.bankId)}` : ''}
                   </option>
                 ))}
               </select>
@@ -149,7 +150,8 @@ export default function UserFormModal({
                 required
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                placeholder="उदा. 43308"
+                onBlur={() => setUsername(normalizeBankId(username) || username)}
+                placeholder="যেমন: 043308"
                 className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 font-mono"
               />
             </div>
@@ -176,7 +178,8 @@ export default function UserFormModal({
                 type="text"
                 value={mobile}
                 onChange={e => setMobile(e.target.value)}
-                placeholder="01XXXXXXXXX"
+                onBlur={() => setMobile(normalizeMobile(mobile) || mobile)}
+                placeholder="যেমন: 017XXXXXXXX"
                 className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100"
               />
             </div>

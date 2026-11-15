@@ -14,6 +14,7 @@
     "db:dump": "npx tsx src/db/dump.ts",
     "db:push": "npx drizzle-kit push",
     "db:migrate-passwords": "npx tsx src/db/migrate-passwords.ts",
+    "db:fix-bank-ids": "npx tsx src/db/fix-bank-ids.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",

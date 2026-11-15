@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import logger from '@/lib/logger';
 import { UserProfile } from '@/context/ProfileContext';
 import { User, Cell, Employee, AuditLog } from '../types';
+import { normalizeBankId, normalizeMobile } from '@/lib/bank-id-helper';
 
 export function useUsersData(currentUser: UserProfile | null | undefined, refetchProfile?: () => Promise<void>) {
   const [users, setUsers] = useState<User[]>([]);
@@ -123,9 +124,9 @@ export function useUsersData(currentUser: UserProfile | null | undefined, refetc
   const handleOpenEditModal = (user: User) => {
     setEditingUser(user);
     setName(user.name);
-    setUsername(user.username);
+    setUsername(normalizeBankId(user.username) || user.username);
     setPassword('');
-    setMobile(user.mobile || '');
+    setMobile(normalizeMobile(user.mobile) || user.mobile || '');
     setRole(user.role);
     setSelectedCellIds(user.cells ? user.cells.map(c => c.id) : []);
 
@@ -157,10 +158,10 @@ export function useUsersData(currentUser: UserProfile | null | undefined, refetc
         password?: string;
       } = {
         name,
-        username,
+        username: normalizeBankId(username) || username,
         role,
         cellIds: selectedCellIds,
-        mobile,
+        mobile: normalizeMobile(mobile) || mobile,
         cellDuties: JSON.stringify(cellRoles)
       };
 

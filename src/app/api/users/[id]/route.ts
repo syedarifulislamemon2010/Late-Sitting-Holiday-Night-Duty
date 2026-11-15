@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { users, userCells, cells, employees } from '@/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and, ne } from 'drizzle-orm';
+import { normalizeBankId, normalizeMobile } from '@/lib/bank-id-helper';
 import { logActivity } from '@/lib/audit';
 import { hashPassword } from '@/lib/password';
 
@@ -39,7 +40,7 @@ export async function PUT(
       return handleApiError(parseResult.error);
     }
     const validated = parseResult.data;
-    const { name, password, role, cellIds } = validated;
+    const { name, username, password, role, cellIds } = validated;
     const { cellDuties, mobile } = body;
 
     if (!name) {
@@ -72,6 +73,7 @@ export async function PUT(
     const updatedFields: {
       name: string;
       role: string;
+      username?: string;
       cellDuties?: string | null;
       mobile?: string | null;
       password?: string;
@@ -79,11 +81,21 @@ export async function PUT(
       name: name.trim(),
       role: finalRole,
     };
+    if (currentUser.role === 'ADMIN' && username) {
+      const cleanUsername = normalizeBankId(username) || username.trim();
+      if (cleanUsername !== targetUser.username) {
+        const duplicateUsers = await db.select().from(users).where(and(eq(users.username, cleanUsername), ne(users.id, userId)));
+        if (duplicateUsers.length > 0) {
+          return NextResponse.json({ error: 'user_exists', message: 'এই ইউজারনেমটি ইতিমধ্যেই ব্যবহৃত হচ্ছে!' }, { status: 400 });
+        }
+        updatedFields.username = cleanUsername;
+      }
+    }
     if (currentUser.role === 'ADMIN') {
       updatedFields.cellDuties = cellDuties !== undefined ? (cellDuties ? JSON.stringify(cellDuties) : null) : undefined;
     }
     if (mobile !== undefined) {
-      updatedFields.mobile = mobile ? mobile.trim() : null;
+      updatedFields.mobile = normalizeMobile(mobile);
     }
     if (password && password.trim()) {
       updatedFields.password = await hashPassword(password.trim());
@@ -97,9 +109,10 @@ export async function PUT(
     const updatedUser = updatedUserList[0];
 
     // Synchronize name, mobile, and primary cellId to the Employee table if username corresponds to an employee's bankId
-    const employeeSyncData: { name?: string; mobile?: string | null; cellId?: number } = {};
+    const employeeSyncData: { name?: string; mobile?: string | null; cellId?: number; bankId?: string } = {};
     if (updatedUser.name) employeeSyncData.name = updatedUser.name.trim();
-    if (mobile !== undefined) employeeSyncData.mobile = mobile ? mobile.trim() : null;
+    if (updatedFields.username) employeeSyncData.bankId = updatedFields.username;
+    if (mobile !== undefined) employeeSyncData.mobile = normalizeMobile(mobile);
     if (currentUser.role === 'ADMIN' && Array.isArray(cellIds) && cellIds.length > 0) {
       const primaryCid = typeof cellIds[0] === 'string' ? parseInt(cellIds[0], 10) : cellIds[0];
       if (!isNaN(primaryCid)) {
@@ -132,7 +145,6 @@ export async function PUT(
       createdAt: updatedUser.createdAt,
       cells: assignedCells,
     };
-
     // Logging the update activity
     const isPasswordChange = !!(password && password.trim());
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';

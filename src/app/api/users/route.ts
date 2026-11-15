@@ -9,6 +9,7 @@ import { logActivity } from '@/lib/audit';
 import { hashPassword } from '@/lib/password';
 import { userCreateSchema } from '@/validations/user.schema';
 import { handleApiError } from '@/lib/errors';
+import { normalizeBankId, normalizeMobile, repairBankIdsAndMobilesInDb } from '@/lib/bank-id-helper';
 
 export async function GET() {
   try {
@@ -17,6 +18,9 @@ export async function GET() {
     if (!currentUser || currentUser.role !== 'ADMIN') {
       return NextResponse.json({ error: 'unauthorized', message: 'শুধুমাত্র এডমিন এই ইউজার তালিকা দেখতে পারবেন।' }, { status: 403 });
     }
+
+    // Run self-healing repair on bank IDs and mobile numbers in DB
+    await repairBankIdsAndMobilesInDb(db);
 
     // 1. Fetch all employees with a bank ID
     const emps = await db.select().from(employees).where(isNotNull(employees.bankId));
@@ -29,15 +33,16 @@ export async function GET() {
     const hashedDefaultPassword = await hashPassword('123456');
     for (const emp of emps) {
       if (emp.bankId && emp.bankId.trim() !== '') {
-        const username = emp.bankId.trim().toLowerCase();
+        const finalBankId = normalizeBankId(emp.bankId) || emp.bankId.trim();
+        const username = finalBankId.toLowerCase();
         // Skip if username is 'admin' or already exists
         if (username !== 'admin' && !existingUsernames.has(username)) {
           const newUsers = await db.insert(users).values({
-            username: emp.bankId.trim(),
+            username: finalBankId,
             password: hashedDefaultPassword,
             name: emp.name.trim(),
             role: 'USER',
-            mobile: emp.mobile ? emp.mobile.trim() : null,
+            mobile: normalizeMobile(emp.mobile),
           }).returning();
           const newUser = newUsers[0];
 
@@ -123,7 +128,7 @@ export async function POST(request: Request) {
       name: name.trim(),
       role: role || 'USER',
       cellDuties: cellDuties ? JSON.stringify(cellDuties) : null,
-      mobile: mobile ? mobile.trim() : null,
+      mobile: normalizeMobile(mobile),
     }).returning();
     const user = newUsers[0];
 

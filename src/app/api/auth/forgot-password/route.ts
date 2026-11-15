@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users, employees } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { toEnglishDigits } from '@/lib/bengali-converter';
+import { normalizeBankId, normalizeMobile, getBankIdSearchCandidates } from '@/lib/bank-id-helper';
 import { hashPassword } from '@/lib/password';
 import { sendJanataSms } from '@/lib/sms';
 import { checkCanSendOtp, issueOtp, verifyAndConsumeOtp } from '@/lib/otp-store';
@@ -16,10 +17,11 @@ export async function POST(request: Request) {
     const { action, bankId, mobile, otp, newPassword } = body;
 
     const rawBankId = (bankId || '').toString().trim();
-    const cleanBankId = toEnglishDigits(rawBankId).trim();
+    const cleanBankId = normalizeBankId(rawBankId) || toEnglishDigits(rawBankId).trim();
+    const bankCandidates = getBankIdSearchCandidates(rawBankId);
 
     const rawMobile = (mobile || '').toString().trim();
-    const cleanMobile = toEnglishDigits(rawMobile).replace(/\D/g, '').slice(-11);
+    const cleanMobile = normalizeMobile(rawMobile) || '';
 
     if (!cleanBankId) {
       return NextResponse.json({
@@ -35,9 +37,15 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Lookup user by Bank ID (username)
-    const matchedUsers = await db.select().from(users).where(eq(users.username, cleanBankId)).limit(1);
-    const user = matchedUsers[0];
+    // Lookup user by Bank ID (username) candidates
+    const matchedUsers = await db.select().from(users).where(inArray(users.username, bankCandidates)).limit(1);
+    let user = matchedUsers[0];
+
+    if (!user) {
+      const candidateLower = bankCandidates.map(c => c.toLowerCase());
+      const ciUsers = await db.select().from(users).where(inArray(sql`LOWER(TRIM(${users.username}))`, candidateLower)).limit(1);
+      user = ciUsers[0];
+    }
 
     if (!user) {
       return NextResponse.json({
@@ -47,12 +55,12 @@ export async function POST(request: Request) {
     }
 
     // Resolve registered mobile (check users table first, fallback to employees table)
-    let registeredMobile = (user.mobile || '').replace(/\D/g, '').slice(-11);
+    let registeredMobile = normalizeMobile(user.mobile);
     if (!registeredMobile) {
-      const matchedEmployees = await db.select().from(employees).where(eq(employees.bankId, cleanBankId)).limit(1);
+      const matchedEmployees = await db.select().from(employees).where(inArray(employees.bankId, bankCandidates)).limit(1);
       const emp = matchedEmployees[0];
       if (emp?.mobile) {
-        registeredMobile = emp.mobile.replace(/\D/g, '').slice(-11);
+        registeredMobile = normalizeMobile(emp.mobile);
       }
     }
 
@@ -69,6 +77,16 @@ export async function POST(request: Request) {
         error: 'mobile_mismatch',
         message: 'প্রদত্ত মোবাইল নম্বরটি এই ব্যাংক আইডিতে নিবন্ধিত নম্বরের সাথে মিলছে না।'
       }, { status: 400 });
+    }
+
+    // Self-heal user record in DB if bankId or mobile was unpadded
+    if (user.username !== cleanBankId || user.mobile !== cleanMobile) {
+      await db.update(users)
+        .set({ username: cleanBankId, mobile: cleanMobile })
+        .where(eq(users.id, user.id))
+        .catch(() => {});
+      user.username = cleanBankId;
+      user.mobile = cleanMobile;
     }
 
     // ==========================================
