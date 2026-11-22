@@ -5,17 +5,16 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      major-dependencies:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
       minor-patch-dependencies:
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
     open-pull-requests-limit: 5
     reviewers:
       - "syedarifulislamemon2010"
