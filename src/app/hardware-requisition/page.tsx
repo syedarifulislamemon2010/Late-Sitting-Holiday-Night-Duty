@@ -371,7 +371,11 @@ export default function HardwareRequisitionPage() {
   // Build requisition items dynamically for the preview / submission
   const getRequisitionItems = (): RequisitionItem[] => {
     let hwLabel = '';
-    if (hardwareType === 'OTHER') {
+    if (hardwareType === 'PC') {
+      hwLabel = 'পিসি মেরামত - ১ (এক) টি';
+    } else if (hardwareType === 'LAPTOP') {
+      hwLabel = 'ল্যাপটপ মেরামত - ১ (এক) টি';
+    } else if (hardwareType === 'OTHER') {
       const hwName = customHardwareType || 'হার্ডওয়্যার';
       const isSupply = customRequestType.includes('সরবরাহ');
       const isRepair = customRequestType.includes('মেরামত');
@@ -431,15 +435,29 @@ export default function HardwareRequisitionPage() {
     upsAction?: string;
     subjectLine?: string;
   }) => {
-    const cellName = req.cellName || 'অনুমোদিত সেল';
-    const count = req.items?.length || 0;
+    const cellName = req.cellName || selectedApplicantEmp?.cell?.name || 'R09 Development & Customization Cell';
+    const count = req.items?.length || 1;
     const countBn = toBanglaDigits(String(count).padStart(2, '0'));
     const countWord = getBanglaCountWords(count);
 
     let subjectLine = '';
     let bodyParagraph = '';
 
-    if (req.hardwareType === 'OTHER' || req.upsAction === 'CUSTOM') {
+    if (req.hardwareType === 'PC') {
+      subjectLine = req.subjectLine || `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত পিসি মেরামত প্রসঙ্গে।`;
+      if (count > 1) {
+        bodyParagraph = `${cellName}-এ কর্মরত নিম্নস্বাক্ষরকারী কর্মকর্তাগণের দাপ্তরিক কার্যক্রম সুচারুরূপে ও নিরবচ্ছিন্নভাবে সম্পাদনের জন্য ব্যবহৃত পিসিগুলো আকস্মিকভাবে বিকল হয়ে পড়ায় দাপ্তরিক কার্যক্রমের স্বাভাবিক গতি বজায় রাখার স্বার্থে উক্ত পিসিগুলো জরুরিভিত্তিতে মেরামত করা প্রয়োজন।`;
+      } else {
+        bodyParagraph = `${cellName}-এ কর্মরত নিম্নস্বাক্ষরকারী কর্মকর্তার দাপ্তরিক কার্যক্রম সুচারুরূপে ও নিরবচ্ছিন্নভাবে সম্পাদনের জন্য ব্যবহৃত পিসিটি আকস্মিকভাবে বিকল হয়ে পড়ায় দাপ্তরিক কার্যক্রমের স্বাভাবিক গতি বজায় রাখার স্বার্থে উক্ত পিসিটি জরুরিভিত্তিতে মেরামত করা প্রয়োজন।`;
+      }
+    } else if (req.hardwareType === 'LAPTOP') {
+      subjectLine = req.subjectLine || `বিষয়ঃ ${cellName}-এ জরুরিভিত্তিতে ${countBn} (${countWord}) টি ব্যবহৃত ল্যাপটপ মেরামত প্রসঙ্গে।`;
+      if (count > 1) {
+        bodyParagraph = `${cellName}-এ কর্মরত নিম্নস্বাক্ষরকারী কর্মকর্তাগণের দাপ্তরিক কার্যক্রম সুচারুরূপে ও নিরবচ্ছিন্নভাবে সম্পাদনের জন্য ব্যবহৃত ল্যাপটপগুলো আকস্মিকভাবে বিকল হয়ে পড়ায় দাপ্তরিক কার্যক্রমের স্বাভাবিক গতি বজায় রাখার স্বার্থে উক্ত ল্যাপটপগুলো জরুরিভিত্তিতে মেরামত করা প্রয়োজন।`;
+      } else {
+        bodyParagraph = `${cellName}-এ কর্মরত নিম্নস্বাক্ষরকারী কর্মকর্তার দাপ্তরিক কার্যক্রম সুচারুরূপে ও নিরবচ্ছিন্নভাবে সম্পাদনের জন্য ব্যবহৃত ল্যাপটপটি আকস্মিকভাবে বিকল হয়ে পড়ায় দাপ্তরিক কার্যক্রমের স্বাভাবিক গতি বজায় রাখার স্বার্থে উক্ত ল্যাপটপটি জরুরিভিত্তিতে মেরামত করা প্রয়োজন।`;
+      }
+    } else if (req.hardwareType === 'OTHER' || req.upsAction === 'CUSTOM') {
       if (req.subjectLine) {
         subjectLine = req.subjectLine;
         const coreText = req.subjectLine
@@ -515,7 +533,7 @@ export default function HardwareRequisitionPage() {
 
   const isFormValid = !!selectedApplicantEmp && 
     !!hardwareType && 
-    (hardwareType === 'UPS' ? !!upsAction : (hardwareType === 'OTHER' ? !!customHardwareType.trim() : false)) &&
+    (hardwareType === 'UPS' ? !!upsAction : (hardwareType === 'OTHER' ? !!customHardwareType.trim() : true)) &&
     !isDateHoliday &&
     (entryMode === 'MULTIPLE' ? Object.values(checkedEmployees).filter(Boolean).length === upsCount : true);
 
@@ -893,13 +911,21 @@ export default function HardwareRequisitionPage() {
                           onChange={(e) => {
                             const val = e.target.value;
                             setHardwareType(val);
-                            setUpsAction(val === 'UPS' ? '' : 'CUSTOM');
+                            if (val === 'UPS') {
+                              setUpsAction('');
+                            } else if (val === 'PC' || val === 'LAPTOP') {
+                              setUpsAction('REPAIR');
+                            } else {
+                              setUpsAction('CUSTOM');
+                            }
                             setCustomHardwareType('');
                             setCustomRequestType('');
                           }}
                           className="w-full h-10 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold cursor-pointer text-slate-800 dark:text-slate-100"
                         >
                           <option value="">ক্যাটাগরি নির্বাচন করুন...</option>
+                          <option value="PC">পিসি (PC)</option>
+                          <option value="LAPTOP">ল্যাপটপ (Laptop)</option>
                           <option value="UPS">ইউপিএস (UPS)</option>
                           <option value="OTHER">অন্যান্য (Other)</option>
                         </select>
