@@ -1090,14 +1090,14 @@ export default function HardwareRequisitionPage() {
                   
                   {/* Top Header */}
                   <div className="text-right space-y-1 font-bold pr-1">
-                    <h2 className="text-black" style={{ letterSpacing: 'normal', fontSize: '20pt', lineHeight: 'normal' }}>অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
-                    <p className="text-xs text-black" style={{ letterSpacing: 'normal' }}>
+                    <h2 className="req-header text-black font-bold tracking-normal text-[22pt] leading-tight">অনলাইন ব্যাংকিং ডিপার্টমেন্ট</h2>
+                    <p className="req-date text-black text-[13pt] tracking-normal font-medium mt-1">
                       তারিখঃ {getBnDateString(previewReq.requisitionDate)} ইং
                     </p>
                   </div>
 
                   {/* Subject line */}
-                  <div className="text-left text-[13px] leading-relaxed text-black mt-4">
+                  <div className="req-subject text-left text-[14pt] leading-relaxed text-black mt-6">
                     <span className="font-bold">বিষয়ঃ </span>
                     <span className="font-bold inline-block border-b border-black pb-0.5">
                       {previewReq.subjectLine.replace('বিষয়ঃ ', '').replace('विषয়ঃ ', '')}
@@ -1105,55 +1105,55 @@ export default function HardwareRequisitionPage() {
                   </div>
 
                   {/* Body Paragraph */}
-                  <p className="text-justify text-[13px] leading-relaxed text-black tracking-normal mt-4">
+                  <p className="req-body text-justify text-[13.5pt] leading-relaxed text-black tracking-normal mt-5">
                     {bodyParagraph}
                   </p>
 
                   {/* Table */}
-                  <table className="w-full text-center border-collapse border border-black mt-4 mb-4 text-[13px]">
+                  <table className="req-table w-full text-center border-collapse border border-black mt-5 mb-5 text-[13pt]">
                     <thead>
                       <tr className="bg-slate-50/20 font-bold border-b border-black">
-                        <th className="border border-black px-2 py-1.5 text-center font-bold w-[12%]">ক্রমিক নং</th>
-                        <th className="border border-black px-3 py-1.5 text-center font-bold w-[35%]">কর্মকর্তার নাম</th>
-                        <th className="border border-black px-3 py-1.5 text-center font-bold w-[25%]">পদবী</th>
-                        <th className="border border-black px-3 py-1.5 text-center font-bold w-[28%]">প্রয়োজনীয় হার্ডওয়্যার</th>
+                        <th className="border border-black px-3 py-2.5 text-center font-bold w-[12%]">ক্রমিক নং</th>
+                        <th className="border border-black px-3 py-2.5 text-center font-bold w-[35%]">কর্মকর্তার নাম</th>
+                        <th className="border border-black px-3 py-2.5 text-center font-bold w-[25%]">পদবী</th>
+                        <th className="border border-black px-3 py-2.5 text-center font-bold w-[28%]">প্রয়োজনীয় হার্ডওয়্যার</th>
                       </tr>
                     </thead>
                     <tbody>
                       {previewReq.items.map((item, idx) => (
                         <tr key={idx} className="border-b border-black">
-                          <td className="border border-black px-2 py-2 text-center">{item.serialNo}</td>
-                          <td className="border border-black px-3 py-2 text-left">{item.officerNameSnapshot}</td>
-                          <td className="border border-black px-3 py-2 text-center">{item.officerDesignationSnapshot}</td>
-                          <td className="border border-black px-3 py-2 text-center">{item.hardwareLabel}</td>
+                          <td className="border border-black px-3 py-2.5 text-center">{item.serialNo}</td>
+                          <td className="border border-black px-3 py-2.5 text-left">{item.officerNameSnapshot}</td>
+                          <td className="border border-black px-3 py-2.5 text-center">{item.officerDesignationSnapshot}</td>
+                          <td className="border border-black px-3 py-2.5 text-center">{item.hardwareLabel}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
 
                   {/* Closing Paragraph */}
-                  <p className="text-justify text-[13px] leading-relaxed text-black mt-4">
-                    এমতাবস্থায়, উপরে উল্লেখিত সমস্যা সমাধানের জন্য প্রয়োজনীয় ব্যবস্থা গ্রহণের অনুরোধ জানিয়ে নথিটি অत्र ডিপার্টমেন্টের <strong><em>হার্ডওয়্যার সেল</em></strong> বরাবর প্রেরণ করা যেতে পারে।
+                  <p className="req-closing text-justify text-[13.5pt] leading-relaxed text-black mt-5">
+                    এমতাবস্থায়, উপরে উল্লেখিত সমস্যা সমাধানের জন্য প্রয়োজনীয় ব্যবস্থা গ্রহণের অনুরোধ জানিয়ে নথিটি অত্র ডিপার্টমেন্টের <strong><em>হার্ডওয়্যার সেল</em></strong> বরাবর প্রেরণ করা যেতে পারে।
                   </p>
 
                 </div>
 
                 {/* Bottom Signature and Receivers block */}
-                <div className="mt-10 space-y-12" contentEditable={true} suppressContentEditableWarning={true}>
+                <div className="mt-12 space-y-12" contentEditable={true} suppressContentEditableWarning={true}>
                   
                   {/* Signature block */}
                   <div className="flex justify-end">
-                    <div className="text-right space-y-1 pr-2">
-                      <p className="text-[13px]">({(previewReq.requester?.name || selectedApplicantEmp?.name || '[আবেদনকারীর নাম]').replace(/^জনাব\s+/, '')})</p>
-                      <p className="text-[13px]">{selectedApplicantEmp ? cleanDesignation(selectedApplicantEmp.designation) : '[আবেদনকারীর পদবী]'}</p>
+                    <div className="req-signature text-right space-y-1 pr-2 text-[13.5pt]">
+                      <p className="font-medium">({(previewReq.requester?.name || selectedApplicantEmp?.name || '[আবেদনকারীর নাম]').replace(/^জনাব\s+/, '')})</p>
+                      <p className="font-medium">{selectedApplicantEmp ? cleanDesignation(selectedApplicantEmp.designation) : '[আবেদনকারীর পদবী]'}</p>
                     </div>
                   </div>
 
                   {/* Receiver destinations list */}
-                  <div className="space-y-16 pt-2 text-left text-[13px] leading-relaxed text-black">
-                    <p className="underline">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
-                    <p className="underline">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
-                    <p className="underline">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
+                  <div className="req-receivers space-y-14 pt-4 text-left text-[13.5pt] leading-relaxed text-black">
+                    <p className="underline font-medium">এসপিও, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
+                    <p className="underline font-medium">এজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
+                    <p className="underline font-medium">ডিজিএম, (অনলাইন ব্যাংকিং ডিপার্টমেন্ট) সমীপেঃ</p>
                   </div>
 
                 </div>
@@ -1169,16 +1169,68 @@ export default function HardwareRequisitionPage() {
         {/* Print specific CSS wrapper */}
         <style>{`
           /* Universal font styling on screen preview sheet */
-          #printable-hardware-requisition-sheet, 
-          #printable-hardware-requisition-sheet * {
-            font-family: 'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif !important;
-            font-size: 11px !important;
+          #printable-hardware-requisition-sheet {
+            font-family: 'Kalpurush', 'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif !important;
+            font-size: 13.5pt !important;
             color: #000000;
+            line-height: 1.7 !important;
+            letter-spacing: normal !important;
+          }
+
+          #printable-hardware-requisition-sheet * {
+            font-family: 'Kalpurush', 'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif !important;
+            letter-spacing: normal !important;
+          }
+
+          #printable-hardware-requisition-sheet h2,
+          #printable-hardware-requisition-sheet .req-header {
+            font-size: 22pt !important;
+            font-weight: bold !important;
+            line-height: 1.2 !important;
+          }
+
+          #printable-hardware-requisition-sheet .req-date {
+            font-size: 13pt !important;
             line-height: 1.5 !important;
           }
 
-          #printable-hardware-requisition-sheet h2 {
-            font-size: 20px !important;
+          #printable-hardware-requisition-sheet .req-subject {
+            font-size: 14pt !important;
+            line-height: 1.6 !important;
+          }
+
+          #printable-hardware-requisition-sheet .req-body,
+          #printable-hardware-requisition-sheet .req-closing {
+            font-size: 13.5pt !important;
+            line-height: 1.75 !important;
+            text-align: justify !important;
+          }
+
+          #printable-hardware-requisition-sheet table,
+          #printable-hardware-requisition-sheet .req-table {
+            font-size: 13pt !important;
+            line-height: 1.4 !important;
+          }
+
+          #printable-hardware-requisition-sheet th {
+            font-size: 13pt !important;
+            font-weight: bold !important;
+            padding: 8px 10px !important;
+          }
+
+          #printable-hardware-requisition-sheet td {
+            font-size: 13pt !important;
+            padding: 8px 10px !important;
+          }
+
+          #printable-hardware-requisition-sheet .req-signature {
+            font-size: 13.5pt !important;
+            line-height: 1.5 !important;
+          }
+
+          #printable-hardware-requisition-sheet .req-receivers {
+            font-size: 13.5pt !important;
+            line-height: 1.6 !important;
           }
 
           .dark #printable-hardware-requisition-sheet {
@@ -1200,11 +1252,6 @@ export default function HardwareRequisitionPage() {
 
           .dark #printable-hardware-requisition-sheet .border-black {
             border-color: #f8fafc !important;
-          }
-
-          #printable-hardware-requisition-sheet h2 {
-            font-size: 20pt !important;
-            line-height: normal !important;
           }
 
           @media print {
@@ -1264,6 +1311,9 @@ export default function HardwareRequisitionPage() {
               display: flex !important;
               flex-direction: column !important;
               justify-content: flex-start !important;
+              font-family: 'Kalpurush', 'SolaimanLipi', 'Nikosh', 'Noto Sans Bengali', sans-serif !important;
+              font-size: 13.5pt !important;
+              line-height: 1.7 !important;
               page-break-after: avoid !important;
               page-break-before: avoid !important;
               page-break-inside: avoid !important;
@@ -1273,6 +1323,57 @@ export default function HardwareRequisitionPage() {
               background-color: transparent !important;
               color: #000000 !important;
               border-color: #000000 !important;
+            }
+
+            #printable-hardware-requisition-sheet h2,
+            #printable-hardware-requisition-sheet .req-header {
+              font-size: 22pt !important;
+              font-weight: bold !important;
+              line-height: 1.2 !important;
+            }
+
+            #printable-hardware-requisition-sheet .req-date {
+              font-size: 13pt !important;
+              line-height: 1.5 !important;
+            }
+
+            #printable-hardware-requisition-sheet .req-subject {
+              font-size: 14pt !important;
+              line-height: 1.6 !important;
+            }
+
+            #printable-hardware-requisition-sheet .req-body,
+            #printable-hardware-requisition-sheet .req-closing {
+              font-size: 13.5pt !important;
+              line-height: 1.75 !important;
+              text-align: justify !important;
+            }
+
+            #printable-hardware-requisition-sheet table,
+            #printable-hardware-requisition-sheet .req-table {
+              font-size: 13pt !important;
+              line-height: 1.4 !important;
+            }
+
+            #printable-hardware-requisition-sheet th {
+              font-size: 13pt !important;
+              font-weight: bold !important;
+              padding: 8px 10px !important;
+            }
+
+            #printable-hardware-requisition-sheet td {
+              font-size: 13pt !important;
+              padding: 8px 10px !important;
+            }
+
+            #printable-hardware-requisition-sheet .req-signature {
+              font-size: 13.5pt !important;
+              line-height: 1.5 !important;
+            }
+
+            #printable-hardware-requisition-sheet .req-receivers {
+              font-size: 13.5pt !important;
+              line-height: 1.6 !important;
             }
           }
         `}</style>
